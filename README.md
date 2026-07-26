@@ -9,6 +9,10 @@ autocontido (os logotipos vêm embutidos como data URI).
 
 ![A interface: lista de serviços à esquerda, docker-compose.yml gerado à direita](docs/screenshot.png)
 
+O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
+
+![O combobox aberto, mostrando os treze serviços disponíveis](docs/services.png)
+
 ## O que dá para fazer
 
 - **Escolher serviços** num combobox com logotipos e adicioná-los à stack.
