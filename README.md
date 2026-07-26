@@ -7,6 +7,8 @@ de mídia), sem backend e sem dependências externas.
 Abra `arr-stack-prototype.html` no navegador. É só isso — o arquivo é
 autocontido (os logotipos vêm embutidos como data URI).
 
+![A interface: lista de serviços à esquerda, docker-compose.yml gerado à direita](docs/screenshot.png)
+
 ## O que dá para fazer
 
 - **Escolher serviços** num combobox com logotipos e adicioná-los à stack.
