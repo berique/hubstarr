@@ -203,7 +203,6 @@
           <option>Europe/Lisbon</option><option>UTC</option>
         </select>
       </div>
-      <div class="row"><label for="eStack">Nome da stack / rede</label><input type="text" id="eStack"></div>
       <div class="row"><label for="eRestart">Restart policy</label>
         <select id="eRestart"><option>unless-stopped</option><option>always</option><option>no</option></select>
       </div>
@@ -233,8 +232,8 @@
         <input type="text" id="eCountries" placeholder="Brazil, Netherlands"></div>
 
       <p class="hint">Valem para toda a stack. As bases saem no compose como
-        <b>${BASE_CONFIG}</b>, <b>${BASE_MEDIA}</b> e <b>${DOWNLOAD_BASE}</b>; a stack e o restart como
-        <b>${STACK}</b> e <b>${RESTART}</b>. Todos os valores acima vão para o <b>.env</b>.</p>
+        <b>${BASE_CONFIG}</b>, <b>${BASE_MEDIA}</b> e <b>${DOWNLOAD_BASE}</b>, e o restart como
+        <b>${RESTART}</b>. Todos os valores acima vão para o <b>.env</b>.</p>
     </div>
     <div class="bar">
       <span class="hint" id="eWarn"></span>
@@ -332,7 +331,11 @@ function icoFail(img){
 }
 
 // ambiente global da stack — editável no botão "Ambiente" do topo
-const DEFAULTS = {stack:'starrnet', restart:'unless-stopped',
+// nome da stack e da rede — fixos
+const STACK = 'starrnet';
+const NETWORK = 'starrnet';
+
+const DEFAULTS = {restart:'unless-stopped',
                   cfg:'/opt/appdata', data:'/mnt/media', dl:'/mnt/downloads',
                   puid:'1000', pgid:'1000', tz:'America/Sao_Paulo',
                   // gluetun
@@ -552,7 +555,7 @@ $('#mSave').onclick = ()=>{
 
 /* ---------- ambiente global ---------- */
 function openEnv(){
-  $('#eStack').value=DEFAULTS.stack; $('#eRestart').value=DEFAULTS.restart;
+  $('#eRestart').value=DEFAULTS.restart;
   $('#eVpnProv').value=DEFAULTS.vpnProv; $('#eVpnType').value=DEFAULTS.vpnType;
   $('#eWgKey').value=DEFAULTS.wgKey; $('#eWgAddr').value=DEFAULTS.wgAddr;
   $('#eOvpnUser').value=DEFAULTS.ovpnUser; $('#eOvpnPass').value=DEFAULTS.ovpnPass;
@@ -596,9 +599,7 @@ $('#eSave').onclick = ()=>{
   if(!/^\d+$/.test(puid) || !/^\d+$/.test(pgid)){
     $('#eWarn').innerHTML='<span class="warn">PUID/PGID devem ser numéricos</span>'; return;
   }
-  const stack = slug($('#eStack').value);
-  if(!stack){ $('#eWarn').innerHTML='<span class="warn">Nome da stack inválido</span>'; return; }
-  Object.assign(DEFAULTS, {stack, restart:$('#eRestart').value, puid, pgid,
+  Object.assign(DEFAULTS, {restart:$('#eRestart').value, puid, pgid,
     tz:$('#eTz').value, cfg:$('#eCfg').value.trim(), data:$('#eData').value.trim(),
     dl:$('#eDl').value.trim(),
     vpnProv:$('#eVpnProv').value.trim(), vpnType:$('#eVpnType').value,
@@ -625,11 +626,11 @@ function checkConflicts(list){
 }
 
 function build(){
-  const stack = DEFAULTS.stack, restart = '${RESTART}';   // rede/projeto entram literais
+  const restart = '${RESTART}';
   const list = effective();
 
   const L=[];
-  L.push(`<span class="c"># ${DEFAULTS.stack} — gerado pelo Hubstarr</span>`);
+  L.push(`<span class="c"># ${STACK} — gerado pelo Hubstarr</span>`);
   L.push(`<span class="c"># valores em .env</span>`);
   L.push(``);
   L.push(`<span class="k">services</span>:`);
@@ -692,7 +693,7 @@ function build(){
     } else {
       L.push(`    <span class="k">ports</span>:`);
       L.push(`      - <span class="v">"${a.port}:${inner(a.id)}"</span>`);
-      L.push(`    <span class="k">networks</span>: [<span class="v">${stack}</span>]`);
+      L.push(`    <span class="k">networks</span>: [<span class="v">${NETWORK}</span>]`);
     }
     L.push(`    <span class="k">restart</span>: <span class="v">${restart}</span>`);
   });
@@ -705,17 +706,16 @@ function build(){
 
   L.push(``);
   L.push(`<span class="k">networks</span>:`);
-  L.push(`  <span class="k">${stack}</span>:`);
+  L.push(`  <span class="k">${NETWORK}</span>:`);
   L.push(`    <span class="k">driver</span>: <span class="v">bridge</span>`);
   return {html:L.join('\n'), list};
 }
 
 function buildEnv(list){
   const E=[];
-  E.push(`<span class="c"># ${DEFAULTS.stack} — gerado pelo Hubstarr</span>`);
+  E.push(`<span class="c"># ${STACK} — gerado pelo Hubstarr</span>`);
   E.push(``);
   E.push(`<span class="c"># stack</span>`);
-  E.push(`<span class="k">STACK</span>=<span class="v">${DEFAULTS.stack}</span>`);
   E.push(`<span class="k">RESTART</span>=<span class="v">${DEFAULTS.restart}</span>`);
   E.push(``);
   E.push(`<span class="c"># caminhos base</span>`);
@@ -839,7 +839,7 @@ function makeZip(files){                       // files: [{name, text}]
 }
 
 $('#dl').onclick = ()=>{
-  const stack = DEFAULTS.stack;
+  const stack = STACK;
   const blob = makeZip([
     {name:'docker-compose.yml', text:plain()+'\n'},
     {name:'.env',               text:plainEnv()+'\n'},
