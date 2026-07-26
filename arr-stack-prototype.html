@@ -291,11 +291,13 @@ const SERVICES = [
   {id:'jellyfin', name:'Jellyfin',  desc:'Media server',        port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:''},
   {id:'jellyseerr',name:'Jellyseerr',desc:'Pedidos de mídia',   port:5055, img:'fallenbagel/jellyseerr:latest',        color:'#35c48a'},
   {id:'seerr',    name:'Seerr',     desc:'Pedidos de mídia',   port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5'},
-  {id:'heimdall',  name:'Heimdall',  desc:'Painel de atalhos',  port:8090, img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f'},
+  {id:'heimdall', name:'Heimdall',  desc:'Painel de atalhos',   port:8090, img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f', inner:80},
   {id:'flaresolverr',name:'FlareSolverr',desc:'Bypass Cloudflare',port:8191,img:'ghcr.io/flaresolverr/flaresolverr:latest',color:'#ff7f50',noVol:true},
   {id:'gluetun',  name:'Gluetun',   desc:'Cliente VPN',         port:8000, img:'qmcgaw/gluetun:latest',                color:'#8b98a5', noVol:true},
 ];
 const svc = id => SERVICES.find(s=>s.id===id);
+// porta dentro do container (só difere quando o serviço declara `inner`)
+const inner = id => svc(id).inner || svc(id).port;
 
 // serviços que suportam nome de instância (*__APP__INSTANCENAME)
 const INSTANCE_ENV = {sonarr:'SONARR__APP__INSTANCENAME', radarr:'RADARR__APP__INSTANCENAME'};
@@ -426,7 +428,7 @@ function renderItems(){
       <div class="meta">
         <div class="nm">${a.title || s.name}
           ${a.vpn?'<span class="tag">via VPN</span>'
-                 :`<span class="tag">${a.port} → ${s.port}</span>`}
+                 :`<span class="tag">${a.port} → ${inner(a.id)}</span>`}
         </div>
         <div class="ds">${cname(a)}${(a.title && a.title!==s.name)?' ('+s.name+')':''}${s.noVol?' · '+s.desc:' · '+cfgReal(a)}${s.media&&!s.noVol?' · '+dataReal(a):''}</div>
       </div>
@@ -499,7 +501,7 @@ function openModal(id, key){
   $('#mName').value = isEdit ? cur.title
     : (isMulti(id) && has(id)) ? `${s.name} ${nth}` : s.name;
   $('#mPort').value = cur.port; $('#mData').value = cur.data;
-  $('#mInner').textContent = s.port;   // porta original do serviço, nunca muda
+  $('#mInner').textContent = inner(id);   // porta original do serviço, nunca muda
   $('#mVpn').checked = cur.vpn;
   $('#mDataBase').textContent = (s.dlClient ? DEFAULTS.dl : DEFAULTS.data) + '/';
   $('#mDataLabel').textContent = s.dlClient ? 'Subpasta de downloads' : 'Subpasta de mídia';
@@ -686,16 +688,16 @@ function build(){
     if(a.vpn){
       L.push(`    <span class="k">network_mode</span>: <span class="v">service:gluetun</span>`);
       L.push(`    <span class="k">depends_on</span>: [<span class="v">gluetun</span>]`);
-      L.push(`    <span class="c"># ${a.port}:${s.port} publicada pelo gluetun</span>`);
+      L.push(`    <span class="c"># ${a.port}:${inner(a.id)} publicada pelo gluetun</span>`);
     } else {
       L.push(`    <span class="k">ports</span>:`);
-      L.push(`      - <span class="v">"${a.port}:${svc(a.id).port}"</span>`);
+      L.push(`      - <span class="v">"${a.port}:${inner(a.id)}"</span>`);
       L.push(`    <span class="k">networks</span>: [<span class="v">${stack}</span>]`);
     }
     L.push(`    <span class="k">restart</span>: <span class="v">${restart}</span>`);
   });
 
-  const fw = list.filter(a=>a.vpn).map(a=>`"${a.port}:${svc(a.id).port}"`);
+  const fw = list.filter(a=>a.vpn).map(a=>`"${a.port}:${inner(a.id)}"`);
   if(fw.length){
     L.push(``);
     L.push(`<span class="c"># gluetun publica: ${fw.join(', ')}</span>`);
