@@ -275,7 +275,7 @@ const SERVICES = [
   {id:'radarr',   name:'Radarr',    desc:'Filmes',              port:7878, img:'lscr.io/linuxserver/radarr:latest',    color:'#feca57', media:true, mdir:'movies', needsDl:true},
   {id:'lidarr',   name:'Lidarr',    desc:'Música',              port:8686, img:'lscr.io/linuxserver/lidarr:latest',    color:'#1db954', media:true, mdir:'music', needsDl:true},
   {id:'prowlarr', name:'Prowlarr',  desc:'Gerenciador de indexers', port:9696, img:'lscr.io/linuxserver/prowlarr:latest', color:'#e5534b'},
-  {id:'bazarr',   name:'Bazarr',    desc:'Legendas',            port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:''},
+  {id:'bazarr',   name:'Bazarr',    desc:'Legendas',            port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr']},
   {id:'qbittorrent',name:'qBittorrent',desc:'Cliente torrent',  port:8080, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true},
   {id:'sabnzbd',  name:'SABnzbd',   desc:'Cliente Usenet',      port:8081, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true},
   {id:'jellyfin', name:'Jellyfin',  desc:'Media server',        port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:''},
@@ -351,8 +351,16 @@ const dataPath = a => (svc(a.id).dlClient ? '${DOWNLOAD_BASE}' : '${BASE_MEDIA}'
                       + (a.data ? '/'+a.data : '');
 // mesmas rotas com o valor real das bases (usadas só na interface)
 const cfgReal  = a => `${DEFAULTS.cfg}/${cname(a)}`;
-const dataReal = a => (svc(a.id).dlClient ? DEFAULTS.dl : DEFAULTS.data)
-                      + (a.data ? '/'+a.data : '');
+const dataReal = a => {
+  const s = svc(a.id);
+  if(s.derived){                       // ex.: bazarr segue radarr/sonarr
+    const subs = [...new Set(added.filter(x=>s.derived.includes(x.id))
+                                  .map(x=>x.data).filter(Boolean))];
+    const list = subs.length ? subs : s.derived.map(id=>svc(id).mdir).filter(Boolean);
+    return list.map(sub=>DEFAULTS.data+'/'+sub).join(', ');
+  }
+  return (s.dlClient ? DEFAULTS.dl : DEFAULTS.data) + (a.data ? '/'+a.data : '');
+};
 // serviço bloqueado no combobox: instância única já adicionada
 const locked = id => !isMulti(id) && has(id);
 const defCfg = id => ({id, title:svc(id).name, port:String(svc(id).port),
@@ -455,8 +463,10 @@ function updateHint(s){
     + (s.noVol ? ' · sem volumes persistentes'
                : ` · config em <b>${DEFAULTS.cfg}/${cn}</b>`)
     + (s.media && !s.noVol
-        ? ` · ${s.dlClient?'downloads':'mídia'} em `
-          + `<b>${s.dlClient?DEFAULTS.dl:DEFAULTS.data}${sub?'/'+sub:''}</b>` : '');
+        ? (s.derived
+            ? ` · mídia: acompanha ${s.derived.map(id=>svc(id).name).join(' e ')}`
+            : ` · ${s.dlClient?'downloads':'mídia'} em `
+              + `<b>${s.dlClient?DEFAULTS.dl:DEFAULTS.data}${sub?'/'+sub:''}</b>`) : '');
 }
 
 function openModal(id, key){
@@ -481,7 +491,7 @@ function openModal(id, key){
   $('#mVpn').checked = cur.vpn;
   $('#mDataBase').textContent = (s.dlClient ? DEFAULTS.dl : DEFAULTS.data) + '/';
   $('#mDataLabel').textContent = s.dlClient ? 'Subpasta de downloads' : 'Subpasta de mídia';
-  $('#mDataRow').style.display = (s.media && !s.noVol) ? 'grid' : 'none';
+  $('#mDataRow').style.display = (s.media && !s.noVol && !s.derived) ? 'grid' : 'none';
   $('#mVpnRow').style.display = s.vpn ? 'grid' : 'none';
   updateHint(s);
   $('#mWarn').textContent = '';
@@ -588,7 +598,7 @@ function checkConflicts(list){
 }
 
 function build(){
-  const stack = '${STACK}', restart = '${RESTART}';
+  const stack = DEFAULTS.stack, restart = '${RESTART}';   // rede/projeto entram literais
   const list = effective();
 
   const L=[];
@@ -636,7 +646,14 @@ function build(){
       };
       L.push(`    <span class="k">volumes</span>:`);
       bind(cfgPath(a), '/config');
-      if(s.media) bind(dataPath(a),
+      if(s.derived){
+        // acompanha as subpastas das instâncias de radarr/sonarr já adicionadas
+        const subs = [...new Set(added.filter(x=>s.derived.includes(x.id))
+                                      .map(x=>x.data).filter(Boolean))];
+        const list = subs.length ? subs
+          : s.derived.map(id=>svc(id).mdir).filter(Boolean);
+        list.forEach(sub=>bind('${BASE_MEDIA}/'+sub, '/data/'+sub));
+      } else if(s.media) bind(dataPath(a),
         (s.dlClient ? '/downloads' : '/data') + (a.data?'/'+a.data:''));
       // *arr também veem a árvore de downloads, para importar do cliente
       if(s.needsDl) bind('${DOWNLOAD_BASE}', '/downloads');
