@@ -9,6 +9,15 @@
     --bg:#0f1216; --panel:#161b22; --panel-2:#1c232c; --line:#2a3340;
     --txt:#e6edf3; --muted:#8b98a5; --accent:#4f9cf9; --accent-2:#35c48a;
     --danger:#e5534b; --radius:10px;
+    --code-bg:#0d1117; --ico-bg:#11161d;
+    --c-key:#79c0ff; --c-val:#a5d6ff; --c-com:#6e7781; --c-ph:#ffa657;
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f6f9; --panel:#ffffff; --panel-2:#eef1f6; --line:#d6dce5;
+    --txt:#1b2330; --muted:#5d6b7d; --accent:#1f6feb; --accent-2:#1a7f4b;
+    --danger:#c92a2a;
+    --code-bg:#f7f9fc; --ico-bg:#ffffff;
+    --c-key:#0550ae; --c-val:#0a6b57; --c-com:#7d8896; --c-ph:#a2560a;
   }
   *{box-sizing:border-box}
   body{margin:0;font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -35,7 +44,7 @@
   /* logotipos: SVG do dashboardicons.com, com fallback para a inicial colorida */
   .ico{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;
        font-weight:700;font-size:13px;color:#0b0e12;flex:none;
-       background:#11161d;border:1px solid var(--line);padding:4px}
+       background:var(--ico-bg);border:1px solid var(--line);padding:4px}
   .ico img{width:100%;height:100%;object-fit:contain;display:block}
   .ico.fb{border:none;padding:0}
   .ico.sm{width:22px;height:22px;border-radius:6px;font-size:11px;padding:3px}
@@ -44,19 +53,19 @@
   .picker{display:flex;gap:8px;align-items:stretch;margin-bottom:14px}
   .combo{position:relative;flex:1;min-width:0}
   .combo .trigger{width:100%;display:flex;align-items:center;gap:10px;padding:8px 10px;
-      background:#0d1117;border:1px solid var(--line);border-radius:7px;cursor:pointer;
+      background:var(--code-bg);border:1px solid var(--line);border-radius:7px;cursor:pointer;
       color:var(--txt);font:inherit;text-align:left}
-  .combo .trigger:hover{border-color:#3d4c5e}
+  .combo .trigger:hover{border-color:var(--accent)}
   .combo.open .trigger{border-color:var(--accent)}
   .combo .trigger .cap{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .combo .trigger .cap.ph{color:var(--muted)}
   .combo .caret{color:var(--muted);font-size:11px}
   .combo .list{position:absolute;z-index:40;top:calc(100% + 4px);left:0;right:0;
       max-height:290px;overflow:auto;background:var(--panel-2);border:1px solid var(--line);
-      border-radius:8px;box-shadow:0 12px 30px #0009;padding:4px;display:none}
+      border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.45);padding:4px;display:none}
   .combo.open .list{display:block}
   .opt{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:6px;cursor:pointer}
-  .opt:hover{background:#243040}
+  .opt:hover{background:color-mix(in srgb, var(--accent) 14%, transparent)}
   .opt .nm{font-weight:600}
   .opt .ds{color:var(--muted);font-size:12px}
   .opt .pt{margin-left:auto;color:var(--muted);font-size:11px;font-family:ui-monospace,monospace}
@@ -78,7 +87,7 @@
 
   .row{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;margin-bottom:10px}
   label{color:var(--muted)}
-  input[type=text],select{width:100%;padding:8px 10px;background:#0d1117;color:var(--txt);
+  input[type=text],select{width:100%;padding:8px 10px;background:var(--code-bg);color:var(--txt);
     border:1px solid var(--line);border-radius:7px;font:inherit}
   input:focus,select:focus{outline:none;border-color:var(--accent)}
   .hint{color:var(--muted);font-size:12px}
@@ -90,9 +99,9 @@
   .check{display:flex;align-items:center;gap:8px;color:var(--txt)}
   .check input{width:auto}
 
-  pre{margin:0;padding:16px;background:#0d1117;overflow:auto;max-height:560px;
-      font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:#c9d5e1}
-  .k{color:#79c0ff}.v{color:#a5d6ff}.c{color:#6e7781}.d{color:#ffa657}
+  pre{margin:0;padding:16px;background:var(--code-bg);overflow:auto;max-height:560px;
+      font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--txt)}
+  .k{color:var(--c-key)}.v{color:var(--c-val)}.c{color:var(--c-com)}.d{color:var(--c-ph)}
 
   button{padding:8px 14px;border-radius:7px;border:1px solid var(--line);
     background:var(--panel-2);color:var(--txt);font:inherit;cursor:pointer}
@@ -109,12 +118,12 @@
   .ok{color:var(--accent-2);font-size:12px}
 
   /* modal */
-  .backdrop{position:fixed;inset:0;background:#04070ccc;display:none;
+  .backdrop{position:fixed;inset:0;background:rgba(4,7,12,.78);display:none;
      align-items:center;justify-content:center;padding:20px;z-index:60}
   .backdrop.open{display:flex}
   .modal{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
      width:100%;max-width:520px;max-height:90vh;display:flex;flex-direction:column;
-     box-shadow:0 20px 60px #000a}
+     box-shadow:0 20px 60px rgba(0,0,0,.5)}
   .modal h3{margin:0;padding:14px 16px;font-size:14px;border-bottom:1px solid var(--line);
      background:var(--panel-2);display:flex;align-items:center;gap:10px}
   .modal .body{padding:16px;overflow:auto}
@@ -126,6 +135,7 @@
   <div class="logo">H</div>
   <h1>Hubstarr &middot; Adicionar *arr Stack</h1>
   <span style="flex:1"></span>
+  <button id="themeBtn" title="Alternar tema">🌙</button>
   <button id="envBtn">⚙ Ambiente</button>
 </header>
 
@@ -559,6 +569,19 @@ function vpnRows(){
   $('#eOvpnRows').style.display = wg ? 'none'  : 'block';
 }
 $('#eVpnType').addEventListener('change', vpnRows);
+
+/* ---------- tema claro/escuro ---------- */
+function setTheme(t){
+  document.documentElement.dataset.theme = t;
+  $('#themeBtn').textContent = t==='light' ? '☀' : '🌙';
+  try{ localStorage.setItem('hubstarr-theme', t); }catch(e){}
+}
+setTheme((()=>{
+  try{ const s = localStorage.getItem('hubstarr-theme'); if(s) return s; }catch(e){}
+  return matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+})());
+$('#themeBtn').onclick = ()=>
+  setTheme(document.documentElement.dataset.theme==='light' ? 'dark' : 'light');
 
 $('#envBtn').onclick = openEnv;
 $('#eCancel').onclick = closeEnv;
