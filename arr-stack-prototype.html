@@ -172,11 +172,13 @@
       <span class="tabs">
         <button class="tab on" data-tab="yml">docker-compose.yml</button>
         <button class="tab" data-tab="env">.env</button>
+        <button class="tab" data-tab="nginx">nginx.conf</button>
       </span>
       <span id="stat"></span>
     </h2>
     <pre id="out"></pre>
     <pre id="outEnv" style="display:none"></pre>
+    <pre id="outNginx" style="display:none"></pre>
     <div class="bar">
       <span class="hint" id="summary"></span>
       <span class="sp"></span>
@@ -252,11 +254,8 @@
     <div class="body">
       <div class="row" id="mNameRow"><label for="mName">Título</label>
         <input type="text" id="mName" placeholder="Nome da instância"></div>
-      <div class="row"><label for="mPort">Porta no host</label>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input type="text" id="mPort">
-          <span class="hint" style="white-space:nowrap">→ interna <b id="mInner"></b> (fixa)</span>
-        </div>
+      <div class="row"><label>Porta</label>
+        <span class="hint">interna <b id="mInner"></b> (fixa) — publicada só pelo nginx</span>
       </div>
       <div class="row" id="mDataRow"><label for="mData" id="mDataLabel">Subpasta de mídia</label>
         <div style="display:flex;gap:8px;align-items:center">
@@ -288,18 +287,21 @@ const SERVICES = [
   {id:'qbittorrent',name:'qBittorrent',desc:'Cliente torrent',  port:8080, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true},
   {id:'sabnzbd',  name:'SABnzbd',   desc:'Cliente Usenet',      port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true},
   {id:'jellyfin', name:'Jellyfin',  desc:'Media server',        port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:''},
-  {id:'jellyseerr',name:'Jellyseerr',desc:'Pedidos de mídia',   port:5055, img:'fallenbagel/jellyseerr:latest',        color:'#35c48a'},
   {id:'seerr',    name:'Seerr',     desc:'Pedidos de mídia',   port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5'},
-  {id:'heimdall', name:'Heimdall',  desc:'Painel de atalhos',   port:8090, img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f', inner:80},
+  {id:'heimdall', name:'Heimdall',  desc:'Painel de atalhos',   port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f'},
   {id:'flaresolverr',name:'FlareSolverr',desc:'Bypass Cloudflare',port:8191,img:'ghcr.io/flaresolverr/flaresolverr:latest',color:'#ff7f50',noVol:true},
   {id:'gluetun',  name:'Gluetun',   desc:'Cliente VPN',         port:8000, img:'qmcgaw/gluetun:latest',                color:'#8b98a5', noVol:true},
 ];
 const svc = id => SERVICES.find(s=>s.id===id);
-// porta dentro do container (só difere quando o serviço declara `inner`)
-const inner = id => svc(id).inner || svc(id).port;
+// porta em que o serviço escuta dentro do container — o nginx fala com ela
+const inner = id => svc(id).port;
 
 // serviços que suportam nome de instância (*__APP__INSTANCENAME)
 const INSTANCE_ENV = {sonarr:'SONARR__APP__INSTANCENAME', radarr:'RADARR__APP__INSTANCENAME'};
+
+// base URL do app, que precisa bater com o subpath roteado pelo nginx
+const URLBASE_ENV = {sonarr:'SONARR__SERVER__URLBASE', radarr:'RADARR__SERVER__URLBASE',
+                     lidarr:'LIDARR__SERVER__URLBASE', prowlarr:'PROWLARR__SERVER__URLBASE'};
 
 /* logotipos SVG do dashboardicons.com, embutidos como data URI (funciona offline).
    Se algum id não tiver ícone, cai para a inicial sobre a cor do serviço. */
@@ -312,7 +314,6 @@ const ICONS = {
   qbittorrent:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbDpzcGFjZT0icHJlc2VydmUiIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiPjxsaW5lYXJHcmFkaWVudCBpZD0iYSIgeDE9Ii00NDYuMjk4IiB4Mj0iLTQ0NS44NzUiIHkxPSIxMDUyLjkyNCIgeTI9IjEwNTIuMTU2IiBncmFkaWVudFRyYW5zZm9ybT0ibWF0cml4KDk5MiAwIDAgLTk5MiA0NDI5OTMgMTA0NDU2NSkiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj48c3RvcCBvZmZzZXQ9IjAiIHN0eWxlPSJzdG9wLWNvbG9yOiM3MmI0ZjUiLz48c3RvcCBvZmZzZXQ9IjEiIHN0eWxlPSJzdG9wLWNvbG9yOiMzNTZlYmYiLz48L2xpbmVhckdyYWRpZW50PjxjaXJjbGUgY3g9IjUxMiIgY3k9IjUxMiIgcj0iNDk2IiBzdHlsZT0iZmlsbC1ydWxlOmV2ZW5vZGQ7Y2xpcC1ydWxlOmV2ZW5vZGQ7ZmlsbDp1cmwoI2EpO3N0cm9rZTojZGFlZmZmO3N0cm9rZS13aWR0aDozMiIvPjxwYXRoIGQ9Ik03MTIuOSAzMzIuNGM0NC40IDAgNzguOSAxNS4yIDEwMy40IDQ1LjcgMjQuNyAzMC4yIDM3IDczLjEgMzcgMTI4LjcgMCA1NS41LTEyLjQgOTguOC0zNy4zIDEyOS42LTI0LjcgMzAuNy01OSA0Ni0xMDMuMSA0Ni0yMiAwLTQyLjItNC02MC41LTEyLTE4LjEtOC4yLTMzLjMtMjAuOC00NS43LTM3LjZINjAzbC0xMC44IDQzLjVoLTM2LjdWMTk2aDUxLjJ2MTE2LjZjMCAyNi4xLS44IDQ5LjYtMi41IDcwLjRoMi41YzIzLjktMzMuNyA1OS4zLTUwLjYgMTA2LjItNTAuNm0tNy40IDQyLjljLTM1IDAtNjAuMiAxMC4xLTc1LjYgMzAuMi0xNS40IDIwLTIzLjEgNTMuNy0yMy4xIDEwMS4yczcuOSA4MS42IDIzLjggMTAyLjFjMTUuOCAyMC40IDQxLjIgMzAuNSA3Ni4yIDMwLjUgMzEuNSAwIDU0LjktMTEuNCA3MC40LTM0LjMgMTUuNC0yMyAyMy4xLTU2LjEgMjMuMS05OS4xcTAtNjYtMjMuMS05OC40Yy0xNS41LTIxLjQtMzkuNC0zMi4yLTcxLjctMzIuMiIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO2ZpbGw6I2ZmZiIvPjxwYXRoIGQ9Ik0zMTcuMyA2MzkuNWMzNC4yIDAgNTktOS4yIDc0LjctMjcuNSAxNS42LTE4LjMgMjQtNDkuMiAyNS05Mi42VjUwOGMwLTQ3LjMtOC04MS40LTI0LjEtMTAyLjEtMTYtMjAuOC00MS41LTMxLjItNzYuMi0zMS4yLTMwIDAtNTMuMSAxMS43LTY5LjEgMzUuMi0xNS44IDIzLjItMjMuOCA1Ni4yLTIzLjggOTguOHM3LjggNzUuMSAyMy41IDk3LjVjMTUuOCAyMi4xIDM5LjEgMzMuMiA3MCAzMy4zbS03LjcgNDIuOGMtNDMuNiAwLTc3LjctMTUuMy0xMDIuMS00Ni0yNC41LTMwLjctMzYuNy03My40LTM2LjctMTI4LjQgMC01NS4zIDEyLjMtOTguNSAzNy0xMjkuNnM1OS00Ni42IDEwMy4xLTQ2LjZxNjkuNDUgMCAxMDYuOCA1Mi41aDIuOGw3LjQtNDYuM2g0MC40djQ5MGgtNTEuMlY2ODMuM2MwLTIwLjYgMS4xLTM4LjEgMy40LTUyLjVoLTRjLTIzLjggMzQuNC01OS40IDUxLjUtMTA2LjkgNTEuNSIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO2ZpbGw6I2M4ZThmZiIvPjwvc3ZnPg==',
   sabnzbd:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAwIDEwMDAiPjxwYXRoIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSI3NCIgZD0iTTIwMC40IDM5LjNoNTk4LjF2NDM3LjhoMTYxbC00NjAuMSA0ODNMMzkuNCA0NzdoMTYxeiIvPjxwYXRoIGZpbGw9IiNmZmIzMDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTIwMC40IDM5LjNoNTk4LjF2NDM3LjhoMTYxbC00NjAuMSA0ODMtNDYwLTQ4M2gxNjF6Ii8+PHBhdGggZmlsbD0iI2ZmY2EyOCIgZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNNDk5LjQgOTYwLjIgMjAxLjEgMzkuNGg1OTYuN3oiLz48cGF0aCBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSI3NCIgZD0iTTMyOS4yIDg0My41SDgzdi01MS44aDE0Ni4xdi00NS45SDgzVjU5Ni45aDI0Ni4ydjUxLjVIMTgzLjF2NDUuOWgxNDYuMXptMjkyLjIgMEgzNzUuMlY2OTQuM2gxNDYuMXYtNDUuOUgzNzUuMnYtNTEuNWgyNDYuMnptLTE0Ni4xLTk3LjhoNDZ2NDZoLTQ2em0xOTIuMSA5Ny44di0zNDRoMTAwLjF2OTcuNGgxNDYuMXYyNDYuNnptMTAwLjEtMTk1LjJoNDZ2MTQzLjRoLTQ2eiIvPjxwYXRoIGZpbGw9IiNmZmYiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTMyOS4yIDg0My41SDgzdi01MS44aDE0Ni4xdi00NS45SDgzVjU5Ni45aDI0Ni4ydjUxLjVIMTgzLjF2NDUuOWgxNDYuMXptMjkyLjIgMEgzNzUuMlY2OTQuM2gxNDYuMXYtNDUuOUgzNzUuMnYtNTEuNWgyNDYuMnptLTE0Ni4xLTUxLjhoNDZ2LTQ2aC00NnptMTkyLjEgNTEuOXYtMzQ0aDEwMC4xVjU5N2gxNDYuMXYyNDYuNnptMTAwLjEtNTEuOWg0NlY2NDguNGgtNDZ6Ii8+PC9zdmc+',
   jellyfin:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbDpzcGFjZT0icHJlc2VydmUiIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48bGluZWFyR3JhZGllbnQgaWQ9ImEiIHgxPSI5Ny41MDgiIHgyPSI1MjIuMDY5IiB5MT0iMzA4LjEzNSIgeTI9IjYzLjAxOSIgZ3JhZGllbnRUcmFuc2Zvcm09Im1hdHJpeCgxIDAgMCAtMSAwIDUxNCkiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj48c3RvcCBvZmZzZXQ9IjAiIHN0eWxlPSJzdG9wLWNvbG9yOiNhYTVjYzMiLz48c3RvcCBvZmZzZXQ9IjEiIHN0eWxlPSJzdG9wLWNvbG9yOiMwMGE0ZGMiLz48L2xpbmVhckdyYWRpZW50PjxwYXRoIGQ9Ik0yNTYgMTk2LjJjLTIyLjQgMC05NC44IDEzMS4zLTgzLjggMTUzLjRzMTU2LjggMjEuOSAxNjcuNyAwLTYxLjMtMTUzLjQtODMuOS0xNTMuNCIgc3R5bGU9ImZpbGw6dXJsKCNhKSIvPjxsaW5lYXJHcmFkaWVudCBpZD0iYiIgeDE9Ijk0LjE5MyIgeDI9IjUxOC43NTQiIHkxPSIzMDIuMzk0IiB5Mj0iNTcuMjc4IiBncmFkaWVudFRyYW5zZm9ybT0ibWF0cml4KDEgMCAwIC0xIDAgNTE0KSIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPjxzdG9wIG9mZnNldD0iMCIgc3R5bGU9InN0b3AtY29sb3I6I2FhNWNjMyIvPjxzdG9wIG9mZnNldD0iMSIgc3R5bGU9InN0b3AtY29sb3I6IzAwYTRkYyIvPjwvbGluZWFyR3JhZGllbnQ+PHBhdGggZD0iTTI1NiAwQzE4OC4zIDAtMjkuOCAzOTUuNCAzLjQgNDYyLjJzNDcyLjMgNjYgNTA1LjIgMFMzMjMuOCAwIDI1NiAwbTE2NS42IDQwNC4zYy0yMS42IDQzLjItMzA5LjMgNDMuOC0zMzEuMSAwUzIxMS43IDEwMS40IDI1NiAxMDEuNCA0NDMuMiAzNjEgNDIxLjYgNDA0LjMiIHN0eWxlPSJmaWxsOnVybCgjYikiLz48L3N2Zz4=',
-  jellyseerr:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbDpzcGFjZT0icHJlc2VydmUiIHZpZXdCb3g9IjAgMCA0NDkgNDQ5Ij48bGluZWFyR3JhZGllbnQgaWQ9ImEiIHgxPSItMjI1NC4wMTYiIHgyPSItMjI2Ny41MSIgeTE9Ii0yODMxLjQzMyIgeTI9Ii0yOTYxLjYxOCIgZ3JhZGllbnRUcmFuc2Zvcm09Im1hdHJpeCgxLjc1IDAgMCAtMS43NSA0MDk5LjcwNSAtNDYzMS45NikiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj48c3RvcCBvZmZzZXQ9IjAiIHN0eWxlPSJzdG9wLWNvbG9yOiM1MDJkOTUiLz48c3RvcCBvZmZzZXQ9Ii4xIiBzdHlsZT0ic3RvcC1jb2xvcjojNmQzN2FjIi8+PHN0b3Agb2Zmc2V0PSIuNTciIHN0eWxlPSJzdG9wLWNvbG9yOiM2Nzg2ZDEiLz48L2xpbmVhckdyYWRpZW50PjxwYXRoIGQ9Im0xNzAuOSAzMTQtMjctNnMtNi4yIDM5LjYtOC42IDU5LjVjLTMuOCAzMi4xLTguNCA3Ni41LTYuNiAxMTAuNSAyIDM3LjQgMTIuMiA3My40IDE1LjYgNzMuNHMtMS44LTIyLjkuNS03My4zYzEuNS0zMy42IDcuMS03NCAxMy44LTExMC41IDMuMy0xOCAxMi45LTUzLjQgMTIuOS01My40aC0uNnoiIHN0eWxlPSJmaWxsOnVybCgjYSkiLz48bGluZWFyR3JhZGllbnQgaWQ9ImIiIHgxPSItMjE3NS44MSIgeDI9Ii0yMTg5LjMwMyIgeTE9Ii0yODM5LjQ4MyIgeTI9Ii0yOTY5LjcyMSIgZ3JhZGllbnRUcmFuc2Zvcm09Im1hdHJpeCgxLjc1IDAgMCAtMS43NSA0MDk5LjcwNSAtNDYzMS45NikiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj48c3RvcCBvZmZzZXQ9IjAiIHN0eWxlPSJzdG9wLWNvbG9yOiM1MDJkOTUiLz48c3RvcCBvZmZzZXQ9Ii4xIiBzdHlsZT0ic3RvcC1jb2xvcjojNmQzN2FjIi8+PHN0b3Agb2Zmc2V0PSIuNTciIHN0eWxlPSJzdG9wLWNvbG9yOiM2Nzg2ZDEiLz48L2xpbmVhckdyYWRpZW50PjxwYXRoIGQ9Ik0yODQuOCAzMTEuMmg4LjNjMTEuMSA0MS40IDEzLjIgMTAxLjEgMTAuOCAxNDYuMS0yLjYgNDkuNS0xNi4yIDk3LjItMjAuNiA5Ny4yczIuNC0zMC4zLS43LTk3LjFDMjgwLjQgNDEyLjkgMjcxIDM3MSAyNzAgMzExLjJ6IiBzdHlsZT0iZmlsbDp1cmwoI2IpIi8+PGxpbmVhckdyYWRpZW50IGlkPSJjIiB4MT0iLTE4MzEuNzU3IiB4Mj0iLTE4MzEuNzU3IiB5MT0iLTI1NzYuOTk2IiB5Mj0iLTI2OTUuNDUiIGdyYWRpZW50VHJhbnNmb3JtPSJtYXRyaXgoMi4xMiAwIDAgLTIuMTIgNDE5OS40NiAtNTEzNy4zMikiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj48c3RvcCBvZmZzZXQ9IjAiIHN0eWxlPSJzdG9wLWNvbG9yOiM3NjNkY2QiLz48c3RvcCBvZmZzZXQ9Ii4yMiIgc3R5bGU9InN0b3AtY29sb3I6IzhkNjFlYiIvPjxzdG9wIG9mZnNldD0iLjM3IiBzdHlsZT0ic3RvcC1jb2xvcjojOGM4NmVjIi8+PHN0b3Agb2Zmc2V0PSIuNjQiIHN0eWxlPSJzdG9wLWNvbG9yOiM3NDhjZTgiLz48c3RvcCBvZmZzZXQ9Ii45IiBzdHlsZT0ic3RvcC1jb2xvcjojNmJhMWU2Ii8+PC9saW5lYXJHcmFkaWVudD48cGF0aCBkPSJNMzA5LjggMTgxLjZoMTMuM2MxNy44IDY2LjIgMjYuMSAxNjEuOSAyMi4yIDIzNC00LjIgNzkuNC0yNS45IDE1NS43LTMzLjEgMTU1LjdzMy44LTQ4LjYtMS4xLTE1NS42Yy0zLjMtNzEuNC0yMy41LTEzOC40LTI1LjEtMjM0LjJ6IiBzdHlsZT0iZmlsbDp1cmwoI2MpIi8+PGxpbmVhckdyYWRpZW50IGlkPSJkIiB4MT0iLTE4OTEuMTM0IiB4Mj0iLTE4OTEuMTM0IiB5MT0iLTI1NzYuOTk2IiB5Mj0iLTI2OTUuNDUiIGdyYWRpZW50VHJhbnNmb3JtPSJtYXRyaXgoMi4xMiAwIDAgLTIuMTIgNDE5OS40NiAtNTEzNy4zMikiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj48c3RvcCBvZmZzZXQ9IjAiIHN0eWxlPSJzdG9wLWNvbG9yOiM3NjNkY2QiLz48c3RvcCBvZmZzZXQ9Ii4yMiIgc3R5bGU9InN0b3AtY29sb3I6IzhkNjFlYiIvPjxzdG9wIG9mZnNldD0iLjM3IiBzdHlsZT0ic3RvcC1jb2xvcjojOGM4NmVjIi8+PHN0b3Agb2Zmc2V0PSIuNjQiIHN0eWxlPSJzdG9wLWNvbG9yOiM3NDhjZTgiLz48c3RvcCBvZmZzZXQ9Ii45IiBzdHlsZT0ic3RvcC1jb2xvcjojNmJhMWU2Ii8+PC9saW5lYXJHcmFkaWVudD48cGF0aCBkPSJNMTk2LjYgMTgwLjFoLTEzLjNjLTE3LjggNjYuMi0yNi4xIDE2MS45LTIyLjIgMjM0IDQuMiA3OS40IDI1LjkgMTU1LjcgMzMuMSAxNTUuN3MtMy44LTQ4LjYgMS4xLTE1NS42YzMuMy03MS40IDIzLjUtMTM4LjQgMjUuMS0yMzQuMmgtMjMuOHoiIHN0eWxlPSJmaWxsOnVybCgjZCkiLz48bGluZWFyR3JhZGllbnQgaWQ9ImUiIHgxPSItMTkyMi4wMDQiIHgyPSItMTkyMi4wMDQiIHkxPSItMjU3Ni45OTYiIHkyPSItMjY5NS40NSIgZ3JhZGllbnRUcmFuc2Zvcm09Im1hdHJpeCgyLjEyIDAgMCAtMi4xMiA0MTk5LjQ2IC01MTM3LjMyKSIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPjxzdG9wIG9mZnNldD0iMCIgc3R5bGU9InN0b3AtY29sb3I6Izc2M2RjZCIvPjxzdG9wIG9mZnNldD0iLjIyIiBzdHlsZT0ic3RvcC1jb2xvcjojOGQ2MWViIi8+PHN0b3Agb2Zmc2V0PSIuMzciIHN0eWxlPSJzdG9wLWNvbG9yOiM4Yzg2ZWMiLz48c3RvcCBvZmZzZXQ9Ii42NCIgc3R5bGU9InN0b3AtY29sb3I6Izc0OGNlOCIvPjxzdG9wIG9mZnNldD0iLjkiIHN0eWxlPSJzdG9wLWNvbG9yOiM2YmExZTYiLz48L2xpbmVhckdyYWRpZW50PjxwYXRoIGQ9Im0xNTUuNiAxNTAtMzAuMi0xMC44cy0xMS4xIDcwLjctMTUuMyAxMDYuMmMtNi43IDU3LjMtMjAgMTM2LjYtMTYuNyAxOTcuMyAzLjYgNjYuOCAyMS44IDEzMS4xIDI3LjggMTMxLjFzLTMuMi00MC45IDEtMTMxYzIuOC02MC4xIDIxLjItMTE3IDI3LjQtMTk3LjQgMi41LTMxLjkgNy4zLTk1LjUgNy4zLTk1LjV6IiBzdHlsZT0iZmlsbDp1cmwoI2UpIi8+PGxpbmVhckdyYWRpZW50IGlkPSJmIiB4MT0iLTE4NjIuNDIxIiB4Mj0iLTE4NjIuNDIxIiB5MT0iLTI1NzYuOTk2IiB5Mj0iLTI2OTUuNDUiIGdyYWRpZW50VHJhbnNmb3JtPSJtYXRyaXgoMi4xMiAwIDAgLTIuMTIgNDE5OS40NiAtNTEzNy4zMikiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj48c3RvcCBvZmZzZXQ9IjAiIHN0eWxlPSJzdG9wLWNvbG9yOiM3NjNkY2QiLz48c3RvcCBvZmZzZXQ9Ii4yMiIgc3R5bGU9InN0b3AtY29sb3I6IzhkNjFlYiIvPjxzdG9wIG9mZnNldD0iLjM3IiBzdHlsZT0ic3RvcC1jb2xvcjojOGM4NmVjIi8+PHN0b3Agb2Zmc2V0PSIuNjQiIHN0eWxlPSJzdG9wLWNvbG9yOiM3NDhjZTgiLz48c3RvcCBvZmZzZXQ9Ii45IiBzdHlsZT0ic3RvcC1jb2xvcjojNmJhMWU2Ii8+PC9saW5lYXJHcmFkaWVudD48cGF0aCBkPSJtMjU1LjUgMTgxLjYtMjcuMyA0LjZzMy42IDUzIDMuNiA4My4xYzAgNDguOSAxLjkgOTguMiAxLjggMTQ5LjUtLjIgNTguOSA5LjcgMTU3LjYgMTQuOCAxNTcuNnMyMS43LTEyNyAyNS4yLTIwM2MyLjMtNTAuNy01LjItOTUuMS02LjUtMTI1LjQtMS4yLTI3LTUtNjMuNC01LTYzLjR6IiBzdHlsZT0iZmlsbDp1cmwoI2YpIi8+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iLTE3MzUuNTQ4IiB4Mj0iLTE1ODYuOTM2IiB5MT0iLTI2NzMuMDk1IiB5Mj0iLTI4MzguMTkiIGdyYWRpZW50VHJhbnNmb3JtPSJtYXRyaXgoMS43OSAwIDAgLTEuNzkgMzI0Ni4xNTUgLTQ2NTcuOTEpIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHN0b3Agb2Zmc2V0PSIwIiBzdHlsZT0ic3RvcC1jb2xvcjojYzM5NWZjIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdHlsZT0ic3RvcC1jb2xvcjojNGY2NWY1Ii8+PC9saW5lYXJHcmFkaWVudD48cGF0aCBkPSJNNDA1LjggMTk3LjdjMCA2OC44LTExLjcgNzMtMzAuOCAxMDIuMS0xMy44IDIwLjkgMTQuMSAzNy4xIDIuOSA0Mi45LTEzLjMgNi45LTkuMS01LjYtMzUuNi0xMi43LTExLjUtMy0zNi41LjMtNDYuNiAyLjMtMTAgMS45LTQwLjYtMTUuMS00OC43LTE3LjMtMTIuMS0zLjMtNDEuOCAxMi41LTU5LjkgMTIuNXMtMzctMTUuOC02MS4xLTkuM2MtMjguNiA3LjctNjMuMSAyNi4zLTY4LjMgMjAuMi0xMC0xMS43IDIxLjktMjAuNiAxMC00MS40LTcuNS0xMy4yLTMzLjQtNDcuOS0zNC4yLTgzLTIuNC0xMTIuOCA5MS0yMDguMSAxOTEuMS0yMDguMXMxODEuMSA4Ni44IDE4MS4xIDE4My45IiBzdHlsZT0iZmlsbDp1cmwoI2cpIi8+PGxpbmVhckdyYWRpZW50IGlkPSJoIiB4MT0iLTEwNTkuODcyIiB4Mj0iLTEwNTkuODcyIiB5MT0iLTYzNzguMDMxIiB5Mj0iLTY1OTQuNzc1IiBncmFkaWVudFRyYW5zZm9ybT0ibWF0cml4KC41MSAwIDAgLS41MSA2ODcuODY1IC0zMjA1LjUzKSIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPjxzdG9wIG9mZnNldD0iMCIgc3R5bGU9InN0b3AtY29sb3I6I2ZmZjtzdG9wLW9wYWNpdHk6LjQiLz48c3RvcCBvZmZzZXQ9IjEiIHN0eWxlPSJzdG9wLWNvbG9yOiNmZmY7c3RvcC1vcGFjaXR5OjAiLz48L2xpbmVhckdyYWRpZW50PjxwYXRoIGQ9Ik0yMTguNCA0MS43QzE2My43IDQxLjcgODcuMyA5OC4zIDg3LjMgMTUzYzAgNi4xLTQuOSAxMS0xMSAxMXMtMTEtNC45LTExLTExYzAtNjYuOCA4Ni4yLTEzMy4yIDE1My4xLTEzMy4yIDYuMSAwIDExIDQuOSAxMSAxMXMtNSAxMC45LTExIDEwLjkiIHN0eWxlPSJmaWxsLXJ1bGU6ZXZlbm9kZDtjbGlwLXJ1bGU6ZXZlbm9kZDtmaWxsOnVybCgjaCkiLz48bGluZWFyR3JhZGllbnQgaWQ9ImkiIHgxPSItMTM1MS4zODIiIHgyPSItMTQ4NS4xOTUiIHkxPSItMzkwOC44OTQiIHkyPSItNDAwNy4yNCIgZ3JhZGllbnRUcmFuc2Zvcm09Im1hdHJpeCgxLjAyIDAgMCAtMS4wMiAxNjU3LjUgLTM4MzIuNDUpIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHN0b3Agb2Zmc2V0PSIwIiBzdHlsZT0ic3RvcC1jb2xvcjojZjlmOWY5Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdHlsZT0ic3RvcC1jb2xvcjojZjlmOWY5O3N0b3Atb3BhY2l0eTowIi8+PC9saW5lYXJHcmFkaWVudD48cGF0aCBkPSJNMjk5LjMgMjQ4LjVjLTUuOCA5LjUtMTMuNyAxNy4xLTIzIDIyLjMtNCAyLjItOC4yIDMuOS0xMi42IDUuMi0xMy4xIDUuOS0yNy43IDktNDIuNiA5LjMtNTAuOC45LTkzLTMxLjYtOTQuNy03Mi44LS44LTIwLjIgMTEuMy00MS4yIDIwLjYtNTcuMyA3LjktMTMuNyAyMS41LTM3LjIgMzkuNC00Ni42IDM2LjUtMTkuMiA4NS44IDEuMSAxMTAuNCA0NS42IDcuMSAxMi45IDExLjcgMjcgMTMuMiA0MS4xIDEuMSA0LjYgMS44IDkuMyAxLjggMTQgLjIgMTIuMi0zLjQgMjQuMy0xMC4yIDM1LjEtLjcgMS40LTEuNCAyLjctMi4yIDQgMCAuMS0uMS4xLS4xLjEiIHN0eWxlPSJmaWxsOnVybCgjaSkiLz48bGluZWFyR3JhZGllbnQgaWQ9ImoiIHgxPSItMTI5My4wMzUiIHgyPSItMTIyOC4zNDQiIHkxPSItMzEzOS41NTIiIHkyPSItMzIwNS41NzgiIGdyYWRpZW50VHJhbnNmb3JtPSJtYXRyaXgoMS40MyAwIDAgLTEuNDMgMjAyNy42NjUgLTQzMjYuMDEpIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHN0b3Agb2Zmc2V0PSIwIiBzdHlsZT0ic3RvcC1jb2xvcjojMDA0M2EyIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdHlsZT0ic3RvcC1jb2xvcjojMDAxMzNhIi8+PC9saW5lYXJHcmFkaWVudD48cGF0aCBkPSJNMjE5IDE0Ny40YzMxLjcgMCA1Ny4zIDI1LjcgNTcuMyA1Ny4zUzI1MC42IDI2MiAyMTkgMjYycy01Ny4zLTI1LjctNTcuMy01Ny4zYzAtNS45LjktMTEuNSAyLjUtMTYuOSA0LjUgMTAgMTQuNSAxNi45IDI2LjEgMTYuOSAxNS44IDAgMjguNi0xMi45IDI4LjYtMjguNiAwLTExLjYtNi45LTIxLjctMTYuOS0yNi4xIDUuNC0xLjcgMTEtMi41IDE3LTIuNiIgc3R5bGU9ImZpbGw6dXJsKCNqKSIvPjwvc3ZnPg==',
   flaresolverr:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbDpzcGFjZT0icHJlc2VydmUiIGlkPSJzdmcyIiB4PSIwIiB5PSIwIiB2ZXJzaW9uPSIxLjEiIHZpZXdCb3g9IjAuMDIgMTAxLjkxIDUxMS45NiAzMDguMTgiPjxzdHlsZT4uc3Qye2ZpbGw6IzRkNGQ0ZH08L3N0eWxlPjxnIGlkPSJsYXllcjEiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAgLTc5Ni4zNjIpIj48ZyBpZD0iZzQxNzciIHRyYW5zZm9ybT0ibWF0cml4KC41MTQzNiAwIDAgLjU5NDk2IC0zMzQuNjA3IDY1MC40MzkpIj48ZyBpZD0iZzQyNjMiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0xMTEuNDk5IDM5My42NTEpc2NhbGUoLjk0OTU1KSI+PGcgaWQ9Imc0MzQyIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg3MzYuMjQ2IC0zNDUuOTcyKSI+PHBhdGggaWQ9InBhdGg0Mjg1IiBkPSJNMTExNC41IDcyMWMtMi0xMDYuNS05MS4xLTE5MC45LTE5Ny42LTE4Ny4xLTE1LjYuNi0zMC4zLTcuOS0zNy44LTIxLjYtNDYuMi04NC44LTEzNi4xLTE0Mi4yLTIzOS40LTE0Mi4yLTEwNiAwLTE5Ny44IDYwLjUtMjQyLjkgMTQ4LjctMTMuMiAyNS43LTM5LjQgMjIuMy01MC41IDIyLjMtODIuMiAwLTE1MS45IDUyLjktMTc3LjEgMTI2LjUtNC4yIDEyLjItMTQuMiAyMS40LTI2LjQgMjUuNy00NiAxNi4yLTc4LjQgNjAuNy03Ni40IDExMi41IDIuNCA2MS44IDU1IDEwOS44IDExNi44IDEwOS44aDczNi43YzEwNyAwIDE5Ni43LTg3LjYgMTk0LjYtMTk0LjYiIHN0eWxlPSJmaWxsOiM5ZGM2ZmIiLz48cGF0aCBpZD0icGF0aDQyODciIGQ9Ik0zMDguNCA4MDUuOGMtMi01MS44IDMwLjUtOTYuMyA3Ni4zLTExMi40IDEyLjItNC4zIDIyLjItMTMuNSAyNi40LTI1LjcgMjUuMi03My42IDk1LTEyNi41IDE3Ny4xLTEyNi41IDExLjIgMCAzNy40IDMuNCA1MC41LTIyLjMgMjYuNi01Mi4xIDY5LjUtOTQuNCAxMjEuOS0xMjAuNS0zNi41LTE4LjEtNzcuNS0yOC4zLTEyMS0yOC4zLTEwNiAwLTE5Ny44IDYwLjUtMjQyLjkgMTQ4LjctMTMuMiAyNS43LTM5LjQgMjIuMy01MC41IDIyLjMtODIuMiAwLTE1MS45IDUyLjktMTc3LjEgMTI2LjUtNC4yIDEyLjItMTQuMiAyMS40LTI2LjQgMjUuNy00NS45IDE2LjItNzguMyA2MC43LTc2LjMgMTEyLjUgMi40IDYxLjggNTUgMTA5LjggMTE2LjggMTA5LjhoMjQyYy02MS44IDAtMTE0LjQtNDgtMTE2LjgtMTA5LjgiIHN0eWxlPSJmaWxsOiM4MGI0ZmIiLz48L2c+PC9nPjwvZz48ZyBpZD0iZzQyNDEiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDQ3LjAxMiA4NTQuODM3KXNjYWxlKC4xNDUzNCkiPjxnIGlkPSJnNDE5NyI+PHBhdGggaWQ9InBhdGg0MjAxIiBkPSJtMjA3My42IDExMDktNjQuNS01NC41Yy0xOS45LTE2LjgtNDkuMS0xNi02OCAxLjhsLTM1LjYgMzMuNGMtMzAuMS0xNC41LTYyLTI0LjgtOTUtMzAuN2wtMTAtNDkuMWMtNS4xLTI1LjQtMjguNy00My01NC41LTQwLjlsLTg0LjIgNy4yYy0yNS44IDIuMy00Ni4xIDIzLjMtNDYuOSA0OS4zbC0xLjYgNTBjLTMyLjQgMTEuNy02Mi45IDI3LjYtOTAuNyA0Ny43bC00Mi42LTI4LjNjLTIxLjctMTQuMy01MC42LTEwLjItNjcuNCA5LjZsLTU0LjUgNjQuOWMtMTYuOCAxOS45LTE2IDQ5LjEgMS44IDY4bDM3LjMgMzkuN2MtMTIuOSAyOS4xLTIyLjEgNTkuNi0yNy40IDkwLjlsLTUzLjIgMTAuOWMtMjUuNCA1LjEtNDMgMjguNy00MC45IDU0LjVsNy4yIDg0LjJjMi4zIDI1LjggMjMuMyA0Ni4xIDQ5LjMgNDYuOWw1Ny41IDEuOGMxMC40IDI3LjQgMjQuMiA1My40IDQwLjcgNzcuOGwtMzIuMSA0OC41Yy0xNC4zIDIxLjctMTAuMiA1MC42IDkuNiA2Ny40bDY0LjUgNTQuNWMxOS45IDE2LjggNDkuMSAxNiA2OC0xLjhsNDIuMi0zOS41YzI3LjYgMTIuOSA1Ni43IDIyLjUgODYuNiAyOC4zbDExLjcgNTcuN2M1LjEgMjUuNCAyOC43IDQzIDU0LjUgNDAuOWw4NC4yLTcuMmMyNS44LTIuMyA0Ni4xLTIzLjMgNDYuOS00OS4zbDEuOC01Ni41YzMwLjctMTAuOSA1OS44LTI1LjYgODYuNi00My44bDQ2LjUgMzAuN2MyMS43IDE0LjMgNTAuNiAxMC4yIDY3LjQtOS42bDU0LjUtNjQuNWMxNi44LTE5LjkgMTYtNDkuMS0xLjgtNjhsLTM3LjUtMzkuN2MxMy43LTI5LjEgMjMuOC01OS44IDI5LjUtOTEuM2w1MS4yLTEwLjRjMjUuNC01LjEgNDMtMjguNyA0MC45LTU0LjVsLTcuMi04NC4yYy0yLjMtMjUuOC0yMy4zLTQ2LjEtNDkuMy00Ni45bC01MS40LTEuNmMtMTAuNi0yOS45LTI1LTU4LjEtNDIuOC04NC40bDI4LTQyLjJjMTQuNy0yMS44IDEwLjYtNTAuOS05LjMtNjcuN20tMzE3LjEgNDg2LjVjLTkwLjkgNy44LTE3MS4yLTYwLTE3OC43LTE1MC45LTcuOC05MC45IDYwLTE3MS4yIDE1MC45LTE3OC43IDkwLjktNy44IDE3MS4yIDYwIDE3OC43IDE1MC45IDcuNyA5MC45LTYwIDE3MS4xLTE1MC45IDE3OC43IiBjbGFzcz0ic3QyIi8+PHBhdGggaWQ9InBhdGg0MjAzIiBkPSJNNzE2LjggMTgyMS45Yy0yNS44IDIuNy00NS43IDI0LjQtNDUuOSA1MC40bC0uNiA1MS44Yy0uNCAyNiAxOC44IDQ4LjEgNDQuNiA1MS40bDM4LjEgNC45YzYuMyAyMy4xIDE1LjQgNDUuMyAyNyA2Ni4xbC0yNC42IDMwLjNjLTE2LjQgMjAuMy0xNS4yIDQ5LjMgMy4xIDY4bDM2LjIgMzcuMWMxOC4yIDE4LjYgNDcuMyAyMC43IDY4IDQuN2wzMC41LTIzLjVjMjEuNSAxMi43IDQ0LjIgMjIuNyA2OCAyOS43bDQuMSAzOS4zYzIuNyAyNS44IDI0LjQgNDUuNyA1MC40IDQ1LjlsNTEuOC42YzI2IC40IDQ4LjEtMTguOCA1MS40LTQ0LjZsNC43LTM3LjNjMjUuOC02LjMgNTAuNC0xNiA3My43LTI4LjdsMjguNyAyMy4xYzIwLjMgMTYuNCA0OS4zIDE1LjIgNjgtMy4xbDM3LjEtMzYuMmMxOC42LTE4LjIgMjAuNy00Ny4zIDQuNy02OGwtMjEuOS0yOC41YzEzLjUtMjIuNSAyNC00Ni41IDMxLjEtNzEuN2wzNC0zLjVjMjUuOC0yLjcgNDUuNy0yNC40IDQ1LjktNTAuNGwuNi01MS44Yy40LTI2LTE4LjgtNDguMS00NC42LTUxLjRsLTMzLjItNC4zYy02LjMtMjUtMTUuOC00OS4xLTI4LTcxLjdsMjAuNy0yNS40YzE2LjQtMjAuMyAxNS4yLTQ5LjMtMy4xLTY4bC0zNi4yLTM3LjFhNTEuMTUgNTEuMTUgMCAwIDAtNjgtNC43bC0yNC44IDE5Yy0yMy4zLTE0LjEtNDguMy0yNS03NC41LTMyLjNsLTMuMy0zMi4xYy0yLjctMjUuOC0yNC40LTQ1LjctNTAuNC00NS45bC01MS44LS42Yy0yNi0uNC00OC4xIDE4LjgtNTEuNCA0NC42bC00LjEgMzEuOWMtMjcgNy01MyAxNy42LTc3LjIgMzEuNWwtMjUuNi0yMC45Yy0yMC4zLTE2LjQtNDkuMy0xNS4xLTY4IDMuMWwtMzcuMyAzNi40YTUxLjE1IDUxLjE1IDAgMCAwLTQuNyA2OGwyMS45IDI4LjNjLTEyLjcgMjIuNS0yMi43IDQ2LjUtMjkuMyA3MS43IDAgLjMtMzUuOCAzLjktMzUuOCAzLjltMzM0LjMtNTguNWM3NC4zLjggMTMzLjkgNjIgMTMzLjEgMTM2LjQtLjggNzQuMy02MiAxMzMuOS0xMzYuNCAxMzMuMS03NC4zLS44LTEzMy45LTYyLTEzMy4xLTEzNi40LjktNzQuNCA2Mi4xLTEzMy45IDEzNi40LTEzMy4xIiBjbGFzcz0ic3QyIi8+PC9nPjwvZz48L2c+PC9zdmc+',
   seerr:'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2ZXJzaW9uPSIxLjEiIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgOTYgOTYiPgogIDwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyOS44LjEsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiAyLjEuMSBCdWlsZCAyKSAgLS0+CiAgPGRlZnM+CiAgICA8c3R5bGU+CiAgICAgIC5zdDAsIC5zdDEgewogICAgICAgIGZpbGw6ICMxMzE5Mjg7CiAgICAgIH0KCiAgICAgIC5zdDIgewogICAgICAgIGZpbGw6IHVybCgjVW5iZW5hbm50ZXJfVmVybGF1Zik7CiAgICAgIH0KCiAgICAgIC5zdDIsIC5zdDMsIC5zdDEgewogICAgICAgIGZpbGwtcnVsZTogZXZlbm9kZDsKICAgICAgfQoKICAgICAgLnN0MyB7CiAgICAgICAgZmlsbDogdXJsKCNVbmJlbmFubnRlcl9WZXJsYXVmXzIpOwogICAgICB9CgogICAgICAuc3QxIHsKICAgICAgICBpc29sYXRpb246IGlzb2xhdGU7CiAgICAgICAgb3BhY2l0eTogLjI7CiAgICAgIH0KICAgIDwvc3R5bGU+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9IlVuYmVuYW5udGVyX1ZlcmxhdWYiIGRhdGEtbmFtZT0iVW5iZW5hbm50ZXIgVmVybGF1ZiIgeDE9IjI0IiB5MT0iMTQ4IiB4Mj0iOTMuNSIgeTI9Ijc4LjUiIGdyYWRpZW50VHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCAxNzIpIHNjYWxlKDEgLTEpIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2MzOTVmYyIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiM0ZjY1ZjUiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9IlVuYmVuYW5udGVyX1ZlcmxhdWZfMiIgZGF0YS1uYW1lPSJVbmJlbmFubnRlciBWZXJsYXVmIDIiIHgxPSIyOCIgeTE9IjE2NCIgeDI9IjI4IiB5Mj0iMTI0IiBncmFkaWVudFRyYW5zZm9ybT0idHJhbnNsYXRlKDAgMTcyKSBzY2FsZSgxIC0xKSIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmZmYiIHN0b3Atb3BhY2l0eT0iLjQiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjZmZmIiBzdG9wLW9wYWNpdHk9IjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxjaXJjbGUgY2xhc3M9InN0MCIgY3g9IjUyIiBjeT0iNTIiIHI9IjI4Ii8+CiAgPHBhdGggY2xhc3M9InN0MiIgZD0iTTQ4LDk2YzI2LjUxLDAsNDgtMjEuNDksNDgtNDhTNzQuNTEsMCw0OCwwLDAsMjEuNDksMCw0OHMyMS40OSw0OCw0OCw0OFpNODAsNTJjMCwxNS40Ni0xMi41NCwyOC0yOCwyOHMtMjgtMTIuNTQtMjgtMjhjMC0yLjg3LjQzLTUuNjQsMS4yMy04LjI1LDIuMTksNC44Niw3LjA5LDguMjUsMTIuNzcsOC4yNSw3LjczLDAsMTQtNi4yNywxNC0xNCwwLTUuNjgtMy4zOC0xMC41Ny04LjI1LTEyLjc3LDIuNjEtLjgsNS4zOC0xLjIzLDguMjUtMS4yMywxNS40NiwwLDI4LDEyLjU0LDI4LDI4WiIvPgogIDxwYXRoIGNsYXNzPSJzdDEiIGQ9Ik04MCw1MmMwLDE1LjQ2LTEyLjU0LDI4LTI4LDI4cy0yNy40Ny0xMi4wMS0yNy45OC0yNy4wMmMtLjAxLjM0LS4wMi42OC0uMDIsMS4wMiwwLDE2LjU3LDEzLjQzLDMwLDMwLDMwczMwLTEzLjQzLDMwLTMwLTEzLjQzLTMwLTMwLTMwYy0uMzQsMC0uNjgsMC0xLjAyLjAyLDE1LjAxLjUyLDI3LjAyLDEyLjg1LDI3LjAyLDI3Ljk4WiIvPgogIDxwYXRoIGNsYXNzPSJzdDMiIGQ9Ik00OCwxMmMtMTkuODgsMC0zNiwxNi4xMi0zNiwzNiwwLDIuMjEtMS43OSw0LTQsNHMtNC0xLjc5LTQtNEM0LDIzLjcsMjMuNyw0LDQ4LDRjMi4yMSwwLDQsMS43OSw0LDRzLTEuNzksNC00LDRaIi8+Cjwvc3ZnPg==',
   heimdall:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbDpzcGFjZT0icHJlc2VydmUiIHZpZXdCb3g9IjUxLjggMCA0MDguNiA1MTIiPjxwYXRoIGQ9Ik04MiAzOGgzNDh2NDM2SDgyeiIgc3R5bGU9ImZpbGw6bm9uZSIvPjxwYXRoIGQ9Ik0zMTMuMyA0NzAuNlY0NDFsMTAuMi0zMS42YzcxLjEtNzAuNSAxMjctMTM2LjQgMTM2LjktMTU2LjdsLTEyLjEgNC4yczExLjMtMTQuMSAxMC4yLTIyQzQ0OS4zIDk2LjggMzcxLjQgMjQuOCAzNTAgNy4xYzMxLjYgMzggMjMgNTAuNCAyMyA1MC40QzM1OSAzMS42IDMzMC40IDYuNCAzMjQuOCAwTDMxOCA0MC4yQzM0NS4xIDU2IDMzNy45IDY1IDMzNy45IDY1Yy02LjQtOS0yMy43LTE2LjktMjMuNy0xNi45bC0xLjkgMTEuM2M4LjMgMy44IDQ1LjUgMjYuMyA0NS44IDg0LjIgMCA3MC41LTQwLjEgODkuMS00Ny4xIDkxLjktMjMuNC0xNC4xLTQ4LjgtMTMuOC01NS0xNC40LTYuMi42LTMxLjYuMy01NSAxNC40LTcuMS0yLjgtNDcuMS0yMS40LTQ3LjEtOTEuOS4zLTU3LjkgMzcuNS04MC40IDQ1LjgtODQuMmwtMS45LTExLjNTMTgwLjUgNTYgMTc0LjEgNjVjMCAwLTcuMi05IDE5LjktMjQuOEwxODcuMiAwQzE4MS42IDYuNCAxNTMgMzEuNiAxMzkgNTcuNWMwIDAtOC43LTEyLjQgMjMtNTAuNC0yMS40IDE3LjctOTkuMyA4OS43LTEwOC4zIDIyNy44LTEuMSA3LjkgMTAuMiAyMiAxMC4yIDIybC0xMi4xLTQuMmM5LjkgMjAuMyA2NS44IDg2LjMgMTM2LjkgMTU2LjdsMTAuMiAzMS42djI5LjZsLTktMzEuNi0yMC42LTMzLjh2MzQuNGM4LjUgMjQgNDEuNSA3Mi40IDQxLjUgNzIuNFY0MTEuNkw4NC4xIDI3My44czc5IDY0LjMgMTAxLjYgODcuNGwxMS45LTEyLjFjLTE0LjctMTAuNC03OC41LTc0LjQtODQuMS0xMzAuOCA0OCAxMDEuNSA5NCAxMTQuMiAxMjcuOCAxNTMuNnY5LjdoMjkuNHYtOS43YzMzLjktMzkuNSA3OS45LTUyLjIgMTI3LjgtMTUzLjYtNS42IDU2LjQtNjkuNCAxMjAuNC04NC4xIDEzMC44bDExLjkgMTIuMWMyMi42LTIzLjEgMTAxLjYtODcuNCAxMDEuNi04Ny40TDMwMS40IDQxMS42VjUxMnMzMy00OC41IDQxLjUtNzIuNHYtMzQuNEwzMjIuMyA0Mzl6TTI1NiAzNDkuNGMtMjEuMi0xNC4xLTc1LjYtNDcuMS05OC4yLTk4LjcgMTIuNSAxNC45IDI2LjIgMjguNyA0MC45IDQxLjQgMCAwLTEuNC0zNi40IDEuNC00NC4zIDUuMSA0My43IDE1LjUgNjIuMyA1NS45IDg1LjQgNDAuNC0yMy4xIDUwLjgtNDEuNyA1NS45LTg1LjQgMi44IDcuOSAxLjQgNDQuMyAxLjQgNDQuMyAxNC43LTEyLjcgMjguNC0yNi42IDQwLjktNDEuNC0yMi42IDUxLjYtNzcgODQuNi05OC4yIDk4LjciLz48L3N2Zz4=',
@@ -335,6 +336,11 @@ function icoFail(img){
 const STACK = 'starrnet';
 const NETWORK = 'starrnet';
 
+/* reverse proxy fixo da stack: sempre presente, não sai no combobox e não pode
+   ser removido. É o único container que publica portas no host. */
+const NGINX = {id:'nginx', name:'Nginx', desc:'Reverse proxy',
+               img:'nginx:alpine', color:'#009639', http:80, https:443};
+
 const DEFAULTS = {restart:'unless-stopped',
                   cfg:'/opt/appdata', data:'/mnt/media', dl:'/mnt/downloads',
                   puid:'1000', pgid:'1000', tz:'America/Sao_Paulo',
@@ -346,7 +352,7 @@ const DEFAULTS = {restart:'unless-stopped',
 const MULTI = ['sonarr','radarr','lidarr','bazarr','prowlarr'];
 const isMulti = id => MULTI.includes(id);
 
-// serviços adicionados: [{id, title, port, cfg, data, tz, vpn}]
+// serviços adicionados: [{id, title, data, vpn}]
 let added = [];
 let picked = null;   // id selecionado no combobox
 let editing = null;  // key da instância em edição (null = adicionando)
@@ -380,7 +386,7 @@ const dataReal = a => {
 };
 // serviço bloqueado no combobox: instância única já adicionada
 const locked = id => !isMulti(id) && has(id);
-const defCfg = id => ({id, title:svc(id).name, port:String(svc(id).port),
+const defCfg = id => ({id, title:svc(id).name,
                        data:svc(id).mdir||'', vpn:false});
 
 /* ---------- combobox ---------- */
@@ -424,14 +430,26 @@ document.addEventListener('click', e=>{
 /* ---------- lista de serviços ---------- */
 function renderItems(){
   const box = $('#items');
-  box.innerHTML = added.length ? added.map(a=>{
+  // o reverse proxy é fixo: aparece sempre, sem editar nem excluir
+  const fixed = `<div class="item">
+      ${icoHtml(NGINX)}
+      <div class="meta">
+        <div class="nm">${NGINX.name}
+          <span class="tag">${NGINX.http} / ${NGINX.https} no host</span>
+        </div>
+        <div class="ds">${NGINX.id} · ${NGINX.desc} · ${DEFAULTS.cfg}/${NGINX.id}/conf.d</div>
+      </div>
+      <div class="acts"><span class="hint">fixo</span></div>
+    </div>`;
+
+  box.innerHTML = fixed + (added.length ? added.map(a=>{
     const s = svc(a.id);
     return `<div class="item" data-key="${cname(a)}">
       ${icoHtml(s)}
       <div class="meta">
         <div class="nm">${a.title || s.name}
-          ${a.vpn?'<span class="tag">via VPN</span>'
-                 :`<span class="tag">${a.port} → ${inner(a.id)}</span>`}
+          ${a.vpn?'<span class="tag">via VPN</span>':''}
+          <span class="tag">/${cname(a)} → ${inner(a.id)}</span>
         </div>
         <div class="ds">${cname(a)}${(a.title && a.title!==s.name)?' ('+s.name+')':''}${s.noVol?' · '+s.desc:' · '+cfgReal(a)}${s.media&&!s.noVol?' · '+dataReal(a):''}</div>
       </div>
@@ -440,7 +458,7 @@ function renderItems(){
         <button class="sm danger" data-act="del">Excluir</button>
       </div>
     </div>`;
-  }).join('') : `<div class="empty">Nenhum serviço adicionado.<br>Escolha um no combobox acima e clique em <b>Adicionar</b>.</div>`;
+  }).join('') : `<div class="empty">Nenhum serviço adicionado.<br>Escolha um no combobox acima e clique em <b>Adicionar</b>.</div>`);
   $('#count').textContent = added.length + ' adicionados';
   $('#clear').disabled = !added.length;
   $('#clear').textContent = 'Limpar tudo';
@@ -503,7 +521,7 @@ function openModal(id, key){
   const nth = added.filter(a=>a.id===id).length + 1;
   $('#mName').value = isEdit ? cur.title
     : (isMulti(id) && has(id)) ? `${s.name} ${nth}` : s.name;
-  $('#mPort').value = cur.port; $('#mData').value = cur.data;
+  $('#mData').value = cur.data;
   $('#mInner').textContent = inner(id);   // porta original do serviço, nunca muda
   $('#mVpn').checked = cur.vpn;
   $('#mDataBase').textContent = (s.dlClient ? DEFAULTS.dl : DEFAULTS.data) + '/';
@@ -514,7 +532,7 @@ function openModal(id, key){
   $('#mWarn').textContent = '';
   $('#mSave').textContent = isEdit ? 'Salvar' : 'Concluir';
   $('#backdrop').classList.add('open');
-  $('#mPort').focus();
+  $('#mName').focus();
 }
 function closeModal(){ $('#backdrop').classList.remove('open'); editing=null; }
 
@@ -534,12 +552,9 @@ const warn = msg => $('#mWarn').innerHTML = `<span class="warn">${msg}</span>`;
 $('#mSave').onclick = ()=>{
   const id = editing ? byKey(editing).id : picked;
   const s = svc(id);
-  const port = $('#mPort').value.trim();
-  if(!/^\d+$/.test(port)) return warn('Porta inválida');
-
   const useName = isMulti(id) || INSTANCE_ENV[id];
   const cfg = {id, title:(useName ? $('#mName').value.trim() : '') || s.name,
-               port, data:slug($('#mData').value),
+               data:slug($('#mData').value),
                vpn: s.vpn && $('#mVpn').checked};
 
   const key = cname(cfg);
@@ -616,15 +631,6 @@ function effective(){
   return list;
 }
 
-function checkConflicts(list){
-  const seen={}, dup=[];
-  list.filter(a=>!a.vpn).forEach(a=>{
-    const n = a.title || svc(a.id).name;
-    if(seen[a.port]) dup.push(`${a.port} (${seen[a.port]} / ${n})`); else seen[a.port]=n;
-  });
-  return dup;
-}
-
 function build(){
   const restart = '${RESTART}';
   const list = effective();
@@ -632,8 +638,25 @@ function build(){
   const L=[];
   L.push(`<span class="c"># ${STACK} — gerado pelo Hubstarr</span>`);
   L.push(`<span class="c"># valores em .env</span>`);
+  L.push(`<span class="c"># só o nginx publica portas; o resto é alcançado na rede ${NETWORK}</span>`);
   L.push(``);
   L.push(`<span class="k">services</span>:`);
+
+  // reverse proxy fixo: único serviço com portas publicadas
+  L.push(``);
+  L.push(`  <span class="k">${NGINX.id}</span>:`);
+  L.push(`    <span class="k">image</span>: <span class="v">${NGINX.img}</span>`);
+  L.push(`    <span class="k">container_name</span>: <span class="v">${NGINX.id}</span>`);
+  L.push(`    <span class="k">ports</span>:`);
+  L.push(`      - <span class="v">"${NGINX.http}:80"</span>`);
+  L.push(`      - <span class="v">"${NGINX.https}:443"</span>`);
+  L.push(`    <span class="k">volumes</span>:`);
+  L.push(`      - <span class="k">type</span>: <span class="v">bind</span>`);
+  L.push(`        <span class="k">source</span>: <span class="v">\${BASE_CONFIG}/${NGINX.id}/conf.d</span>`);
+  L.push(`        <span class="k">target</span>: <span class="v">/etc/nginx/conf.d</span>`);
+  L.push(`        <span class="k">read_only</span>: <span class="v">true</span>`);
+  L.push(`    <span class="k">networks</span>: [<span class="v">${NETWORK}</span>]`);
+  L.push(`    <span class="k">restart</span>: <span class="v">${restart}</span>`);
 
   list.forEach(a=>{
     const s = svc(a.id);
@@ -662,6 +685,8 @@ function build(){
       L.push(`      - <span class="v">TZ=\${TZ}</span>`);
       if(INSTANCE_ENV[s.id] && a.title)
         L.push(`      - <span class="v">${INSTANCE_ENV[s.id]}=${a.title}</span>`);
+      if(URLBASE_ENV[s.id])
+        L.push(`      - <span class="v">${URLBASE_ENV[s.id]}=/${cname(a)}</span>`);
     }
     if(!s.noVol){
       // sintaxe longa: bind mount com propagação rslave
@@ -689,26 +714,64 @@ function build(){
     if(a.vpn){
       L.push(`    <span class="k">network_mode</span>: <span class="v">service:gluetun</span>`);
       L.push(`    <span class="k">depends_on</span>: [<span class="v">gluetun</span>]`);
-      L.push(`    <span class="c"># ${a.port}:${inner(a.id)} publicada pelo gluetun</span>`);
+      L.push(`    <span class="c"># nginx → gluetun:${inner(a.id)}</span>`);
     } else {
-      L.push(`    <span class="k">ports</span>:`);
-      L.push(`      - <span class="v">"${a.port}:${inner(a.id)}"</span>`);
       L.push(`    <span class="k">networks</span>: [<span class="v">${NETWORK}</span>]`);
+      L.push(`    <span class="c"># nginx → ${cname(a)}:${inner(a.id)}</span>`);
     }
     L.push(`    <span class="k">restart</span>: <span class="v">${restart}</span>`);
   });
-
-  const fw = list.filter(a=>a.vpn).map(a=>`"${a.port}:${inner(a.id)}"`);
-  if(fw.length){
-    L.push(``);
-    L.push(`<span class="c"># gluetun publica: ${fw.join(', ')}</span>`);
-  }
 
   L.push(``);
   L.push(`<span class="k">networks</span>:`);
   L.push(`  <span class="k">${NETWORK}</span>:`);
   L.push(`    <span class="k">driver</span>: <span class="v">bridge</span>`);
   return {html:L.join('\n'), list};
+}
+
+/* nginx.conf — um location por serviço, roteando por subpath.
+   O upstream é o próprio container na rede da stack; quem roteia pela VPN
+   responde no gluetun, que é quem detém a rede. */
+function buildNginx(list){
+  const N=[];
+  N.push(`<span class="c"># ${STACK} — gerado pelo Hubstarr</span>`);
+  N.push(`<span class="c"># montar em \${BASE_CONFIG}/${NGINX.id}/conf.d/${STACK}.conf</span>`);
+  N.push(``);
+  N.push(`<span class="k">server</span> {`);
+  N.push(`  <span class="k">listen</span> <span class="v">80</span>;`);
+  N.push(`  <span class="k">server_name</span> <span class="v">_</span>;`);
+  N.push(``);
+  N.push(`  <span class="k">client_max_body_size</span> <span class="v">0</span>;`);
+
+  const items = list.filter(a=>a.id!=='gluetun');
+  if(!items.length){
+    N.push(``);
+    N.push(`  <span class="c"># nenhum serviço adicionado ainda</span>`);
+  }
+  items.forEach(a=>{
+    const host = a.vpn ? 'gluetun' : cname(a);
+    const path = cname(a);
+    N.push(``);
+    N.push(`  <span class="c"># ${a.title || svc(a.id).name}</span>`);
+    N.push(`  <span class="k">location</span> <span class="v">/${path}</span> {`);
+    N.push(`    <span class="k">proxy_pass</span> <span class="v">http://${host}:${inner(a.id)}</span>;`);
+    N.push(`    <span class="k">proxy_set_header</span> <span class="v">Host $host</span>;`);
+    N.push(`    <span class="k">proxy_set_header</span> <span class="v">X-Real-IP $remote_addr</span>;`);
+    N.push(`    <span class="k">proxy_set_header</span> <span class="v">X-Forwarded-For $proxy_add_x_forwarded_for</span>;`);
+    N.push(`    <span class="k">proxy_set_header</span> <span class="v">X-Forwarded-Proto $scheme</span>;`);
+    N.push(`    <span class="k">proxy_http_version</span> <span class="v">1.1</span>;`);
+    N.push(`    <span class="k">proxy_set_header</span> <span class="v">Upgrade $http_upgrade</span>;`);
+    N.push(`    <span class="k">proxy_set_header</span> <span class="v">Connection $http_connection</span>;`);
+    N.push(`  }`);
+  });
+
+  N.push(`}`);
+  if(items.length){
+    N.push(``);
+    N.push(`<span class="c"># cada app precisa da base URL igual ao seu subpath — quem não recebe</span>`);
+    N.push(`<span class="c"># a variável no compose tem que configurar na própria interface</span>`);
+  }
+  return N.join('\n');
 }
 
 function buildEnv(list){
@@ -749,25 +812,28 @@ function render(){
   const {html, list} = build();
   $('#out').innerHTML = html;
   $('#outEnv').innerHTML = buildEnv(list);
-  const dup = checkConflicts(list);
+  $('#outNginx').innerHTML = buildNginx(list);
+  const routes = list.filter(a=>a.id!=='gluetun').length;
   $('#conflicts').innerHTML = !added.length ? ''
-    : dup.length ? `<span class="warn">⚠ Conflito de porta: ${dup.join('; ')}</span>`
-                 : `<span class="ok">✓ Nenhum conflito de porta</span>`;
-  $('#stat').textContent = list.length + ' containers';
+    : `<span class="ok">✓ ${routes} ${routes===1?'rota':'rotas'} no nginx</span>`;
+  const n = list.length + 1;   // +1: nginx fixo
+  $('#stat').textContent = n + (n===1 ? ' container' : ' containers');
   $('#summary').textContent = list.map(a=>a.title||svc(a.id).name).join(' · ') || 'nenhum serviço adicionado';
 }
 
 let tab = 'yml';
+const PANES = {yml:'#out', env:'#outEnv', nginx:'#outNginx'};
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   tab = t.dataset.tab;
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on', x===t));
-  $('#out').style.display    = tab==='yml' ? 'block' : 'none';
-  $('#outEnv').style.display = tab==='env' ? 'block' : 'none';
+  Object.entries(PANES).forEach(([k,sel])=>
+    $(sel).style.display = k===tab ? 'block' : 'none');
   $('#copy').textContent = 'Copiar';
 });
 
-const plain    = ()=> $('#out').textContent;
-const plainEnv = ()=> $('#outEnv').textContent;
+const plain      = ()=> $('#out').textContent;
+const plainEnv   = ()=> $('#outEnv').textContent;
+const plainNginx = ()=> $('#outNginx').textContent;
 
 function download(name, text, type){
   const a=document.createElement('a');
@@ -776,7 +842,7 @@ function download(name, text, type){
 }
 
 $('#copy').onclick = async e=>{
-  await navigator.clipboard.writeText(tab==='yml' ? plain() : plainEnv());
+  await navigator.clipboard.writeText($(PANES[tab]).textContent);
   e.target.textContent='Copiado ✓'; setTimeout(()=>e.target.textContent='Copiar',1500);
 };
 /* ZIP mínimo (método "store", sem compressão) — evita dependências externas */
@@ -843,6 +909,7 @@ $('#dl').onclick = ()=>{
   const blob = makeZip([
     {name:'docker-compose.yml', text:plain()+'\n'},
     {name:'.env',               text:plainEnv()+'\n'},
+    {name:`nginx/conf.d/${STACK}.conf`, text:plainNginx()+'\n'},
   ]);
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob); a.download=`${stack}.zip`; a.click();
