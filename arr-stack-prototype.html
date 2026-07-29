@@ -220,6 +220,20 @@
       <p class="hint" data-i18n-html="env.apiHint" style="margin:-2px 0 12px"></p>
 
       <h4 style="margin:18px 0 10px;font-size:12px;text-transform:uppercase;
+                 letter-spacing:.06em;color:var(--muted)" data-i18n="env.secTls">TLS</h4>
+      <div class="row"><label for="eTls" data-i18n="env.tlsOn">Servir HTTPS</label>
+        <label class="check"><input type="checkbox" id="eTls"> 443</label></div>
+      <div class="row"><label for="eDomain" data-i18n="env.domain">Domínio</label>
+        <input type="text" id="eDomain" data-i18n-ph="env.phDomain"></div>
+      <div id="eTlsRows">
+        <div class="row"><label for="eCert" data-i18n="env.cert">Certificado (host)</label>
+          <input type="text" id="eCert"></div>
+        <div class="row"><label for="eTlsKey" data-i18n="env.key">Chave privada (host)</label>
+          <input type="text" id="eTlsKey"></div>
+      </div>
+      <p class="hint" data-i18n-html="env.tlsHint" style="margin:-2px 0 12px"></p>
+
+      <h4 style="margin:18px 0 10px;font-size:12px;text-transform:uppercase;
                  letter-spacing:.06em;color:var(--muted)" data-i18n="env.vpn">VPN (gluetun)</h4>
       <div class="row"><label for="eVpnProv" data-i18n="env.provider">Provedor</label>
         <input type="text" id="eVpnProv" placeholder="mullvad, protonvpn, nordvpn…"></div>
@@ -377,6 +391,14 @@ const I18N = {
   'env.secApi':'API key (*arr)',
   'env.apiHint':'A mesma chave vale para todos os *arr, como um <b>openssl rand -hex 16</b>.',
   'btn.gen':'Gerar',
+  'env.secTls':'TLS',
+  'env.tlsOn':'Servir HTTPS',
+  'env.domain':'Domínio',
+  'env.cert':'Certificado (host)',
+  'env.key':'Chave privada (host)',
+  'env.tlsHint':'Os caminhos são do host e entram no compose como <b>${TLS_CERT}</b> e <b>${TLS_KEY}</b>, montados só-leitura no nginx. Sem TLS, a stack fica só na porta 80.',
+  'env.phDomain':'midia.seudominio.com',
+  'ngx.redirect':'redireciona http para https',
   'env.phProvider':'seu-provedor',
   'env.phKey':'SUA_CHAVE_PRIVADA',
   'env.phUser':'usuario',
@@ -489,6 +511,14 @@ const I18N = {
   'env.secApi':'API key (*arr)',
   'env.apiHint':'One key for every *arr, like an <b>openssl rand -hex 16</b>.',
   'btn.gen':'Generate',
+  'env.secTls':'TLS',
+  'env.tlsOn':'Serve HTTPS',
+  'env.domain':'Domain',
+  'env.cert':'Certificate (host)',
+  'env.key':'Private key (host)',
+  'env.tlsHint':'These are host paths; they land in the compose file as <b>${TLS_CERT}</b> and <b>${TLS_KEY}</b>, mounted read-only into nginx. Without TLS the stack stays on port 80 only.',
+  'env.phDomain':'media.yourdomain.com',
+  'ngx.redirect':'redirects http to https',
   'env.phProvider':'your-provider',
   'env.phKey':'YOUR_PRIVATE_KEY',
   'env.phUser':'username',
@@ -601,6 +631,14 @@ const I18N = {
   'env.secApi':'API key (*arr)',
   'env.apiHint':'La misma clave vale para todos los *arr, como un <b>openssl rand -hex 16</b>.',
   'btn.gen':'Generar',
+  'env.secTls':'TLS',
+  'env.tlsOn':'Servir HTTPS',
+  'env.domain':'Dominio',
+  'env.cert':'Certificado (host)',
+  'env.key':'Clave privada (host)',
+  'env.tlsHint':'Las rutas son del host y entran en el compose como <b>${TLS_CERT}</b> y <b>${TLS_KEY}</b>, montadas de solo lectura en nginx. Sin TLS, la stack se queda solo en el puerto 80.',
+  'env.phDomain':'media.tudominio.com',
+  'ngx.redirect':'redirige http a https',
   'env.phProvider':'tu-proveedor',
   'env.phKey':'TU_CLAVE_PRIVADA',
   'env.phUser':'usuario',
@@ -687,6 +725,9 @@ const APIKEY_ENV = {sonarr:'SONARR__AUTH__APIKEY', radarr:'RADARR__AUTH__APIKEY'
                     lidarr:'LIDARR__AUTH__APIKEY', prowlarr:'PROWLARR__AUTH__APIKEY'};
 // variável única que carrega a chave de todos os *arr
 const APIKEY_VAR = 'STARR_APIKEY';
+// onde o certificado e a chave aparecem dentro do container do nginx
+const TLS_CERT = '/etc/nginx/certs/fullchain.pem';
+const TLS_KEY  = '/etc/nginx/certs/privkey.pem';
 // equivalente a `openssl rand -hex 16`
 const randKey = ()=> Array.from(crypto.getRandomValues(new Uint8Array(16)))
   .map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -769,6 +810,9 @@ const DEFAULTS = {restart:'unless-stopped',
                   // gluetun
                   // chave de API por app, preenchida no Ambiente
                   apiKey:randKey(),
+                  // TLS no nginx: caminhos do host, montados só-leitura
+                  tls:false, domain:'', cert:'/etc/letsencrypt/live/exemplo/fullchain.pem',
+                  tlsKey:'/etc/letsencrypt/live/exemplo/privkey.pem',
                   vpnProv:'mullvad', vpnType:'wireguard',
                   wgKey:'', wgAddr:'', ovpnUser:'', ovpnPass:'', countries:''};
 
@@ -1004,6 +1048,9 @@ function openEnv(){
   $('#eOvpnUser').value=DEFAULTS.ovpnUser; $('#eOvpnPass').value=DEFAULTS.ovpnPass;
   $('#eCountries').value=DEFAULTS.countries;
   $('#eApiKey').value = DEFAULTS.apiKey;
+  $('#eTls').checked = DEFAULTS.tls; $('#eDomain').value = DEFAULTS.domain;
+  $('#eCert').value = DEFAULTS.cert; $('#eTlsKey').value = DEFAULTS.tlsKey;
+  tlsRows();
   vpnRows();
   $('#ePuid').value=DEFAULTS.puid; $('#ePgid').value=DEFAULTS.pgid;
   $('#eTz').value=DEFAULTS.tz; $('#eCfg').value=DEFAULTS.cfg; $('#eData').value=DEFAULTS.data;
@@ -1021,6 +1068,10 @@ function vpnRows(){
 }
 $('#eVpnType').addEventListener('change', vpnRows);
 $('#eApiGen').onclick = ()=> $('#eApiKey').value = randKey();
+
+// caminhos de certificado só interessam com o TLS ligado
+function tlsRows(){ $('#eTlsRows').style.display = $('#eTls').checked ? 'block' : 'none'; }
+$('#eTls').addEventListener('change', ()=>{ tlsRows(); render(); });
 
 /* ---------- tema claro/escuro ---------- */
 function setTheme(t){
@@ -1052,6 +1103,8 @@ $('#eSave').onclick = ()=>{
     ovpnUser:$('#eOvpnUser').value.trim(), ovpnPass:$('#eOvpnPass').value.trim(),
     countries:$('#eCountries').value.trim()});
   DEFAULTS.apiKey = $('#eApiKey').value.trim() || randKey();
+  Object.assign(DEFAULTS, {tls:$('#eTls').checked, domain:$('#eDomain').value.trim(),
+    cert:$('#eCert').value.trim(), tlsKey:$('#eTlsKey').value.trim()});
   closeEnv(); renderItems(); render();
 };
 
@@ -1086,6 +1139,15 @@ function build(){
   L.push(`        <span class="k">source</span>: <span class="v">\${BASE_CONFIG}/${NGINX.id}/conf.d</span>`);
   L.push(`        <span class="k">target</span>: <span class="v">/etc/nginx/conf.d</span>`);
   L.push(`        <span class="k">read_only</span>: <span class="v">true</span>`);
+  if(DEFAULTS.tls){
+    // certificado e chave chegam do host, cada um no seu caminho fixo
+    [['TLS_CERT', TLS_CERT], ['TLS_KEY', TLS_KEY]].forEach(([v, target])=>{
+      L.push(`      - <span class="k">type</span>: <span class="v">bind</span>`);
+      L.push(`        <span class="k">source</span>: <span class="v">\${${v}}</span>`);
+      L.push(`        <span class="k">target</span>: <span class="v">${target}</span>`);
+      L.push(`        <span class="k">read_only</span>: <span class="v">true</span>`);
+    });
+  }
   L.push(`    <span class="k">networks</span>: [<span class="v">${NETWORK}</span>]`);
   L.push(`    <span class="k">restart</span>: <span class="v">${restart}</span>`);
 
@@ -1169,10 +1231,36 @@ function buildNginx(list){
   const N=[];
   N.push(`<span class="c"># ${STACK} — ${t('ngx.head')}</span>`);
   N.push(`<span class="c"># ${t('ngx.mount', `\${BASE_CONFIG}/${NGINX.id}/conf.d/${STACK}.conf`)}</span>`);
+  const name = DEFAULTS.domain || '_';
   N.push(``);
+
+  if(DEFAULTS.tls){
+    // porta 80 só existe para mandar todo mundo para o https
+    N.push(`<span class="k">server</span> {`);
+    N.push(`  <span class="k">listen</span> <span class="v">80</span>;`);
+    N.push(`  <span class="k">server_name</span> <span class="v">${name}</span>;`);
+    N.push(`  <span class="c"># ${t('ngx.redirect')}</span>`);
+    N.push(`  <span class="k">return</span> <span class="v">301 https://$host$request_uri</span>;`);
+    N.push(`}`);
+    N.push(``);
+  }
+
   N.push(`<span class="k">server</span> {`);
-  N.push(`  <span class="k">listen</span> <span class="v">80</span>;`);
-  N.push(`  <span class="k">server_name</span> <span class="v">_</span>;`);
+  if(DEFAULTS.tls){
+    N.push(`  <span class="k">listen</span> <span class="v">443 ssl</span>;`);
+    N.push(`  <span class="k">http2</span> <span class="v">on</span>;`);
+  } else {
+    N.push(`  <span class="k">listen</span> <span class="v">80</span>;`);
+  }
+  N.push(`  <span class="k">server_name</span> <span class="v">${name}</span>;`);
+  if(DEFAULTS.tls){
+    N.push(``);
+    N.push(`  <span class="k">ssl_certificate</span> <span class="v">${TLS_CERT}</span>;`);
+    N.push(`  <span class="k">ssl_certificate_key</span> <span class="v">${TLS_KEY}</span>;`);
+    N.push(`  <span class="k">ssl_protocols</span> <span class="v">TLSv1.2 TLSv1.3</span>;`);
+    N.push(`  <span class="k">ssl_session_cache</span> <span class="v">shared:SSL:10m</span>;`);
+    N.push(`  <span class="k">ssl_session_timeout</span> <span class="v">1d</span>;`);
+  }
   N.push(``);
   N.push(`  <span class="k">client_max_body_size</span> <span class="v">0</span>;`);
 
@@ -1230,6 +1318,12 @@ function buildEnv(list){
     E.push(``);
     E.push(`<span class="c"># ${t('env.secApi')}</span>`);
     E.push(`<span class="k">${APIKEY_VAR}</span>=<span class="v">${DEFAULTS.apiKey}</span>`);
+  }
+  if(DEFAULTS.tls){
+    E.push(``);
+    E.push(`<span class="c"># ${t('env.secTls')}</span>`);
+    E.push(`<span class="k">TLS_CERT</span>=${val(DEFAULTS.cert,'/caminho/fullchain.pem')}`);
+    E.push(`<span class="k">TLS_KEY</span>=${val(DEFAULTS.tlsKey,'/caminho/privkey.pem')}`);
   }
   if(list.some(a=>a.id==='gluetun')){
     E.push(``);

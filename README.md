@@ -7,7 +7,7 @@ de mídia), sem backend e sem dependências externas.
 Abra `arr-stack-prototype.html` no navegador. É só isso — o arquivo é
 autocontido (os logotipos vêm embutidos como data URI).
 
-![A interface: lista de serviços à esquerda, docker-compose.yml gerado à direita](docs/screenshot.png)
+![A interface: lista de serviços à esquerda, arquivos gerados à direita](docs/screenshot.png)
 
 O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
 
@@ -81,6 +81,13 @@ não pode ser removido. É o único container que publica portas no host (80 e
 443) — todos os outros ficam só na rede `starrnet`, alcançados pelo nginx por
 `nome-do-container:porta-interna`. Quem roteia pela VPN responde no `gluetun`,
 que é quem detém a rede.
+
+No Ambiente dá para ligar o **TLS**: o `nginx.conf` passa a ter um `server` na
+443 com `ssl_certificate`, TLSv1.2/1.3 e um bloco na 80 que só redireciona para
+o https. O certificado e a chave são caminhos do host, informados no mesmo
+lugar, e entram no compose como `${TLS_CERT}` e `${TLS_KEY}`, montados
+só-leitura em `/etc/nginx/certs`. Sem TLS, a stack fica só na 80. O domínio
+informado vira o `server_name` (na falta dele, `_`).
 
 A aba **nginx.conf** gera a configuração correspondente, roteando por subpath
 (`/sonarr`, `/radarr`…), um `location` por serviço. O Heimdall é a exceção:
