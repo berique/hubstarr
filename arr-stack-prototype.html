@@ -201,10 +201,7 @@
         </div>
       </div>
       <div class="row"><label for="eTz" data-i18n="env.tz">Time Zone</label>
-        <select id="eTz">
-          <option>America/Sao_Paulo</option><option>America/New_York</option>
-          <option>Europe/Lisbon</option><option>UTC</option>
-        </select>
+        <select id="eTz"></select>
       </div>
       <div class="row"><label for="eRestart" data-i18n="env.restart">Restart policy</label>
         <select id="eRestart"><option>unless-stopped</option><option>always</option><option>no</option></select>
@@ -666,6 +663,9 @@ const inner = id => svc(id).port;
 const INSTANCE_ENV = {sonarr:'SONARR__APP__INSTANCENAME', radarr:'RADARR__APP__INSTANCENAME'};
 
 // base URL do app, que precisa bater com o subpath roteado pelo nginx
+// serviço que atende na raiz do proxy, em vez de um subpath próprio
+const ROOT_SERVICE = 'heimdall';
+
 const URLBASE_ENV = {sonarr:'SONARR__SERVER__URLBASE', radarr:'RADARR__SERVER__URLBASE',
                      lidarr:'LIDARR__SERVER__URLBASE', prowlarr:'PROWLARR__SERVER__URLBASE'};
 
@@ -707,9 +707,37 @@ const NETWORK = 'starrnet';
 const NGINX = {id:'nginx', name:'Nginx',
                img:'nginx:alpine', color:'#009639', http:80, https:443};
 
+/* fusos: o navegador moderno entrega a lista IANA inteira; sem ela, fica uma
+   seleção curta que cobre as regiões mais comuns da stack */
+const FALLBACK_TZ = ['UTC',
+  'America/Sao_Paulo','America/Bahia','America/Fortaleza','America/Manaus',
+  'America/Argentina/Buenos_Aires','America/Santiago','America/Bogota',
+  'America/Lima','America/Mexico_City','America/New_York','America/Chicago',
+  'America/Denver','America/Los_Angeles','America/Toronto',
+  'Europe/Lisbon','Europe/Madrid','Europe/London','Europe/Paris','Europe/Berlin',
+  'Europe/Rome','Europe/Amsterdam','Europe/Moscow',
+  'Africa/Luanda','Africa/Maputo','Africa/Johannesburg',
+  'Asia/Dubai','Asia/Kolkata','Asia/Shanghai','Asia/Tokyo',
+  'Australia/Sydney','Pacific/Auckland'];
+
+const TIMEZONES = (()=>{
+  try{ const all = Intl.supportedValuesOf('timeZone'); if(all && all.length) return all; }
+  catch(e){}
+  return FALLBACK_TZ;
+})();
+
+// fuso do próprio navegador, quando estiver na lista
+function localTz(){
+  try{
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if(TIMEZONES.includes(tz)) return tz;
+  }catch(e){}
+  return TIMEZONES.includes('America/Sao_Paulo') ? 'America/Sao_Paulo' : 'UTC';
+}
+
 const DEFAULTS = {restart:'unless-stopped',
                   cfg:'/opt/appdata', data:'/mnt/media', dl:'/mnt/downloads',
-                  puid:'1000', pgid:'1000', tz:'America/Sao_Paulo',
+                  puid:'1000', pgid:'1000', tz:localTz(),
                   // gluetun
                   vpnProv:'mullvad', vpnType:'wireguard',
                   wgKey:'', wgAddr:'', ovpnUser:'', ovpnPass:'', countries:''};
@@ -732,6 +760,8 @@ const slug = t => (t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
   .replace(/[^a-z0-9]+/g,'-')
   .replace(/^-+|-+$/g,'');
 const cname = a => slug(a.title) || a.id;   // container_name / service key / pasta
+// caminho no nginx: subpath próprio, ou a raiz para o painel de atalhos
+const route = a => a.id===ROOT_SERVICE ? '/' : '/'+cname(a);
 const has = id => added.some(a=>a.id===id);
 const byKey = k => added.find(a=>cname(a)===k);
 // caminhos sempre derivados das bases do Ambiente, expostas como variáveis
@@ -815,7 +845,7 @@ function renderItems(){
       <div class="meta">
         <div class="nm">${a.title || s.name}
           ${a.vpn?`<span class="tag">${t('items.viaVpn')}</span>`:''}
-          <span class="tag">/${cname(a)} → ${inner(a.id)}</span>
+          ${a.id==='gluetun' ? '' : `<span class="tag">${route(a)} → ${inner(a.id)}</span>`}
         </div>
         <div class="ds">${cname(a)}${(a.title && a.title!==s.name)?' ('+s.name+')':''}${s.noVol?' · '+sdesc(s.id):' · '+cfgReal(a)}${s.media&&!s.noVol?' · '+dataReal(a):''}</div>
       </div>
@@ -931,6 +961,8 @@ $('#mSave').onclick = ()=>{
 
   if(editing) added = added.map(a=>cname(a)===editing?cfg:a);
   else { added.push(cfg); picked=null; }
+  // rotear pela VPN exige o gluetun na stack: entra sozinho, na frente de todos
+  if(cfg.vpn && !has('gluetun')) added.unshift(defCfg('gluetun'));
   closeModal(); renderItems(); renderCombo(); render();
 };
 
@@ -1116,10 +1148,10 @@ function buildNginx(list){
   }
   items.forEach(a=>{
     const host = a.vpn ? 'gluetun' : cname(a);
-    const path = cname(a);
+    const path = route(a);
     N.push(``);
     N.push(`  <span class="c"># ${a.title || svc(a.id).name}</span>`);
-    N.push(`  <span class="k">location</span> <span class="v">/${path}</span> {`);
+    N.push(`  <span class="k">location</span> <span class="v">${path}</span> {`);
     N.push(`    <span class="k">proxy_pass</span> <span class="v">http://${host}:${inner(a.id)}</span>;`);
     N.push(`    <span class="k">proxy_set_header</span> <span class="v">Host $host</span>;`);
     N.push(`    <span class="k">proxy_set_header</span> <span class="v">X-Real-IP $remote_addr</span>;`);
@@ -1285,6 +1317,8 @@ $('#deploy').onclick = e=>{
   setTimeout(()=>{ e.target.textContent=t('btn.deployed');
     setTimeout(()=>{e.target.textContent=t('btn.deploy');e.target.disabled=false},1800); },900);
 };
+
+$('#eTz').innerHTML = TIMEZONES.map(z=>`<option>${z}</option>`).join('');
 
 $('#langSel').innerHTML = Object.entries(LANGS)
   .map(([k,v])=>`<option value="${k}">${v}</option>`).join('');

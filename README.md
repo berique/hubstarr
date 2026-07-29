@@ -24,8 +24,10 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
 - **Base URL automática**: Sonarr, Radarr, Lidarr e Prowlarr recebem
   `<APP>__SERVER__URLBASE=/<container_name>`, já casando com o subpath do
   nginx. O Bazarr não expõe essa variável — a base fica na interface dele.
-- **Ambiente global** (botão no topo): bases de caminho, PUID/PGID, timezone,
-  nome da stack, restart policy e as credenciais do gluetun.
+- **Ambiente global** (botão no topo): bases de caminho, PUID/PGID, time zone,
+  nome da stack, restart policy e as credenciais do gluetun. A lista de fusos é
+  a IANA inteira, vinda do próprio navegador, e o valor inicial é o fuso da
+  máquina.
 - **Baixar** `docker-compose.yml`, `.env` e `nginx/conf.d/starrnet.conf` juntos
   num `.zip`.
 - **Trocar o idioma** no seletor do topo: português (Brasil), inglês e
@@ -77,7 +79,8 @@ não pode ser removido. É o único container que publica portas no host (80 e
 que é quem detém a rede.
 
 A aba **nginx.conf** gera a configuração correspondente, roteando por subpath
-(`/sonarr`, `/radarr`…), um `location` por serviço. O arquivo é montado em
+(`/sonarr`, `/radarr`…), um `location` por serviço. O Heimdall é a exceção:
+como painel de atalhos, fica na raiz (`location /`). O arquivo é montado em
 `${BASE_CONFIG}/nginx/conf.d` e cada app precisa da sua *base URL* igual ao
 subpath.
 
