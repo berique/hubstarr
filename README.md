@@ -28,6 +28,8 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
   nome da stack, restart policy e as credenciais do gluetun.
 - **Baixar** `docker-compose.yml`, `.env` e `nginx/conf.d/starrnet.conf` juntos
   num `.zip`.
+- **Trocar o idioma** no seletor do topo: português (Brasil), inglês e
+  espanhol.
 
 ## Convenções geradas
 
@@ -52,6 +54,19 @@ Os caminhos saem como variáveis resolvidas pelo `.env`:
 Todos os volumes usam a sintaxe longa, com `type: bind` e
 `bind.propagation: rslave`. A porta é sempre a original do serviço, dentro do
 container: não há porta de host para escolher, nem conflito possível.
+
+## Idiomas
+
+A interface fala português (Brasil), inglês e espanhol. O idioma inicial vem do
+que estiver salvo no `localStorage`, caindo para o do navegador e, por fim,
+para o português. A tradução cobre também os comentários dos arquivos gerados —
+o YAML, o `.env` e o `nginx.conf` saem no idioma escolhido.
+
+Toda string visível está no dicionário `I18N`, no topo do `<script>`: uma chave
+por texto, com valor em string ou função quando depende de algum dado. No HTML,
+os textos estáticos são marcados com `data-i18n` (ou `data-i18n-html`,
+`data-i18n-ph`, `data-i18n-title`). Adicionar um idioma é copiar um dos blocos
+e traduzir os valores.
 
 ## Reverse proxy
 

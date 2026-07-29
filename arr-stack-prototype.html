@@ -133,34 +133,35 @@
 
 <header>
   <div class="logo">H</div>
-  <h1>Hubstarr &middot; Adicionar *arr Stack</h1>
+  <h1 data-i18n="app.title">Hubstarr &middot; Adicionar *arr Stack</h1>
   <span style="flex:1"></span>
-  <button id="themeBtn" title="Alternar tema">🌙</button>
-  <button id="envBtn">⚙ Ambiente</button>
+  <select id="langSel" style="width:auto;padding:6px 8px" data-i18n-title="app.lang"></select>
+  <button id="themeBtn" data-i18n-title="app.theme">🌙</button>
+  <button id="envBtn" data-i18n="app.env">⚙ Ambiente</button>
 </header>
 
 <div class="wrap">
   <!-- coluna esquerda -->
   <div>
     <div class="card overflow">
-      <h2>Serviços <span id="count">0 adicionados</span></h2>
+      <h2><span data-i18n="services.h">Serviços</span> <span id="count"></span></h2>
       <div class="body">
         <div class="picker">
           <div class="combo" id="combo">
             <button type="button" class="trigger" id="comboBtn">
               <span class="ico sm" id="comboIco" style="display:none"></span>
-              <span class="cap ph" id="comboCap">Selecione um serviço…</span>
+              <span class="cap ph" id="comboCap"></span>
               <span class="caret">▾</span>
             </button>
             <div class="list" id="comboList"></div>
           </div>
-          <button class="primary" id="add" disabled>Adicionar</button>
+          <button class="primary" id="add" data-i18n="btn.add" disabled>Adicionar</button>
         </div>
 
         <div class="items" id="items"></div>
         <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
           <div id="conflicts" style="flex:1"></div>
-          <button class="sm danger" id="clear" disabled>Limpar tudo</button>
+          <button class="sm danger" id="clear" data-i18n="btn.clear" disabled>Limpar tudo</button>
         </div>
       </div>
     </div>
@@ -182,9 +183,9 @@
     <div class="bar">
       <span class="hint" id="summary"></span>
       <span class="sp"></span>
-      <button id="copy">Copiar</button>
-      <button id="dl">Baixar .zip</button>
-      <button class="primary" id="deploy">Criar stack</button>
+      <button id="copy" data-i18n="btn.copy">Copiar</button>
+      <button id="dl" data-i18n="btn.zip">Baixar .zip</button>
+      <button class="primary" id="deploy" data-i18n="btn.deploy">Criar stack</button>
     </div>
   </div>
 </div>
@@ -192,56 +193,54 @@
 <!-- modal de ambiente (valores globais da stack) -->
 <div class="backdrop" id="envBack">
   <div class="modal">
-    <h3>⚙ Ambiente</h3>
+    <h3 data-i18n="env.h">⚙ Ambiente</h3>
     <div class="body">
       <div class="row"><label for="ePuid">PUID / PGID</label>
         <div style="display:flex;gap:8px">
           <input type="text" id="ePuid"><input type="text" id="ePgid">
         </div>
       </div>
-      <div class="row"><label for="eTz">Time Zone</label>
+      <div class="row"><label for="eTz" data-i18n="env.tz">Time Zone</label>
         <select id="eTz">
           <option>America/Sao_Paulo</option><option>America/New_York</option>
           <option>Europe/Lisbon</option><option>UTC</option>
         </select>
       </div>
-      <div class="row"><label for="eRestart">Restart policy</label>
+      <div class="row"><label for="eRestart" data-i18n="env.restart">Restart policy</label>
         <select id="eRestart"><option>unless-stopped</option><option>always</option><option>no</option></select>
       </div>
-      <div class="row"><label for="eCfg">Base da pasta config</label><input type="text" id="eCfg"></div>
-      <div class="row"><label for="eData">Base da pasta de mídia</label><input type="text" id="eData"></div>
-      <div class="row"><label for="eDl">Base de downloads</label><input type="text" id="eDl"></div>
+      <div class="row"><label for="eCfg" data-i18n="env.cfg">Base da pasta config</label><input type="text" id="eCfg"></div>
+      <div class="row"><label for="eData" data-i18n="env.data">Base da pasta de mídia</label><input type="text" id="eData"></div>
+      <div class="row"><label for="eDl" data-i18n="env.dl">Base de downloads</label><input type="text" id="eDl"></div>
       <h4 style="margin:18px 0 10px;font-size:12px;text-transform:uppercase;
-                 letter-spacing:.06em;color:var(--muted)">VPN (gluetun)</h4>
-      <div class="row"><label for="eVpnProv">Provedor</label>
+                 letter-spacing:.06em;color:var(--muted)" data-i18n="env.vpn">VPN (gluetun)</h4>
+      <div class="row"><label for="eVpnProv" data-i18n="env.provider">Provedor</label>
         <input type="text" id="eVpnProv" placeholder="mullvad, protonvpn, nordvpn…"></div>
-      <div class="row"><label for="eVpnType">Tipo</label>
+      <div class="row"><label for="eVpnType" data-i18n="env.type">Tipo</label>
         <select id="eVpnType"><option>wireguard</option><option>openvpn</option></select>
       </div>
       <div id="eWgRows">
-        <div class="row"><label for="eWgKey">WireGuard key</label>
-          <input type="text" id="eWgKey" placeholder="chave privada"></div>
+        <div class="row"><label for="eWgKey" data-i18n="env.wgKey">WireGuard key</label>
+          <input type="text" id="eWgKey" data-i18n-ph="env.wgKeyPh"></div>
         <div class="row"><label for="eWgAddr">WireGuard addresses</label>
           <input type="text" id="eWgAddr" placeholder="10.64.0.2/32"></div>
       </div>
       <div id="eOvpnRows">
-        <div class="row"><label for="eOvpnUser">OpenVPN user</label>
+        <div class="row"><label for="eOvpnUser" data-i18n="env.ovpnUser">OpenVPN user</label>
           <input type="text" id="eOvpnUser"></div>
-        <div class="row"><label for="eOvpnPass">OpenVPN password</label>
+        <div class="row"><label for="eOvpnPass" data-i18n="env.ovpnPass">OpenVPN password</label>
           <input type="text" id="eOvpnPass"></div>
       </div>
-      <div class="row"><label for="eCountries">Países do servidor</label>
+      <div class="row"><label for="eCountries" data-i18n="env.countries">Países do servidor</label>
         <input type="text" id="eCountries" placeholder="Brazil, Netherlands"></div>
 
-      <p class="hint">Valem para toda a stack. As bases saem no compose como
-        <b>${BASE_CONFIG}</b>, <b>${BASE_MEDIA}</b> e <b>${DOWNLOAD_BASE}</b>, e o restart como
-        <b>${RESTART}</b>. Todos os valores acima vão para o <b>.env</b>.</p>
+      <p class="hint" data-i18n-html="env.hint"></p>
     </div>
     <div class="bar">
       <span class="hint" id="eWarn"></span>
       <span class="sp"></span>
-      <button id="eCancel">Cancelar</button>
-      <button class="primary" id="eSave">Salvar</button>
+      <button id="eCancel" data-i18n="btn.cancel">Cancelar</button>
+      <button class="primary" id="eSave" data-i18n="btn.save">Salvar</button>
     </div>
   </div>
 </div>
@@ -252,10 +251,11 @@
     <h3><span class="ico sm" id="mIco"></span><span id="mTitle">Configuração</span>
         <span class="hint" id="mMode" style="margin-left:auto"></span></h3>
     <div class="body">
-      <div class="row" id="mNameRow"><label for="mName">Título</label>
-        <input type="text" id="mName" placeholder="Nome da instância"></div>
-      <div class="row"><label>Porta</label>
-        <span class="hint">interna <b id="mInner"></b> (fixa) — publicada só pelo nginx</span>
+      <div class="row" id="mNameRow"><label for="mName" data-i18n="m.name">Título</label>
+        <input type="text" id="mName" data-i18n-ph="m.namePh"></div>
+      <div class="row"><label data-i18n="m.port">Porta</label>
+        <span class="hint"><span data-i18n="m.portInner">interna</span> <b id="mInner"></b>
+          <span data-i18n="m.portHint"></span></span>
       </div>
       <div class="row" id="mDataRow"><label for="mData" id="mDataLabel">Subpasta de mídia</label>
         <div style="display:flex;gap:8px;align-items:center">
@@ -263,34 +263,400 @@
           <input type="text" id="mData" placeholder="movies">
         </div>
       </div>
-      <div class="row" id="mVpnRow"><label>Rede</label>
-        <label class="check"><input type="checkbox" id="mVpn"> Rotear pelo container VPN (gluetun)</label>
+      <div class="row" id="mVpnRow"><label data-i18n="m.network">Rede</label>
+        <label class="check"><input type="checkbox" id="mVpn"> <span data-i18n="m.vpn"></span></label>
       </div>
       <p class="hint" id="mHint"></p>
     </div>
     <div class="bar">
       <span class="hint" id="mWarn"></span>
       <span class="sp"></span>
-      <button id="mCancel">Cancelar</button>
-      <button class="primary" id="mSave">Concluir</button>
+      <button id="mCancel" data-i18n="btn.cancel">Cancelar</button>
+      <button class="primary" id="mSave" data-i18n="btn.done">Concluir</button>
     </div>
   </div>
 </div>
 
 <script>
+/* ---------- idiomas ----------
+   Toda string visível — interface e comentários dos arquivos gerados — sai
+   daqui. Valores podem ser função quando dependem de algum dado. */
+const LANGS = {'pt-BR':'Português', 'en':'English', 'es':'Español'};
+
+const I18N = {
+'pt-BR':{
+  'doc.title':'Hubstarr — Adicionar *arr Stack',
+  'app.title':'Hubstarr · Adicionar *arr Stack',
+  'app.theme':'Alternar tema',
+  'app.lang':'Idioma',
+  'app.env':'⚙ Ambiente',
+
+  'services.h':'Serviços',
+  'services.count':n=>`${n} adicionados`,
+  'combo.placeholder':'Selecione um serviço…',
+  'combo.added':'já adicionado',
+  'combo.newInstance':n=>`${n}× · nova instância`,
+  'btn.add':'Adicionar',
+  'btn.clear':'Limpar tudo',
+  'btn.clearConfirm':'Confirmar?',
+  'btn.edit':'Editar',
+  'btn.del':'Excluir',
+  'items.empty':'Nenhum serviço adicionado.<br>Escolha um no combobox acima e clique em <b>Adicionar</b>.',
+  'items.fixed':'fixo',
+  'items.viaVpn':'via VPN',
+  'items.nginxPorts':(a,b)=>`${a} / ${b} no host`,
+  'items.routes':n=>`✓ ${n} ${n===1?'rota':'rotas'} no nginx`,
+
+  'out.containers':n=>`${n} ${n===1?'container':'containers'}`,
+  'out.empty':'nenhum serviço adicionado',
+  'btn.copy':'Copiar',
+  'btn.copied':'Copiado ✓',
+  'btn.zip':'Baixar .zip',
+  'btn.deploy':'Criar stack',
+  'btn.deploying':'Criando…',
+  'btn.deployed':'Stack criada ✓',
+
+  'env.h':'⚙ Ambiente',
+  'env.tz':'Time Zone',
+  'env.restart':'Restart policy',
+  'env.cfg':'Base da pasta config',
+  'env.data':'Base da pasta de mídia',
+  'env.dl':'Base de downloads',
+  'env.vpn':'VPN (gluetun)',
+  'env.provider':'Provedor',
+  'env.type':'Tipo',
+  'env.wgKey':'WireGuard key',
+  'env.wgKeyPh':'chave privada',
+  'env.ovpnUser':'OpenVPN user',
+  'env.ovpnPass':'OpenVPN password',
+  'env.countries':'Países do servidor',
+  'env.hint':'Valem para toda a stack. As bases saem no compose como <b>${BASE_CONFIG}</b>, <b>${BASE_MEDIA}</b> e <b>${DOWNLOAD_BASE}</b>, e o restart como <b>${RESTART}</b>. Todos os valores acima vão para o <b>.env</b>.',
+  'env.warnIds':'PUID/PGID devem ser numéricos',
+  'btn.cancel':'Cancelar',
+  'btn.save':'Salvar',
+  'btn.done':'Concluir',
+
+  'm.title':name=>`Configuração — ${name}`,
+  'm.editing':'editando',
+  'm.nth':n=>`instância nº ${n}`,
+  'm.new':'novo serviço',
+  'm.name':'Título',
+  'm.namePh':'Nome da instância',
+  'm.port':'Porta',
+  'm.portInner':'interna',
+  'm.portHint':'(fixa) — publicada só pelo nginx',
+  'm.mediaDir':'Subpasta de mídia',
+  'm.dlDir':'Subpasta de downloads',
+  'm.network':'Rede',
+  'm.vpn':'Rotear pelo container VPN (gluetun)',
+  'm.noVol':'sem volumes persistentes',
+  'm.cfgAt':p=>` · config em <b>${p}</b>`,
+  'm.follows':names=>` · mídia: acompanha ${names.join(' e ')}`,
+  'm.mediaAt':(kind,p)=>` · ${kind} em <b>${p}</b>`,
+  'm.media':'mídia',
+  'm.downloads':'downloads',
+  'm.warnName':'Título inválido',
+  'm.warnDup':k=>`Já existe uma instância chamada "${k}"`,
+
+  'yml.head':'gerado pelo Hubstarr',
+  'yml.env':'valores em .env',
+  'yml.ports':net=>`só o nginx publica portas; o resto é alcançado na rede ${net}`,
+  'yml.route':(host,port)=>`nginx → ${host}:${port}`,
+  'env.head':'gerado pelo Hubstarr',
+  'env.secStack':'stack',
+  'env.secPaths':'caminhos base',
+  'env.secUser':'usuário e fuso dos containers',
+  'env.secVpn':'VPN (gluetun)',
+  'env.phProvider':'seu-provedor',
+  'env.phKey':'SUA_CHAVE_PRIVADA',
+  'env.phUser':'usuario',
+  'env.phPass':'senha',
+  'env.phCountry':'Brazil',
+  'ngx.head':'gerado pelo Hubstarr',
+  'ngx.mount':p=>`montar em ${p}`,
+  'ngx.none':'nenhum serviço adicionado ainda',
+  'ngx.base1':'cada app precisa da base URL igual ao seu subpath — quem não recebe',
+  'ngx.base2':'a variável no compose tem que configurar na própria interface',
+
+  'd.nginx':'Reverse proxy',
+  'd.sonarr':'Séries de TV',
+  'd.radarr':'Filmes',
+  'd.lidarr':'Música',
+  'd.prowlarr':'Gerenciador de indexers',
+  'd.bazarr':'Legendas',
+  'd.qbittorrent':'Cliente torrent',
+  'd.sabnzbd':'Cliente Usenet',
+  'd.jellyfin':'Media server',
+  'd.seerr':'Pedidos de mídia',
+  'd.heimdall':'Painel de atalhos',
+  'd.flaresolverr':'Bypass Cloudflare',
+  'd.gluetun':'Cliente VPN',
+},
+
+'en':{
+  'doc.title':'Hubstarr — Add *arr Stack',
+  'app.title':'Hubstarr · Add *arr Stack',
+  'app.theme':'Toggle theme',
+  'app.lang':'Language',
+  'app.env':'⚙ Environment',
+
+  'services.h':'Services',
+  'services.count':n=>`${n} added`,
+  'combo.placeholder':'Pick a service…',
+  'combo.added':'already added',
+  'combo.newInstance':n=>`${n}× · new instance`,
+  'btn.add':'Add',
+  'btn.clear':'Clear all',
+  'btn.clearConfirm':'Confirm?',
+  'btn.edit':'Edit',
+  'btn.del':'Remove',
+  'items.empty':'No services added.<br>Pick one in the combobox above and click <b>Add</b>.',
+  'items.fixed':'fixed',
+  'items.viaVpn':'via VPN',
+  'items.nginxPorts':(a,b)=>`${a} / ${b} on the host`,
+  'items.routes':n=>`✓ ${n} nginx ${n===1?'route':'routes'}`,
+
+  'out.containers':n=>`${n} ${n===1?'container':'containers'}`,
+  'out.empty':'no services added',
+  'btn.copy':'Copy',
+  'btn.copied':'Copied ✓',
+  'btn.zip':'Download .zip',
+  'btn.deploy':'Create stack',
+  'btn.deploying':'Creating…',
+  'btn.deployed':'Stack created ✓',
+
+  'env.h':'⚙ Environment',
+  'env.tz':'Time zone',
+  'env.restart':'Restart policy',
+  'env.cfg':'Config base path',
+  'env.data':'Media base path',
+  'env.dl':'Downloads base path',
+  'env.vpn':'VPN (gluetun)',
+  'env.provider':'Provider',
+  'env.type':'Type',
+  'env.wgKey':'WireGuard key',
+  'env.wgKeyPh':'private key',
+  'env.ovpnUser':'OpenVPN user',
+  'env.ovpnPass':'OpenVPN password',
+  'env.countries':'Server countries',
+  'env.hint':'These apply to the whole stack. The base paths land in the compose file as <b>${BASE_CONFIG}</b>, <b>${BASE_MEDIA}</b> and <b>${DOWNLOAD_BASE}</b>, and the restart policy as <b>${RESTART}</b>. Every value above goes to <b>.env</b>.',
+  'env.warnIds':'PUID/PGID must be numeric',
+  'btn.cancel':'Cancel',
+  'btn.save':'Save',
+  'btn.done':'Done',
+
+  'm.title':name=>`Settings — ${name}`,
+  'm.editing':'editing',
+  'm.nth':n=>`instance #${n}`,
+  'm.new':'new service',
+  'm.name':'Title',
+  'm.namePh':'Instance name',
+  'm.port':'Port',
+  'm.portInner':'internal',
+  'm.portHint':'(fixed) — published by nginx only',
+  'm.mediaDir':'Media subfolder',
+  'm.dlDir':'Downloads subfolder',
+  'm.network':'Network',
+  'm.vpn':'Route through the VPN container (gluetun)',
+  'm.noVol':'no persistent volumes',
+  'm.cfgAt':p=>` · config at <b>${p}</b>`,
+  'm.follows':names=>` · media: follows ${names.join(' and ')}`,
+  'm.mediaAt':(kind,p)=>` · ${kind} at <b>${p}</b>`,
+  'm.media':'media',
+  'm.downloads':'downloads',
+  'm.warnName':'Invalid title',
+  'm.warnDup':k=>`There is already an instance named "${k}"`,
+
+  'yml.head':'generated by Hubstarr',
+  'yml.env':'values in .env',
+  'yml.ports':net=>`only nginx publishes ports; everything else is reached over the ${net} network`,
+  'yml.route':(host,port)=>`nginx → ${host}:${port}`,
+  'env.head':'generated by Hubstarr',
+  'env.secStack':'stack',
+  'env.secPaths':'base paths',
+  'env.secUser':'container user and time zone',
+  'env.secVpn':'VPN (gluetun)',
+  'env.phProvider':'your-provider',
+  'env.phKey':'YOUR_PRIVATE_KEY',
+  'env.phUser':'username',
+  'env.phPass':'password',
+  'env.phCountry':'Brazil',
+  'ngx.head':'generated by Hubstarr',
+  'ngx.mount':p=>`mount at ${p}`,
+  'ngx.none':'no services added yet',
+  'ngx.base1':'every app needs its base URL to match its subpath — the ones that',
+  'ngx.base2':'get no variable in the compose file must set it in their own UI',
+
+  'd.nginx':'Reverse proxy',
+  'd.sonarr':'TV shows',
+  'd.radarr':'Movies',
+  'd.lidarr':'Music',
+  'd.prowlarr':'Indexer manager',
+  'd.bazarr':'Subtitles',
+  'd.qbittorrent':'Torrent client',
+  'd.sabnzbd':'Usenet client',
+  'd.jellyfin':'Media server',
+  'd.seerr':'Media requests',
+  'd.heimdall':'Application dashboard',
+  'd.flaresolverr':'Cloudflare bypass',
+  'd.gluetun':'VPN client',
+},
+
+'es':{
+  'doc.title':'Hubstarr — Añadir *arr Stack',
+  'app.title':'Hubstarr · Añadir *arr Stack',
+  'app.theme':'Cambiar tema',
+  'app.lang':'Idioma',
+  'app.env':'⚙ Entorno',
+
+  'services.h':'Servicios',
+  'services.count':n=>`${n} añadidos`,
+  'combo.placeholder':'Elige un servicio…',
+  'combo.added':'ya añadido',
+  'combo.newInstance':n=>`${n}× · nueva instancia`,
+  'btn.add':'Añadir',
+  'btn.clear':'Limpiar todo',
+  'btn.clearConfirm':'¿Confirmar?',
+  'btn.edit':'Editar',
+  'btn.del':'Eliminar',
+  'items.empty':'Ningún servicio añadido.<br>Elige uno en el combobox de arriba y pulsa <b>Añadir</b>.',
+  'items.fixed':'fijo',
+  'items.viaVpn':'por VPN',
+  'items.nginxPorts':(a,b)=>`${a} / ${b} en el host`,
+  'items.routes':n=>`✓ ${n} ${n===1?'ruta':'rutas'} en nginx`,
+
+  'out.containers':n=>`${n} ${n===1?'contenedor':'contenedores'}`,
+  'out.empty':'ningún servicio añadido',
+  'btn.copy':'Copiar',
+  'btn.copied':'Copiado ✓',
+  'btn.zip':'Descargar .zip',
+  'btn.deploy':'Crear stack',
+  'btn.deploying':'Creando…',
+  'btn.deployed':'Stack creada ✓',
+
+  'env.h':'⚙ Entorno',
+  'env.tz':'Zona horaria',
+  'env.restart':'Restart policy',
+  'env.cfg':'Base de la carpeta config',
+  'env.data':'Base de la carpeta multimedia',
+  'env.dl':'Base de descargas',
+  'env.vpn':'VPN (gluetun)',
+  'env.provider':'Proveedor',
+  'env.type':'Tipo',
+  'env.wgKey':'WireGuard key',
+  'env.wgKeyPh':'clave privada',
+  'env.ovpnUser':'OpenVPN user',
+  'env.ovpnPass':'OpenVPN password',
+  'env.countries':'Países del servidor',
+  'env.hint':'Valen para toda la stack. Las bases salen en el compose como <b>${BASE_CONFIG}</b>, <b>${BASE_MEDIA}</b> y <b>${DOWNLOAD_BASE}</b>, y el restart como <b>${RESTART}</b>. Todos los valores de arriba van al <b>.env</b>.',
+  'env.warnIds':'PUID/PGID deben ser numéricos',
+  'btn.cancel':'Cancelar',
+  'btn.save':'Guardar',
+  'btn.done':'Listo',
+
+  'm.title':name=>`Configuración — ${name}`,
+  'm.editing':'editando',
+  'm.nth':n=>`instancia nº ${n}`,
+  'm.new':'servicio nuevo',
+  'm.name':'Título',
+  'm.namePh':'Nombre de la instancia',
+  'm.port':'Puerto',
+  'm.portInner':'interno',
+  'm.portHint':'(fijo) — publicado solo por nginx',
+  'm.mediaDir':'Subcarpeta multimedia',
+  'm.dlDir':'Subcarpeta de descargas',
+  'm.network':'Red',
+  'm.vpn':'Enrutar por el contenedor VPN (gluetun)',
+  'm.noVol':'sin volúmenes persistentes',
+  'm.cfgAt':p=>` · config en <b>${p}</b>`,
+  'm.follows':names=>` · multimedia: sigue a ${names.join(' y ')}`,
+  'm.mediaAt':(kind,p)=>` · ${kind} en <b>${p}</b>`,
+  'm.media':'multimedia',
+  'm.downloads':'descargas',
+  'm.warnName':'Título inválido',
+  'm.warnDup':k=>`Ya existe una instancia llamada "${k}"`,
+
+  'yml.head':'generado por Hubstarr',
+  'yml.env':'valores en .env',
+  'yml.ports':net=>`solo nginx publica puertos; el resto se alcanza en la red ${net}`,
+  'yml.route':(host,port)=>`nginx → ${host}:${port}`,
+  'env.head':'generado por Hubstarr',
+  'env.secStack':'stack',
+  'env.secPaths':'rutas base',
+  'env.secUser':'usuario y zona horaria de los contenedores',
+  'env.secVpn':'VPN (gluetun)',
+  'env.phProvider':'tu-proveedor',
+  'env.phKey':'TU_CLAVE_PRIVADA',
+  'env.phUser':'usuario',
+  'env.phPass':'contraseña',
+  'env.phCountry':'Brazil',
+  'ngx.head':'generado por Hubstarr',
+  'ngx.mount':p=>`montar en ${p}`,
+  'ngx.none':'ningún servicio añadido todavía',
+  'ngx.base1':'cada app necesita la base URL igual a su subpath — el que no recibe',
+  'ngx.base2':'la variable en el compose hay que configurarlo en su propia interfaz',
+
+  'd.nginx':'Reverse proxy',
+  'd.sonarr':'Series de TV',
+  'd.radarr':'Películas',
+  'd.lidarr':'Música',
+  'd.prowlarr':'Gestor de indexers',
+  'd.bazarr':'Subtítulos',
+  'd.qbittorrent':'Cliente torrent',
+  'd.sabnzbd':'Cliente Usenet',
+  'd.jellyfin':'Servidor multimedia',
+  'd.seerr':'Peticiones de contenido',
+  'd.heimdall':'Panel de accesos',
+  'd.flaresolverr':'Bypass de Cloudflare',
+  'd.gluetun':'Cliente VPN',
+},
+};
+
+// idioma salvo > idioma do navegador > pt-BR
+let LANG = (()=>{
+  try{ const s = localStorage.getItem('hubstarr-lang'); if(I18N[s]) return s; }catch(e){}
+  const nav = (navigator.language||'').toLowerCase();
+  if(nav.startsWith('en')) return 'en';
+  if(nav.startsWith('es')) return 'es';
+  return 'pt-BR';
+})();
+
+const t = (k, ...args)=>{
+  const v = (I18N[LANG] && I18N[LANG][k]) ?? I18N['pt-BR'][k] ?? k;
+  return typeof v === 'function' ? v(...args) : v;
+};
+// descrição traduzida de um serviço
+const sdesc = id => t('d.'+id);
+
+function applyI18n(){
+  document.documentElement.lang = LANG;
+  $('#langSel').value = LANG;
+  document.title = t('doc.title');
+  document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent = t(el.dataset.i18n));
+  document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML = t(el.dataset.i18nHtml));
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>el.placeholder = t(el.dataset.i18nPh));
+  document.querySelectorAll('[data-i18n-title]').forEach(el=>el.title = t(el.dataset.i18nTitle));
+}
+
+function setLang(l){
+  LANG = I18N[l] ? l : 'pt-BR';
+  try{ localStorage.setItem('hubstarr-lang', LANG); }catch(e){}
+  applyI18n(); renderCombo(); renderItems(); render();
+}
+
 const SERVICES = [
-  {id:'sonarr',   name:'Sonarr',    desc:'Séries de TV',        port:8989, img:'lscr.io/linuxserver/sonarr:latest',    color:'#3fb8ea', media:true, mdir:'series', needsDl:true},
-  {id:'radarr',   name:'Radarr',    desc:'Filmes',              port:7878, img:'lscr.io/linuxserver/radarr:latest',    color:'#feca57', media:true, mdir:'movies', needsDl:true},
-  {id:'lidarr',   name:'Lidarr',    desc:'Música',              port:8686, img:'lscr.io/linuxserver/lidarr:latest',    color:'#1db954', media:true, mdir:'music', needsDl:true},
-  {id:'prowlarr', name:'Prowlarr',  desc:'Gerenciador de indexers', port:9696, img:'lscr.io/linuxserver/prowlarr:latest', color:'#e5534b'},
-  {id:'bazarr',   name:'Bazarr',    desc:'Legendas',            port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr']},
-  {id:'qbittorrent',name:'qBittorrent',desc:'Cliente torrent',  port:8080, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true},
-  {id:'sabnzbd',  name:'SABnzbd',   desc:'Cliente Usenet',      port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true},
-  {id:'jellyfin', name:'Jellyfin',  desc:'Media server',        port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:''},
-  {id:'seerr',    name:'Seerr',     desc:'Pedidos de mídia',   port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5'},
-  {id:'heimdall', name:'Heimdall',  desc:'Painel de atalhos',   port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f'},
-  {id:'flaresolverr',name:'FlareSolverr',desc:'Bypass Cloudflare',port:8191,img:'ghcr.io/flaresolverr/flaresolverr:latest',color:'#ff7f50',noVol:true},
-  {id:'gluetun',  name:'Gluetun',   desc:'Cliente VPN',         port:8000, img:'qmcgaw/gluetun:latest',                color:'#8b98a5', noVol:true},
+  {id:'sonarr',   name:'Sonarr',    port:8989, img:'lscr.io/linuxserver/sonarr:latest',    color:'#3fb8ea', media:true, mdir:'series', needsDl:true},
+  {id:'radarr',   name:'Radarr',    port:7878, img:'lscr.io/linuxserver/radarr:latest',    color:'#feca57', media:true, mdir:'movies', needsDl:true},
+  {id:'lidarr',   name:'Lidarr',    port:8686, img:'lscr.io/linuxserver/lidarr:latest',    color:'#1db954', media:true, mdir:'music', needsDl:true},
+  {id:'prowlarr', name:'Prowlarr',  port:9696, img:'lscr.io/linuxserver/prowlarr:latest', color:'#e5534b'},
+  {id:'bazarr',   name:'Bazarr',    port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr']},
+  {id:'qbittorrent',name:'qBittorrent',port:8080, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true},
+  {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true},
+  {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:''},
+  {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5'},
+  {id:'heimdall', name:'Heimdall',  port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f'},
+  {id:'flaresolverr',name:'FlareSolverr',port:8191,img:'ghcr.io/flaresolverr/flaresolverr:latest',color:'#ff7f50',noVol:true},
+  {id:'gluetun',  name:'Gluetun',   port:8000, img:'qmcgaw/gluetun:latest',                color:'#8b98a5', noVol:true},
 ];
 const svc = id => SERVICES.find(s=>s.id===id);
 // porta em que o serviço escuta dentro do container — o nginx fala com ela
@@ -338,7 +704,7 @@ const NETWORK = 'starrnet';
 
 /* reverse proxy fixo da stack: sempre presente, não sai no combobox e não pode
    ser removido. É o único container que publica portas no host. */
-const NGINX = {id:'nginx', name:'Nginx', desc:'Reverse proxy',
+const NGINX = {id:'nginx', name:'Nginx',
                img:'nginx:alpine', color:'#009639', http:80, https:443};
 
 const DEFAULTS = {restart:'unless-stopped',
@@ -394,9 +760,9 @@ function renderCombo(){
   $('#comboList').innerHTML = SERVICES.map(s=>`
     <div class="opt ${locked(s.id)?'dis':''}" data-id="${s.id}">
       ${icoHtml(s,'sm')}
-      <span><span class="nm">${s.name}</span> <span class="ds">${s.desc}</span></span>
-      <span class="pt">${locked(s.id) ? 'já adicionado'
-        : isMulti(s.id) && has(s.id) ? added.filter(a=>a.id===s.id).length+'× · nova instância'
+      <span><span class="nm">${s.name}</span> <span class="ds">${sdesc(s.id)}</span></span>
+      <span class="pt">${locked(s.id) ? t('combo.added')
+        : isMulti(s.id) && has(s.id) ? t('combo.newInstance', added.filter(a=>a.id===s.id).length)
         : ':'+s.port}</span>
     </div>`).join('');
 
@@ -406,11 +772,11 @@ function renderCombo(){
     ico.className='ico sm'; ico.style.display='grid'; ico.style.background='';
     ico.dataset.color=s.color; ico.dataset.letter=s.name[0];
     ico.innerHTML = `<img src="${ICON_URL(s.id)}" alt="${s.name}" onerror="icoFail(this)">`;
-    $('#comboCap').textContent = `${s.name} — ${s.desc}`;
+    $('#comboCap').textContent = `${s.name} — ${sdesc(s.id)}`;
     $('#comboCap').classList.remove('ph');
   } else {
     ico.style.display='none';
-    $('#comboCap').textContent='Selecione um serviço…';
+    $('#comboCap').textContent = t('combo.placeholder');
     $('#comboCap').classList.add('ph');
   }
   $('#add').disabled = !s;
@@ -435,11 +801,11 @@ function renderItems(){
       ${icoHtml(NGINX)}
       <div class="meta">
         <div class="nm">${NGINX.name}
-          <span class="tag">${NGINX.http} / ${NGINX.https} no host</span>
+          <span class="tag">${t('items.nginxPorts', NGINX.http, NGINX.https)}</span>
         </div>
-        <div class="ds">${NGINX.id} · ${NGINX.desc} · ${DEFAULTS.cfg}/${NGINX.id}/conf.d</div>
+        <div class="ds">${NGINX.id} · ${sdesc(NGINX.id)} · ${DEFAULTS.cfg}/${NGINX.id}/conf.d</div>
       </div>
-      <div class="acts"><span class="hint">fixo</span></div>
+      <div class="acts"><span class="hint">${t('items.fixed')}</span></div>
     </div>`;
 
   box.innerHTML = fixed + (added.length ? added.map(a=>{
@@ -448,20 +814,20 @@ function renderItems(){
       ${icoHtml(s)}
       <div class="meta">
         <div class="nm">${a.title || s.name}
-          ${a.vpn?'<span class="tag">via VPN</span>':''}
+          ${a.vpn?`<span class="tag">${t('items.viaVpn')}</span>`:''}
           <span class="tag">/${cname(a)} → ${inner(a.id)}</span>
         </div>
-        <div class="ds">${cname(a)}${(a.title && a.title!==s.name)?' ('+s.name+')':''}${s.noVol?' · '+s.desc:' · '+cfgReal(a)}${s.media&&!s.noVol?' · '+dataReal(a):''}</div>
+        <div class="ds">${cname(a)}${(a.title && a.title!==s.name)?' ('+s.name+')':''}${s.noVol?' · '+sdesc(s.id):' · '+cfgReal(a)}${s.media&&!s.noVol?' · '+dataReal(a):''}</div>
       </div>
       <div class="acts">
-        <button class="sm" data-act="edit">Editar</button>
-        <button class="sm danger" data-act="del">Excluir</button>
+        <button class="sm" data-act="edit">${t('btn.edit')}</button>
+        <button class="sm danger" data-act="del">${t('btn.del')}</button>
       </div>
     </div>`;
-  }).join('') : `<div class="empty">Nenhum serviço adicionado.<br>Escolha um no combobox acima e clique em <b>Adicionar</b>.</div>`);
-  $('#count').textContent = added.length + ' adicionados';
+  }).join('') : `<div class="empty">${t('items.empty')}</div>`);
+  $('#count').textContent = t('services.count', added.length);
   $('#clear').disabled = !added.length;
-  $('#clear').textContent = 'Limpar tudo';
+  $('#clear').textContent = t('btn.clear');
 }
 
 $('#items').onclick = e=>{
@@ -481,8 +847,8 @@ let clearArmed = false;
 $('#clear').onclick = e=>{
   if(!clearArmed){
     clearArmed = true;
-    e.target.textContent = 'Confirmar?';
-    setTimeout(()=>{ if(clearArmed){ clearArmed=false; e.target.textContent='Limpar tudo'; } }, 3000);
+    e.target.textContent = t('btn.clearConfirm');
+    setTimeout(()=>{ if(clearArmed){ clearArmed=false; e.target.textContent=t('btn.clear'); } }, 3000);
     return;
   }
   clearArmed = false;
@@ -495,13 +861,13 @@ function updateHint(s){
   const cn = slug($('#mName').value) || s.id;
   const sub = slug($('#mData').value);
   $('#mHint').innerHTML = `container_name: <b>${cn}</b>`
-    + (s.noVol ? ' · sem volumes persistentes'
-               : ` · config em <b>${DEFAULTS.cfg}/${cn}</b>`)
+    + (s.noVol ? ' · ' + t('m.noVol')
+               : t('m.cfgAt', `${DEFAULTS.cfg}/${cn}`))
     + (s.media && !s.noVol
         ? (s.derived
-            ? ` · mídia: acompanha ${s.derived.map(id=>svc(id).name).join(' e ')}`
-            : ` · ${s.dlClient?'downloads':'mídia'} em `
-              + `<b>${s.dlClient?DEFAULTS.dl:DEFAULTS.data}${sub?'/'+sub:''}</b>`) : '');
+            ? t('m.follows', s.derived.map(id=>svc(id).name))
+            : t('m.mediaAt', t(s.dlClient?'m.downloads':'m.media'),
+                `${s.dlClient?DEFAULTS.dl:DEFAULTS.data}${sub?'/'+sub:''}`)) : '');
 }
 
 function openModal(id, key){
@@ -512,10 +878,10 @@ function openModal(id, key){
   const mi = $('#mIco');
   mi.className='ico sm'; mi.style.background=''; mi.dataset.color=s.color; mi.dataset.letter=s.name[0];
   mi.innerHTML = `<img src="${ICON_URL(s.id)}" alt="${s.name}" onerror="icoFail(this)">`;
-  $('#mTitle').textContent = `Configuração — ${s.name}`;
-  $('#mMode').textContent = isEdit ? 'editando'
-    : (isMulti(id) && has(id)) ? 'instância nº '+(added.filter(a=>a.id===id).length+1)
-    : 'novo serviço';
+  $('#mTitle').textContent = t('m.title', s.name);
+  $('#mMode').textContent = isEdit ? t('m.editing')
+    : (isMulti(id) && has(id)) ? t('m.nth', added.filter(a=>a.id===id).length+1)
+    : t('m.new');
   // título fica disponível para quem aceita múltiplas instâncias
   $('#mNameRow').style.display = (isMulti(id) || INSTANCE_ENV[id]) ? 'grid' : 'none';
   const nth = added.filter(a=>a.id===id).length + 1;
@@ -525,12 +891,12 @@ function openModal(id, key){
   $('#mInner').textContent = inner(id);   // porta original do serviço, nunca muda
   $('#mVpn').checked = cur.vpn;
   $('#mDataBase').textContent = (s.dlClient ? DEFAULTS.dl : DEFAULTS.data) + '/';
-  $('#mDataLabel').textContent = s.dlClient ? 'Subpasta de downloads' : 'Subpasta de mídia';
+  $('#mDataLabel').textContent = t(s.dlClient ? 'm.dlDir' : 'm.mediaDir');
   $('#mDataRow').style.display = (s.media && !s.noVol && !s.derived) ? 'grid' : 'none';
   $('#mVpnRow').style.display = s.vpn ? 'grid' : 'none';
   updateHint(s);
   $('#mWarn').textContent = '';
-  $('#mSave').textContent = isEdit ? 'Salvar' : 'Concluir';
+  $('#mSave').textContent = t(isEdit ? 'btn.save' : 'btn.done');
   $('#backdrop').classList.add('open');
   $('#mName').focus();
 }
@@ -558,10 +924,10 @@ $('#mSave').onclick = ()=>{
                vpn: s.vpn && $('#mVpn').checked};
 
   const key = cname(cfg);
-  if(!key) return warn('Título inválido');
+  if(!key) return warn(t('m.warnName'));
   // títulos precisam ser únicos: eles definem container_name e pasta de config
   if(added.some(a=>cname(a)===key && cname(a)!==editing))
-    return warn(`Já existe uma instância chamada "${key}"`);
+    return warn(t('m.warnDup', key));
 
   if(editing) added = added.map(a=>cname(a)===editing?cfg:a);
   else { added.push(cfg); picked=null; }
@@ -612,7 +978,7 @@ $('#envBack').onclick = e=>{ if(e.target.id==='envBack') closeEnv(); };
 $('#eSave').onclick = ()=>{
   const puid=$('#ePuid').value.trim(), pgid=$('#ePgid').value.trim();
   if(!/^\d+$/.test(puid) || !/^\d+$/.test(pgid)){
-    $('#eWarn').innerHTML='<span class="warn">PUID/PGID devem ser numéricos</span>'; return;
+    $('#eWarn').innerHTML=`<span class="warn">${t('env.warnIds')}</span>`; return;
   }
   Object.assign(DEFAULTS, {restart:$('#eRestart').value, puid, pgid,
     tz:$('#eTz').value, cfg:$('#eCfg').value.trim(), data:$('#eData').value.trim(),
@@ -636,9 +1002,9 @@ function build(){
   const list = effective();
 
   const L=[];
-  L.push(`<span class="c"># ${STACK} — gerado pelo Hubstarr</span>`);
-  L.push(`<span class="c"># valores em .env</span>`);
-  L.push(`<span class="c"># só o nginx publica portas; o resto é alcançado na rede ${NETWORK}</span>`);
+  L.push(`<span class="c"># ${STACK} — ${t('yml.head')}</span>`);
+  L.push(`<span class="c"># ${t('yml.env')}</span>`);
+  L.push(`<span class="c"># ${t('yml.ports', NETWORK)}</span>`);
   L.push(``);
   L.push(`<span class="k">services</span>:`);
 
@@ -714,10 +1080,10 @@ function build(){
     if(a.vpn){
       L.push(`    <span class="k">network_mode</span>: <span class="v">service:gluetun</span>`);
       L.push(`    <span class="k">depends_on</span>: [<span class="v">gluetun</span>]`);
-      L.push(`    <span class="c"># nginx → gluetun:${inner(a.id)}</span>`);
+      L.push(`    <span class="c"># ${t('yml.route', 'gluetun', inner(a.id))}</span>`);
     } else {
       L.push(`    <span class="k">networks</span>: [<span class="v">${NETWORK}</span>]`);
-      L.push(`    <span class="c"># nginx → ${cname(a)}:${inner(a.id)}</span>`);
+      L.push(`    <span class="c"># ${t('yml.route', cname(a), inner(a.id))}</span>`);
     }
     L.push(`    <span class="k">restart</span>: <span class="v">${restart}</span>`);
   });
@@ -734,8 +1100,8 @@ function build(){
    responde no gluetun, que é quem detém a rede. */
 function buildNginx(list){
   const N=[];
-  N.push(`<span class="c"># ${STACK} — gerado pelo Hubstarr</span>`);
-  N.push(`<span class="c"># montar em \${BASE_CONFIG}/${NGINX.id}/conf.d/${STACK}.conf</span>`);
+  N.push(`<span class="c"># ${STACK} — ${t('ngx.head')}</span>`);
+  N.push(`<span class="c"># ${t('ngx.mount', `\${BASE_CONFIG}/${NGINX.id}/conf.d/${STACK}.conf`)}</span>`);
   N.push(``);
   N.push(`<span class="k">server</span> {`);
   N.push(`  <span class="k">listen</span> <span class="v">80</span>;`);
@@ -746,7 +1112,7 @@ function buildNginx(list){
   const items = list.filter(a=>a.id!=='gluetun');
   if(!items.length){
     N.push(``);
-    N.push(`  <span class="c"># nenhum serviço adicionado ainda</span>`);
+    N.push(`  <span class="c"># ${t('ngx.none')}</span>`);
   }
   items.forEach(a=>{
     const host = a.vpn ? 'gluetun' : cname(a);
@@ -768,42 +1134,42 @@ function buildNginx(list){
   N.push(`}`);
   if(items.length){
     N.push(``);
-    N.push(`<span class="c"># cada app precisa da base URL igual ao seu subpath — quem não recebe</span>`);
-    N.push(`<span class="c"># a variável no compose tem que configurar na própria interface</span>`);
+    N.push(`<span class="c"># ${t('ngx.base1')}</span>`);
+    N.push(`<span class="c"># ${t('ngx.base2')}</span>`);
   }
   return N.join('\n');
 }
 
 function buildEnv(list){
   const E=[];
-  E.push(`<span class="c"># ${STACK} — gerado pelo Hubstarr</span>`);
+  E.push(`<span class="c"># ${STACK} — ${t('env.head')}</span>`);
   E.push(``);
-  E.push(`<span class="c"># stack</span>`);
+  E.push(`<span class="c"># ${t('env.secStack')}</span>`);
   E.push(`<span class="k">RESTART</span>=<span class="v">${DEFAULTS.restart}</span>`);
   E.push(``);
-  E.push(`<span class="c"># caminhos base</span>`);
+  E.push(`<span class="c"># ${t('env.secPaths')}</span>`);
   E.push(`<span class="k">BASE_CONFIG</span>=<span class="v">${DEFAULTS.cfg}</span>`);
   E.push(`<span class="k">BASE_MEDIA</span>=<span class="v">${DEFAULTS.data}</span>`);
   E.push(`<span class="k">DOWNLOAD_BASE</span>=<span class="v">${DEFAULTS.dl}</span>`);
   E.push(``);
-  E.push(`<span class="c"># usuário e fuso dos containers</span>`);
+  E.push(`<span class="c"># ${t('env.secUser')}</span>`);
   E.push(`<span class="k">PUID</span>=<span class="v">${DEFAULTS.puid}</span>`);
   E.push(`<span class="k">PGID</span>=<span class="v">${DEFAULTS.pgid}</span>`);
   E.push(`<span class="k">TZ</span>=<span class="v">${DEFAULTS.tz}</span>`);
   if(list.some(a=>a.id==='gluetun')){
     E.push(``);
-    E.push(`<span class="c"># VPN (gluetun)</span>`);
+    E.push(`<span class="c"># ${t('env.secVpn')}</span>`);
     const val = (v, ph) => v ? `<span class="v">${v}</span>` : `<span class="d">${ph}</span>`;
-    E.push(`<span class="k">VPN_SERVICE_PROVIDER</span>=${val(DEFAULTS.vpnProv,'seu-provedor')}`);
+    E.push(`<span class="k">VPN_SERVICE_PROVIDER</span>=${val(DEFAULTS.vpnProv, t('env.phProvider'))}`);
     E.push(`<span class="k">VPN_TYPE</span>=<span class="v">${DEFAULTS.vpnType}</span>`);
     if(DEFAULTS.vpnType==='wireguard'){
-      E.push(`<span class="k">WIREGUARD_PRIVATE_KEY</span>=${val(DEFAULTS.wgKey,'SUA_CHAVE_PRIVADA')}`);
+      E.push(`<span class="k">WIREGUARD_PRIVATE_KEY</span>=${val(DEFAULTS.wgKey, t('env.phKey'))}`);
       E.push(`<span class="k">WIREGUARD_ADDRESSES</span>=${val(DEFAULTS.wgAddr,'10.64.0.2/32')}`);
     } else {
-      E.push(`<span class="k">OPENVPN_USER</span>=${val(DEFAULTS.ovpnUser,'usuario')}`);
-      E.push(`<span class="k">OPENVPN_PASSWORD</span>=${val(DEFAULTS.ovpnPass,'senha')}`);
+      E.push(`<span class="k">OPENVPN_USER</span>=${val(DEFAULTS.ovpnUser, t('env.phUser'))}`);
+      E.push(`<span class="k">OPENVPN_PASSWORD</span>=${val(DEFAULTS.ovpnPass, t('env.phPass'))}`);
     }
-    E.push(`<span class="k">SERVER_COUNTRIES</span>=${val(DEFAULTS.countries,'Brazil')}`);
+    E.push(`<span class="k">SERVER_COUNTRIES</span>=${val(DEFAULTS.countries, t('env.phCountry'))}`);
   }
   return E.join('\n');
 }
@@ -815,10 +1181,9 @@ function render(){
   $('#outNginx').innerHTML = buildNginx(list);
   const routes = list.filter(a=>a.id!=='gluetun').length;
   $('#conflicts').innerHTML = !added.length ? ''
-    : `<span class="ok">✓ ${routes} ${routes===1?'rota':'rotas'} no nginx</span>`;
-  const n = list.length + 1;   // +1: nginx fixo
-  $('#stat').textContent = n + (n===1 ? ' container' : ' containers');
-  $('#summary').textContent = list.map(a=>a.title||svc(a.id).name).join(' · ') || 'nenhum serviço adicionado';
+    : `<span class="ok">${t('items.routes', routes)}</span>`;
+  $('#stat').textContent = t('out.containers', list.length + 1);   // +1: nginx fixo
+  $('#summary').textContent = list.map(a=>a.title||svc(a.id).name).join(' · ') || t('out.empty');
 }
 
 let tab = 'yml';
@@ -828,7 +1193,7 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on', x===t));
   Object.entries(PANES).forEach(([k,sel])=>
     $(sel).style.display = k===tab ? 'block' : 'none');
-  $('#copy').textContent = 'Copiar';
+  $('#copy').textContent = t('btn.copy');
 });
 
 const plain      = ()=> $('#out').textContent;
@@ -843,7 +1208,7 @@ function download(name, text, type){
 
 $('#copy').onclick = async e=>{
   await navigator.clipboard.writeText($(PANES[tab]).textContent);
-  e.target.textContent='Copiado ✓'; setTimeout(()=>e.target.textContent='Copiar',1500);
+  e.target.textContent=t('btn.copied'); setTimeout(()=>e.target.textContent=t('btn.copy'),1500);
 };
 /* ZIP mínimo (método "store", sem compressão) — evita dependências externas */
 const CRC_TABLE = (()=>{
@@ -916,12 +1281,17 @@ $('#dl').onclick = ()=>{
   URL.revokeObjectURL(a.href);
 };
 $('#deploy').onclick = e=>{
-  e.target.textContent='Criando…'; e.target.disabled=true;
-  setTimeout(()=>{ e.target.textContent='Stack criada ✓';
-    setTimeout(()=>{e.target.textContent='Criar stack';e.target.disabled=false},1800); },900);
+  e.target.textContent=t('btn.deploying'); e.target.disabled=true;
+  setTimeout(()=>{ e.target.textContent=t('btn.deployed');
+    setTimeout(()=>{e.target.textContent=t('btn.deploy');e.target.disabled=false},1800); },900);
 };
 
-renderCombo(); renderItems(); render();
+$('#langSel').innerHTML = Object.entries(LANGS)
+  .map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+$('#langSel').value = LANG;
+$('#langSel').onchange = e => setLang(e.target.value);
+
+applyI18n(); renderCombo(); renderItems(); render();
 </script>
 </body>
 </html>
