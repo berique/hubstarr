@@ -1,8 +1,10 @@
 # Hubstarr — gerador de *arr stack
 
-Protótipo de página única que monta um `docker-compose.yml` e o `.env`
-correspondente para uma stack de mídia (*arr + clientes de download + servidor
-de mídia), sem backend e sem dependências externas.
+*Português (Brasil) · [English](README.en.md) · [Español](README.es.md)*
+
+Protótipo de página única que monta o `docker-compose.yml`, o `.env` e o
+`nginx.conf` de uma stack de mídia (*arr + clientes de download + servidor de
+mídia), sem backend e sem dependências externas.
 
 Abra `arr-stack-prototype.html` no navegador. É só isso — o arquivo é
 autocontido (os logotipos vêm embutidos como data URI).
@@ -28,8 +30,9 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
   Prowlarr saem no compose com `<APP>__AUTH__APIKEY=${STARR_APIKEY}` e o valor
   fica no `.env`. A chave já nasce sorteada — 16 bytes em hexadecimal, o mesmo
   que `openssl rand -hex 16` — e o botão "Gerar" sorteia outra.
+- **HTTPS opcional**, com o certificado e a chave vindos do host.
 - **Ambiente global** (botão no topo): bases de caminho, PUID/PGID, time zone,
-  nome da stack, restart policy e as credenciais do gluetun. A lista de fusos é
+  restart policy, API key, TLS e as credenciais do gluetun. A lista de fusos é
   a IANA inteira, vinda do próprio navegador, e o valor inicial é o fuso da
   máquina.
 - **Baixar** `docker-compose.yml`, `.env` e `nginx/conf.d/starrnet.conf` juntos
@@ -39,8 +42,9 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
 
 ## Convenções geradas
 
-O título de cada instância vira um slug (minúsculas, sem acentos, espaços como
-hífen) usado como `container_name`, chave do serviço e pasta de config:
+O nome da stack e o da rede são fixos: `starrnet`. O título de cada instância
+vira um slug (minúsculas, sem acentos, espaços como hífen) usado como
+`container_name`, chave do serviço e pasta de config:
 
 | Título          | container_name | config                       |
 | --------------- | -------------- | ---------------------------- |
@@ -61,6 +65,35 @@ Todos os volumes usam a sintaxe longa, com `type: bind` e
 `bind.propagation: rslave`. A porta é sempre a original do serviço, dentro do
 container: não há porta de host para escolher, nem conflito possível.
 
+## Reverse proxy
+
+O nginx é fixo e obrigatório: entra sempre na stack, não aparece no combobox e
+não pode ser removido. É o único container que publica portas no host (80 e
+443) — todos os outros ficam só na rede `starrnet`, alcançados pelo nginx por
+`nome-do-container:porta-interna`. Quem roteia pela VPN responde no `gluetun`,
+que é quem detém a rede.
+
+A aba **nginx.conf** gera a configuração correspondente, roteando por subpath
+(`/sonarr`, `/radarr`…), um `location` por serviço. O Heimdall é a exceção:
+como painel de atalhos, fica na raiz (`location /`). O arquivo é montado em
+`${BASE_CONFIG}/nginx/conf.d` e cada app precisa da sua *base URL* igual ao
+subpath.
+
+No Ambiente dá para ligar o **TLS**: o `nginx.conf` passa a ter um `server` na
+443 com `ssl_certificate`, TLSv1.2/1.3 e um bloco na 80 que só redireciona para
+o https. O certificado e a chave são caminhos do host, informados no mesmo
+lugar, e entram no compose como `${TLS_CERT}` e `${TLS_KEY}`, montados
+só-leitura em `/etc/nginx/certs`. Sem TLS, a stack fica só na 80. O domínio
+informado vira o `server_name` (na falta dele, `_`).
+
+## VPN
+
+Marcar um cliente como "rotear pelo gluetun" faz o serviço usar
+`network_mode: service:gluetun`, e o gluetun entra na lista de serviços na
+hora, se ainda não estiver lá. Ele passa a ser o endereço desse serviço no
+nginx. As credenciais (`VPN_SERVICE_PROVIDER`, `VPN_TYPE`, chaves do WireGuard
+ou usuário/senha do OpenVPN, `SERVER_COUNTRIES`) ficam no `.env`.
+
 ## Idiomas
 
 A interface fala português (Brasil), inglês e espanhol. O idioma inicial vem do
@@ -74,36 +107,8 @@ os textos estáticos são marcados com `data-i18n` (ou `data-i18n-html`,
 `data-i18n-ph`, `data-i18n-title`). Adicionar um idioma é copiar um dos blocos
 e traduzir os valores.
 
-## Reverse proxy
-
-O nginx é fixo e obrigatório: entra sempre na stack, não aparece no combobox e
-não pode ser removido. É o único container que publica portas no host (80 e
-443) — todos os outros ficam só na rede `starrnet`, alcançados pelo nginx por
-`nome-do-container:porta-interna`. Quem roteia pela VPN responde no `gluetun`,
-que é quem detém a rede.
-
-No Ambiente dá para ligar o **TLS**: o `nginx.conf` passa a ter um `server` na
-443 com `ssl_certificate`, TLSv1.2/1.3 e um bloco na 80 que só redireciona para
-o https. O certificado e a chave são caminhos do host, informados no mesmo
-lugar, e entram no compose como `${TLS_CERT}` e `${TLS_KEY}`, montados
-só-leitura em `/etc/nginx/certs`. Sem TLS, a stack fica só na 80. O domínio
-informado vira o `server_name` (na falta dele, `_`).
-
-A aba **nginx.conf** gera a configuração correspondente, roteando por subpath
-(`/sonarr`, `/radarr`…), um `location` por serviço. O Heimdall é a exceção:
-como painel de atalhos, fica na raiz (`location /`). O arquivo é montado em
-`${BASE_CONFIG}/nginx/conf.d` e cada app precisa da sua *base URL* igual ao
-subpath.
-
-## VPN
-
-Marcar um cliente como "rotear pelo gluetun" faz o serviço usar
-`network_mode: service:gluetun`; o gluetun é adicionado à stack
-automaticamente e passa a ser o endereço desse serviço no nginx. As credenciais
-(`VPN_SERVICE_PROVIDER`, `VPN_TYPE`, chaves do WireGuard ou usuário/senha do
-OpenVPN, `SERVER_COUNTRIES`) ficam no `.env`.
-
 ## Status
 
 Protótipo de interface: o botão "Criar stack" apenas simula o deploy. O
-`docker-compose.yml` e o `.env` gerados, esses sim, são de verdade.
+`docker-compose.yml`, o `.env` e o `nginx.conf` gerados, esses sim, são de
+verdade.
