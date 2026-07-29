@@ -21,6 +21,8 @@ defecto:
 - **Elegir servicios** en un combobox con logotipos y añadirlos a la stack.
 - **Configurar cada instancia** en un modal: título, subcarpeta multimedia o de
   descargas y enrutamiento por la VPN.
+- **Copiar el enlace** de cada servicio, ya con el esquema, el dominio y el
+  subpath por los que nginx lo va a atender.
 - **Múltiples instancias** de Sonarr, Radarr, Lidarr, Bazarr y Prowlarr — basta
   con que el título sea distinto. Sonarr y Radarr reciben además
   `SONARR__APP__INSTANCENAME` / `RADARR__APP__INSTANCENAME`.

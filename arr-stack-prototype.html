@@ -322,6 +322,9 @@ const I18N = {
   'btn.clearConfirm':'Confirmar?',
   'btn.edit':'Editar',
   'btn.del':'Excluir',
+  'btn.link':'Link',
+  'btn.linkTitle':url=>`Copiar ${url}`,
+  'btn.linkOk':'✓',
   'items.empty':'Nenhum serviço adicionado.<br>Escolha um no combobox acima e clique em <b>Adicionar</b>.',
   'items.fixed':'fixo',
   'items.viaVpn':'via VPN',
@@ -442,6 +445,9 @@ const I18N = {
   'btn.clearConfirm':'Confirm?',
   'btn.edit':'Edit',
   'btn.del':'Remove',
+  'btn.link':'Link',
+  'btn.linkTitle':url=>`Copy ${url}`,
+  'btn.linkOk':'✓',
   'items.empty':'No services added.<br>Pick one in the combobox above and click <b>Add</b>.',
   'items.fixed':'fixed',
   'items.viaVpn':'via VPN',
@@ -562,6 +568,9 @@ const I18N = {
   'btn.clearConfirm':'¿Confirmar?',
   'btn.edit':'Editar',
   'btn.del':'Eliminar',
+  'btn.link':'Link',
+  'btn.linkTitle':url=>`Copiar ${url}`,
+  'btn.linkOk':'✓',
   'items.empty':'Ningún servicio añadido.<br>Elige uno en el combobox de arriba y pulsa <b>Añadir</b>.',
   'items.fixed':'fijo',
   'items.viaVpn':'por VPN',
@@ -836,6 +845,9 @@ const slug = t => (t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
 const cname = a => slug(a.title) || a.id;   // container_name / service key / pasta
 // caminho no nginx: subpath próprio, ou a raiz para o painel de atalhos
 const route = a => a.id===ROOT_SERVICE ? '/' : '/'+cname(a);
+// endereço pelo qual o serviço vai ser acessado, passando pelo proxy
+const url = a => (DEFAULTS.tls ? 'https://' : 'http://')
+  + (DEFAULTS.domain || 'localhost') + route(a);
 const has = id => added.some(a=>a.id===id);
 const byKey = k => added.find(a=>cname(a)===k);
 // caminhos sempre derivados das bases do Ambiente, expostas como variáveis
@@ -924,6 +936,8 @@ function renderItems(){
         <div class="ds">${cname(a)}${(a.title && a.title!==s.name)?' ('+s.name+')':''}${s.noVol?' · '+sdesc(s.id):' · '+cfgReal(a)}${s.media&&!s.noVol?' · '+dataReal(a):''}</div>
       </div>
       <div class="acts">
+        ${a.id==='gluetun' ? '' : `<button class="sm" data-act="link"
+          title="${t('btn.linkTitle', url(a))}">${t('btn.link')}</button>`}
         <button class="sm" data-act="edit">${t('btn.edit')}</button>
         <button class="sm danger" data-act="del">${t('btn.del')}</button>
       </div>
@@ -937,7 +951,14 @@ function renderItems(){
 $('#items').onclick = e=>{
   const btn = e.target.closest('button[data-act]'); if(!btn) return;
   const key = btn.closest('.item').dataset.key;
-  if(btn.dataset.act==='del'){
+  if(btn.dataset.act==='link'){
+    const a = byKey(key); if(!a) return;
+    const label = btn.textContent;
+    navigator.clipboard.writeText(url(a)).then(()=>{
+      btn.textContent = t('btn.linkOk');
+      setTimeout(()=>{ btn.textContent = label; }, 1200);
+    }).catch(()=>{});
+  } else if(btn.dataset.act==='del'){
     added = added.filter(a=>cname(a)!==key);
     renderItems(); renderCombo(); render();
   } else {

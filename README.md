@@ -20,6 +20,8 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
 - **Escolher serviços** num combobox com logotipos e adicioná-los à stack.
 - **Configurar cada instância** num modal: título, subpasta de mídia/downloads
   e roteamento pela VPN.
+- **Copiar o link** de cada serviço, já com o esquema, o domínio e o subpath
+  pelos quais o nginx vai atendê-lo.
 - **Múltiplas instâncias** de Sonarr, Radarr, Lidarr, Bazarr e Prowlarr —
   basta o título ser diferente. Sonarr e Radarr recebem também
   `SONARR__APP__INSTANCENAME` / `RADARR__APP__INSTANCENAME`.

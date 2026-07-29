@@ -20,6 +20,8 @@ The combobox lists the available services with their logos and default ports:
 - **Pick services** from a combobox with logos and add them to the stack.
 - **Configure each instance** in a modal: title, media/downloads subfolder and
   VPN routing.
+- **Copy each service's link**, with the scheme, domain and subpath nginx will
+  serve it on.
 - **Multiple instances** of Sonarr, Radarr, Lidarr, Bazarr and Prowlarr — they
   only need different titles. Sonarr and Radarr also get
   `SONARR__APP__INSTANCENAME` / `RADARR__APP__INSTANCENAME`.
