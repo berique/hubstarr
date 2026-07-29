@@ -211,8 +211,13 @@
       <div class="row"><label for="eDl" data-i18n="env.dl">Base de downloads</label><input type="text" id="eDl"></div>
       <h4 style="margin:18px 0 10px;font-size:12px;text-transform:uppercase;
                  letter-spacing:.06em;color:var(--muted)" data-i18n="env.secApi">API keys</h4>
-      <div id="eApiRows"></div>
-      <p class="hint" data-i18n="env.apiHint" style="margin:-2px 0 12px"></p>
+      <div class="row"><label for="eApiKey">STARR_APIKEY</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="eApiKey">
+          <button type="button" id="eApiGen" data-i18n="btn.gen">Gerar</button>
+        </div>
+      </div>
+      <p class="hint" data-i18n-html="env.apiHint" style="margin:-2px 0 12px"></p>
 
       <h4 style="margin:18px 0 10px;font-size:12px;text-transform:uppercase;
                  letter-spacing:.06em;color:var(--muted)" data-i18n="env.vpn">VPN (gluetun)</h4>
@@ -369,9 +374,9 @@ const I18N = {
   'env.secPaths':'caminhos base',
   'env.secUser':'usuário e fuso dos containers',
   'env.secVpn':'VPN (gluetun)',
-  'env.secApi':'API keys',
-  'env.apiHint':'Uma chave por app. Instâncias do mesmo app compartilham a chave.',
-  'env.phApiKey':'sua-chave',
+  'env.secApi':'API key (*arr)',
+  'env.apiHint':'A mesma chave vale para todos os *arr, como um <b>openssl rand -hex 16</b>.',
+  'btn.gen':'Gerar',
   'env.phProvider':'seu-provedor',
   'env.phKey':'SUA_CHAVE_PRIVADA',
   'env.phUser':'usuario',
@@ -481,9 +486,9 @@ const I18N = {
   'env.secPaths':'base paths',
   'env.secUser':'container user and time zone',
   'env.secVpn':'VPN (gluetun)',
-  'env.secApi':'API keys',
-  'env.apiHint':'One key per app. Instances of the same app share the key.',
-  'env.phApiKey':'your-key',
+  'env.secApi':'API key (*arr)',
+  'env.apiHint':'One key for every *arr, like an <b>openssl rand -hex 16</b>.',
+  'btn.gen':'Generate',
   'env.phProvider':'your-provider',
   'env.phKey':'YOUR_PRIVATE_KEY',
   'env.phUser':'username',
@@ -593,9 +598,9 @@ const I18N = {
   'env.secPaths':'rutas base',
   'env.secUser':'usuario y zona horaria de los contenedores',
   'env.secVpn':'VPN (gluetun)',
-  'env.secApi':'API keys',
-  'env.apiHint':'Una clave por app. Las instancias de la misma app comparten la clave.',
-  'env.phApiKey':'tu-clave',
+  'env.secApi':'API key (*arr)',
+  'env.apiHint':'La misma clave vale para todos los *arr, como un <b>openssl rand -hex 16</b>.',
+  'btn.gen':'Generar',
   'env.phProvider':'tu-proveedor',
   'env.phKey':'TU_CLAVE_PRIVADA',
   'env.phUser':'usuario',
@@ -680,8 +685,11 @@ const INSTANCE_ENV = {sonarr:'SONARR__APP__INSTANCENAME', radarr:'RADARR__APP__I
 // apps que aceitam a chave de API por variável de ambiente
 const APIKEY_ENV = {sonarr:'SONARR__AUTH__APIKEY', radarr:'RADARR__AUTH__APIKEY',
                     lidarr:'LIDARR__AUTH__APIKEY', prowlarr:'PROWLARR__AUTH__APIKEY'};
-// nome da variável que carrega a chave no .env
-const apiVar = id => id.toUpperCase()+'_API_KEY';
+// variável única que carrega a chave de todos os *arr
+const APIKEY_VAR = 'STARR_APIKEY';
+// equivalente a `openssl rand -hex 16`
+const randKey = ()=> Array.from(crypto.getRandomValues(new Uint8Array(16)))
+  .map(b=>b.toString(16).padStart(2,'0')).join('');
 
 // serviço que atende na raiz do proxy, em vez de um subpath próprio
 const ROOT_SERVICE = 'heimdall';
@@ -760,7 +768,7 @@ const DEFAULTS = {restart:'unless-stopped',
                   puid:'1000', pgid:'1000', tz:localTz(),
                   // gluetun
                   // chave de API por app, preenchida no Ambiente
-                  apiKeys:{},
+                  apiKey:randKey(),
                   vpnProv:'mullvad', vpnType:'wireguard',
                   wgKey:'', wgAddr:'', ovpnUser:'', ovpnPass:'', countries:''};
 
@@ -995,15 +1003,7 @@ function openEnv(){
   $('#eWgKey').value=DEFAULTS.wgKey; $('#eWgAddr').value=DEFAULTS.wgAddr;
   $('#eOvpnUser').value=DEFAULTS.ovpnUser; $('#eOvpnPass').value=DEFAULTS.ovpnPass;
   $('#eCountries').value=DEFAULTS.countries;
-  // uma linha por app que aceita chave de API
-  $('#eApiRows').innerHTML = Object.keys(APIKEY_ENV).map(id=>`
-    <div class="row"><label for="eApi-${id}">${svc(id).name}</label>
-      <input type="text" id="eApi-${id}"></div>`).join('');
-  Object.keys(APIKEY_ENV).forEach(id=>{
-    const el = $('#eApi-'+id);
-    el.value = DEFAULTS.apiKeys[id] || '';
-    el.placeholder = t('env.phApiKey');
-  });
+  $('#eApiKey').value = DEFAULTS.apiKey;
   vpnRows();
   $('#ePuid').value=DEFAULTS.puid; $('#ePgid').value=DEFAULTS.pgid;
   $('#eTz').value=DEFAULTS.tz; $('#eCfg').value=DEFAULTS.cfg; $('#eData').value=DEFAULTS.data;
@@ -1020,6 +1020,7 @@ function vpnRows(){
   $('#eOvpnRows').style.display = wg ? 'none'  : 'block';
 }
 $('#eVpnType').addEventListener('change', vpnRows);
+$('#eApiGen').onclick = ()=> $('#eApiKey').value = randKey();
 
 /* ---------- tema claro/escuro ---------- */
 function setTheme(t){
@@ -1050,8 +1051,7 @@ $('#eSave').onclick = ()=>{
     wgKey:$('#eWgKey').value.trim(), wgAddr:$('#eWgAddr').value.trim(),
     ovpnUser:$('#eOvpnUser').value.trim(), ovpnPass:$('#eOvpnPass').value.trim(),
     countries:$('#eCountries').value.trim()});
-  DEFAULTS.apiKeys = Object.fromEntries(Object.keys(APIKEY_ENV)
-    .map(id=>[id, $('#eApi-'+id).value.trim()]));
+  DEFAULTS.apiKey = $('#eApiKey').value.trim() || randKey();
   closeEnv(); renderItems(); render();
 };
 
@@ -1119,7 +1119,7 @@ function build(){
       if(URLBASE_ENV[s.id])
         L.push(`      - <span class="v">${URLBASE_ENV[s.id]}=/${cname(a)}</span>`);
       if(APIKEY_ENV[s.id])
-        L.push(`      - <span class="v">${APIKEY_ENV[s.id]}=\${${apiVar(s.id)}}</span>`);
+        L.push(`      - <span class="v">${APIKEY_ENV[s.id]}=\${${APIKEY_VAR}}</span>`);
     }
     if(!s.noVol){
       // sintaxe longa: bind mount com propagação rslave
@@ -1225,13 +1225,11 @@ function buildEnv(list){
   E.push(`<span class="k">PUID</span>=<span class="v">${DEFAULTS.puid}</span>`);
   E.push(`<span class="k">PGID</span>=<span class="v">${DEFAULTS.pgid}</span>`);
   E.push(`<span class="k">TZ</span>=<span class="v">${DEFAULTS.tz}</span>`);
-  // uma chave por app presente na stack, mesmo com várias instâncias
-  const apiApps = Object.keys(APIKEY_ENV).filter(id=>list.some(a=>a.id===id));
-  if(apiApps.length){
+  // uma única chave, compartilhada por todos os *arr da stack
+  if(list.some(a=>APIKEY_ENV[a.id])){
     E.push(``);
     E.push(`<span class="c"># ${t('env.secApi')}</span>`);
-    apiApps.forEach(id=>
-      E.push(`<span class="k">${apiVar(id)}</span>=${val(DEFAULTS.apiKeys[id], t('env.phApiKey'))}`));
+    E.push(`<span class="k">${APIKEY_VAR}</span>=<span class="v">${DEFAULTS.apiKey}</span>`);
   }
   if(list.some(a=>a.id==='gluetun')){
     E.push(``);
