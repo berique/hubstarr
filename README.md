@@ -24,6 +24,9 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
 - **Base URL automática**: Sonarr, Radarr, Lidarr e Prowlarr recebem
   `<APP>__SERVER__URLBASE=/<container_name>`, já casando com o subpath do
   nginx. O Bazarr não expõe essa variável — a base fica na interface dele.
+- **API keys** no Ambiente: uma por app (Sonarr, Radarr, Lidarr, Prowlarr). O
+  compose sai com `<APP>__AUTH__APIKEY=${<APP>_API_KEY}` e o valor fica no
+  `.env`. Instâncias do mesmo app compartilham a chave.
 - **Ambiente global** (botão no topo): bases de caminho, PUID/PGID, time zone,
   nome da stack, restart policy e as credenciais do gluetun. A lista de fusos é
   a IANA inteira, vinda do próprio navegador, e o valor inicial é o fuso da
