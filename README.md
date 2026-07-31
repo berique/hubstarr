@@ -7,7 +7,9 @@ Protótipo de página única que monta o `docker-compose.yml`, o `.env` e o
 mídia), sem backend e sem dependências externas.
 
 Abra `arr-stack-prototype.html` no navegador. É só isso — o arquivo é
-autocontido (os logotipos vêm embutidos como data URI).
+autocontido (os logotipos vêm embutidos como data URI). O **Ambiente** abre
+junto: é dali que saem as bases de caminho que todo o resto usa. Fechou, ele
+continua no botão do topo.
 
 ![A interface: lista de serviços à esquerda, arquivos gerados à direita](docs/screenshot.png)
 

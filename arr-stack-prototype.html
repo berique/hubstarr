@@ -1868,6 +1868,8 @@ $('#langSel').value = LANG;
 $('#langSel').onchange = e => setLang(e.target.value);
 
 applyI18n(); renderCombo(); renderItems(); render();
+// a stack inteira depende das bases de caminho: o Ambiente abre junto com a página
+openEnv();
 </script>
 </body>
 </html>

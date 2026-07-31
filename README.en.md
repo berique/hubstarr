@@ -7,7 +7,9 @@ Single-page prototype that builds the `docker-compose.yml`, the `.env` and the
 with no backend and no external dependencies.
 
 Open `arr-stack-prototype.html` in a browser. That's it — the file is
-self-contained (the logos are embedded as data URIs).
+self-contained (the logos are embedded as data URIs). The **Environment** opens
+with it: that is where the base paths everything else uses come from. Once
+closed, it is still behind the button at the top.
 
 ![The interface: service list on the left, generated files on the right](docs/screenshot.png)
 
