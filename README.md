@@ -50,8 +50,10 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
 - **Configuração** (botão no topo): escolher quais instâncias o Prowlarr vai
   configurar, quais *arr recebem cada cliente de download (qBittorrent,
   SABnzbd) e as opções de *Media Management* — hardlink, renomear, permissões,
-  pastas vazias e o formato do nome (*Episode Naming*, *Nomenclatura de filme*,
-  *Nomeação da faixa*) —, separadas por família: Sonarr, Radarr e Lidarr. Por
+  pastas vazias e a nomenclatura completa de cada app (*Episode Naming*,
+  *Nomenclatura de filme*, *Nomeação da faixa*: caracteres ilegais,
+  dois-pontos, vários episódios e todos os formatos de arquivo e de pasta) —,
+  separadas por família: Sonarr, Radarr e Lidarr. Por
   enquanto as escolhas ficam guardadas na interface; nada é aplicado nos apps.
 - **Ambiente global** (botão no topo): bases de caminho, PUID/PGID, time zone,
   restart policy, API key e TLS. A

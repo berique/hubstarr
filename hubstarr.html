@@ -128,6 +128,11 @@
                background:var(--panel-2);margin-bottom:8px}
   .cfgSec .box > .nm{font-weight:600;margin-bottom:6px}
   .cfgList{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+  .naming{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+  .naming .nm{font-weight:600;margin-bottom:8px}
+  .naming .row{grid-template-columns:150px 1fr;margin-bottom:8px}
+  .naming label{font-size:13px}
+  input.fmt{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
   .cfgList .check{font-size:13px}
 
   /* diretórios extras da biblioteca: uma linha por pasta, com o × ao lado */
@@ -417,6 +422,33 @@ const I18N = {
   'cfg.naming.sonarr':'Episode Naming',
   'cfg.naming.radarr':'Nomenclatura de filme',
   'cfg.naming.lidarr':'Nomeação da faixa',
+  'cfg.n.illegal':'Caracteres ilegais',
+  'cfg.n.illegalOn':'substituir em vez de remover',
+  'cfg.n.colon':'Dois-pontos',
+  'cfg.n.multiEp':'Vários episódios',
+  'cfg.n.standardEp':'Episódio padrão',
+  'cfg.n.dailyEp':'Episódio diário',
+  'cfg.n.animeEp':'Episódio de anime',
+  'cfg.n.seriesFolder':'Pasta da série',
+  'cfg.n.seasonFolder':'Pasta da temporada',
+  'cfg.n.specialsFolder':'Pasta dos especiais',
+  'cfg.n.standardMovie':'Arquivo do filme',
+  'cfg.n.movieFolder':'Pasta do filme',
+  'cfg.n.standardTrack':'Faixa',
+  'cfg.n.multiDiscTrack':'Faixa (vários discos)',
+  'cfg.n.artistFolder':'Pasta do artista',
+  'cfg.n.albumFolder':'Pasta do álbum',
+  'cfg.opt.delete':'Remover',
+  'cfg.opt.dash':'Hífen',
+  'cfg.opt.spaceDash':'Espaço + hífen',
+  'cfg.opt.spaceDashSpace':'Espaço + hífen + espaço',
+  'cfg.opt.smart':'Inteligente',
+  'cfg.opt.extend':'Estender',
+  'cfg.opt.duplicate':'Duplicar',
+  'cfg.opt.repeat':'Repetir',
+  'cfg.opt.scene':'Scene',
+  'cfg.opt.range':'Intervalo',
+  'cfg.opt.prefixedRange':'Intervalo com prefixo',
   'cfg.noProwlarr':'Sem Prowlarr na stack — adicione-o para escolher o que ele configura.',
   'cfg.noArr':'Sem Sonarr, Radarr ou Lidarr na stack.',
   'cfg.noClient':'Sem qBittorrent ou SABnzbd na stack.',
@@ -599,6 +631,33 @@ const I18N = {
   'cfg.naming.sonarr':'Episode Naming',
   'cfg.naming.radarr':'Movie Naming',
   'cfg.naming.lidarr':'Track Naming',
+  'cfg.n.illegal':'Illegal characters',
+  'cfg.n.illegalOn':'replace instead of removing',
+  'cfg.n.colon':'Colon',
+  'cfg.n.multiEp':'Multi-episode',
+  'cfg.n.standardEp':'Standard episode',
+  'cfg.n.dailyEp':'Daily episode',
+  'cfg.n.animeEp':'Anime episode',
+  'cfg.n.seriesFolder':'Series folder',
+  'cfg.n.seasonFolder':'Season folder',
+  'cfg.n.specialsFolder':'Specials folder',
+  'cfg.n.standardMovie':'Movie file',
+  'cfg.n.movieFolder':'Movie folder',
+  'cfg.n.standardTrack':'Track',
+  'cfg.n.multiDiscTrack':'Track (multi disc)',
+  'cfg.n.artistFolder':'Artist folder',
+  'cfg.n.albumFolder':'Album folder',
+  'cfg.opt.delete':'Delete',
+  'cfg.opt.dash':'Dash',
+  'cfg.opt.spaceDash':'Space dash',
+  'cfg.opt.spaceDashSpace':'Space dash space',
+  'cfg.opt.smart':'Smart replace',
+  'cfg.opt.extend':'Extend',
+  'cfg.opt.duplicate':'Duplicate',
+  'cfg.opt.repeat':'Repeat',
+  'cfg.opt.scene':'Scene',
+  'cfg.opt.range':'Range',
+  'cfg.opt.prefixedRange':'Prefixed range',
   'cfg.noProwlarr':'No Prowlarr in the stack — add it to pick what it configures.',
   'cfg.noArr':'No Sonarr, Radarr or Lidarr in the stack.',
   'cfg.noClient':'No qBittorrent or SABnzbd in the stack.',
@@ -781,6 +840,33 @@ const I18N = {
   'cfg.naming.sonarr':'Episode Naming',
   'cfg.naming.radarr':'Nomenclatura de película',
   'cfg.naming.lidarr':'Nomenclatura de pista',
+  'cfg.n.illegal':'Caracteres ilegales',
+  'cfg.n.illegalOn':'sustituir en vez de quitar',
+  'cfg.n.colon':'Dos puntos',
+  'cfg.n.multiEp':'Varios episodios',
+  'cfg.n.standardEp':'Episodio estándar',
+  'cfg.n.dailyEp':'Episodio diario',
+  'cfg.n.animeEp':'Episodio de anime',
+  'cfg.n.seriesFolder':'Carpeta de la serie',
+  'cfg.n.seasonFolder':'Carpeta de la temporada',
+  'cfg.n.specialsFolder':'Carpeta de especiales',
+  'cfg.n.standardMovie':'Archivo de la película',
+  'cfg.n.movieFolder':'Carpeta de la película',
+  'cfg.n.standardTrack':'Pista',
+  'cfg.n.multiDiscTrack':'Pista (varios discos)',
+  'cfg.n.artistFolder':'Carpeta del artista',
+  'cfg.n.albumFolder':'Carpeta del álbum',
+  'cfg.opt.delete':'Quitar',
+  'cfg.opt.dash':'Guion',
+  'cfg.opt.spaceDash':'Espacio + guion',
+  'cfg.opt.spaceDashSpace':'Espacio + guion + espacio',
+  'cfg.opt.smart':'Inteligente',
+  'cfg.opt.extend':'Extender',
+  'cfg.opt.duplicate':'Duplicar',
+  'cfg.opt.repeat':'Repetir',
+  'cfg.opt.scene':'Scene',
+  'cfg.opt.range':'Intervalo',
+  'cfg.opt.prefixedRange':'Intervalo con prefijo',
   'cfg.noProwlarr':'Sin Prowlarr en la stack — añádelo para elegir lo que configura.',
   'cfg.noArr':'Sin Sonarr, Radarr o Lidarr en la stack.',
   'cfg.noClient':'Sin qBittorrent o SABnzbd en la stack.',
@@ -1497,14 +1583,47 @@ $('#mLibAdd').onclick = ()=>{
    - clients: por cliente de download, quais *arr o recebem
    - mm:      Media Management (avançado), por família de *arr           */
 const ARRS = ['sonarr','radarr','lidarr'];
-// formato padrão de cada app, o mesmo que eles trazem de fábrica
-const NAMING = {
-  sonarr:'{Series Title} - S{season:00}E{episode:00} - {Episode Title} {Quality Full}',
-  radarr:'{Movie Title} ({Release Year}) {Quality Full}',
-  lidarr:'{Album Title}/{track:00} - {Track Title}',
+/* Nomenclatura: os campos que cada app tem em Media Management, com os
+   formatos que eles trazem de fábrica. `file:true` marca o que só vale quando
+   o app está renomeando; as pastas continuam valendo de qualquer jeito. */
+const COLON  = ['delete','dash','spaceDash','spaceDashSpace','smart'];
+const MULTIEP = ['extend','duplicate','repeat','scene','range','prefixedRange'];
+const NAMING_FIELDS = {
+  sonarr:[
+    {k:'illegal',        type:'check',  def:true},
+    {k:'colon',          type:'select', opts:COLON,   def:'smart'},
+    {k:'multiEp',        type:'select', opts:MULTIEP, def:'extend', file:true},
+    {k:'standardEp',     type:'fmt', file:true,
+     def:'{Series Title} - S{season:00}E{episode:00} - {Episode Title} {Quality Full}'},
+    {k:'dailyEp',        type:'fmt', file:true,
+     def:'{Series Title} - {Air-Date} - {Episode Title} {Quality Full}'},
+    {k:'animeEp',        type:'fmt', file:true,
+     def:'{Series Title} - S{season:00}E{episode:00} - {Episode Title} {Quality Full}'},
+    {k:'seriesFolder',   type:'fmt', def:'{Series Title}'},
+    {k:'seasonFolder',   type:'fmt', def:'Season {season:00}'},
+    {k:'specialsFolder', type:'fmt', def:'Specials'},
+  ],
+  radarr:[
+    {k:'illegal',        type:'check',  def:true},
+    {k:'colon',          type:'select', opts:COLON, def:'smart'},
+    {k:'standardMovie',  type:'fmt', file:true,
+     def:'{Movie Title} ({Release Year}) {Quality Full}'},
+    {k:'movieFolder',    type:'fmt', def:'{Movie Title} ({Release Year})'},
+  ],
+  lidarr:[
+    {k:'illegal',        type:'check', def:true},
+    {k:'standardTrack',  type:'fmt', file:true,
+     def:'{Album Title}/{track:00} - {Track Title}'},
+    {k:'multiDiscTrack', type:'fmt', file:true,
+     def:'{Album Title}/{medium:0}-{track:00} - {Track Title}'},
+    {k:'artistFolder',   type:'fmt', def:'{Artist Name}'},
+    {k:'albumFolder',    type:'fmt', def:'{Album Title} ({Release Year})'},
+  ],
 };
+const namingDefault = id =>
+  Object.fromEntries((NAMING_FIELDS[id]||[]).map(f=>[f.k, f.def]));
 const mmDefault = id => ({hardlink:true, rename:true, perms:false, empty:false,
-                          naming:NAMING[id] || ''});
+                          naming:namingDefault(id)});
 const CONFIG = {apps:{}, clients:{}, mm:{}};
 
 const arrList    = ()=> added.filter(a=>ARRS.includes(a.id));
@@ -1579,18 +1698,38 @@ function renderConfig(){
       H.push(`<div class="cfgList">` + MM_OPTS.map(o=>
         check(CONFIG.mm[id][o], t('cfg.mm.'+o), `data-kind="mm" data-key="${id}" data-opt="${o}"`)
       ).join('') + `</div>`);
-      // o formato só vale se ele for renomear
-      const off = CONFIG.mm[id].rename ? '' : ' disabled';
-      H.push(`<div class="row" style="grid-template-columns:150px 1fr;margin:10px 0 0">
-        <label for="mmName-${id}">${t('cfg.naming.'+id)}</label>
-        <input type="text" id="mmName-${id}" data-kind="naming" data-key="${id}"
-               value="${CONFIG.mm[id].naming.replace(/"/g,'&quot;')}"${off}>
-      </div></div>`);
+      H.push(namingBlock(id));
+      H.push(`</div>`);
     });
   }
   H.push(`</div>`);
   H.push(`<p class="hint">${t('cfg.hint')}</p>`);
   box.innerHTML = H.join('');
+}
+
+/* bloco de nomenclatura de uma família: uma linha por campo do app. Sem
+   renomear, os formatos de arquivo ficam travados — as pastas, não. */
+function namingBlock(id){
+  const cfg = CONFIG.mm[id].naming, ren = CONFIG.mm[id].rename;
+  const row = (f)=>{
+    const off = (f.file && !ren) ? ' disabled' : '';
+    const at = `data-kind="naming" data-key="${id}" data-opt="${f.k}"`;
+    const lbl = t('cfg.n.'+f.k);
+    if(f.type === 'check')
+      return `<div class="row"><label>${lbl}</label>
+        <label class="check"><input type="checkbox" ${cfg[f.k]?'checked':''} ${at}${off}>
+          <span class="hint">${t('cfg.n.illegalOn')}</span></label></div>`;
+    if(f.type === 'select')
+      return `<div class="row"><label for="n-${id}-${f.k}">${lbl}</label>
+        <select id="n-${id}-${f.k}" ${at}${off}>${f.opts.map(o=>
+          `<option value="${o}"${cfg[f.k]===o?' selected':''}>${t('cfg.opt.'+o)}</option>`
+        ).join('')}</select></div>`;
+    return `<div class="row"><label for="n-${id}-${f.k}">${lbl}</label>
+      <input type="text" class="fmt" id="n-${id}-${f.k}" ${at}${off}
+             value="${String(cfg[f.k]??'').replace(/"/g,'&quot;')}"></div>`;
+  };
+  return `<div class="naming"><div class="nm">${t('cfg.naming.'+id)}</div>
+    ${NAMING_FIELDS[id].map(row).join('')}</div>`;
 }
 
 // endereço em que o *arr alcança o cliente: quem roteia pela VPN atende no gluetun
@@ -1603,12 +1742,15 @@ $('#cfgBody').onchange = e=>{
   else if(d.kind === 'client') CONFIG.clients[d.key][d.arr] = el.checked;
   else if(d.kind === 'mm'){
     CONFIG.mm[d.key][d.opt] = el.checked;
-    if(d.opt === 'rename') renderConfig();   // libera ou trava o formato
+    if(d.opt === 'rename') renderConfig();   // libera ou trava os formatos
   }
+  else if(d.kind === 'naming') CONFIG.mm[d.key].naming[d.opt] = el.checked;
 };
+// selects e campos de texto da nomenclatura
 $('#cfgBody').oninput = e=>{
-  const d = e.target.dataset;
-  if(d.kind === 'naming') CONFIG.mm[d.key].naming = e.target.value;
+  const el = e.target, d = el.dataset;
+  if(d.kind === 'naming' && el.type !== 'checkbox')
+    CONFIG.mm[d.key].naming[d.opt] = el.value;
 };
 
 let cfgBackup = null;   // estado de antes de abrir, para o Cancelar desfazer

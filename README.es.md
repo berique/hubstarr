@@ -54,9 +54,10 @@ defecto:
 - **Configuración** (botón arriba): elegir qué instancias configurará Prowlarr,
   qué *arr reciben cada cliente de descarga (qBittorrent, SABnzbd) y las
   opciones de *Media Management* — hardlink, renombrar, permisos, carpetas
-  vacías y el formato del nombre (*Episode Naming*, *Nomenclatura de película*,
-  *Nomenclatura de pista*) —, separadas por familia: Sonarr, Radarr y Lidarr.
-  Por ahora las
+  vacías y la nomenclatura completa de cada app (*Episode Naming*,
+  *Nomenclatura de película*, *Nomenclatura de pista*: caracteres ilegales, dos
+  puntos, varios episodios y todos los formatos de archivo y de carpeta) —,
+  separadas por familia: Sonarr, Radarr y Lidarr. Por ahora las
   opciones se guardan en la interfaz; no se aplica nada en las apps.
 - **Entorno global** (botón arriba): rutas base, PUID/PGID, zona horaria,
   restart policy, API key y TLS. La lista de husos es la IANA entera, que viene

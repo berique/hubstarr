@@ -54,7 +54,8 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    do nginx e as credenciais da VPN no do gluetun (flag `vpnCfg`) — os dois são
    de um serviço só, não da stack. `CONFIG` guarda as ligações entre instâncias
    (o que o Prowlarr configura, quais *arr recebem cada cliente, o Media
-   Management por família); `syncConfig()` o alinha com o `added` a cada
+   Management e a nomenclatura por família — os campos de cada app estão em
+   `NAMING_FIELDS`, com os formatos de fábrica); `syncConfig()` o alinha com o `added` a cada
    abertura do modal, e ele não entra nos arquivos gerados — é protótipo de
    interface, como o botão "Criar stack".
 5. **Derivações** — `slug()` → `cname()` (container_name = chave do serviço =
