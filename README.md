@@ -35,6 +35,8 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
 - **Aceleração de hardware do Jellyfin**: CPU, Intel ou NVIDIA. Intel ganha
   `devices: /dev/dri:/dev/dri`; NVIDIA, a reserva de GPU em `deploy` e as
   variáveis `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES`.
+- **Ajuda por campo** no Ambiente: cada linha tem um `?` que abre uma
+  explicação do que aquele valor faz e de como ele sai nos arquivos gerados.
 - **HTTPS opcional**, com o certificado e a chave vindos do host.
 - **Ambiente global** (botão no topo): bases de caminho, PUID/PGID, time zone,
   restart policy, portas do host, API key, TLS e as credenciais do gluetun. A

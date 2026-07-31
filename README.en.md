@@ -36,6 +36,8 @@ The combobox lists the available services with their logos and default ports:
 - **Jellyfin hardware acceleration**: CPU, Intel or NVIDIA. Intel gets
   `devices: /dev/dri:/dev/dri`; NVIDIA gets the GPU reservation under `deploy`
   plus the `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES` variables.
+- **Per-field help** in the Environment: every row has a `?` that opens an
+  explanation of what the value does and how it lands in the generated files.
 - **Optional HTTPS**, with the certificate and key coming from the host.
 - **Global environment** (button at the top): base paths, PUID/PGID, time zone,
   restart policy, host ports, API key, TLS and the gluetun credentials. The

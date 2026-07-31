@@ -85,12 +85,20 @@
   .empty{color:var(--muted);border:1px dashed var(--line);border-radius:8px;
          padding:20px;text-align:center}
 
-  .row{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;margin-bottom:10px}
+  /* a terceira coluna guarda o botão de ajuda; fica vazia em quem não tem */
+  .row{display:grid;grid-template-columns:150px 1fr auto;gap:10px;align-items:center;margin-bottom:10px}
   label{color:var(--muted)}
   input[type=text],select{width:100%;padding:8px 10px;background:var(--code-bg);color:var(--txt);
     border:1px solid var(--line);border-radius:7px;font:inherit}
   input:focus,select:focus{outline:none;border-color:var(--accent)}
   .hint{color:var(--muted);font-size:12px}
+  /* ajuda por campo: o "?" fica na terceira coluna da linha e liga/desliga o
+     parágrafo logo abaixo dela */
+  button.help{width:24px;height:24px;padding:0;border-radius:50%;line-height:1;
+    font-size:12px;color:var(--muted)}
+  button.help.on{border-color:var(--accent);color:var(--txt)}
+  .helpTxt{margin:-4px 0 12px;padding-left:160px}
+  .helpTxt[hidden]{display:none}
 
   .tabs{display:flex;gap:6px}
   .tab{padding:4px 10px;font-size:12px;text-transform:none;letter-spacing:0;
@@ -195,69 +203,67 @@
   <div class="modal">
     <h3 data-i18n="env.h">⚙ Ambiente</h3>
     <div class="body">
-      <div class="row"><label for="ePuid">PUID / PGID</label>
+      <div class="row" data-help="env.hIds"><label for="ePuid">PUID / PGID</label>
         <div style="display:flex;gap:8px">
           <input type="text" id="ePuid"><input type="text" id="ePgid">
         </div>
       </div>
-      <div class="row"><label for="eTz" data-i18n="env.tz">Time Zone</label>
+      <div class="row" data-help="env.hTz"><label for="eTz" data-i18n="env.tz">Time Zone</label>
         <select id="eTz"></select>
       </div>
-      <div class="row"><label for="eRestart" data-i18n="env.restart">Restart policy</label>
+      <div class="row" data-help="env.hRestart"><label for="eRestart" data-i18n="env.restart">Restart policy</label>
         <select id="eRestart"><option>unless-stopped</option><option>always</option><option>no</option></select>
       </div>
-      <div class="row"><label for="eCfg" data-i18n="env.cfg">Base da pasta config</label><input type="text" id="eCfg"></div>
-      <div class="row"><label for="eData" data-i18n="env.data">Base da pasta de mídia</label><input type="text" id="eData"></div>
-      <div class="row"><label for="eDl" data-i18n="env.dl">Base de downloads</label><input type="text" id="eDl"></div>
       <div class="row" data-help="env.portsHint"><label for="eHttp" data-i18n="env.ports">Portas do host (nginx)</label>
         <div style="display:flex;gap:8px">
           <input type="text" id="eHttp" placeholder="80"><input type="text" id="eHttps" placeholder="443">
         </div>
       </div>
+      <div class="row" data-help="env.hCfg"><label for="eCfg" data-i18n="env.cfg">Base da pasta config</label><input type="text" id="eCfg"></div>
+      <div class="row" data-help="env.hData"><label for="eData" data-i18n="env.data">Base da pasta de mídia</label><input type="text" id="eData"></div>
+      <div class="row" data-help="env.hDl"><label for="eDl" data-i18n="env.dl">Base de downloads</label><input type="text" id="eDl"></div>
       <h4 style="margin:18px 0 10px;font-size:12px;text-transform:uppercase;
                  letter-spacing:.06em;color:var(--muted)" data-i18n="env.secApi">API keys</h4>
-      <div class="row"><label for="eApiKey">STARR_APIKEY</label>
+      <div class="row" data-help="env.apiHint"><label for="eApiKey">STARR_APIKEY</label>
         <div style="display:flex;gap:8px">
           <input type="text" id="eApiKey">
           <button type="button" id="eApiGen" data-i18n="btn.gen">Gerar</button>
         </div>
       </div>
-      <p class="hint" data-i18n-html="env.apiHint" style="margin:-2px 0 12px"></p>
 
       <h4 style="margin:18px 0 10px;font-size:12px;text-transform:uppercase;
                  letter-spacing:.06em;color:var(--muted)" data-i18n="env.secTls">TLS</h4>
-      <div class="row"><label for="eTls" data-i18n="env.tlsOn">Servir HTTPS</label>
-      <div class="row"><label for="eDomain" data-i18n="env.domain">Domínio</label>
+      <div class="row" data-help="env.tlsHint"><label for="eTls" data-i18n="env.tlsOn">Servir HTTPS</label>
         <label class="check"><input type="checkbox" id="eTls"> <span id="eTlsPort">443</span></label></div>
+      <div class="row" data-help="env.hDomain"><label for="eDomain" data-i18n="env.domain">Domínio</label>
         <input type="text" id="eDomain" data-i18n-ph="env.phDomain"></div>
       <div id="eTlsRows">
-        <div class="row"><label for="eCert" data-i18n="env.cert">Certificado (host)</label>
+        <div class="row" data-help="env.hCert"><label for="eCert" data-i18n="env.cert">Certificado (host)</label>
           <input type="text" id="eCert"></div>
-        <div class="row"><label for="eTlsKey" data-i18n="env.key">Chave privada (host)</label>
+        <div class="row" data-help="env.hKey"><label for="eTlsKey" data-i18n="env.key">Chave privada (host)</label>
           <input type="text" id="eTlsKey"></div>
       </div>
-      <p class="hint" data-i18n-html="env.tlsHint" style="margin:-2px 0 12px"></p>
 
       <h4 style="margin:18px 0 10px;font-size:12px;text-transform:uppercase;
                  letter-spacing:.06em;color:var(--muted)" data-i18n="env.vpn">VPN (gluetun)</h4>
-      <div class="row"><label for="eVpnProv" data-i18n="env.provider">Provedor</label>
+      <div class="row" data-help="env.hProvider"><label for="eVpnProv" data-i18n="env.provider">Provedor</label>
         <input type="text" id="eVpnProv" placeholder="mullvad, protonvpn, nordvpn…"></div>
-      <div class="row"><label for="eVpnType" data-i18n="env.type">Tipo</label>
+      <div class="row" data-help="env.hType"><label for="eVpnType" data-i18n="env.type">Tipo</label>
         <select id="eVpnType"><option>wireguard</option><option>openvpn</option></select>
       </div>
       <div id="eWgRows">
-        <div class="row"><label for="eWgKey" data-i18n="env.wgKey">WireGuard key</label>
+        <div class="row" data-help="env.hWgKey"><label for="eWgKey" data-i18n="env.wgKey">WireGuard key</label>
           <input type="text" id="eWgKey" data-i18n-ph="env.wgKeyPh"></div>
-        <div class="row"><label for="eWgAddr">WireGuard addresses</label>
+        <div class="row" data-help="env.hWgAddr"><label for="eWgAddr">WireGuard addresses</label>
           <input type="text" id="eWgAddr" placeholder="10.64.0.2/32"></div>
       </div>
       <div id="eOvpnRows">
-        <div class="row"><label for="eOvpnUser" data-i18n="env.ovpnUser">OpenVPN user</label>
+        <div class="row" data-help="env.hOvpnUser"><label for="eOvpnUser" data-i18n="env.ovpnUser">OpenVPN user</label>
           <input type="text" id="eOvpnUser"></div>
-        <div class="row"><label for="eOvpnPass" data-i18n="env.ovpnPass">OpenVPN password</label>
+        <div class="row" data-help="env.hOvpnPass"><label for="eOvpnPass" data-i18n="env.ovpnPass">OpenVPN password</label>
           <input type="text" id="eOvpnPass"></div>
       </div>
-      <div class="row"><label for="eCountries" data-i18n="env.countries">Países do servidor</label>
+      <div class="row" data-help="env.hCountries"><label for="eCountries" data-i18n="env.countries">Países do servidor</label>
         <input type="text" id="eCountries" placeholder="Brazil, Netherlands"></div>
 
       <p class="hint" data-i18n-html="env.hint"></p>
@@ -296,6 +302,7 @@
           <option value="nvidia" data-i18n="m.hwNvidia"></option>
         </select>
       </div>
+      <div class="row" id="mSolverRow" data-help="m.solverWhy"><label data-i18n="m.indexers">Indexadores</label>
       </div>
       <div class="row" id="mVpnRow"><label data-i18n="m.network">Rede</label>
         <label class="check"><input type="checkbox" id="mVpn"> <span data-i18n="m.vpn"></span></label>
@@ -349,6 +356,23 @@ const I18N = {
   'btn.copy':'Copiar',
   'btn.copied':'Copiado ✓',
   'btn.zip':'Baixar .zip',
+  'btn.help':'O que é isso?',
+  'env.hIds':'Usuário e grupo do host que os containers assumem para escrever nos volumes. Saem no <b>.env</b> como <b>PUID</b>/<b>PGID</b>; no seu usuário, veja com <b>id -u</b> e <b>id -g</b>.',
+  'env.hTz':'Fuso dos containers, em <b>TZ</b> — mexe nos horários de log, agendamento e renomeio. A lista é a IANA inteira; o valor inicial é o desta máquina.',
+  'env.hRestart':'O que o Docker faz quando um container morre ou a máquina reinicia. Sai como <b>${RESTART}</b> em todos os serviços: <b>unless-stopped</b> volta sozinho, menos se você tiver parado o container na mão.',
+  'env.hCfg':'Pasta do host onde fica a configuração de cada container, uma subpasta por serviço. Sai como <b>${BASE_CONFIG}</b>.',
+  'env.hData':'Raiz da biblioteca no host. Cada *arr monta a própria subpasta (<b>series</b>, <b>movies</b>, <b>music</b>) e o Jellyfin monta a base inteira. Sai como <b>${BASE_MEDIA}</b>.',
+  'env.hDl':'Pasta do host onde os clientes baixam. Os *arr montam a base inteira em <b>/downloads</b>, para importar sem copiar de um disco para outro. Sai como <b>${DOWNLOAD_BASE}</b>.',
+  'env.hDomain':'Vira o <b>server_name</b> do nginx e o domínio dos links copiados. Em branco, o nginx atende qualquer nome (<b>_</b>) e os links apontam para <b>localhost</b>.',
+  'env.hCert':'Caminho no host do certificado (fullchain). Entra no compose como <b>${TLS_CERT}</b>, montado só-leitura em /etc/nginx/certs.',
+  'env.hKey':'Caminho no host da chave privada do certificado. Entra no compose como <b>${TLS_KEY}</b>, montada só-leitura ao lado dele.',
+  'env.hProvider':'Nome do provedor como o gluetun o conhece — <b>mullvad</b>, <b>protonvpn</b>, <b>nordvpn</b>… Sai como <b>VPN_SERVICE_PROVIDER</b>.',
+  'env.hType':'Protocolo do túnel. Muda quais credenciais o gluetun espera: chave e endereços no WireGuard, usuário e senha no OpenVPN.',
+  'env.hWgKey':'A chave privada do WireGuard, do arquivo de configuração que o provedor entrega. Sai como <b>WIREGUARD_PRIVATE_KEY</b>.',
+  'env.hWgAddr':'O endereço que o provedor reservou para você dentro do túnel, com a máscara. Sai como <b>WIREGUARD_ADDRESSES</b>.',
+  'env.hOvpnUser':'Usuário do OpenVPN no provedor — nem sempre é o mesmo do login do site. Sai como <b>OPENVPN_USER</b>.',
+  'env.hOvpnPass':'Senha correspondente ao usuário do OpenVPN. Sai como <b>OPENVPN_PASSWORD</b>.',
+  'env.hCountries':'Países onde o gluetun pode escolher servidor, separados por vírgula. Em branco, ele escolhe em qualquer lugar. Sai como <b>SERVER_COUNTRIES</b>.',
   'btn.deploy':'Criar stack',
   'btn.deploying':'Criando…',
   'btn.deployed':'Stack criada ✓',
@@ -484,6 +508,23 @@ const I18N = {
   'btn.copy':'Copy',
   'btn.copied':'Copied ✓',
   'btn.zip':'Download .zip',
+  'btn.help':'What is this?',
+  'env.hIds':'Host user and group the containers take on to write in the volumes. They land in <b>.env</b> as <b>PUID</b>/<b>PGID</b>; for your own user, check <b>id -u</b> and <b>id -g</b>.',
+  'env.hTz':'Container time zone, as <b>TZ</b> — it drives log timestamps, scheduling and renaming. The list is the whole IANA database; the initial value is this machine\'s.',
+  'env.hRestart':'What Docker does when a container dies or the machine reboots. Lands as <b>${RESTART}</b> on every service: <b>unless-stopped</b> comes back on its own, unless you stopped the container yourself.',
+  'env.hCfg':'Host folder holding each container\'s configuration, one subfolder per service. Lands as <b>${BASE_CONFIG}</b>.',
+  'env.hData':'Root of the library on the host. Each *arr mounts its own subfolder (<b>series</b>, <b>movies</b>, <b>music</b>) and Jellyfin mounts the whole base. Lands as <b>${BASE_MEDIA}</b>.',
+  'env.hDl':'Host folder the clients download into. The *arr apps mount the whole base at <b>/downloads</b>, so they can import without copying across disks. Lands as <b>${DOWNLOAD_BASE}</b>.',
+  'env.hDomain':'Becomes the nginx <b>server_name</b> and the domain in the copied links. Left empty, nginx answers to any name (<b>_</b>) and the links point at <b>localhost</b>.',
+  'env.hCert':'Host path to the certificate (fullchain). Lands in the compose file as <b>${TLS_CERT}</b>, mounted read-only at /etc/nginx/certs.',
+  'env.hKey':'Host path to the certificate\'s private key. Lands in the compose file as <b>${TLS_KEY}</b>, mounted read-only next to it.',
+  'env.hProvider':'Provider name as gluetun knows it — <b>mullvad</b>, <b>protonvpn</b>, <b>nordvpn</b>… Lands as <b>VPN_SERVICE_PROVIDER</b>.',
+  'env.hType':'Tunnel protocol. It changes which credentials gluetun expects: key and addresses for WireGuard, username and password for OpenVPN.',
+  'env.hWgKey':'The WireGuard private key, from the config file your provider hands you. Lands as <b>WIREGUARD_PRIVATE_KEY</b>.',
+  'env.hWgAddr':'The address the provider reserved for you inside the tunnel, with its mask. Lands as <b>WIREGUARD_ADDRESSES</b>.',
+  'env.hOvpnUser':'Your OpenVPN username at the provider — often not the same as the website login. Lands as <b>OPENVPN_USER</b>.',
+  'env.hOvpnPass':'The password matching the OpenVPN username. Lands as <b>OPENVPN_PASSWORD</b>.',
+  'env.hCountries':'Countries gluetun may pick a server in, comma separated. Left empty, it picks anywhere. Lands as <b>SERVER_COUNTRIES</b>.',
   'btn.deploy':'Create stack',
   'btn.deploying':'Creating…',
   'btn.deployed':'Stack created ✓',
@@ -619,6 +660,23 @@ const I18N = {
   'btn.copy':'Copiar',
   'btn.copied':'Copiado ✓',
   'btn.zip':'Descargar .zip',
+  'btn.help':'¿Qué es esto?',
+  'env.hIds':'Usuario y grupo del host que los contenedores asumen para escribir en los volúmenes. Salen en el <b>.env</b> como <b>PUID</b>/<b>PGID</b>; para tu usuario, mira <b>id -u</b> e <b>id -g</b>.',
+  'env.hTz':'Zona horaria de los contenedores, como <b>TZ</b> — afecta a los horarios de log, la programación y el renombrado. La lista es la IANA entera; el valor inicial es el de esta máquina.',
+  'env.hRestart':'Qué hace Docker cuando un contenedor muere o la máquina reinicia. Sale como <b>${RESTART}</b> en todos los servicios: <b>unless-stopped</b> vuelve solo, salvo que hayas parado el contenedor a mano.',
+  'env.hCfg':'Carpeta del host donde queda la configuración de cada contenedor, una subcarpeta por servicio. Sale como <b>${BASE_CONFIG}</b>.',
+  'env.hData':'Raíz de la biblioteca en el host. Cada *arr monta su propia subcarpeta (<b>series</b>, <b>movies</b>, <b>music</b>) y Jellyfin monta la base entera. Sale como <b>${BASE_MEDIA}</b>.',
+  'env.hDl':'Carpeta del host donde descargan los clientes. Los *arr montan la base entera en <b>/downloads</b>, para importar sin copiar de un disco a otro. Sale como <b>${DOWNLOAD_BASE}</b>.',
+  'env.hDomain':'Se vuelve el <b>server_name</b> de nginx y el dominio de los enlaces copiados. En blanco, nginx atiende cualquier nombre (<b>_</b>) y los enlaces apuntan a <b>localhost</b>.',
+  'env.hCert':'Ruta en el host del certificado (fullchain). Entra en el compose como <b>${TLS_CERT}</b>, montado de solo lectura en /etc/nginx/certs.',
+  'env.hKey':'Ruta en el host de la clave privada del certificado. Entra en el compose como <b>${TLS_KEY}</b>, montada de solo lectura a su lado.',
+  'env.hProvider':'Nombre del proveedor tal como lo conoce gluetun — <b>mullvad</b>, <b>protonvpn</b>, <b>nordvpn</b>… Sale como <b>VPN_SERVICE_PROVIDER</b>.',
+  'env.hType':'Protocolo del túnel. Cambia qué credenciales espera gluetun: clave y direcciones en WireGuard, usuario y contraseña en OpenVPN.',
+  'env.hWgKey':'La clave privada de WireGuard, del archivo de configuración que entrega el proveedor. Sale como <b>WIREGUARD_PRIVATE_KEY</b>.',
+  'env.hWgAddr':'La dirección que el proveedor te reservó dentro del túnel, con su máscara. Sale como <b>WIREGUARD_ADDRESSES</b>.',
+  'env.hOvpnUser':'Usuario de OpenVPN en el proveedor — muchas veces no es el mismo del login del sitio. Sale como <b>OPENVPN_USER</b>.',
+  'env.hOvpnPass':'La contraseña correspondiente al usuario de OpenVPN. Sale como <b>OPENVPN_PASSWORD</b>.',
+  'env.hCountries':'Países donde gluetun puede elegir servidor, separados por comas. En blanco, elige en cualquier lugar. Sale como <b>SERVER_COUNTRIES</b>.',
   'btn.deploy':'Crear stack',
   'btn.deploying':'Creando…',
   'btn.deployed':'Stack creada ✓',
@@ -1148,6 +1206,30 @@ function openEnv(){
   $('#envBack').classList.add('open');
 }
 const closeEnv = ()=> $('#envBack').classList.remove('open');
+
+/* ajuda por campo: cada linha marcada com data-help ganha um "?" na terceira
+   coluna e um parágrafo logo abaixo, escondido até alguém pedir. O texto sai
+   do I18N pela chave do próprio data-help, com data-i18n-html para acompanhar
+   a troca de idioma. */
+function buildHelp(){
+  document.querySelectorAll('.modal .row[data-help]').forEach(row=>{
+    const key = row.dataset.help;
+    const btn = document.createElement('button');
+    btn.type='button'; btn.className='help'; btn.textContent='?';
+    btn.dataset.i18nTitle = 'btn.help';
+    row.appendChild(btn);
+
+    const p = document.createElement('p');
+    p.className='hint helpTxt'; p.hidden=true; p.dataset.i18nHtml = key;
+    row.after(p);
+
+    btn.onclick = ()=>{
+      p.hidden = !p.hidden;
+      btn.classList.toggle('on', !p.hidden);
+    };
+  });
+}
+buildHelp();
 
 // mostra só os campos do tipo de VPN escolhido
 function vpnRows(){

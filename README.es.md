@@ -38,6 +38,9 @@ defecto:
 - **Aceleración por hardware de Jellyfin**: CPU, Intel o NVIDIA. Intel recibe
   `devices: /dev/dri:/dev/dri`; NVIDIA, la reserva de GPU en `deploy` y las
   variables `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES`.
+- **Ayuda por campo** en el Entorno: cada línea tiene un `?` que abre una
+  explicación de lo que hace ese valor y de cómo sale en los archivos
+  generados.
 - **HTTPS opcional**, con el certificado y la clave provenientes del host.
 - **Entorno global** (botón arriba): rutas base, PUID/PGID, zona horaria,
   restart policy, puertos del host, API key, TLS y las credenciales de
