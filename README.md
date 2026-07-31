@@ -37,9 +37,9 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
   variáveis `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES`.
 - **HTTPS opcional**, com o certificado e a chave vindos do host.
 - **Ambiente global** (botão no topo): bases de caminho, PUID/PGID, time zone,
-  restart policy, API key, TLS e as credenciais do gluetun. A lista de fusos é
-  a IANA inteira, vinda do próprio navegador, e o valor inicial é o fuso da
-  máquina.
+  restart policy, portas do host, API key, TLS e as credenciais do gluetun. A
+  lista de fusos é a IANA inteira, vinda do próprio navegador, e o valor
+  inicial é o fuso da máquina.
 - **Baixar** `docker-compose.yml`, `.env` e `nginx/conf.d/starrnet.conf` juntos
   num `.zip`.
 - **Trocar o idioma** no seletor do topo: português (Brasil), inglês e
@@ -68,15 +68,22 @@ Os caminhos saem como variáveis resolvidas pelo `.env`:
 
 Todos os volumes usam a sintaxe longa, com `type: bind` e
 `bind.propagation: rslave`. A porta é sempre a original do serviço, dentro do
-container: não há porta de host para escolher, nem conflito possível.
+container: fora o nginx, não há porta de host para escolher, nem conflito
+possível.
 
 ## Reverse proxy
 
 O nginx é fixo e obrigatório: entra sempre na stack, não aparece no combobox e
-não pode ser removido. É o único container que publica portas no host (80 e
-443) — todos os outros ficam só na rede `starrnet`, alcançados pelo nginx por
+não pode ser removido. É o único container que publica portas no host — todos
+os outros ficam só na rede `starrnet`, alcançados pelo nginx por
 `nome-do-container:porta-interna`. Quem roteia pela VPN responde no `gluetun`,
 que é quem detém a rede.
+
+As duas portas do host saem no Ambiente, em **Portas do host (nginx)**: 80 e
+443 por padrão, mas dá para publicar em 8080 e 8443, por exemplo, se algo já
+ocupa as privilegiadas. Elas viram `HTTP_PORT` e `HTTPS_PORT` no `.env`; dentro
+do container o nginx continua ouvindo em 80 e 443. Os links copiados e o
+redirecionamento para o https já levam a porta escolhida.
 
 A aba **nginx.conf** gera a configuração correspondente, roteando por subpath
 (`/sonarr`, `/radarr`…), um `location` por serviço. O Heimdall é a exceção:

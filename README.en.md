@@ -38,9 +38,9 @@ The combobox lists the available services with their logos and default ports:
   plus the `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES` variables.
 - **Optional HTTPS**, with the certificate and key coming from the host.
 - **Global environment** (button at the top): base paths, PUID/PGID, time zone,
-  restart policy, API key, TLS and the gluetun credentials. The time zone list
-  is the whole IANA database, straight from the browser, and it starts on the
-  machine's own zone.
+  restart policy, host ports, API key, TLS and the gluetun credentials. The
+  time zone list is the whole IANA database, straight from the browser, and it
+  starts on the machine's own zone.
 - **Download** `docker-compose.yml`, `.env` and `nginx/conf.d/starrnet.conf`
   together in a `.zip`.
 - **Switch languages** in the selector at the top: Portuguese (Brazil), English
@@ -69,15 +69,22 @@ Paths come out as variables resolved by `.env`:
 
 Every volume uses the long syntax, with `type: bind` and
 `bind.propagation: rslave`. The port is always the service's own, inside the
-container: there is no host port to choose, and no conflict to worry about.
+container: apart from nginx there is no host port to choose, and no conflict
+to worry about.
 
 ## Reverse proxy
 
 nginx is fixed and mandatory: it is always in the stack, never shows up in the
 combobox and cannot be removed. It is the only container publishing ports on
-the host (80 and 443) — everything else stays on the `starrnet` network,
-reached by nginx at `container-name:internal-port`. Whatever routes through the
-VPN answers at `gluetun`, which owns the network.
+the host — everything else stays on the `starrnet` network, reached by nginx at
+`container-name:internal-port`. Whatever routes through the VPN answers at
+`gluetun`, which owns the network.
+
+Both host ports live in the Environment, under **Host ports (nginx)**: 80 and
+443 by default, but you can publish on 8080 and 8443, say, if something already
+holds the privileged ones. They become `HTTP_PORT` and `HTTPS_PORT` in the
+`.env`; inside the container nginx keeps listening on 80 and 443. The copied
+links and the redirect to https already carry the chosen port.
 
 The **nginx.conf** tab generates the matching configuration, routing by subpath
 (`/sonarr`, `/radarr`…), one `location` per service. Heimdall is the exception:

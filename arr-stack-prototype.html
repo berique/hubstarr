@@ -209,6 +209,11 @@
       <div class="row"><label for="eCfg" data-i18n="env.cfg">Base da pasta config</label><input type="text" id="eCfg"></div>
       <div class="row"><label for="eData" data-i18n="env.data">Base da pasta de mídia</label><input type="text" id="eData"></div>
       <div class="row"><label for="eDl" data-i18n="env.dl">Base de downloads</label><input type="text" id="eDl"></div>
+      <div class="row" data-help="env.portsHint"><label for="eHttp" data-i18n="env.ports">Portas do host (nginx)</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="eHttp" placeholder="80"><input type="text" id="eHttps" placeholder="443">
+        </div>
+      </div>
       <h4 style="margin:18px 0 10px;font-size:12px;text-transform:uppercase;
                  letter-spacing:.06em;color:var(--muted)" data-i18n="env.secApi">API keys</h4>
       <div class="row"><label for="eApiKey">STARR_APIKEY</label>
@@ -222,8 +227,8 @@
       <h4 style="margin:18px 0 10px;font-size:12px;text-transform:uppercase;
                  letter-spacing:.06em;color:var(--muted)" data-i18n="env.secTls">TLS</h4>
       <div class="row"><label for="eTls" data-i18n="env.tlsOn">Servir HTTPS</label>
-        <label class="check"><input type="checkbox" id="eTls"> 443</label></div>
       <div class="row"><label for="eDomain" data-i18n="env.domain">Domínio</label>
+        <label class="check"><input type="checkbox" id="eTls"> <span id="eTlsPort">443</span></label></div>
         <input type="text" id="eDomain" data-i18n-ph="env.phDomain"></div>
       <div id="eTlsRows">
         <div class="row"><label for="eCert" data-i18n="env.cert">Certificado (host)</label>
@@ -351,6 +356,8 @@ const I18N = {
   'env.h':'⚙ Ambiente',
   'env.tz':'Time Zone',
   'env.restart':'Restart policy',
+  'env.ports':'Portas do host (nginx)',
+  'env.portsHint':'Portas publicadas pelo nginx no host: a do http e a do https, nessa ordem. Dentro da stack ele continua ouvindo em 80 e 443.',
   'env.cfg':'Base da pasta config',
   'env.data':'Base da pasta de mídia',
   'env.dl':'Base de downloads',
@@ -364,6 +371,7 @@ const I18N = {
   'env.countries':'Países do servidor',
   'env.hint':'Valem para toda a stack. As bases saem no compose como <b>${BASE_CONFIG}</b>, <b>${BASE_MEDIA}</b> e <b>${DOWNLOAD_BASE}</b>, e o restart como <b>${RESTART}</b>. Todos os valores acima vão para o <b>.env</b>.',
   'env.warnIds':'PUID/PGID devem ser numéricos',
+  'env.warnPorts':'As portas do host devem ser números de 1 a 65535, e diferentes entre si',
   'btn.cancel':'Cancelar',
   'btn.save':'Salvar',
   'btn.done':'Concluir',
@@ -483,6 +491,8 @@ const I18N = {
   'env.h':'⚙ Environment',
   'env.tz':'Time zone',
   'env.restart':'Restart policy',
+  'env.ports':'Host ports (nginx)',
+  'env.portsHint':'Ports nginx publishes on the host: http first, https second. Inside the stack it keeps listening on 80 and 443.',
   'env.cfg':'Config base path',
   'env.data':'Media base path',
   'env.dl':'Downloads base path',
@@ -496,6 +506,7 @@ const I18N = {
   'env.countries':'Server countries',
   'env.hint':'These apply to the whole stack. The base paths land in the compose file as <b>${BASE_CONFIG}</b>, <b>${BASE_MEDIA}</b> and <b>${DOWNLOAD_BASE}</b>, and the restart policy as <b>${RESTART}</b>. Every value above goes to <b>.env</b>.',
   'env.warnIds':'PUID/PGID must be numeric',
+  'env.warnPorts':'Host ports must be numbers from 1 to 65535, and different from each other',
   'btn.cancel':'Cancel',
   'btn.save':'Save',
   'btn.done':'Done',
@@ -615,6 +626,8 @@ const I18N = {
   'env.h':'⚙ Entorno',
   'env.tz':'Zona horaria',
   'env.restart':'Restart policy',
+  'env.ports':'Puertos del host (nginx)',
+  'env.portsHint':'Puertos que nginx publica en el host: primero el de http, luego el de https. Dentro de la stack sigue escuchando en 80 y 443.',
   'env.cfg':'Base de la carpeta config',
   'env.data':'Base de la carpeta multimedia',
   'env.dl':'Base de descargas',
@@ -628,6 +641,7 @@ const I18N = {
   'env.countries':'Países del servidor',
   'env.hint':'Valen para toda la stack. Las bases salen en el compose como <b>${BASE_CONFIG}</b>, <b>${BASE_MEDIA}</b> y <b>${DOWNLOAD_BASE}</b>, y el restart como <b>${RESTART}</b>. Todos los valores de arriba van al <b>.env</b>.',
   'env.warnIds':'PUID/PGID deben ser numéricos',
+  'env.warnPorts':'Los puertos del host deben ser números de 1 a 65535, y distintos entre sí',
   'btn.cancel':'Cancelar',
   'btn.save':'Guardar',
   'btn.done':'Listo',
@@ -816,7 +830,9 @@ const STACK = 'starrnet';
 const NETWORK = 'starrnet';
 
 /* reverse proxy fixo da stack: sempre presente, não sai no combobox e não pode
-   ser removido. É o único container que publica portas no host. */
+   ser removido. É o único container que publica portas no host — as 80/443
+   abaixo são as de dentro do container; as do host ficam no Ambiente
+   (DEFAULTS.http / DEFAULTS.https). */
 const NGINX = {id:'nginx', name:'Nginx',
                img:'nginx:alpine', color:'#009639', http:80, https:443};
 
@@ -850,6 +866,8 @@ function localTz(){
 
 const DEFAULTS = {restart:'unless-stopped',
                   cfg:'/opt/appdata', data:'/mnt/media', dl:'/mnt/downloads',
+                  // portas publicadas pelo nginx no host
+                  http:'80', https:'443',
                   puid:'1000', pgid:'1000', tz:localTz(),
                   // gluetun
                   // chave de API por app, preenchida no Ambiente
@@ -880,9 +898,13 @@ const slug = t => (t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
 const cname = a => slug(a.title) || a.id;   // container_name / service key / pasta
 // caminho no nginx: subpath próprio, ou a raiz para o painel de atalhos
 const route = a => a.id===ROOT_SERVICE ? '/' : '/'+cname(a);
-// endereço pelo qual o serviço vai ser acessado, passando pelo proxy
+// endereço pelo qual o serviço vai ser acessado, passando pelo proxy;
+// a porta só aparece quando não é a padrão do esquema
+const hostPort = ()=> DEFAULTS.tls ? DEFAULTS.https : DEFAULTS.http;
 const url = a => (DEFAULTS.tls ? 'https://' : 'http://')
-  + (DEFAULTS.domain || 'localhost') + route(a);
+  + (DEFAULTS.domain || 'localhost')
+  + (hostPort() === (DEFAULTS.tls ? '443' : '80') ? '' : ':'+hostPort())
+  + route(a);
 const has = id => added.some(a=>a.id===id);
 const byKey = k => added.find(a=>cname(a)===k);
 // caminhos sempre derivados das bases do Ambiente, expostas como variáveis
@@ -952,7 +974,7 @@ function renderItems(){
       ${icoHtml(NGINX)}
       <div class="meta">
         <div class="nm">${NGINX.name}
-          <span class="tag">${t('items.nginxPorts', NGINX.http, NGINX.https)}</span>
+          <span class="tag">${t('items.nginxPorts', DEFAULTS.http, DEFAULTS.https)}</span>
         </div>
         <div class="ds">${NGINX.id} · ${sdesc(NGINX.id)} · ${DEFAULTS.cfg}/${NGINX.id}/conf.d</div>
       </div>
@@ -1113,6 +1135,8 @@ function openEnv(){
   $('#eOvpnUser').value=DEFAULTS.ovpnUser; $('#eOvpnPass').value=DEFAULTS.ovpnPass;
   $('#eCountries').value=DEFAULTS.countries;
   $('#eApiKey').value = DEFAULTS.apiKey;
+  $('#eHttp').value = DEFAULTS.http; $('#eHttps').value = DEFAULTS.https;
+  $('#eTlsPort').textContent = DEFAULTS.https;
   $('#eTls').checked = DEFAULTS.tls; $('#eDomain').value = DEFAULTS.domain;
   $('#eCert').value = DEFAULTS.cert; $('#eTlsKey').value = DEFAULTS.tlsKey;
   tlsRows();
@@ -1137,6 +1161,9 @@ $('#eApiGen').onclick = ()=> $('#eApiKey').value = randKey();
 // caminhos de certificado só interessam com o TLS ligado
 function tlsRows(){ $('#eTlsRows').style.display = $('#eTls').checked ? 'block' : 'none'; }
 $('#eTls').addEventListener('change', ()=>{ tlsRows(); render(); });
+// a porta ao lado do "Servir HTTPS" acompanha o que está no campo
+$('#eHttps').addEventListener('input', e=>
+  $('#eTlsPort').textContent = e.target.value.trim() || '443');
 
 /* ---------- tema claro/escuro ---------- */
 function setTheme(t){
@@ -1160,6 +1187,12 @@ $('#eSave').onclick = ()=>{
   if(!/^\d+$/.test(puid) || !/^\d+$/.test(pgid)){
     $('#eWarn').innerHTML=`<span class="warn">${t('env.warnIds')}</span>`; return;
   }
+  const http=$('#eHttp').value.trim() || '80', https=$('#eHttps').value.trim() || '443';
+  const port = p => /^\d+$/.test(p) && +p >= 1 && +p <= 65535;
+  if(!port(http) || !port(https) || http === https){
+    $('#eWarn').innerHTML=`<span class="warn">${t('env.warnPorts')}</span>`; return;
+  }
+  Object.assign(DEFAULTS, {http, https});
   Object.assign(DEFAULTS, {restart:$('#eRestart').value, puid, pgid,
     tz:$('#eTz').value, cfg:$('#eCfg').value.trim(), data:$('#eData').value.trim(),
     dl:$('#eDl').value.trim(),
@@ -1197,8 +1230,8 @@ function build(){
   L.push(`    <span class="k">image</span>: <span class="v">${NGINX.img}</span>`);
   L.push(`    <span class="k">container_name</span>: <span class="v">${NGINX.id}</span>`);
   L.push(`    <span class="k">ports</span>:`);
-  L.push(`      - <span class="v">"${NGINX.http}:80"</span>`);
-  L.push(`      - <span class="v">"${NGINX.https}:443"</span>`);
+  L.push(`      - <span class="v">"\${HTTP_PORT}:${NGINX.http}"</span>`);
+  L.push(`      - <span class="v">"\${HTTPS_PORT}:${NGINX.https}"</span>`);
   L.push(`    <span class="k">volumes</span>:`);
   L.push(`      - <span class="k">type</span>: <span class="v">bind</span>`);
   L.push(`        <span class="k">source</span>: <span class="v">\${BASE_CONFIG}/${NGINX.id}/conf.d</span>`);
@@ -1321,7 +1354,9 @@ function buildNginx(list){
     N.push(`  <span class="k">listen</span> <span class="v">80</span>;`);
     N.push(`  <span class="k">server_name</span> <span class="v">${name}</span>;`);
     N.push(`  <span class="c"># ${t('ngx.redirect')}</span>`);
-    N.push(`  <span class="k">return</span> <span class="v">301 https://$host$request_uri</span>;`);
+    // o destino leva a porta do host, não a de dentro do container
+    const pub = DEFAULTS.https === '443' ? '' : ':'+DEFAULTS.https;
+    N.push(`  <span class="k">return</span> <span class="v">301 https://$host${pub}$request_uri</span>;`);
     N.push(`}`);
     N.push(``);
   }
@@ -1384,6 +1419,8 @@ function buildEnv(list){
   E.push(``);
   E.push(`<span class="c"># ${t('env.secStack')}</span>`);
   E.push(`<span class="k">RESTART</span>=<span class="v">${DEFAULTS.restart}</span>`);
+  E.push(`<span class="k">HTTP_PORT</span>=<span class="v">${DEFAULTS.http}</span>`);
+  E.push(`<span class="k">HTTPS_PORT</span>=<span class="v">${DEFAULTS.https}</span>`);
   E.push(``);
   E.push(`<span class="c"># ${t('env.secPaths')}</span>`);
   E.push(`<span class="k">BASE_CONFIG</span>=<span class="v">${DEFAULTS.cfg}</span>`);
