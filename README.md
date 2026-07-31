@@ -171,3 +171,14 @@ e traduzir os valores.
 Protótipo de interface: o botão "Criar stack" apenas simula o deploy. O
 `docker-compose.yml`, o `.env` e o `nginx.conf` gerados, esses sim, são de
 verdade.
+
+## Licença
+
+[GNU General Public License v3.0](LICENSE) ou posterior. Use, estude, modifique
+e redistribua à vontade; se distribuir uma versão modificada, ela precisa vir
+com o código e sob a mesma licença. Sem garantia — veja as seções 15 e 16 do
+texto.
+
+Os logotipos dos serviços são de seus respectivos projetos e vêm do
+[dashboardicons.com](https://dashboardicons.com); a GPL cobre o Hubstarr, não
+eles.

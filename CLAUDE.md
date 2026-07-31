@@ -15,6 +15,10 @@ está no `.gitignore`.
 
 O botão "Criar stack" apenas simula o deploy; os arquivos gerados são reais.
 
+Licença GPL-3.0 (`LICENSE`, texto oficial da FSF). O aviso de copyright fica no
+comentário logo depois do `<!DOCTYPE html>` — não o remova ao mexer no arquivo,
+é ele que liga o código à licença.
+
 ## Arquitetura do script
 
 O script é uma sequência de seções marcadas por comentários `/* ---------- x ---------- */`:
