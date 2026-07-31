@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Hubstarr é um protótipo de página única que gera `docker-compose.yml`, `.env` e
 `nginx.conf` de uma stack de mídia (*arr + clientes de download + servidor de
 mídia). **Todo o projeto é um único arquivo**: `arr-stack-prototype.html`
-(~1700 linhas: CSS, HTML e um `<script>` inline).
+(~1850 linhas: CSS, HTML e um `<script>` inline).
 
 Não há build, testes, lint, package manager nem backend. Para rodar, abra o
 arquivo no navegador — nada de servidor. O `.mvn/` é resto de outro projeto e
@@ -57,7 +57,10 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    literal ou com variável; não remonte `${BASE_MEDIA}/…` na mão.
 6. **UI** — `renderCombo()`, `renderItems()`, modal de configuração
    (`openModal` + o handler de `#mSave`), modal de ambiente (`openEnv`), modal
-   do nginx (`openNgx`), `buildHelp()` e tema claro/escuro.
+   do nginx (`openNgx`), lista de pastas do Jellyfin (`renderLibs`/`libsOf`),
+   `buildHelp()` e tema claro/escuro. O hint do modal (`updateHint`) é montado
+   à mão com `innerHTML` a cada digitada — quem mexe nos campos chama
+   `hintNow()`, e o `applyI18n()` o refaz para acompanhar a troca de idioma.
 7. **Geradores** — `build()` (compose), `buildEnv()`, `buildNginx()`. Eles
    emitem **HTML com spans de realce** (`<span class="k">`/`v`/`c`); o texto
    puro para copiar/baixar vem de `textContent` dos panes (`plain()`,
@@ -100,6 +103,10 @@ handler de `#mSave`.
   `network_mode: service:gluetun` e responde no endereço do gluetun.
 - **Volumes em sintaxe longa**, com `type: bind` e `bind.propagation: rslave`.
 - **Cada subpath do nginx casa com a base URL do app** (`<APP>__SERVER__URLBASE`).
+- **Serviço `internal` não vira rota**: gluetun e FlareSolverr existem para os
+  outros containers, então ficam sem `location`, sem link e fora da contagem de
+  rotas — mas continuam no compose. Ao acrescentar um serviço assim, use a
+  flag; não espalhe `if(id==='…')`.
 - Toda string visível ao usuário passa pelo `I18N`, nos três idiomas.
 - **`id` do serviço ≠ imagem do container**: o `flaresolverr` roda a imagem do
   Byparr (`ghcr.io/thephaseless/byparr`), substituto direto. O `id` é o que vira
