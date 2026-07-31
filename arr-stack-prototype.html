@@ -1125,8 +1125,8 @@ function renderItems(){
         </div>
         <div class="ds">${NGINX.id} · ${sdesc(NGINX.id)} · ${DEFAULTS.cfg}/${NGINX.id}/conf.d</div>
       </div>
-      <div class="acts"><span class="hint">${t('items.fixed')}</span>
-        <button class="sm" data-act="ngx">${t('btn.edit')}</button></div>
+      <div class="acts"><button class="sm" data-act="ngx">${t('btn.edit')}</button>
+        <span class="hint">${t('items.fixed')}</span></div>
     </div>`;
 
   box.innerHTML = fixed + (added.length ? added.map(a=>{
