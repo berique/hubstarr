@@ -101,7 +101,9 @@ No modal, o campo da subpasta mostra o caminho já resolvido e aceita as
 variáveis: digitar `${BASE_MEDIA}` troca pelo valor dela na hora. Apontar para
 fora das bases — `/mnt/disco2/filmes-4k`, por exemplo — é permitido, e aí o
 compose sai com esse caminho literal, sem variável nenhuma. O Bazarr acompanha:
-monta o caminho de cada instância como ela ficou.
+monta o caminho de cada instância como ela ficou. O Jellyfin também: além da
+base inteira, ganha um volume para cada pasta que ficou fora dela, senão a
+biblioteca não apareceria para ele.
 
 Todos os volumes usam a sintaxe longa, com `type: bind` e
 `bind.propagation: rslave`. A porta é sempre a original do serviço, dentro do

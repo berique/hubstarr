@@ -27,7 +27,8 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
 2. **`SERVICES`** — catálogo dos serviços disponíveis. Cada entrada traz
    `id, name, port (interna), img, color` e flags que dirigem a geração:
    `media`/`mdir` (subpasta da biblioteca), `needsDl` (monta a árvore de
-   downloads inteira), `dlClient`, `vpn`, `hw` (Jellyfin), `solver` (Prowlarr;
+   downloads inteira), `dlClient`, `vpn`, `hw` (Jellyfin), `library` (Jellyfin:
+   monta a base e mais as pastas que ficaram fora dela), `solver` (Prowlarr;
    ver abaixo), `noVol`, `derived` (Bazarr herda as subpastas das instâncias de
    Radarr/Sonarr presentes).
    Adicionar um serviço normalmente é acrescentar uma linha aqui + o ícone em

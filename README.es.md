@@ -106,7 +106,9 @@ En el modal, el campo de la subcarpeta muestra la ruta ya resuelta y acepta las
 variables: escribir `${BASE_MEDIA}` la cambia por su valor al instante. Apuntar
 fuera de las bases — `/mnt/disco2/peliculas-4k`, por ejemplo — está permitido, y
 entonces el compose sale con esa ruta literal, sin ninguna variable. Bazarr
-acompaña: monta la ruta de cada instancia tal como quedó.
+acompaña: monta la ruta de cada instancia tal como quedó. Jellyfin también:
+además de la base entera, recibe un volumen por cada carpeta que quedó fuera de
+ella, si no esa biblioteca no le aparecería.
 
 Todos los volúmenes usan la sintaxis larga, con `type: bind` y
 `bind.propagation: rslave`. El puerto siempre es el original del servicio,

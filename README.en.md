@@ -102,7 +102,9 @@ In the modal, the subfolder field shows the resolved path and takes the
 variables: typing `${BASE_MEDIA}` swaps in its value right away. Pointing
 outside the bases — `/mnt/disk2/movies-4k`, say — is allowed, and then the
 compose file carries that literal path, with no variable at all. Bazarr
-follows: it mounts each instance's path as it ended up.
+follows: it mounts each instance's path as it ended up. So does Jellyfin: on
+top of the whole base it gets one volume per folder left outside it, otherwise
+that library would be invisible to it.
 
 Every volume uses the long syntax, with `type: bind` and
 `bind.propagation: rslave`. The port is always the service's own, inside the

@@ -863,7 +863,7 @@ const SERVICES = [
   {id:'bazarr',   name:'Bazarr',    port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr']},
   {id:'qbittorrent',name:'qBittorrent',port:8080, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true},
   {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true},
-  {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true},
+  {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true},
   {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5'},
   {id:'heimdall', name:'Heimdall',  port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f'},
   {id:'flaresolverr',name:'FlareSolverr',port:8191,img:'ghcr.io/thephaseless/byparr:latest',color:'#ff7f50',noVol:true},
@@ -1036,8 +1036,22 @@ const dataReal = a => {
   const s = svc(a.id);
   if(s.derived)                        // ex.: bazarr segue radarr/sonarr
     return derivedMounts(s).map(m=>m.real).join(', ');
-  return a.abs || (s.dlClient ? DEFAULTS.dl : DEFAULTS.data) + (a.data ? '/'+a.data : '');
+  const own = a.abs || (s.dlClient ? DEFAULTS.dl : DEFAULTS.data) + (a.data ? '/'+a.data : '');
+  return s.library ? [own, ...extraLibs(a).map(l=>l.path)].join(', ') : own;
 };
+/* pastas de mídia que alguma instância pôs fora das bases: quem enxerga a
+   biblioteca inteira (jellyfin) monta a base e mais estas, uma a uma. */
+function extraLibs(self){
+  const seen = new Set([self && self.abs].filter(Boolean)), out = [];
+  added.forEach(x=>{
+    const sx = svc(x.id);
+    if(!x.abs || !sx.media || sx.dlClient || sx.derived || seen.has(x.abs)) return;
+    seen.add(x.abs);
+    out.push({name:x.data, path:x.abs});
+  });
+  return out;
+}
+
 /* pastas que um serviço derivado (bazarr) monta: uma por instância presente
    de radarr/sonarr, com o caminho que cada uma usa de fato. Sem nenhuma, as
    subpastas padrão dos serviços de origem. */
@@ -1481,8 +1495,11 @@ function build(){
       if(s.derived){
         // acompanha as pastas das instâncias de radarr/sonarr já adicionadas
         derivedMounts(s).forEach(m=>bind(m.source, '/data/'+m.name));
-      } else if(s.media) bind(dataPath(a),
-        (s.dlClient ? '/downloads' : '/data') + (a.data?'/'+a.data:''));
+      } else if(s.media){
+        bind(dataPath(a),
+          (s.dlClient ? '/downloads' : '/data') + (a.data?'/'+a.data:''));
+        if(s.library) extraLibs(a).forEach(l=>bind(l.path, '/data/'+l.name));
+      }
       // *arr também veem a árvore de downloads, para importar do cliente
       if(s.needsDl) bind('${DOWNLOAD_BASE}', '/downloads');
     }
