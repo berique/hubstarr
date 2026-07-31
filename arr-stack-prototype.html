@@ -312,10 +312,7 @@
           <span data-i18n="m.portHint"></span></span>
       </div>
       <div class="row" id="mDataRow"><label for="mData" id="mDataLabel">Subpasta de mídia</label>
-        <div style="display:flex;gap:8px;align-items:center">
-          <span class="hint" id="mDataBase" style="white-space:nowrap"></span>
-          <input type="text" id="mData" placeholder="movies">
-        </div>
+        <input type="text" id="mData" placeholder="${BASE_MEDIA}/movies">
       </div>
       <div class="row" id="mHwRow"><label for="mHw" data-i18n="m.hw">Aceleração</label>
         <select id="mHw">
@@ -1010,6 +1007,11 @@ const url = a => (DEFAULTS.tls ? 'https://' : 'http://')
 const has = id => added.some(a=>a.id===id);
 const byKey = k => added.find(a=>cname(a)===k);
 // caminhos sempre derivados das bases do Ambiente, expostas como variáveis
+// a base de dados do serviço, como variável do .env
+const baseVar = s => s.dlClient ? '${DOWNLOAD_BASE}' : '${BASE_MEDIA}';
+// o campo mostra "${BASE_MEDIA}/sub": a subpasta é o que sobra depois da variável
+const dataOf = s => slug($('#mData').value.replace(/^\s*\$\{[A-Z_]+\}\/?/, ''));
+
 const cfgPath  = a => `\${BASE_CONFIG}/${cname(a)}`;
 const dataPath = a => (svc(a.id).dlClient ? '${DOWNLOAD_BASE}' : '${BASE_MEDIA}')
                       + (a.data ? '/'+a.data : '');
@@ -1149,7 +1151,7 @@ $('#clear').onclick = e=>{
 /* ---------- modal de configuração ---------- */
 function updateHint(s){
   const cn = slug($('#mName').value) || s.id;
-  const sub = slug($('#mData').value);
+  const sub = dataOf(s);
   $('#mHint').innerHTML = `container_name: <b>${cn}</b>`
     + (s.noVol ? ' · ' + t('m.noVol')
                : t('m.cfgAt', `${DEFAULTS.cfg}/${cn}`))
@@ -1178,14 +1180,12 @@ function openModal(id, key){
   const nth = added.filter(a=>a.id===id).length + 1;
   $('#mName').value = isEdit ? cur.title
     : (isMulti(id) && has(id)) ? `${s.name} ${nth}` : s.name;
-  $('#mData').value = cur.data;
+  $('#mData').value = baseVar(s) + '/' + cur.data;
   $('#mInner').textContent = inner(id);   // porta original do serviço, nunca muda
   $('#mVpn').checked = cur.vpn;
   $('#mSolver').checked = cur.solver;
-  // o prefixo é a variável do .env, como sai no compose; o caminho resolvido
-  // aparece no hint de baixo
-  $('#mDataBase').textContent = (s.dlClient ? '${DOWNLOAD_BASE}' : '${BASE_MEDIA}') + '/';
   $('#mDataLabel').textContent = t(s.dlClient ? 'm.dlDir' : 'm.mediaDir');
+  $('#mData').placeholder = baseVar(s) + '/' + (s.mdir || '');
   $('#mDataRow').style.display = (s.media && !s.noVol && !s.derived) ? 'grid' : 'none';
   $('#mVpnRow').style.display = s.vpn ? 'grid' : 'none';
   $('#mSolverRow').style.display = s.solver ? 'grid' : 'none';
@@ -1221,7 +1221,7 @@ $('#mSave').onclick = ()=>{
   const useName = isMulti(id) || INSTANCE_ENV[id];
   const cfg = {id, title:(useName ? $('#mName').value.trim() : '') || s.name,
                hw: s.hw ? $('#mHw').value : 'cpu',
-               data:slug($('#mData').value),
+               data:dataOf(s),
                vpn: s.vpn && $('#mVpn').checked,
                solver: !!s.solver && $('#mSolver').checked};
 
