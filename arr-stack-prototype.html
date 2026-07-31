@@ -312,7 +312,7 @@
           <span data-i18n="m.portHint"></span></span>
       </div>
       <div class="row" id="mDataRow"><label for="mData" id="mDataLabel">Subpasta de mídia</label>
-        <input type="text" id="mData" placeholder="${BASE_MEDIA}/movies">
+        <input type="text" id="mData" placeholder="/mnt/media/movies">
       </div>
       <div class="row" id="mHwRow"><label for="mHw" data-i18n="m.hw">Aceleração</label>
         <select id="mHw">
@@ -1007,10 +1007,21 @@ const url = a => (DEFAULTS.tls ? 'https://' : 'http://')
 const has = id => added.some(a=>a.id===id);
 const byKey = k => added.find(a=>cname(a)===k);
 // caminhos sempre derivados das bases do Ambiente, expostas como variáveis
-// a base de dados do serviço, como variável do .env
-const baseVar = s => s.dlClient ? '${DOWNLOAD_BASE}' : '${BASE_MEDIA}';
-// o campo mostra "${BASE_MEDIA}/sub": a subpasta é o que sobra depois da variável
-const dataOf = s => slug($('#mData').value.replace(/^\s*\$\{[A-Z_]+\}\/?/, ''));
+// as variáveis que o .env resolve, com o valor que elas têm agora
+const VARS = () => ({BASE_MEDIA:DEFAULTS.data, DOWNLOAD_BASE:DEFAULTS.dl,
+                     BASE_CONFIG:DEFAULTS.cfg});
+// troca ${BASE_MEDIA} pelo caminho de verdade — quem digita a variável vê o
+// valor dela na hora, e o compose continua saindo com a variável
+const expandVars = v => v.replace(/\$\{([A-Z_]+)\}/g, (m, name) => VARS()[name] ?? m);
+// a base de dados do serviço, já resolvida
+const baseOf = s => s.dlClient ? DEFAULTS.dl : DEFAULTS.data;
+// a subpasta é o que vem depois da base; sem ela, o último trecho do caminho
+const dataOf = s => {
+  let v = expandVars($('#mData').value.trim());
+  const base = baseOf(s);
+  v = v.startsWith(base) ? v.slice(base.length) : v.slice(v.lastIndexOf('/') + 1);
+  return slug(v);
+};
 
 const cfgPath  = a => `\${BASE_CONFIG}/${cname(a)}`;
 const dataPath = a => (svc(a.id).dlClient ? '${DOWNLOAD_BASE}' : '${BASE_MEDIA}')
@@ -1180,12 +1191,12 @@ function openModal(id, key){
   const nth = added.filter(a=>a.id===id).length + 1;
   $('#mName').value = isEdit ? cur.title
     : (isMulti(id) && has(id)) ? `${s.name} ${nth}` : s.name;
-  $('#mData').value = baseVar(s) + '/' + cur.data;
+  $('#mData').value = baseOf(s) + '/' + cur.data;
   $('#mInner').textContent = inner(id);   // porta original do serviço, nunca muda
   $('#mVpn').checked = cur.vpn;
   $('#mSolver').checked = cur.solver;
   $('#mDataLabel').textContent = t(s.dlClient ? 'm.dlDir' : 'm.mediaDir');
-  $('#mData').placeholder = baseVar(s) + '/' + (s.mdir || '');
+  $('#mData').placeholder = baseOf(s) + '/' + (s.mdir || '');
   $('#mDataRow').style.display = (s.media && !s.noVol && !s.derived) ? 'grid' : 'none';
   $('#mVpnRow').style.display = s.vpn ? 'grid' : 'none';
   $('#mSolverRow').style.display = s.solver ? 'grid' : 'none';
@@ -1198,6 +1209,14 @@ function openModal(id, key){
   $('#mName').focus();
 }
 function closeModal(){ $('#backdrop').classList.remove('open'); editing=null; }
+
+$('#mData').addEventListener('input', e=>{
+  const el = e.target, exp = expandVars(el.value);
+  if(exp === el.value) return;
+  const pos = el.selectionStart + (exp.length - el.value.length);
+  el.value = exp;
+  el.setSelectionRange(pos, pos);
+});
 
 document.querySelectorAll('#mName,#mData').forEach(el=>el.addEventListener('input', ()=>{
   const id = editing || picked; if(id) updateHint(svc(id));
