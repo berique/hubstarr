@@ -54,6 +54,28 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
 - **Trocar o idioma** no seletor do topo: português (Brasil), inglês e
   espanhol.
 
+## Docker
+
+O Hubstarr em si só precisa de um navegador; os arquivos que ele gera é que
+precisam do Docker com o plugin Compose. No Linux, o script oficial resolve:
+
+```sh
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+```
+
+No macOS e no Windows — ou no Linux, se preferir uma instalação gerenciada com
+interface gráfica — instale o [Docker Desktop][dd].
+
+[dd]: https://docs.docker.com/desktop/
+
+Com o Docker no lugar, descompacte o `.zip` e suba a stack de dentro da pasta
+dos arquivos:
+
+```sh
+docker compose up -d
+```
+
 ## Convenções geradas
 
 O nome da stack e o da rede são fixos: `starrnet`. O título de cada instância

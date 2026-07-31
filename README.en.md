@@ -55,6 +55,28 @@ The combobox lists the available services with their logos and default ports:
 - **Switch languages** in the selector at the top: Portuguese (Brazil), English
   and Spanish.
 
+## Docker
+
+Hubstarr itself only needs a browser; it's the files it generates that need
+Docker with the Compose plugin. On Linux, the official script does it:
+
+```sh
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+```
+
+On macOS and Windows — or on Linux, if you'd rather have a managed install with
+a GUI — install [Docker Desktop][dd].
+
+[dd]: https://docs.docker.com/desktop/
+
+With Docker in place, unzip the `.zip` and bring the stack up from the folder
+holding the files:
+
+```sh
+docker compose up -d
+```
+
 ## Generated conventions
 
 The stack and network names are fixed: `starrnet`. Each instance title becomes

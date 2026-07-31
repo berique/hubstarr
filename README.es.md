@@ -58,6 +58,29 @@ defecto:
 - **Cambiar el idioma** en el selector de arriba: portugués (Brasil), inglés y
   español.
 
+## Docker
+
+Hubstarr en sí solo necesita un navegador; son los archivos que genera los que
+necesitan Docker con el plugin Compose. En Linux, el script oficial lo
+resuelve:
+
+```sh
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+```
+
+En macOS y Windows — o en Linux, si prefieres una instalación gestionada con
+interfaz gráfica — instala [Docker Desktop][dd].
+
+[dd]: https://docs.docker.com/desktop/
+
+Con Docker en su sitio, descomprime el `.zip` y levanta la stack desde la
+carpeta de los archivos:
+
+```sh
+docker compose up -d
+```
+
 ## Convenciones generadas
 
 El nombre de la stack y el de la red son fijos: `starrnet`. El título de cada

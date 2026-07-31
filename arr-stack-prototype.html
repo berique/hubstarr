@@ -192,7 +192,7 @@
       <span class="hint" id="summary"></span>
       <span class="sp"></span>
       <button id="copy" data-i18n="btn.copy">Copiar</button>
-      <button id="dl" data-i18n="btn.zip">Baixar .zip</button>
+      <button id="dl" data-i18n="btn.zip" data-i18n-title="btn.zipHint">Baixar .zip</button>
       <button class="primary" id="deploy" data-i18n="btn.deploy">Criar stack</button>
     </div>
   </div>
@@ -357,6 +357,7 @@ const I18N = {
   'btn.copy':'Copiar',
   'btn.copied':'Copiado ✓',
   'btn.zip':'Baixar .zip',
+  'btn.zipHint':'Descompacte e suba com "docker compose up -d". Sem Docker: curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh — no macOS/Windows, instale o Docker Desktop.',
   'btn.help':'O que é isso?',
   'env.hIds':'Usuário e grupo do host que os containers assumem para escrever nos volumes. Saem no <b>.env</b> como <b>PUID</b>/<b>PGID</b>; no seu usuário, veja com <b>id -u</b> e <b>id -g</b>.',
   'env.hTz':'Fuso dos containers, em <b>TZ</b> — mexe nos horários de log, agendamento e renomeio. A lista é a IANA inteira; o valor inicial é o desta máquina.',
@@ -512,6 +513,7 @@ const I18N = {
   'btn.copy':'Copy',
   'btn.copied':'Copied ✓',
   'btn.zip':'Download .zip',
+  'btn.zipHint':'Unzip it and bring the stack up with "docker compose up -d". No Docker yet: curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh — on macOS/Windows, install Docker Desktop.',
   'btn.help':'What is this?',
   'env.hIds':'Host user and group the containers take on to write in the volumes. They land in <b>.env</b> as <b>PUID</b>/<b>PGID</b>; for your own user, check <b>id -u</b> and <b>id -g</b>.',
   'env.hTz':'Container time zone, as <b>TZ</b> — it drives log timestamps, scheduling and renaming. The list is the whole IANA database; the initial value is this machine\'s.',
@@ -667,6 +669,7 @@ const I18N = {
   'btn.copy':'Copiar',
   'btn.copied':'Copiado ✓',
   'btn.zip':'Descargar .zip',
+  'btn.zipHint':'Descomprímelo y levanta la stack con "docker compose up -d". Sin Docker: curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh — en macOS/Windows, instala Docker Desktop.',
   'btn.help':'¿Qué es esto?',
   'env.hIds':'Usuario y grupo del host que los contenedores asumen para escribir en los volúmenes. Salen en el <b>.env</b> como <b>PUID</b>/<b>PGID</b>; para tu usuario, mira <b>id -u</b> e <b>id -g</b>.',
   'env.hTz':'Zona horaria de los contenedores, como <b>TZ</b> — afecta a los horarios de log, la programación y el renombrado. La lista es la IANA entera; el valor inicial es el de esta máquina.',
