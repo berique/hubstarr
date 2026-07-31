@@ -87,6 +87,14 @@ handler de `#mSave`.
 - **`id` do serviço ≠ imagem do container**: o `flaresolverr` roda a imagem do
   Byparr (`ghcr.io/thephaseless/byparr`), substituto direto. O `id` é o que vira
   `container_name`, subpath e upstream — trocar de imagem não deve mexer nele.
+  O logotipo também segue o nome, não a imagem: o do Byparr é um cookie que aos
+  20px da lista vira um ponto laranja, e já foi tentado e revertido.
+- **Logotipo sempre sobre fundo claro**: os SVGs do dashboardicons são
+  desenhados para isso e alguns são pretos (Heimdall, SABnzbd, Bazarr), então
+  `--ico-bg` é claro nos dois temas. Não o amarre ao `--panel`.
+- **Favicon embutido**: a marca do cabeçalho redesenhada em SVG, como data URI
+  no `<link rel="icon">`. `docs/logo.svg` — o que aparece no título do README —
+  é a mesma arte; mexeu num, mexa no outro. Nada de `favicon.ico` à parte.
 
 ## READMEs
 
@@ -97,8 +105,9 @@ seção **Docker** explicando como instalar o que roda os arquivos gerados.
 
 Para refazer as capturas, copie o HTML para um arquivo temporário fora do
 projeto (o chromium do snap não lê `/tmp` nem `/srv`), injete no fim do
-`<script>` o que a captura precisa — `setTheme('light')`, o `added` da stack de
-exemplo, `$('#combo').classList.add('open')` — e rode:
+`<script>` o que a captura precisa — `setTheme('dark')` (as duas capturas estão
+no tema escuro), o `added` da stack de exemplo,
+`$('#combo').classList.add('open')` — e rode:
 
 ```sh
 chromium-browser --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
@@ -108,7 +117,11 @@ chromium-browser --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
 
 `services.png` é 1480×760 e `screenshot.png` acompanha a altura do conteúdo
 (hoje 1195). O mesmo truque, com `--dump-dom` no lugar de `--screenshot`, é a
-maneira de testar mudanças de comportamento sem navegador interativo.
+maneira de testar mudanças de comportamento sem navegador interativo. Se o
+chromium travar sem escrever nada, passe um `--user-data-dir` próprio.
+
+O favicon não aparece em captura nenhuma: o headless fotografa só o viewport,
+sem a barra de abas.
 
 Ao injetar código, ancore no fim do `<script>` (`…render();\n</script>`): a
 linha `applyI18n(); renderCombo(); renderItems(); render();` sozinha também
