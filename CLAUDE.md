@@ -135,3 +135,7 @@ Mensagens em português, no imperativo/terceira pessoa do singular, uma linha
 ("Copia o link de cada serviço", "Serve a stack por HTTPS, com certificado
 configurável"). Corpo só quando explica o porquê, não o quê. Um assunto por
 commit, mesmo quando as mudanças estão no mesmo arquivo.
+
+Pedido de commit já inclui o push: `git commit && git push origin master`, num
+comando só. Se vier um "push" depois, ele já saiu — responda com o estado
+(`git status -sb` e o último commit) em vez de repetir o comando.
