@@ -29,7 +29,8 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    `media`/`mdir` (subpasta da biblioteca), `needsDl` (monta a árvore de
    downloads inteira), `dlClient`, `vpn`, `hw` (Jellyfin), `library` (Jellyfin:
    monta a base e mais as pastas que ficaram fora dela), `solver` (Prowlarr;
-   ver abaixo), `noVol`, `derived` (Bazarr herda as subpastas das instâncias de
+   ver abaixo), `internal` (gluetun e FlareSolverr: sem rota no nginx e sem
+   botão de link), `noVol`, `derived` (Bazarr herda as subpastas das instâncias de
    Radarr/Sonarr presentes).
    Adicionar um serviço normalmente é acrescentar uma linha aqui + o ícone em
    `ICONS` + as strings `d.<id>` no `I18N`.

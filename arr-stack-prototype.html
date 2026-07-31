@@ -898,8 +898,8 @@ const SERVICES = [
   {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true},
   {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5'},
   {id:'heimdall', name:'Heimdall',  port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f'},
-  {id:'flaresolverr',name:'FlareSolverr',port:8191,img:'ghcr.io/thephaseless/byparr:latest',color:'#ff7f50',noVol:true},
-  {id:'gluetun',  name:'Gluetun',   port:8000, img:'qmcgaw/gluetun:latest',                color:'#8b98a5', noVol:true},
+  {id:'flaresolverr',name:'FlareSolverr',port:8191,img:'ghcr.io/thephaseless/byparr:latest',color:'#ff7f50',noVol:true, internal:true},
+  {id:'gluetun',  name:'Gluetun',   port:8000, img:'qmcgaw/gluetun:latest',                color:'#8b98a5', noVol:true, internal:true},
 ];
 const svc = id => SERVICES.find(s=>s.id===id);
 // porta em que o serviço escuta dentro do container — o nginx fala com ela
@@ -1175,12 +1175,12 @@ function renderItems(){
           ${a.vpn?`<span class="tag">${t('items.viaVpn')}</span>`:''}
           ${a.hw==='intel' ? `<span class="tag">${t('items.hwIntel')}</span>`
             : a.hw==='nvidia' ? `<span class="tag">${t('items.hwNvidia')}</span>` : ''}
-          ${a.id==='gluetun' ? '' : `<span class="tag">${route(a)} → ${inner(a.id)}</span>`}
+          ${s.internal ? '' : `<span class="tag">${route(a)} → ${inner(a.id)}</span>`}
         </div>
         <div class="ds">${cname(a)}${(a.title && a.title!==s.name)?' ('+s.name+')':''}${s.noVol?' · '+sdesc(s.id):' · '+cfgReal(a)}${s.media&&!s.noVol?' · '+dataReal(a):''}</div>
       </div>
       <div class="acts">
-        ${a.id==='gluetun' ? '' : `<button class="sm" data-act="link"
+        ${s.internal ? '' : `<button class="sm" data-act="link"
           title="${t('btn.linkTitle', url(a))}">${t('btn.link')}</button>`}
         <button class="sm" data-act="edit">${t('btn.edit')}</button>
         <button class="sm danger" data-act="del">${t('btn.del')}</button>
@@ -1649,7 +1649,7 @@ function buildNginx(list){
   N.push(``);
   N.push(`  <span class="k">client_max_body_size</span> <span class="v">0</span>;`);
 
-  const items = list.filter(a=>a.id!=='gluetun');
+  const items = list.filter(a=>!svc(a.id).internal);
   if(!items.length){
     N.push(``);
     N.push(`  <span class="c"># ${t('ngx.none')}</span>`);
@@ -1734,7 +1734,7 @@ function render(){
   $('#out').innerHTML = html;
   $('#outEnv').innerHTML = buildEnv(list);
   $('#outNginx').innerHTML = buildNginx(list);
-  const routes = list.filter(a=>a.id!=='gluetun').length;
+  const routes = list.filter(a=>!svc(a.id).internal).length;
   $('#conflicts').innerHTML = !added.length ? ''
     : `<span class="ok">${t('items.routes', routes)}</span>`;
   $('#stat').textContent = t('out.containers', list.length + 1);   // +1: nginx fixo

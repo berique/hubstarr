@@ -133,6 +133,10 @@ as the dashboard, it sits at the root (`location /`). The file is mounted at
 `${BASE_CONFIG}/nginx/conf.d`, and each app needs its *base URL* to match its
 subpath.
 
+Not every service becomes a route: `gluetun` and FlareSolverr only talk to the
+other containers, so they get no `location` and no link button — Prowlarr
+reaches FlareSolverr straight over the stack network.
+
 The Environment can turn **TLS** on: `nginx.conf` then gets a `server` on 443
 with `ssl_certificate`, TLSv1.2/1.3, and a block on 80 that only redirects to
 https. The certificate and the key are host paths, entered in the same place,

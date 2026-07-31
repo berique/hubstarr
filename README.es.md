@@ -137,6 +137,10 @@ excepción: como panel de accesos, se queda en la raíz (`location /`). El
 archivo se monta en `${BASE_CONFIG}/nginx/conf.d` y cada app necesita su *base
 URL* igual a su subpath.
 
+No todo servicio se vuelve ruta: `gluetun` y FlareSolverr solo hablan con los
+otros contenedores, así que no reciben `location` ni botón de enlace — Prowlarr
+llega a FlareSolverr directo por la red de la stack.
+
 En el Entorno se puede activar el **TLS**: el `nginx.conf` pasa a tener un
 `server` en el 443 con `ssl_certificate`, TLSv1.2/1.3 y un bloque en el 80 que
 solo redirige al https. El certificado y la clave son rutas del host, indicadas
