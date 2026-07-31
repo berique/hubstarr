@@ -104,6 +104,11 @@
   button.help{width:24px;height:24px;padding:0;border-radius:50%;line-height:1;
     font-size:12px;color:var(--muted)}
   button.help.on{border-color:var(--accent);color:var(--txt)}
+  /* diretórios extras da biblioteca: uma linha por pasta, com o × ao lado */
+  .libs{display:grid;gap:6px}
+  .libs .lib{display:flex;gap:6px}
+  .libs .lib button{padding:0 10px;color:var(--muted)}
+  .libs .lib button:hover{border-color:var(--danger);color:var(--danger)}
   .helpTxt{margin:-4px 0 12px;padding-left:160px}
   .helpTxt[hidden]{display:none}
 
@@ -314,6 +319,13 @@
       <div class="row" id="mDataRow"><label for="mData" id="mDataLabel">Subpasta de mídia</label>
         <input type="text" id="mData" placeholder="/mnt/media/movies">
       </div>
+      <div class="row" id="mLibsRow" data-help="m.libsWhy"><label data-i18n="m.libs">Outras pastas</label>
+        <div>
+          <div class="libs" id="mLibs"></div>
+          <button type="button" class="sm" id="mLibAdd" style="margin-top:6px"
+                  data-i18n="m.libAdd">+ pasta</button>
+        </div>
+      </div>
       <div class="row" id="mHwRow"><label for="mHw" data-i18n="m.hw">Aceleração</label>
         <select id="mHw">
           <option value="cpu" data-i18n="m.hwCpu"></option>
@@ -439,6 +451,10 @@ const I18N = {
   'm.indexers':'Indexadores',
   'm.solver':'Incluir o FlareSolverr na stack',
   'm.solverWhy':'Vários indexadores ficam atrás do desafio anti-bot da Cloudflare, e o Prowlarr sozinho esbarra nele: a busca volta vazia ou com erro. O <b>FlareSolverr</b> resolve o desafio num navegador headless e devolve a página ao Prowlarr. Marcando aqui, ele entra na stack junto; depois é só apontar o Prowlarr para ele em <i>Settings → Indexers → FlareSolverr</i>, com a URL <b>http://flaresolverr:8191</b>. A imagem usada é a do <b>Byparr</b>, um substituto direto e mais atual, com a mesma API e a mesma porta. Sem indexador protegido pela Cloudflare, dá para deixar desmarcado.',
+  'm.libs':'Outras pastas',
+  'm.libAdd':'+ pasta',
+  'm.libRemove':'Remover',
+  'm.libsWhy':'Pastas de mídia que o Jellyfin deve enxergar além da base — um outro disco, um compartilhamento de rede. Cada uma vira um volume em <b>/data/&lt;nome da pasta&gt;</b>. As pastas que outros serviços já usam fora da base entram sozinhas; aqui é para o que só o Jellyfin conhece. O caminho é do host e digitado à mão: o navegador não abre um seletor de diretórios.',
   'm.hw':'Aceleração',
   'm.hwCpu':'Só CPU (sem aceleração)',
   'm.hwIntel':'Intel — VAAPI / QuickSync',
@@ -453,7 +469,7 @@ const I18N = {
   'm.cfgAt':p=>` · config em <b>${p}</b>`,
   'm.follows':names=>` · mídia: acompanha ${names.join(' e ')}`,
   'm.mediaAt':(kind,p)=>` · ${kind} em <b>${p}</b>`,
-  'm.alsoMounts':l=>` · e mais <b>${l.join('</b>, <b>')}</b>, que fic${l.length>1?'aram':'ou'} fora da base`,
+  'm.alsoMounts':l=>` · e mais <b>${l.join('</b>, <b>')}</b>`,
   'm.media':'mídia',
   'm.downloads':'downloads',
   'm.warnName':'Título inválido',
@@ -599,6 +615,10 @@ const I18N = {
   'm.indexers':'Indexers',
   'm.solver':'Add FlareSolverr to the stack',
   'm.solverWhy':'Plenty of indexers sit behind Cloudflare\'s anti-bot challenge, and Prowlarr alone runs straight into it: searches come back empty or failing. <b>FlareSolverr</b> solves the challenge in a headless browser and hands the page back to Prowlarr. Tick this and it joins the stack; then point Prowlarr at it under <i>Settings → Indexers → FlareSolverr</i>, with the URL <b>http://flaresolverr:8191</b>. The image behind it is <b>Byparr</b>, a drop-in, better-maintained replacement with the same API and the same port. With no Cloudflare-protected indexer, you can leave it off.',
+  'm.libs':'Other folders',
+  'm.libAdd':'+ folder',
+  'm.libRemove':'Remove',
+  'm.libsWhy':'Media folders Jellyfin should see beyond the base — another disk, a network share. Each one becomes a volume at <b>/data/&lt;folder name&gt;</b>. Folders other services already use outside the base come in on their own; this is for what only Jellyfin knows about. The path is on the host and typed by hand: the browser cannot open a directory picker.',
   'm.hw':'Acceleration',
   'm.hwCpu':'CPU only (no acceleration)',
   'm.hwIntel':'Intel — VAAPI / QuickSync',
@@ -613,7 +633,7 @@ const I18N = {
   'm.cfgAt':p=>` · config at <b>${p}</b>`,
   'm.follows':names=>` · media: follows ${names.join(' and ')}`,
   'm.mediaAt':(kind,p)=>` · ${kind} at <b>${p}</b>`,
-  'm.alsoMounts':l=>` · plus <b>${l.join('</b>, <b>')}</b>, left outside the base`,
+  'm.alsoMounts':l=>` · plus <b>${l.join('</b>, <b>')}</b>`,
   'm.media':'media',
   'm.downloads':'downloads',
   'm.warnName':'Invalid title',
@@ -759,6 +779,10 @@ const I18N = {
   'm.indexers':'Indexadores',
   'm.solver':'Incluir FlareSolverr en la stack',
   'm.solverWhy':'Varios indexadores están detrás del desafío anti-bot de Cloudflare, y Prowlarr solo choca con él: la búsqueda vuelve vacía o con error. <b>FlareSolverr</b> resuelve el desafío en un navegador headless y le devuelve la página a Prowlarr. Al marcarlo, entra en la stack junto; luego basta apuntar Prowlarr hacia él en <i>Settings → Indexers → FlareSolverr</i>, con la URL <b>http://flaresolverr:8191</b>. La imagen que usa es la de <b>Byparr</b>, un reemplazo directo y más actual, con la misma API y el mismo puerto. Sin ningún indexador protegido por Cloudflare, se puede dejar sin marcar.',
+  'm.libs':'Otras carpetas',
+  'm.libAdd':'+ carpeta',
+  'm.libRemove':'Quitar',
+  'm.libsWhy':'Carpetas de medios que Jellyfin debe ver además de la base — otro disco, un recurso de red. Cada una se vuelve un volumen en <b>/data/&lt;nombre de la carpeta&gt;</b>. Las carpetas que otros servicios ya usan fuera de la base entran solas; esto es para lo que solo Jellyfin conoce. La ruta es del host y se escribe a mano: el navegador no abre un selector de directorios.',
   'm.hw':'Aceleración',
   'm.hwCpu':'Solo CPU (sin aceleración)',
   'm.hwIntel':'Intel — VAAPI / QuickSync',
@@ -773,7 +797,7 @@ const I18N = {
   'm.cfgAt':p=>` · config en <b>${p}</b>`,
   'm.follows':names=>` · multimedia: sigue a ${names.join(' y ')}`,
   'm.mediaAt':(kind,p)=>` · ${kind} en <b>${p}</b>`,
-  'm.alsoMounts':l=>` · y además <b>${l.join('</b>, <b>')}</b>, que qued${l.length>1?'aron':'ó'} fuera de la base`,
+  'm.alsoMounts':l=>` · y además <b>${l.join('</b>, <b>')}</b>`,
   'm.media':'multimedia',
   'm.downloads':'descargas',
   'm.warnName':'Título inválido',
@@ -1051,12 +1075,17 @@ const dataReal = a => {
    biblioteca inteira (jellyfin) monta a base e mais estas, uma a uma. */
 function extraLibs(self){
   const seen = new Set([self && self.abs].filter(Boolean)), out = [];
+  const push = path => {
+    if(!path || seen.has(path)) return;
+    seen.add(path);
+    out.push({name:slug(path.slice(path.lastIndexOf('/') + 1)), path});
+  };
   added.forEach(x=>{
     const sx = svc(x.id);
-    if(!x.abs || !sx.media || sx.dlClient || sx.derived || seen.has(x.abs)) return;
-    seen.add(x.abs);
-    out.push({name:x.data, path:x.abs});
+    if(!x.abs || !sx.media || sx.dlClient || sx.derived) return;
+    push(x.abs);
   });
+  (self && self.libs || []).forEach(push);   // as escolhidas no próprio modal
   return out;
 }
 
@@ -1079,7 +1108,7 @@ function derivedMounts(s){
 // serviço bloqueado no combobox: instância única já adicionada
 const locked = id => !isMulti(id) && has(id);
 const defCfg = id => ({id, title:svc(id).name, hw:'cpu',
-                       data:svc(id).mdir||'', abs:'', vpn:false,
+                       data:svc(id).mdir||'', abs:'', libs:[], vpn:false,
                        // quem aceita o resolvedor de desafios já nasce com ele marcado
                        solver:!!svc(id).solver});
 
@@ -1211,7 +1240,7 @@ function updateHint(s){
                 abs || `${s.dlClient?DEFAULTS.dl:DEFAULTS.data}${sub?'/'+sub:''}`)) : '')
     // quem enxerga a biblioteca inteira também monta o que ficou fora dela
     + (s.library ? (libs => libs.length ? t('m.alsoMounts', libs.map(l=>l.path)) : '')
-                   (extraLibs({abs})) : '')
+                   (extraLibs({abs, libs:libsOf()})) : '')
     + (s.hw ? ' · ' + t('m.hwHint')[$('#mHw').value] : '');
 }
 
@@ -1239,6 +1268,8 @@ function openModal(id, key){
   $('#mDataLabel').textContent = t(s.dlClient ? 'm.dlDir' : 'm.mediaDir');
   $('#mData').placeholder = baseOf(s) + '/' + (s.mdir || '');
   $('#mDataRow').style.display = (s.media && !s.noVol && !s.derived) ? 'grid' : 'none';
+  $('#mLibsRow').style.display = s.library ? 'grid' : 'none';
+  renderLibs(s.library ? cur.libs : []);
   $('#mVpnRow').style.display = s.vpn ? 'grid' : 'none';
   $('#mSolverRow').style.display = s.solver ? 'grid' : 'none';
   $('#mHw').value = cur.hw || 'cpu';
@@ -1251,13 +1282,19 @@ function openModal(id, key){
 }
 function closeModal(){ $('#backdrop').classList.remove('open'); editing=null; }
 
-$('#mData').addEventListener('input', e=>{
-  const el = e.target, exp = expandVars(el.value);
+// troca a variável pelo valor sem tirar o cursor do lugar
+function expandInto(el){
+  const exp = expandVars(el.value);
   if(exp === el.value) return;
   const pos = el.selectionStart + (exp.length - el.value.length);
   el.value = exp;
   el.setSelectionRange(pos, pos);
-});
+}
+$('#mData').addEventListener('input', e=>expandInto(e.target));
+// refaz o hint com o que está na tela agora
+function hintNow(){
+  const id = editing || picked; if(id) updateHint(svc(id));
+}
 
 document.querySelectorAll('#mName,#mData').forEach(el=>el.addEventListener('input', ()=>{
   const id = editing || picked; if(id) updateHint(svc(id));
@@ -1282,6 +1319,7 @@ $('#mSave').onclick = ()=>{
   const cfg = {id, title:(useName ? $('#mName').value.trim() : '') || s.name,
                hw: s.hw ? $('#mHw').value : 'cpu',
                ...dataOf(s),
+               libs: s.library ? libsOf() : [],
                vpn: s.vpn && $('#mVpn').checked,
                solver: !!s.solver && $('#mSolver').checked};
 
@@ -1318,6 +1356,31 @@ $('#nSave').onclick = ()=>{
   }
   Object.assign(DEFAULTS, {http, https});
   closeNgx(); renderItems(); render();
+};
+
+/* ---------- pastas extras da biblioteca ---------- */
+// o navegador não abre um seletor de diretórios do host: são caminhos digitados
+function libRow(path=''){
+  const row = document.createElement('div');
+  row.className = 'lib';
+  row.innerHTML = `<input type="text" value="${path}" placeholder="/mnt/disco2/filmes">
+                   <button type="button" class="sm" title="${t('m.libRemove')}">×</button>`;
+  row.querySelector('button').onclick = ()=>{ row.remove(); hintNow(); };
+  const inp = row.querySelector('input');
+  inp.addEventListener('input', ()=>{ expandInto(inp); hintNow(); });
+  return row;
+}
+function renderLibs(list){
+  const box = $('#mLibs');
+  box.innerHTML = '';
+  (list || []).forEach(p=>box.appendChild(libRow(p)));
+}
+const libsOf = ()=> [...$('#mLibs').querySelectorAll('input')]
+  .map(i=>expandVars(i.value.trim()).replace(/\/+$/,'')).filter(Boolean);
+$('#mLibAdd').onclick = ()=>{
+  const row = libRow();
+  $('#mLibs').appendChild(row);
+  row.querySelector('input').focus();
 };
 
 /* ---------- ambiente global ---------- */

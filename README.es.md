@@ -108,7 +108,9 @@ fuera de las bases — `/mnt/disco2/peliculas-4k`, por ejemplo — está permiti
 entonces el compose sale con esa ruta literal, sin ninguna variable. Bazarr
 acompaña: monta la ruta de cada instancia tal como quedó. Jellyfin también:
 además de la base entera, recibe un volumen por cada carpeta que quedó fuera de
-ella, si no esa biblioteca no le aparecería.
+ella, si no esa biblioteca no le aparecería. Y su modal tiene un **+ carpeta**
+para apuntar directorios que ningún otro servicio usa — un disco viejo, un
+recurso de red. Cada uno se vuelve un volumen en `/data/<nombre de la carpeta>`.
 
 Todos los volúmenes usan la sintaxis larga, con `type: bind` y
 `bind.propagation: rslave`. El puerto siempre es el original del servicio,

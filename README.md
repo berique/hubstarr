@@ -103,7 +103,9 @@ fora das bases — `/mnt/disco2/filmes-4k`, por exemplo — é permitido, e aí 
 compose sai com esse caminho literal, sem variável nenhuma. O Bazarr acompanha:
 monta o caminho de cada instância como ela ficou. O Jellyfin também: além da
 base inteira, ganha um volume para cada pasta que ficou fora dela, senão a
-biblioteca não apareceria para ele.
+biblioteca não apareceria para ele. E o modal dele tem um **+ pasta** para
+apontar diretórios que nenhum outro serviço usa — um disco antigo, um
+compartilhamento de rede. Cada um vira um volume em `/data/<nome da pasta>`.
 
 Todos os volumes usam a sintaxe longa, com `type: bind` e
 `bind.propagation: rslave`. A porta é sempre a original do serviço, dentro do

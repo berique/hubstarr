@@ -39,8 +39,9 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    instâncias), e os mapas de variáveis de ambiente `INSTANCE_ENV`,
    `URLBASE_ENV`, `APIKEY_ENV`.
 4. **Estado** — três globais mutáveis: `added` (instâncias,
-   `{id,title,data,abs,vpn,hw,solver}` — `abs` só quando o caminho da mídia sai
-   das bases, e aí é ele que vai literal para o compose), `picked` (id no
+   `{id,title,data,abs,libs,vpn,hw,solver}` — `abs` só quando o caminho da mídia
+   sai das bases, e aí é ele que vai literal para o compose; `libs` são as
+   pastas avulsas do Jellyfin, do "+ pasta"), `picked` (id no
    combobox), `editing` (key em edição). `DEFAULTS` guarda o ambiente global
    (caminhos base, PUID/PGID, TZ, portas do host, TLS, VPN, API key). Nem tudo
    que está no `DEFAULTS` se edita no Ambiente: as portas do host saem no modal
@@ -50,8 +51,9 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    `${...}` do `.env`) e `cfgReal`/`dataReal` (caminhos resolvidos, para o hint
    do modal). Alterar `cname` afeta compose, nginx e `.env` ao mesmo tempo.
    Quem monta pasta de outro serviço passa por `derivedMounts()` (Bazarr) e
-   `extraLibs()` (Jellyfin) — os dois já devolvem o caminho certo de cada
-   instância, literal ou com variável; não remonte `${BASE_MEDIA}/…` na mão.
+   `extraLibs()` (Jellyfin, que junta as pastas de fora das outras instâncias
+   com as do "+ pasta") — os dois já devolvem o caminho certo de cada instância,
+   literal ou com variável; não remonte `${BASE_MEDIA}/…` na mão.
 6. **UI** — `renderCombo()`, `renderItems()`, modal de configuração
    (`openModal` + o handler de `#mSave`), modal de ambiente (`openEnv`), modal
    do nginx (`openNgx`), `buildHelp()` e tema claro/escuro.
