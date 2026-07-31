@@ -47,7 +47,7 @@ The combobox lists the available services with their logos and default ports:
   explanation of what the value does and how it lands in the generated files.
 - **Optional HTTPS**, with the certificate and key coming from the host.
 - **Global environment** (button at the top): base paths, PUID/PGID, time zone,
-  restart policy, API key, TLS and the gluetun credentials. The
+  restart policy, API key and TLS. The
   time zone list is the whole IANA database, straight from the browser, and it
   starts on the machine's own zone.
 - **Download** `docker-compose.yml`, `.env` and `nginx/conf.d/starrnet.conf`
@@ -149,8 +149,10 @@ The domain becomes the `server_name` (`_` when left empty).
 Marking a client as "route through gluetun" makes the service use
 `network_mode: service:gluetun`, and gluetun joins the service list right
 there, if it isn't in it yet. It becomes that service's address in nginx. The
-credentials (`VPN_SERVICE_PROVIDER`, `VPN_TYPE`, WireGuard keys or the OpenVPN
-username/password, `SERVER_COUNTRIES`) stay in `.env`.
+credentials live behind **Edit on gluetun** — provider, tunnel type, WireGuard
+keys or the OpenVPN username/password, and the server countries — and land in
+`.env` as `VPN_SERVICE_PROVIDER`, `VPN_TYPE`, `WIREGUARD_*` or `OPENVPN_*` and
+`SERVER_COUNTRIES`.
 
 ## Languages
 

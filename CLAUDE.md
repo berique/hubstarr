@@ -46,7 +46,8 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    combobox), `editing` (key em edição). `DEFAULTS` guarda o ambiente global
    (caminhos base, PUID/PGID, TZ, portas do host, TLS, VPN, API key). Nem tudo
    que está no `DEFAULTS` se edita no Ambiente: as portas do host saem no modal
-   do nginx.
+   do nginx e as credenciais da VPN no do gluetun (flag `vpnCfg`) — os dois são
+   de um serviço só, não da stack.
 5. **Derivações** — `slug()` → `cname()` (container_name = chave do serviço =
    pasta de config), `route()`, `url()`, `cfgPath`/`dataPath` (com variáveis
    `${...}` do `.env`) e `cfgReal`/`dataReal` (caminhos resolvidos, para o hint

@@ -46,7 +46,7 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
   explicação do que aquele valor faz e de como ele sai nos arquivos gerados.
 - **HTTPS opcional**, com o certificado e a chave vindos do host.
 - **Ambiente global** (botão no topo): bases de caminho, PUID/PGID, time zone,
-  restart policy, API key, TLS e as credenciais do gluetun. A
+  restart policy, API key e TLS. A
   lista de fusos é a IANA inteira, vinda do próprio navegador, e o valor
   inicial é o fuso da máquina.
 - **Baixar** `docker-compose.yml`, `.env` e `nginx/conf.d/starrnet.conf` juntos
@@ -148,8 +148,10 @@ informado vira o `server_name` (na falta dele, `_`).
 Marcar um cliente como "rotear pelo gluetun" faz o serviço usar
 `network_mode: service:gluetun`, e o gluetun entra na lista de serviços na
 hora, se ainda não estiver lá. Ele passa a ser o endereço desse serviço no
-nginx. As credenciais (`VPN_SERVICE_PROVIDER`, `VPN_TYPE`, chaves do WireGuard
-ou usuário/senha do OpenVPN, `SERVER_COUNTRIES`) ficam no `.env`.
+nginx. As credenciais ficam no **Editar do gluetun** — provedor, tipo de túnel,
+chaves do WireGuard ou usuário/senha do OpenVPN e os países do servidor — e
+saem no `.env` como `VPN_SERVICE_PROVIDER`, `VPN_TYPE`, `WIREGUARD_*` ou
+`OPENVPN_*` e `SERVER_COUNTRIES`.
 
 ## Idiomas
 

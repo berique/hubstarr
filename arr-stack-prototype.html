@@ -271,28 +271,6 @@
           <input type="text" id="eTlsKey"></div>
       </div>
 
-      <h4 style="margin:18px 0 10px;font-size:12px;text-transform:uppercase;
-                 letter-spacing:.06em;color:var(--muted)" data-i18n="env.vpn">VPN (gluetun)</h4>
-      <div class="row" data-help="env.hProvider"><label for="eVpnProv" data-i18n="env.provider">Provedor</label>
-        <input type="text" id="eVpnProv" placeholder="mullvad, protonvpn, nordvpn…"></div>
-      <div class="row" data-help="env.hType"><label for="eVpnType" data-i18n="env.type">Tipo</label>
-        <select id="eVpnType"><option>wireguard</option><option>openvpn</option></select>
-      </div>
-      <div id="eWgRows">
-        <div class="row" data-help="env.hWgKey"><label for="eWgKey" data-i18n="env.wgKey">WireGuard key</label>
-          <input type="text" id="eWgKey" data-i18n-ph="env.wgKeyPh"></div>
-        <div class="row" data-help="env.hWgAddr"><label for="eWgAddr">WireGuard addresses</label>
-          <input type="text" id="eWgAddr" placeholder="10.64.0.2/32"></div>
-      </div>
-      <div id="eOvpnRows">
-        <div class="row" data-help="env.hOvpnUser"><label for="eOvpnUser" data-i18n="env.ovpnUser">OpenVPN user</label>
-          <input type="text" id="eOvpnUser"></div>
-        <div class="row" data-help="env.hOvpnPass"><label for="eOvpnPass" data-i18n="env.ovpnPass">OpenVPN password</label>
-          <input type="text" id="eOvpnPass"></div>
-      </div>
-      <div class="row" data-help="env.hCountries"><label for="eCountries" data-i18n="env.countries">Países do servidor</label>
-        <input type="text" id="eCountries" placeholder="Brazil, Netherlands"></div>
-
       <p class="hint" data-i18n-html="env.hint"></p>
     </div>
     <div class="bar">
@@ -335,6 +313,27 @@
       </div>
       <div class="row" id="mSolverRow" data-help="m.solverWhy"><label data-i18n="m.indexers">Indexadores</label>
         <label class="check"><input type="checkbox" id="mSolver"> <span data-i18n="m.solver"></span></label>
+      </div>
+      <div id="mVpnCfg">
+      <div class="row" data-help="vpn.hProvider"><label for="gProv" data-i18n="vpn.provider">Provedor</label>
+        <input type="text" id="gProv" placeholder="mullvad, protonvpn, nordvpn…"></div>
+      <div class="row" data-help="vpn.hType"><label for="gType" data-i18n="vpn.type">Tipo</label>
+        <select id="gType"><option>wireguard</option><option>openvpn</option></select>
+      </div>
+      <div id="gWgRows">
+        <div class="row" data-help="vpn.hWgKey"><label for="gWgKey" data-i18n="vpn.wgKey">WireGuard key</label>
+          <input type="text" id="gWgKey" data-i18n-ph="vpn.wgKeyPh"></div>
+        <div class="row" data-help="vpn.hWgAddr"><label for="gWgAddr">WireGuard addresses</label>
+          <input type="text" id="gWgAddr" placeholder="10.64.0.2/32"></div>
+      </div>
+      <div id="gOvpnRows">
+        <div class="row" data-help="vpn.hOvpnUser"><label for="gOvpnUser" data-i18n="vpn.ovpnUser">OpenVPN user</label>
+          <input type="text" id="gOvpnUser"></div>
+        <div class="row" data-help="vpn.hOvpnPass"><label for="gOvpnPass" data-i18n="vpn.ovpnPass">OpenVPN password</label>
+          <input type="text" id="gOvpnPass"></div>
+      </div>
+      <div class="row" data-help="vpn.hCountries"><label for="gCountries" data-i18n="vpn.countries">Países do servidor</label>
+        <input type="text" id="gCountries" placeholder="Brazil, Netherlands"></div>
       </div>
       <div class="row" id="mVpnRow"><label data-i18n="m.network">Rede</label>
         <label class="check"><input type="checkbox" id="mVpn"> <span data-i18n="m.vpn"></span></label>
@@ -399,13 +398,13 @@ const I18N = {
   'env.hDomain':'Vira o <b>server_name</b> do nginx e o domínio dos links copiados. Em branco, o nginx atende qualquer nome (<b>_</b>) e os links apontam para <b>localhost</b>.',
   'env.hCert':'Caminho no host do certificado (fullchain). Entra no compose como <b>${TLS_CERT}</b>, montado só-leitura em /etc/nginx/certs.',
   'env.hKey':'Caminho no host da chave privada do certificado. Entra no compose como <b>${TLS_KEY}</b>, montada só-leitura ao lado dele.',
-  'env.hProvider':'Nome do provedor como o gluetun o conhece — <b>mullvad</b>, <b>protonvpn</b>, <b>nordvpn</b>… Sai como <b>VPN_SERVICE_PROVIDER</b>.',
-  'env.hType':'Protocolo do túnel. Muda quais credenciais o gluetun espera: chave e endereços no WireGuard, usuário e senha no OpenVPN.',
-  'env.hWgKey':'A chave privada do WireGuard, do arquivo de configuração que o provedor entrega. Sai como <b>WIREGUARD_PRIVATE_KEY</b>.',
-  'env.hWgAddr':'O endereço que o provedor reservou para você dentro do túnel, com a máscara. Sai como <b>WIREGUARD_ADDRESSES</b>.',
-  'env.hOvpnUser':'Usuário do OpenVPN no provedor — nem sempre é o mesmo do login do site. Sai como <b>OPENVPN_USER</b>.',
-  'env.hOvpnPass':'Senha correspondente ao usuário do OpenVPN. Sai como <b>OPENVPN_PASSWORD</b>.',
-  'env.hCountries':'Países onde o gluetun pode escolher servidor, separados por vírgula. Em branco, ele escolhe em qualquer lugar. Sai como <b>SERVER_COUNTRIES</b>.',
+  'vpn.hProvider':'Nome do provedor como o gluetun o conhece — <b>mullvad</b>, <b>protonvpn</b>, <b>nordvpn</b>… Sai como <b>VPN_SERVICE_PROVIDER</b>.',
+  'vpn.hType':'Protocolo do túnel. Muda quais credenciais o gluetun espera: chave e endereços no WireGuard, usuário e senha no OpenVPN.',
+  'vpn.hWgKey':'A chave privada do WireGuard, do arquivo de configuração que o provedor entrega. Sai como <b>WIREGUARD_PRIVATE_KEY</b>.',
+  'vpn.hWgAddr':'O endereço que o provedor reservou para você dentro do túnel, com a máscara. Sai como <b>WIREGUARD_ADDRESSES</b>.',
+  'vpn.hOvpnUser':'Usuário do OpenVPN no provedor — nem sempre é o mesmo do login do site. Sai como <b>OPENVPN_USER</b>.',
+  'vpn.hOvpnPass':'Senha correspondente ao usuário do OpenVPN. Sai como <b>OPENVPN_PASSWORD</b>.',
+  'vpn.hCountries':'Países onde o gluetun pode escolher servidor, separados por vírgula. Em branco, ele escolhe em qualquer lugar. Sai como <b>SERVER_COUNTRIES</b>.',
   'btn.deploy':'Criar stack',
   'btn.deploying':'Criando…',
   'btn.deployed':'Stack criada ✓',
@@ -422,14 +421,13 @@ const I18N = {
   'env.cfg':'Base da pasta config',
   'env.data':'Base da pasta de mídia',
   'env.dl':'Base de downloads',
-  'env.vpn':'VPN (gluetun)',
-  'env.provider':'Provedor',
-  'env.type':'Tipo',
-  'env.wgKey':'WireGuard key',
-  'env.wgKeyPh':'chave privada',
-  'env.ovpnUser':'OpenVPN user',
-  'env.ovpnPass':'OpenVPN password',
-  'env.countries':'Países do servidor',
+  'vpn.provider':'Provedor',
+  'vpn.type':'Tipo',
+  'vpn.wgKey':'WireGuard key',
+  'vpn.wgKeyPh':'chave privada',
+  'vpn.ovpnUser':'OpenVPN user',
+  'vpn.ovpnPass':'OpenVPN password',
+  'vpn.countries':'Países do servidor',
   'env.hint':'Valem para toda a stack. As bases saem no compose como <b>${BASE_CONFIG}</b>, <b>${BASE_MEDIA}</b> e <b>${DOWNLOAD_BASE}</b>, e o restart como <b>${RESTART}</b>. Todos os valores acima vão para o <b>.env</b>.',
   'env.warnIds':'PUID/PGID devem ser numéricos',
   'btn.cancel':'Cancelar',
@@ -563,13 +561,13 @@ const I18N = {
   'env.hDomain':'Becomes the nginx <b>server_name</b> and the domain in the copied links. Left empty, nginx answers to any name (<b>_</b>) and the links point at <b>localhost</b>.',
   'env.hCert':'Host path to the certificate (fullchain). Lands in the compose file as <b>${TLS_CERT}</b>, mounted read-only at /etc/nginx/certs.',
   'env.hKey':'Host path to the certificate\'s private key. Lands in the compose file as <b>${TLS_KEY}</b>, mounted read-only next to it.',
-  'env.hProvider':'Provider name as gluetun knows it — <b>mullvad</b>, <b>protonvpn</b>, <b>nordvpn</b>… Lands as <b>VPN_SERVICE_PROVIDER</b>.',
-  'env.hType':'Tunnel protocol. It changes which credentials gluetun expects: key and addresses for WireGuard, username and password for OpenVPN.',
-  'env.hWgKey':'The WireGuard private key, from the config file your provider hands you. Lands as <b>WIREGUARD_PRIVATE_KEY</b>.',
-  'env.hWgAddr':'The address the provider reserved for you inside the tunnel, with its mask. Lands as <b>WIREGUARD_ADDRESSES</b>.',
-  'env.hOvpnUser':'Your OpenVPN username at the provider — often not the same as the website login. Lands as <b>OPENVPN_USER</b>.',
-  'env.hOvpnPass':'The password matching the OpenVPN username. Lands as <b>OPENVPN_PASSWORD</b>.',
-  'env.hCountries':'Countries gluetun may pick a server in, comma separated. Left empty, it picks anywhere. Lands as <b>SERVER_COUNTRIES</b>.',
+  'vpn.hProvider':'Provider name as gluetun knows it — <b>mullvad</b>, <b>protonvpn</b>, <b>nordvpn</b>… Lands as <b>VPN_SERVICE_PROVIDER</b>.',
+  'vpn.hType':'Tunnel protocol. It changes which credentials gluetun expects: key and addresses for WireGuard, username and password for OpenVPN.',
+  'vpn.hWgKey':'The WireGuard private key, from the config file your provider hands you. Lands as <b>WIREGUARD_PRIVATE_KEY</b>.',
+  'vpn.hWgAddr':'The address the provider reserved for you inside the tunnel, with its mask. Lands as <b>WIREGUARD_ADDRESSES</b>.',
+  'vpn.hOvpnUser':'Your OpenVPN username at the provider — often not the same as the website login. Lands as <b>OPENVPN_USER</b>.',
+  'vpn.hOvpnPass':'The password matching the OpenVPN username. Lands as <b>OPENVPN_PASSWORD</b>.',
+  'vpn.hCountries':'Countries gluetun may pick a server in, comma separated. Left empty, it picks anywhere. Lands as <b>SERVER_COUNTRIES</b>.',
   'btn.deploy':'Create stack',
   'btn.deploying':'Creating…',
   'btn.deployed':'Stack created ✓',
@@ -586,14 +584,13 @@ const I18N = {
   'env.cfg':'Config base path',
   'env.data':'Media base path',
   'env.dl':'Downloads base path',
-  'env.vpn':'VPN (gluetun)',
-  'env.provider':'Provider',
-  'env.type':'Type',
-  'env.wgKey':'WireGuard key',
-  'env.wgKeyPh':'private key',
-  'env.ovpnUser':'OpenVPN user',
-  'env.ovpnPass':'OpenVPN password',
-  'env.countries':'Server countries',
+  'vpn.provider':'Provider',
+  'vpn.type':'Type',
+  'vpn.wgKey':'WireGuard key',
+  'vpn.wgKeyPh':'private key',
+  'vpn.ovpnUser':'OpenVPN user',
+  'vpn.ovpnPass':'OpenVPN password',
+  'vpn.countries':'Server countries',
   'env.hint':'These apply to the whole stack. The base paths land in the compose file as <b>${BASE_CONFIG}</b>, <b>${BASE_MEDIA}</b> and <b>${DOWNLOAD_BASE}</b>, and the restart policy as <b>${RESTART}</b>. Every value above goes to <b>.env</b>.',
   'env.warnIds':'PUID/PGID must be numeric',
   'btn.cancel':'Cancel',
@@ -727,13 +724,13 @@ const I18N = {
   'env.hDomain':'Se vuelve el <b>server_name</b> de nginx y el dominio de los enlaces copiados. En blanco, nginx atiende cualquier nombre (<b>_</b>) y los enlaces apuntan a <b>localhost</b>.',
   'env.hCert':'Ruta en el host del certificado (fullchain). Entra en el compose como <b>${TLS_CERT}</b>, montado de solo lectura en /etc/nginx/certs.',
   'env.hKey':'Ruta en el host de la clave privada del certificado. Entra en el compose como <b>${TLS_KEY}</b>, montada de solo lectura a su lado.',
-  'env.hProvider':'Nombre del proveedor tal como lo conoce gluetun — <b>mullvad</b>, <b>protonvpn</b>, <b>nordvpn</b>… Sale como <b>VPN_SERVICE_PROVIDER</b>.',
-  'env.hType':'Protocolo del túnel. Cambia qué credenciales espera gluetun: clave y direcciones en WireGuard, usuario y contraseña en OpenVPN.',
-  'env.hWgKey':'La clave privada de WireGuard, del archivo de configuración que entrega el proveedor. Sale como <b>WIREGUARD_PRIVATE_KEY</b>.',
-  'env.hWgAddr':'La dirección que el proveedor te reservó dentro del túnel, con su máscara. Sale como <b>WIREGUARD_ADDRESSES</b>.',
-  'env.hOvpnUser':'Usuario de OpenVPN en el proveedor — muchas veces no es el mismo del login del sitio. Sale como <b>OPENVPN_USER</b>.',
-  'env.hOvpnPass':'La contraseña correspondiente al usuario de OpenVPN. Sale como <b>OPENVPN_PASSWORD</b>.',
-  'env.hCountries':'Países donde gluetun puede elegir servidor, separados por comas. En blanco, elige en cualquier lugar. Sale como <b>SERVER_COUNTRIES</b>.',
+  'vpn.hProvider':'Nombre del proveedor tal como lo conoce gluetun — <b>mullvad</b>, <b>protonvpn</b>, <b>nordvpn</b>… Sale como <b>VPN_SERVICE_PROVIDER</b>.',
+  'vpn.hType':'Protocolo del túnel. Cambia qué credenciales espera gluetun: clave y direcciones en WireGuard, usuario y contraseña en OpenVPN.',
+  'vpn.hWgKey':'La clave privada de WireGuard, del archivo de configuración que entrega el proveedor. Sale como <b>WIREGUARD_PRIVATE_KEY</b>.',
+  'vpn.hWgAddr':'La dirección que el proveedor te reservó dentro del túnel, con su máscara. Sale como <b>WIREGUARD_ADDRESSES</b>.',
+  'vpn.hOvpnUser':'Usuario de OpenVPN en el proveedor — muchas veces no es el mismo del login del sitio. Sale como <b>OPENVPN_USER</b>.',
+  'vpn.hOvpnPass':'La contraseña correspondiente al usuario de OpenVPN. Sale como <b>OPENVPN_PASSWORD</b>.',
+  'vpn.hCountries':'Países donde gluetun puede elegir servidor, separados por comas. En blanco, elige en cualquier lugar. Sale como <b>SERVER_COUNTRIES</b>.',
   'btn.deploy':'Crear stack',
   'btn.deploying':'Creando…',
   'btn.deployed':'Stack creada ✓',
@@ -750,14 +747,13 @@ const I18N = {
   'env.cfg':'Base de la carpeta config',
   'env.data':'Base de la carpeta multimedia',
   'env.dl':'Base de descargas',
-  'env.vpn':'VPN (gluetun)',
-  'env.provider':'Proveedor',
-  'env.type':'Tipo',
-  'env.wgKey':'WireGuard key',
-  'env.wgKeyPh':'clave privada',
-  'env.ovpnUser':'OpenVPN user',
-  'env.ovpnPass':'OpenVPN password',
-  'env.countries':'Países del servidor',
+  'vpn.provider':'Proveedor',
+  'vpn.type':'Tipo',
+  'vpn.wgKey':'WireGuard key',
+  'vpn.wgKeyPh':'clave privada',
+  'vpn.ovpnUser':'OpenVPN user',
+  'vpn.ovpnPass':'OpenVPN password',
+  'vpn.countries':'Países del servidor',
   'env.hint':'Valen para toda la stack. Las bases salen en el compose como <b>${BASE_CONFIG}</b>, <b>${BASE_MEDIA}</b> y <b>${DOWNLOAD_BASE}</b>, y el restart como <b>${RESTART}</b>. Todos los valores de arriba van al <b>.env</b>.',
   'env.warnIds':'PUID/PGID deben ser numéricos',
   'btn.cancel':'Cancelar',
@@ -899,7 +895,7 @@ const SERVICES = [
   {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5'},
   {id:'heimdall', name:'Heimdall',  port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f'},
   {id:'flaresolverr',name:'FlareSolverr',port:8191,img:'ghcr.io/thephaseless/byparr:latest',color:'#ff7f50',noVol:true, internal:true},
-  {id:'gluetun',  name:'Gluetun',   port:8000, img:'qmcgaw/gluetun:latest',                color:'#8b98a5', noVol:true, internal:true},
+  {id:'gluetun',  name:'Gluetun',   port:8000, img:'qmcgaw/gluetun:latest',                color:'#8b98a5', noVol:true, internal:true, vpnCfg:true},
 ];
 const svc = id => SERVICES.find(s=>s.id===id);
 // porta em que o serviço escuta dentro do container — o nginx fala com ela
@@ -1270,6 +1266,15 @@ function openModal(id, key){
   $('#mDataRow').style.display = (s.media && !s.noVol && !s.derived) ? 'grid' : 'none';
   $('#mLibsRow').style.display = s.library ? 'grid' : 'none';
   renderLibs(s.library ? cur.libs : []);
+  // as credenciais da VPN vivem no modal do gluetun, não no Ambiente
+  $('#mVpnCfg').style.display = s.vpnCfg ? 'block' : 'none';
+  if(s.vpnCfg){
+    $('#gProv').value=DEFAULTS.vpnProv; $('#gType').value=DEFAULTS.vpnType;
+    $('#gWgKey').value=DEFAULTS.wgKey; $('#gWgAddr').value=DEFAULTS.wgAddr;
+    $('#gOvpnUser').value=DEFAULTS.ovpnUser; $('#gOvpnPass').value=DEFAULTS.ovpnPass;
+    $('#gCountries').value=DEFAULTS.countries;
+    vpnRows();
+  }
   $('#mVpnRow').style.display = s.vpn ? 'grid' : 'none';
   $('#mSolverRow').style.display = s.solver ? 'grid' : 'none';
   $('#mHw').value = cur.hw || 'cpu';
@@ -1329,6 +1334,12 @@ $('#mSave').onclick = ()=>{
   if(added.some(a=>cname(a)===key && cname(a)!==editing))
     return warn(t('m.warnDup', key));
 
+  if(s.vpnCfg) Object.assign(DEFAULTS, {
+    vpnProv:$('#gProv').value.trim(), vpnType:$('#gType').value,
+    wgKey:$('#gWgKey').value.trim(), wgAddr:$('#gWgAddr').value.trim(),
+    ovpnUser:$('#gOvpnUser').value.trim(), ovpnPass:$('#gOvpnPass').value.trim(),
+    countries:$('#gCountries').value.trim()});
+
   if(editing) added = added.map(a=>cname(a)===editing?cfg:a);
   else { added.push(cfg); picked=null; }
   // rotear pela VPN exige o gluetun na stack: entra sozinho, na frente de todos
@@ -1386,16 +1397,11 @@ $('#mLibAdd').onclick = ()=>{
 /* ---------- ambiente global ---------- */
 function openEnv(){
   $('#eRestart').value=DEFAULTS.restart;
-  $('#eVpnProv').value=DEFAULTS.vpnProv; $('#eVpnType').value=DEFAULTS.vpnType;
-  $('#eWgKey').value=DEFAULTS.wgKey; $('#eWgAddr').value=DEFAULTS.wgAddr;
-  $('#eOvpnUser').value=DEFAULTS.ovpnUser; $('#eOvpnPass').value=DEFAULTS.ovpnPass;
-  $('#eCountries').value=DEFAULTS.countries;
   $('#eApiKey').value = DEFAULTS.apiKey;
   $('#eTlsPort').textContent = DEFAULTS.https;
   $('#eTls').checked = DEFAULTS.tls; $('#eDomain').value = DEFAULTS.domain;
   $('#eCert').value = DEFAULTS.cert; $('#eTlsKey').value = DEFAULTS.tlsKey;
   tlsRows();
-  vpnRows();
   $('#ePuid').value=DEFAULTS.puid; $('#ePgid').value=DEFAULTS.pgid;
   $('#eTz').value=DEFAULTS.tz; $('#eCfg').value=DEFAULTS.cfg; $('#eData').value=DEFAULTS.data;
   $('#eDl').value=DEFAULTS.dl;
@@ -1430,11 +1436,11 @@ buildHelp();
 
 // mostra só os campos do tipo de VPN escolhido
 function vpnRows(){
-  const wg = $('#eVpnType').value === 'wireguard';
-  $('#eWgRows').style.display   = wg ? 'block' : 'none';
-  $('#eOvpnRows').style.display = wg ? 'none'  : 'block';
+  const wg = $('#gType').value === 'wireguard';
+  $('#gWgRows').style.display   = wg ? 'block' : 'none';
+  $('#gOvpnRows').style.display = wg ? 'none'  : 'block';
 }
-$('#eVpnType').addEventListener('change', vpnRows);
+$('#gType').addEventListener('change', vpnRows);
 $('#eApiGen').onclick = ()=> $('#eApiKey').value = randKey();
 
 // caminhos de certificado só interessam com o TLS ligado
@@ -1466,10 +1472,7 @@ $('#eSave').onclick = ()=>{
   Object.assign(DEFAULTS, {restart:$('#eRestart').value, puid, pgid,
     tz:$('#eTz').value, cfg:$('#eCfg').value.trim(), data:$('#eData').value.trim(),
     dl:$('#eDl').value.trim(),
-    vpnProv:$('#eVpnProv').value.trim(), vpnType:$('#eVpnType').value,
-    wgKey:$('#eWgKey').value.trim(), wgAddr:$('#eWgAddr').value.trim(),
-    ovpnUser:$('#eOvpnUser').value.trim(), ovpnPass:$('#eOvpnPass').value.trim(),
-    countries:$('#eCountries').value.trim()});
+    });
   DEFAULTS.apiKey = $('#eApiKey').value.trim() || randKey();
   Object.assign(DEFAULTS, {tls:$('#eTls').checked, domain:$('#eDomain').value.trim(),
     cert:$('#eCert').value.trim(), tlsKey:$('#eTlsKey').value.trim()});

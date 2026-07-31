@@ -50,9 +50,8 @@ defecto:
   generados.
 - **HTTPS opcional**, con el certificado y la clave provenientes del host.
 - **Entorno global** (botón arriba): rutas base, PUID/PGID, zona horaria,
-  restart policy, API key, TLS y las credenciales de
-  gluetun. La lista de husos es la IANA entera, que viene del propio
-  navegador, y arranca en el huso de la máquina.
+  restart policy, API key y TLS. La lista de husos es la IANA entera, que viene
+  del propio navegador, y arranca en el huso de la máquina.
 - **Descargar** `docker-compose.yml`, `.env` y `nginx/conf.d/starrnet.conf`
   juntos en un `.zip`.
 - **Cambiar el idioma** en el selector de arriba: portugués (Brasil), inglés y
@@ -153,8 +152,10 @@ en el 80. El dominio indicado se vuelve el `server_name` (a falta de él, `_`).
 Marcar un cliente como "enrutar por gluetun" hace que el servicio use
 `network_mode: service:gluetun`, y gluetun entra en la lista de servicios en el
 acto, si todavía no está. Pasa a ser la dirección de ese servicio en nginx. Las
-credenciales (`VPN_SERVICE_PROVIDER`, `VPN_TYPE`, claves de WireGuard o
-usuario/contraseña de OpenVPN, `SERVER_COUNTRIES`) quedan en el `.env`.
+credenciales están en el **Editar de gluetun** — proveedor, tipo de túnel,
+claves de WireGuard o usuario/contraseña de OpenVPN y los países del servidor —
+y salen en el `.env` como `VPN_SERVICE_PROVIDER`, `VPN_TYPE`, `WIREGUARD_*` u
+`OPENVPN_*` y `SERVER_COUNTRIES`.
 
 ## Idiomas
 
