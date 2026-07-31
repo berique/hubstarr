@@ -92,9 +92,11 @@ handler de `#mSave`.
 - **Logotipo sempre sobre fundo claro**: os SVGs do dashboardicons são
   desenhados para isso e alguns são pretos (Heimdall, SABnzbd, Bazarr), então
   `--ico-bg` é claro nos dois temas. Não o amarre ao `--panel`.
-- **Favicon embutido**: a marca do cabeçalho redesenhada em SVG, como data URI
-  no `<link rel="icon">`. `docs/logo.svg` — o que aparece no título do README —
-  é a mesma arte; mexeu num, mexa no outro. Nada de `favicon.ico` à parte.
+- **Favicon em três lugares, uma arte só**: o data URI no `<link rel="icon">`
+  (o que faz o arquivo aberto do disco ter ícone), o `favicon.ico` da raiz (para
+  quem serve a página) e o `docs/logo.svg` do título do README. Mudou a marca,
+  mude os três — o `.ico` sai do SVG, rasterizado em 16…256. O `<link>` do
+  `.ico` vem antes do SVG de propósito: o SVG tem precedência.
 
 ## READMEs
 
