@@ -50,7 +50,7 @@ defecto:
   generados.
 - **HTTPS opcional**, con el certificado y la clave provenientes del host.
 - **Entorno global** (botón arriba): rutas base, PUID/PGID, zona horaria,
-  restart policy, puertos del host, API key, TLS y las credenciales de
+  restart policy, API key, TLS y las credenciales de
   gluetun. La lista de husos es la IANA entera, que viene del propio
   navegador, y arranca en el huso de la máquina.
 - **Descargar** `docker-compose.yml`, `.env` y `nginx/conf.d/starrnet.conf`
@@ -115,11 +115,11 @@ el host — todos los demás se quedan solo en la red `starrnet`, alcanzados por
 nginx en `nombre-del-contenedor:puerto-interno`. Lo que se enruta por la VPN
 responde en `gluetun`, que es quien tiene la red.
 
-Los dos puertos del host están en el Entorno, en **Puertos del host (nginx)**:
-80 y 443 por defecto, pero se puede publicar en 8080 y 8443, por ejemplo, si
-algo ya ocupa los privilegiados. Salen como `HTTP_PORT` y `HTTPS_PORT` en el
-`.env`; dentro del contenedor nginx sigue escuchando en 80 y 443. Los enlaces
-copiados y la redirección al https ya llevan el puerto elegido.
+Los dos puertos del host están en el **Editar** de la línea de nginx: 80 y 443
+por defecto, pero se puede publicar en 8080 y 8443, por ejemplo, si algo ya
+ocupa los privilegiados. Salen como `HTTP_PORT` y `HTTPS_PORT` en el `.env`;
+dentro del contenedor nginx sigue escuchando en 80 y 443. Los enlaces copiados
+y la redirección al https ya llevan el puerto elegido.
 
 La pestaña **nginx.conf** genera la configuración correspondiente, enrutando
 por subpath (`/sonarr`, `/radarr`…), un `location` por servicio. Heimdall es la

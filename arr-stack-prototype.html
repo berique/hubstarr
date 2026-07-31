@@ -205,6 +205,26 @@
   </div>
 </div>
 
+<!-- modal do nginx: só as portas que ele publica no host -->
+<div class="backdrop" id="ngxBack">
+  <div class="modal">
+    <h3 data-i18n="nginx.h">Nginx</h3>
+    <div class="body">
+      <div class="row" data-help="nginx.portsHint"><label for="nHttp" data-i18n="nginx.http">Porta http no host</label>
+        <input type="text" id="nHttp" placeholder="80"></div>
+      <div class="row" data-help="nginx.portsHint"><label for="nHttps" data-i18n="nginx.https">Porta https no host</label>
+        <input type="text" id="nHttps" placeholder="443"></div>
+      <p class="hint" data-i18n-html="nginx.hint"></p>
+    </div>
+    <div class="bar">
+      <span class="hint" id="nWarn"></span>
+      <span class="sp"></span>
+      <button id="nCancel" data-i18n="btn.cancel">Cancelar</button>
+      <button class="primary" id="nSave" data-i18n="btn.save">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- modal de ambiente (valores globais da stack) -->
 <div class="backdrop" id="envBack">
   <div class="modal">
@@ -220,11 +240,6 @@
       </div>
       <div class="row" data-help="env.hRestart"><label for="eRestart" data-i18n="env.restart">Restart policy</label>
         <select id="eRestart"><option>unless-stopped</option><option>always</option><option>no</option></select>
-      </div>
-      <div class="row" data-help="env.portsHint"><label for="eHttp" data-i18n="env.ports">Portas do host (nginx)</label>
-        <div style="display:flex;gap:8px">
-          <input type="text" id="eHttp" placeholder="80"><input type="text" id="eHttps" placeholder="443">
-        </div>
       </div>
       <div class="row" data-help="env.hCfg"><label for="eCfg" data-i18n="env.cfg">Base da pasta config</label><input type="text" id="eCfg"></div>
       <div class="row" data-help="env.hData"><label for="eData" data-i18n="env.data">Base da pasta de mídia</label><input type="text" id="eData"></div>
@@ -389,8 +404,12 @@ const I18N = {
   'env.h':'⚙ Ambiente',
   'env.tz':'Time Zone',
   'env.restart':'Restart policy',
-  'env.ports':'Portas do host (nginx)',
-  'env.portsHint':'Portas publicadas pelo nginx no host: a do http e a do https, nessa ordem. Dentro da stack ele continua ouvindo em 80 e 443.',
+  'nginx.h':'Nginx · portas no host',
+  'nginx.http':'Porta http no host',
+  'nginx.https':'Porta https no host',
+  'nginx.portsHint':'A porta em que o nginx atende no host. Dentro da stack ele continua ouvindo em 80 e 443 — isto aqui é só o lado de fora, útil quando algo já ocupa as portas privilegiadas.',
+  'nginx.hint':'As duas saem no <b>.env</b> como <b>HTTP_PORT</b> e <b>HTTPS_PORT</b>. Os links copiados e o redirecionamento para o https já levam a porta escolhida.',
+  'nginx.warnPorts':'As portas do host devem ser números de 1 a 65535, e diferentes entre si',
   'env.cfg':'Base da pasta config',
   'env.data':'Base da pasta de mídia',
   'env.dl':'Base de downloads',
@@ -404,7 +423,6 @@ const I18N = {
   'env.countries':'Países do servidor',
   'env.hint':'Valem para toda a stack. As bases saem no compose como <b>${BASE_CONFIG}</b>, <b>${BASE_MEDIA}</b> e <b>${DOWNLOAD_BASE}</b>, e o restart como <b>${RESTART}</b>. Todos os valores acima vão para o <b>.env</b>.',
   'env.warnIds':'PUID/PGID devem ser numéricos',
-  'env.warnPorts':'As portas do host devem ser números de 1 a 65535, e diferentes entre si',
   'btn.cancel':'Cancelar',
   'btn.save':'Salvar',
   'btn.done':'Concluir',
@@ -545,8 +563,12 @@ const I18N = {
   'env.h':'⚙ Environment',
   'env.tz':'Time zone',
   'env.restart':'Restart policy',
-  'env.ports':'Host ports (nginx)',
-  'env.portsHint':'Ports nginx publishes on the host: http first, https second. Inside the stack it keeps listening on 80 and 443.',
+  'nginx.h':'Nginx · host ports',
+  'nginx.http':'http port on the host',
+  'nginx.https':'https port on the host',
+  'nginx.portsHint':'The port nginx answers on from the host. Inside the stack it keeps listening on 80 and 443 — this is only the outside, handy when something already holds the privileged ports.',
+  'nginx.hint':'Both land in <b>.env</b> as <b>HTTP_PORT</b> and <b>HTTPS_PORT</b>. The copied links and the redirect to https already carry the chosen port.',
+  'nginx.warnPorts':'Host ports must be numbers from 1 to 65535, and different from each other',
   'env.cfg':'Config base path',
   'env.data':'Media base path',
   'env.dl':'Downloads base path',
@@ -560,7 +582,6 @@ const I18N = {
   'env.countries':'Server countries',
   'env.hint':'These apply to the whole stack. The base paths land in the compose file as <b>${BASE_CONFIG}</b>, <b>${BASE_MEDIA}</b> and <b>${DOWNLOAD_BASE}</b>, and the restart policy as <b>${RESTART}</b>. Every value above goes to <b>.env</b>.',
   'env.warnIds':'PUID/PGID must be numeric',
-  'env.warnPorts':'Host ports must be numbers from 1 to 65535, and different from each other',
   'btn.cancel':'Cancel',
   'btn.save':'Save',
   'btn.done':'Done',
@@ -701,8 +722,12 @@ const I18N = {
   'env.h':'⚙ Entorno',
   'env.tz':'Zona horaria',
   'env.restart':'Restart policy',
-  'env.ports':'Puertos del host (nginx)',
-  'env.portsHint':'Puertos que nginx publica en el host: primero el de http, luego el de https. Dentro de la stack sigue escuchando en 80 y 443.',
+  'nginx.h':'Nginx · puertos del host',
+  'nginx.http':'Puerto http en el host',
+  'nginx.https':'Puerto https en el host',
+  'nginx.portsHint':'El puerto en el que nginx atiende desde el host. Dentro de la stack sigue escuchando en 80 y 443 — esto es solo el lado de afuera, útil cuando algo ya ocupa los puertos privilegiados.',
+  'nginx.hint':'Los dos salen en el <b>.env</b> como <b>HTTP_PORT</b> y <b>HTTPS_PORT</b>. Los enlaces copiados y la redirección al https ya llevan el puerto elegido.',
+  'nginx.warnPorts':'Los puertos del host deben ser números de 1 a 65535, y distintos entre sí',
   'env.cfg':'Base de la carpeta config',
   'env.data':'Base de la carpeta multimedia',
   'env.dl':'Base de descargas',
@@ -716,7 +741,6 @@ const I18N = {
   'env.countries':'Países del servidor',
   'env.hint':'Valen para toda la stack. Las bases salen en el compose como <b>${BASE_CONFIG}</b>, <b>${BASE_MEDIA}</b> y <b>${DOWNLOAD_BASE}</b>, y el restart como <b>${RESTART}</b>. Todos los valores de arriba van al <b>.env</b>.',
   'env.warnIds':'PUID/PGID deben ser numéricos',
-  'env.warnPorts':'Los puertos del host deben ser números de 1 a 65535, y distintos entre sí',
   'btn.cancel':'Cancelar',
   'btn.save':'Guardar',
   'btn.done':'Listo',
@@ -1058,7 +1082,8 @@ function renderItems(){
         </div>
         <div class="ds">${NGINX.id} · ${sdesc(NGINX.id)} · ${DEFAULTS.cfg}/${NGINX.id}/conf.d</div>
       </div>
-      <div class="acts"><span class="hint">${t('items.fixed')}</span></div>
+      <div class="acts"><span class="hint">${t('items.fixed')}</span>
+        <button class="sm" data-act="ngx">${t('btn.edit')}</button></div>
     </div>`;
 
   box.innerHTML = fixed + (added.length ? added.map(a=>{
@@ -1089,6 +1114,7 @@ function renderItems(){
 
 $('#items').onclick = e=>{
   const btn = e.target.closest('button[data-act]'); if(!btn) return;
+  if(btn.dataset.act==='ngx') return openNgx();
   const key = btn.closest('.item').dataset.key;
   if(btn.dataset.act==='link'){
     const a = byKey(key); if(!a) return;
@@ -1212,6 +1238,26 @@ $('#mSave').onclick = ()=>{
   closeModal(); renderItems(); renderCombo(); render();
 };
 
+/* ---------- nginx: portas publicadas no host ---------- */
+function openNgx(){
+  $('#nHttp').value = DEFAULTS.http; $('#nHttps').value = DEFAULTS.https;
+  $('#nWarn').textContent='';
+  $('#ngxBack').classList.add('open');
+  $('#nHttp').focus();
+}
+const closeNgx = ()=> $('#ngxBack').classList.remove('open');
+$('#nCancel').onclick = closeNgx;
+$('#ngxBack').onclick = e=>{ if(e.target.id==='ngxBack') closeNgx(); };
+$('#nSave').onclick = ()=>{
+  const http=$('#nHttp').value.trim() || '80', https=$('#nHttps').value.trim() || '443';
+  const ok = p => /^\d+$/.test(p) && +p >= 1 && +p <= 65535;
+  if(!ok(http) || !ok(https) || http === https){
+    $('#nWarn').innerHTML=`<span class="warn">${t('nginx.warnPorts')}</span>`; return;
+  }
+  Object.assign(DEFAULTS, {http, https});
+  closeNgx(); renderItems(); render();
+};
+
 /* ---------- ambiente global ---------- */
 function openEnv(){
   $('#eRestart').value=DEFAULTS.restart;
@@ -1220,7 +1266,6 @@ function openEnv(){
   $('#eOvpnUser').value=DEFAULTS.ovpnUser; $('#eOvpnPass').value=DEFAULTS.ovpnPass;
   $('#eCountries').value=DEFAULTS.countries;
   $('#eApiKey').value = DEFAULTS.apiKey;
-  $('#eHttp').value = DEFAULTS.http; $('#eHttps').value = DEFAULTS.https;
   $('#eTlsPort').textContent = DEFAULTS.https;
   $('#eTls').checked = DEFAULTS.tls; $('#eDomain').value = DEFAULTS.domain;
   $('#eCert').value = DEFAULTS.cert; $('#eTlsKey').value = DEFAULTS.tlsKey;
@@ -1270,9 +1315,6 @@ $('#eApiGen').onclick = ()=> $('#eApiKey').value = randKey();
 // caminhos de certificado só interessam com o TLS ligado
 function tlsRows(){ $('#eTlsRows').style.display = $('#eTls').checked ? 'block' : 'none'; }
 $('#eTls').addEventListener('change', ()=>{ tlsRows(); render(); });
-// a porta ao lado do "Servir HTTPS" acompanha o que está no campo
-$('#eHttps').addEventListener('input', e=>
-  $('#eTlsPort').textContent = e.target.value.trim() || '443');
 
 /* ---------- tema claro/escuro ---------- */
 function setTheme(t){
@@ -1296,12 +1338,6 @@ $('#eSave').onclick = ()=>{
   if(!/^\d+$/.test(puid) || !/^\d+$/.test(pgid)){
     $('#eWarn').innerHTML=`<span class="warn">${t('env.warnIds')}</span>`; return;
   }
-  const http=$('#eHttp').value.trim() || '80', https=$('#eHttps').value.trim() || '443';
-  const port = p => /^\d+$/.test(p) && +p >= 1 && +p <= 65535;
-  if(!port(http) || !port(https) || http === https){
-    $('#eWarn').innerHTML=`<span class="warn">${t('env.warnPorts')}</span>`; return;
-  }
-  Object.assign(DEFAULTS, {http, https});
   Object.assign(DEFAULTS, {restart:$('#eRestart').value, puid, pgid,
     tz:$('#eTz').value, cfg:$('#eCfg').value.trim(), data:$('#eData').value.trim(),
     dl:$('#eDl').value.trim(),

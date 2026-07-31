@@ -47,7 +47,7 @@ The combobox lists the available services with their logos and default ports:
   explanation of what the value does and how it lands in the generated files.
 - **Optional HTTPS**, with the certificate and key coming from the host.
 - **Global environment** (button at the top): base paths, PUID/PGID, time zone,
-  restart policy, host ports, API key, TLS and the gluetun credentials. The
+  restart policy, API key, TLS and the gluetun credentials. The
   time zone list is the whole IANA database, straight from the browser, and it
   starts on the machine's own zone.
 - **Download** `docker-compose.yml`, `.env` and `nginx/conf.d/starrnet.conf`
@@ -111,11 +111,11 @@ the host — everything else stays on the `starrnet` network, reached by nginx a
 `container-name:internal-port`. Whatever routes through the VPN answers at
 `gluetun`, which owns the network.
 
-Both host ports live in the Environment, under **Host ports (nginx)**: 80 and
-443 by default, but you can publish on 8080 and 8443, say, if something already
-holds the privileged ones. They become `HTTP_PORT` and `HTTPS_PORT` in the
-`.env`; inside the container nginx keeps listening on 80 and 443. The copied
-links and the redirect to https already carry the chosen port.
+Both host ports live behind **Edit** on the nginx row: 80 and 443 by default,
+but you can publish on 8080 and 8443, say, if something already holds the
+privileged ones. They become `HTTP_PORT` and `HTTPS_PORT` in the `.env`; inside
+the container nginx keeps listening on 80 and 443. The copied links and the
+redirect to https already carry the chosen port.
 
 The **nginx.conf** tab generates the matching configuration, routing by subpath
 (`/sonarr`, `/radarr`…), one `location` per service. Heimdall is the exception:

@@ -46,7 +46,7 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
   explicação do que aquele valor faz e de como ele sai nos arquivos gerados.
 - **HTTPS opcional**, com o certificado e a chave vindos do host.
 - **Ambiente global** (botão no topo): bases de caminho, PUID/PGID, time zone,
-  restart policy, portas do host, API key, TLS e as credenciais do gluetun. A
+  restart policy, API key, TLS e as credenciais do gluetun. A
   lista de fusos é a IANA inteira, vinda do próprio navegador, e o valor
   inicial é o fuso da máquina.
 - **Baixar** `docker-compose.yml`, `.env` e `nginx/conf.d/starrnet.conf` juntos
@@ -110,10 +110,10 @@ os outros ficam só na rede `starrnet`, alcançados pelo nginx por
 `nome-do-container:porta-interna`. Quem roteia pela VPN responde no `gluetun`,
 que é quem detém a rede.
 
-As duas portas do host saem no Ambiente, em **Portas do host (nginx)**: 80 e
-443 por padrão, mas dá para publicar em 8080 e 8443, por exemplo, se algo já
-ocupa as privilegiadas. Elas viram `HTTP_PORT` e `HTTPS_PORT` no `.env`; dentro
-do container o nginx continua ouvindo em 80 e 443. Os links copiados e o
+As duas portas do host ficam no **Editar** da linha do nginx: 80 e 443 por
+padrão, mas dá para publicar em 8080 e 8443, por exemplo, se algo já ocupa as
+privilegiadas. Elas viram `HTTP_PORT` e `HTTPS_PORT` no `.env`; dentro do
+container o nginx continua ouvindo em 80 e 443. Os links copiados e o
 redirecionamento para o https já levam a porta escolhida.
 
 A aba **nginx.conf** gera a configuração correspondente, roteando por subpath

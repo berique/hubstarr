@@ -40,14 +40,15 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
 4. **Estado** — três globais mutáveis: `added` (instâncias,
    `{id,title,data,vpn,hw,solver}`), `picked` (id no combobox), `editing` (key
    em edição). `DEFAULTS` guarda o ambiente global (caminhos base, PUID/PGID,
-   TZ, portas do host, TLS, VPN, API key).
+   TZ, portas do host, TLS, VPN, API key). Nem tudo que está no `DEFAULTS` se
+   edita no Ambiente: as portas do host saem no modal do nginx.
 5. **Derivações** — `slug()` → `cname()` (container_name = chave do serviço =
    pasta de config), `route()`, `url()`, `cfgPath`/`dataPath` (com variáveis
    `${...}` do `.env`) e `cfgReal`/`dataReal` (caminhos resolvidos, para o hint
    do modal). Alterar `cname` afeta compose, nginx e `.env` ao mesmo tempo.
 6. **UI** — `renderCombo()`, `renderItems()`, modal de configuração
-   (`openModal` + o handler de `#mSave`), modal de ambiente (`openEnv`),
-   `buildHelp()` e tema claro/escuro.
+   (`openModal` + o handler de `#mSave`), modal de ambiente (`openEnv`), modal
+   do nginx (`openNgx`), `buildHelp()` e tema claro/escuro.
 7. **Geradores** — `build()` (compose), `buildEnv()`, `buildNginx()`. Eles
    emitem **HTML com spans de realce** (`<span class="k">`/`v`/`c`); o texto
    puro para copiar/baixar vem de `textContent` dos panes (`plain()`,
@@ -76,9 +77,9 @@ handler de `#mSave`.
   feito à mão, a lista de fusos vem do `Intl` do navegador. Não introduza CDN,
   fetch nem npm.
 - **Nenhum serviço publica porta no host**, exceto o nginx. Ele ouve em 80/443
-  dentro do container e publica no host as portas do Ambiente
-  (`DEFAULTS.http`/`https` → `HTTP_PORT`/`HTTPS_PORT` no `.env`). Todos os
-  outros só existem na rede `starrnet` e são alcançados por
+  dentro do container e publica no host as portas do modal próprio dele — o
+  "Editar" da linha fixa (`DEFAULTS.http`/`https` → `HTTP_PORT`/`HTTPS_PORT` no
+  `.env`). Todos os outros só existem na rede `starrnet` e são alcançados por
   `container:porta-interna`. Quem roteia pela VPN usa
   `network_mode: service:gluetun` e responde no endereço do gluetun.
 - **Volumes em sintaxe longa**, com `type: bind` e `bind.propagation: rslave`.
