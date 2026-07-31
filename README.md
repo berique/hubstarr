@@ -47,6 +47,12 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
 - **Ajuda por campo** no Ambiente: cada linha tem um `?` que abre uma
   explicação do que aquele valor faz e de como ele sai nos arquivos gerados.
 - **HTTPS opcional**, com o certificado e a chave vindos do host.
+- **Configuração** (botão no topo): escolher quais instâncias o Prowlarr vai
+  configurar, quais *arr recebem cada cliente de download (qBittorrent,
+  SABnzbd) e as opções de *Media Management* — hardlink, renomear, permissões,
+  pastas vazias e o formato do nome (*Episode Naming*, *Nomenclatura de filme*,
+  *Nomeação da faixa*) —, separadas por família: Sonarr, Radarr e Lidarr. Por
+  enquanto as escolhas ficam guardadas na interface; nada é aplicado nos apps.
 - **Ambiente global** (botão no topo): bases de caminho, PUID/PGID, time zone,
   restart policy, API key e TLS. A
   lista de fusos é a IANA inteira, vinda do próprio navegador, e o valor
@@ -170,7 +176,8 @@ e traduzir os valores.
 
 ## Status
 
-Protótipo de interface: o botão "Criar stack" apenas simula o deploy. O
+Protótipo de interface: o botão "Criar stack" apenas simula o deploy, e as
+escolhas da **Configuração** ainda não viram chamada de API nenhuma. O
 `docker-compose.yml`, o `.env` e o `nginx.conf` gerados, esses sim, são de
 verdade.
 

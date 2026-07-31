@@ -120,6 +120,16 @@
   button.help{width:24px;height:24px;padding:0;border-radius:50%;line-height:1;
     font-size:12px;color:var(--muted)}
   button.help.on{border-color:var(--accent);color:var(--txt)}
+  /* configuração: blocos por assunto, com as instâncias em coluna */
+  .cfgSec{margin:0 0 16px}
+  .cfgSec h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;
+             letter-spacing:.06em;color:var(--muted)}
+  .cfgSec .box{border:1px solid var(--line);border-radius:8px;padding:10px 12px;
+               background:var(--panel-2);margin-bottom:8px}
+  .cfgSec .box > .nm{font-weight:600;margin-bottom:6px}
+  .cfgList{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+  .cfgList .check{font-size:13px}
+
   /* diretórios extras da biblioteca: uma linha por pasta, com o × ao lado */
   .libs{display:grid;gap:6px}
   .libs .lib{display:flex;gap:6px}
@@ -173,6 +183,7 @@
   <span style="flex:1"></span>
   <select id="langSel" style="width:auto;padding:6px 8px" data-i18n-title="app.lang"></select>
   <button id="themeBtn" data-i18n-title="app.theme">🌙</button>
+  <button id="cfgBtn" data-i18n="app.cfg">⇄ Configuração</button>
   <button id="envBtn" data-i18n="app.env">⚙ Ambiente</button>
 </header>
 
@@ -222,6 +233,19 @@
       <button id="copy" data-i18n="btn.copy">Copiar</button>
       <button id="dl" data-i18n="btn.zip" data-i18n-title="btn.zipHint">Baixar .zip</button>
       <button class="primary" id="deploy" data-i18n="btn.deploy">Criar stack</button>
+    </div>
+  </div>
+</div>
+
+<!-- modal de configuração: quem fala com quem depois que a stack sobe -->
+<div class="backdrop" id="cfgBack">
+  <div class="modal">
+    <h3 data-i18n="cfg.h">⇄ Configuração</h3>
+    <div class="body" id="cfgBody"></div>
+    <div class="bar">
+      <span class="sp"></span>
+      <button id="cfgCancel" data-i18n="btn.cancel">Cancelar</button>
+      <button class="primary" id="cfgSave" data-i18n="btn.save">Salvar</button>
     </div>
   </div>
 </div>
@@ -378,6 +402,25 @@ const I18N = {
   'app.theme':'Alternar tema',
   'app.lang':'Idioma',
   'app.env':'⚙ Ambiente',
+  'app.cfg':'⇄ Configuração',
+  'cfg.h':'⇄ Configuração',
+  'cfg.apps':'Aplicações no Prowlarr',
+  'cfg.appsHint':'As instâncias marcadas entram em <i>Settings → Apps</i> do Prowlarr, que passa a empurrar os indexadores para elas.',
+  'cfg.clients':'Clientes de download',
+  'cfg.clientsHint':'Para cada cliente, as instâncias que vão recebê-lo em <i>Settings → Download Clients</i>. A categoria de cada uma é o nome do container.',
+  'cfg.mm':'Media Manager (avançado)',
+  'cfg.mmHint':'Vale para todas as instâncias da mesma família. São as opções de <i>Settings → Media Management</i>.',
+  'cfg.mm.hardlink':'Hardlink em vez de copiar',
+  'cfg.mm.rename':'Renomear ao importar',
+  'cfg.mm.perms':'Definir permissões (chmod/chown)',
+  'cfg.mm.empty':'Apagar pastas vazias',
+  'cfg.naming.sonarr':'Episode Naming',
+  'cfg.naming.radarr':'Nomenclatura de filme',
+  'cfg.naming.lidarr':'Nomeação da faixa',
+  'cfg.noProwlarr':'Sem Prowlarr na stack — adicione-o para escolher o que ele configura.',
+  'cfg.noArr':'Sem Sonarr, Radarr ou Lidarr na stack.',
+  'cfg.noClient':'Sem qBittorrent ou SABnzbd na stack.',
+  'cfg.hint':'Protótipo: as escolhas ficam guardadas aqui, mas ainda não são aplicadas nos apps.',
 
   'services.h':'Serviços',
   'services.count':n=>`${n} adicionados`,
@@ -541,6 +584,25 @@ const I18N = {
   'app.theme':'Toggle theme',
   'app.lang':'Language',
   'app.env':'⚙ Environment',
+  'app.cfg':'⇄ Configuration',
+  'cfg.h':'⇄ Configuration',
+  'cfg.apps':'Applications in Prowlarr',
+  'cfg.appsHint':'The instances you tick land in Prowlarr\'s <i>Settings → Apps</i>, so it pushes indexers to them.',
+  'cfg.clients':'Download clients',
+  'cfg.clientsHint':'For each client, the instances that will get it under <i>Settings → Download Clients</i>. Each one\'s category is its container name.',
+  'cfg.mm':'Media Manager (advanced)',
+  'cfg.mmHint':'Applies to every instance of the same family. These are the <i>Settings → Media Management</i> options.',
+  'cfg.mm.hardlink':'Hardlink instead of copy',
+  'cfg.mm.rename':'Rename on import',
+  'cfg.mm.perms':'Set permissions (chmod/chown)',
+  'cfg.mm.empty':'Delete empty folders',
+  'cfg.naming.sonarr':'Episode Naming',
+  'cfg.naming.radarr':'Movie Naming',
+  'cfg.naming.lidarr':'Track Naming',
+  'cfg.noProwlarr':'No Prowlarr in the stack — add it to pick what it configures.',
+  'cfg.noArr':'No Sonarr, Radarr or Lidarr in the stack.',
+  'cfg.noClient':'No qBittorrent or SABnzbd in the stack.',
+  'cfg.hint':'Prototype: the choices are kept here, but not applied to the apps yet.',
 
   'services.h':'Services',
   'services.count':n=>`${n} added`,
@@ -704,6 +766,25 @@ const I18N = {
   'app.theme':'Cambiar tema',
   'app.lang':'Idioma',
   'app.env':'⚙ Entorno',
+  'app.cfg':'⇄ Configuración',
+  'cfg.h':'⇄ Configuración',
+  'cfg.apps':'Aplicaciones en Prowlarr',
+  'cfg.appsHint':'Las instancias marcadas entran en <i>Settings → Apps</i> de Prowlarr, que pasa a empujarles los indexadores.',
+  'cfg.clients':'Clientes de descarga',
+  'cfg.clientsHint':'Para cada cliente, las instancias que lo recibirán en <i>Settings → Download Clients</i>. La categoría de cada una es el nombre del contenedor.',
+  'cfg.mm':'Media Manager (avanzado)',
+  'cfg.mmHint':'Vale para todas las instancias de la misma familia. Son las opciones de <i>Settings → Media Management</i>.',
+  'cfg.mm.hardlink':'Hardlink en vez de copiar',
+  'cfg.mm.rename':'Renombrar al importar',
+  'cfg.mm.perms':'Definir permisos (chmod/chown)',
+  'cfg.mm.empty':'Borrar carpetas vacías',
+  'cfg.naming.sonarr':'Episode Naming',
+  'cfg.naming.radarr':'Nomenclatura de película',
+  'cfg.naming.lidarr':'Nomenclatura de pista',
+  'cfg.noProwlarr':'Sin Prowlarr en la stack — añádelo para elegir lo que configura.',
+  'cfg.noArr':'Sin Sonarr, Radarr o Lidarr en la stack.',
+  'cfg.noClient':'Sin qBittorrent o SABnzbd en la stack.',
+  'cfg.hint':'Prototipo: las opciones se guardan aquí, pero todavía no se aplican en las apps.',
 
   'services.h':'Servicios',
   'services.count':n=>`${n} añadidos`,
@@ -1409,6 +1490,142 @@ $('#mLibAdd').onclick = ()=>{
   $('#mLibs').appendChild(row);
   row.querySelector('input').focus();
 };
+
+/* ---------- configuração: quem fala com quem ---------- */
+/* Estado à parte do `added`, porque descreve ligações entre instâncias:
+   - apps:    instâncias que o Prowlarr vai configurar
+   - clients: por cliente de download, quais *arr o recebem
+   - mm:      Media Management (avançado), por família de *arr           */
+const ARRS = ['sonarr','radarr','lidarr'];
+// formato padrão de cada app, o mesmo que eles trazem de fábrica
+const NAMING = {
+  sonarr:'{Series Title} - S{season:00}E{episode:00} - {Episode Title} {Quality Full}',
+  radarr:'{Movie Title} ({Release Year}) {Quality Full}',
+  lidarr:'{Album Title}/{track:00} - {Track Title}',
+};
+const mmDefault = id => ({hardlink:true, rename:true, perms:false, empty:false,
+                          naming:NAMING[id] || ''});
+const CONFIG = {apps:{}, clients:{}, mm:{}};
+
+const arrList    = ()=> added.filter(a=>ARRS.includes(a.id));
+const clientList = ()=> added.filter(a=>svc(a.id).dlClient);
+
+// mantém o estado alinhado com a stack: instância que saiu some, nova entra ligada
+function syncConfig(){
+  const arrs = arrList().map(cname);
+  const keep = (obj, keys, def) => {
+    keys.forEach(k=>{ if(!(k in obj)) obj[k] = typeof def === 'function' ? def() : def; });
+    Object.keys(obj).forEach(k=>{ if(!keys.includes(k)) delete obj[k]; });
+  };
+  keep(CONFIG.apps, arrs, true);
+  keep(CONFIG.clients, clientList().map(cname), ()=>({}));
+  Object.values(CONFIG.clients).forEach(m=>keep(m, arrs, true));
+  const fams = [...new Set(arrList().map(a=>a.id))];
+  fams.forEach(id=>{ if(!CONFIG.mm[id]) CONFIG.mm[id] = mmDefault(id); });
+  Object.keys(CONFIG.mm).forEach(id=>{ if(!fams.includes(id)) delete CONFIG.mm[id]; });
+}
+
+const MM_OPTS = ['hardlink','rename','perms','empty'];
+
+function renderConfig(){
+  syncConfig();
+  const box = $('#cfgBody');
+  const arrs = arrList();
+  const check = (on, label, act) =>
+    `<label class="check"><input type="checkbox" ${on?'checked':''} ${act}> ${label}</label>`;
+  const nameOf = a => a.title || svc(a.id).name;
+  const H = [];
+
+  // 1) o que o Prowlarr sincroniza
+  H.push(`<div class="cfgSec"><h4>${t('cfg.apps')}</h4>`);
+  if(!has('prowlarr')) H.push(`<p class="hint">${t('cfg.noProwlarr')}</p>`);
+  else if(!arrs.length) H.push(`<p class="hint">${t('cfg.noArr')}</p>`);
+  else {
+    H.push(`<p class="hint" style="margin:0 0 8px">${t('cfg.appsHint')}</p>`);
+    H.push(`<div class="cfgList">` + arrs.map(a=>
+      check(CONFIG.apps[cname(a)], nameOf(a), `data-kind="app" data-key="${cname(a)}"`)
+    ).join('') + `</div>`);
+  }
+  H.push(`</div>`);
+
+  // 2) cada cliente de download e as instâncias que o recebem
+  H.push(`<div class="cfgSec"><h4>${t('cfg.clients')}</h4>`);
+  const cls = clientList();
+  if(!cls.length) H.push(`<p class="hint">${t('cfg.noClient')}</p>`);
+  else if(!arrs.length) H.push(`<p class="hint">${t('cfg.noArr')}</p>`);
+  else {
+    H.push(`<p class="hint" style="margin:0 0 8px">${t('cfg.clientsHint')}</p>`);
+    cls.forEach(c=>{
+      H.push(`<div class="box"><div class="nm">${nameOf(c)}
+        <span class="hint">${dlHost(c)}:${inner(c.id)}</span></div>`);
+      H.push(`<div class="cfgList">` + arrs.map(a=>
+        check(CONFIG.clients[cname(c)][cname(a)], nameOf(a),
+              `data-kind="client" data-key="${cname(c)}" data-arr="${cname(a)}"`)
+      ).join('') + `</div></div>`);
+    });
+  }
+  H.push(`</div>`);
+
+  // 3) media management, uma caixa por família
+  H.push(`<div class="cfgSec"><h4>${t('cfg.mm')}</h4>`);
+  const fams = [...new Set(arrs.map(a=>a.id))];
+  if(!fams.length) H.push(`<p class="hint">${t('cfg.noArr')}</p>`);
+  else {
+    H.push(`<p class="hint" style="margin:0 0 8px">${t('cfg.mmHint')}</p>`);
+    fams.forEach(id=>{
+      const inst = arrs.filter(a=>a.id===id).map(nameOf).join(', ');
+      H.push(`<div class="box"><div class="nm">${svc(id).name}
+        <span class="hint">${inst}</span></div>`);
+      H.push(`<div class="cfgList">` + MM_OPTS.map(o=>
+        check(CONFIG.mm[id][o], t('cfg.mm.'+o), `data-kind="mm" data-key="${id}" data-opt="${o}"`)
+      ).join('') + `</div>`);
+      // o formato só vale se ele for renomear
+      const off = CONFIG.mm[id].rename ? '' : ' disabled';
+      H.push(`<div class="row" style="grid-template-columns:150px 1fr;margin:10px 0 0">
+        <label for="mmName-${id}">${t('cfg.naming.'+id)}</label>
+        <input type="text" id="mmName-${id}" data-kind="naming" data-key="${id}"
+               value="${CONFIG.mm[id].naming.replace(/"/g,'&quot;')}"${off}>
+      </div></div>`);
+    });
+  }
+  H.push(`</div>`);
+  H.push(`<p class="hint">${t('cfg.hint')}</p>`);
+  box.innerHTML = H.join('');
+}
+
+// endereço em que o *arr alcança o cliente: quem roteia pela VPN atende no gluetun
+const dlHost = c => c.vpn ? 'gluetun' : cname(c);
+
+$('#cfgBody').onchange = e=>{
+  const el = e.target; if(el.type !== 'checkbox') return;
+  const d = el.dataset;
+  if(d.kind === 'app')         CONFIG.apps[d.key] = el.checked;
+  else if(d.kind === 'client') CONFIG.clients[d.key][d.arr] = el.checked;
+  else if(d.kind === 'mm'){
+    CONFIG.mm[d.key][d.opt] = el.checked;
+    if(d.opt === 'rename') renderConfig();   // libera ou trava o formato
+  }
+};
+$('#cfgBody').oninput = e=>{
+  const d = e.target.dataset;
+  if(d.kind === 'naming') CONFIG.mm[d.key].naming = e.target.value;
+};
+
+let cfgBackup = null;   // estado de antes de abrir, para o Cancelar desfazer
+function openCfg(){
+  renderConfig();
+  cfgBackup = JSON.parse(JSON.stringify(CONFIG));
+  $('#cfgBack').classList.add('open');
+}
+const closeCfg = ()=> $('#cfgBack').classList.remove('open');
+function cancelCfg(){
+  if(cfgBackup) Object.assign(CONFIG, cfgBackup);
+  closeCfg();
+}
+$('#cfgBtn').onclick = openCfg;
+$('#cfgCancel').onclick = cancelCfg;
+$('#cfgBack').onclick = e=>{ if(e.target.id==='cfgBack') cancelCfg(); };
+$('#cfgSave').onclick = closeCfg;
 
 /* ---------- ambiente global ---------- */
 function openEnv(){

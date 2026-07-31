@@ -48,6 +48,12 @@ The combobox lists the available services with their logos and default ports:
 - **Per-field help** in the Environment: every row has a `?` that opens an
   explanation of what the value does and how it lands in the generated files.
 - **Optional HTTPS**, with the certificate and key coming from the host.
+- **Configuration** (button at the top): pick which instances Prowlarr will
+  configure, which *arr apps get each download client (qBittorrent, SABnzbd)
+  and the *Media Management* options — hardlinks, renaming, permissions, empty
+  folders and the naming format (*Episode*, *Movie*, *Track Naming*) — split
+  per family: Sonarr, Radarr and Lidarr. For now the choices
+  are kept in the interface; nothing is applied to the apps.
 - **Global environment** (button at the top): base paths, PUID/PGID, time zone,
   restart policy, API key and TLS. The
   time zone list is the whole IANA database, straight from the browser, and it
@@ -171,9 +177,10 @@ copying one of the blocks and translating the values.
 
 ## Status
 
-An interface prototype: the "Create stack" button only simulates the deploy.
-The generated `docker-compose.yml`, `.env` and `nginx.conf`, on the other hand,
-are the real thing.
+An interface prototype: the "Create stack" button only simulates the deploy,
+and the **Configuration** choices do not turn into any API call yet. The
+generated `docker-compose.yml`, `.env` and `nginx.conf`, on the other hand, are
+the real thing.
 
 ## License
 

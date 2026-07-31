@@ -51,6 +51,13 @@ defecto:
   explicación de lo que hace ese valor y de cómo sale en los archivos
   generados.
 - **HTTPS opcional**, con el certificado y la clave provenientes del host.
+- **Configuración** (botón arriba): elegir qué instancias configurará Prowlarr,
+  qué *arr reciben cada cliente de descarga (qBittorrent, SABnzbd) y las
+  opciones de *Media Management* — hardlink, renombrar, permisos, carpetas
+  vacías y el formato del nombre (*Episode Naming*, *Nomenclatura de película*,
+  *Nomenclatura de pista*) —, separadas por familia: Sonarr, Radarr y Lidarr.
+  Por ahora las
+  opciones se guardan en la interfaz; no se aplica nada en las apps.
 - **Entorno global** (botón arriba): rutas base, PUID/PGID, zona horaria,
   restart policy, API key y TLS. La lista de husos es la IANA entera, que viene
   del propio navegador, y arranca en el huso de la máquina.
@@ -175,7 +182,8 @@ bloques y traducir los valores.
 
 ## Estado
 
-Prototipo de interfaz: el botón "Crear stack" solo simula el despliegue. El
+Prototipo de interfaz: el botón "Crear stack" solo simula el despliegue, y las
+opciones de **Configuración** todavía no se vuelven ninguna llamada de API. El
 `docker-compose.yml`, el `.env` y el `nginx.conf` generados, esos sí, son de
 verdad.
 

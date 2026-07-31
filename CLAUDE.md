@@ -44,7 +44,7 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    `ROOT_SERVICE` (Heimdall, servido em `/`), `MULTI` (serviços com múltiplas
    instâncias), e os mapas de variáveis de ambiente `INSTANCE_ENV`,
    `URLBASE_ENV`, `APIKEY_ENV`.
-4. **Estado** — três globais mutáveis: `added` (instâncias,
+4. **Estado** — quatro globais mutáveis: `added` (instâncias,
    `{id,title,data,abs,libs,vpn,hw,solver}` — `abs` só quando o caminho da mídia
    sai das bases, e aí é ele que vai literal para o compose; `libs` são as
    pastas avulsas do Jellyfin, do "+ pasta"), `picked` (id no
@@ -52,7 +52,11 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    (caminhos base, PUID/PGID, TZ, portas do host, TLS, VPN, API key). Nem tudo
    que está no `DEFAULTS` se edita no Ambiente: as portas do host saem no modal
    do nginx e as credenciais da VPN no do gluetun (flag `vpnCfg`) — os dois são
-   de um serviço só, não da stack.
+   de um serviço só, não da stack. `CONFIG` guarda as ligações entre instâncias
+   (o que o Prowlarr configura, quais *arr recebem cada cliente, o Media
+   Management por família); `syncConfig()` o alinha com o `added` a cada
+   abertura do modal, e ele não entra nos arquivos gerados — é protótipo de
+   interface, como o botão "Criar stack".
 5. **Derivações** — `slug()` → `cname()` (container_name = chave do serviço =
    pasta de config), `route()`, `url()`, `cfgPath`/`dataPath` (com variáveis
    `${...}` do `.env`) e `cfgReal`/`dataReal` (caminhos resolvidos, para o hint
@@ -63,7 +67,8 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    literal ou com variável; não remonte `${BASE_MEDIA}/…` na mão.
 6. **UI** — `renderCombo()`, `renderItems()`, modal de configuração
    (`openModal` + o handler de `#mSave`), modal de ambiente (`openEnv`), modal
-   do nginx (`openNgx`), lista de pastas do Jellyfin (`renderLibs`/`libsOf`),
+   do nginx (`openNgx`), modal de configuração (`renderConfig`/`openCfg`, com
+   backup para o Cancelar), lista de pastas do Jellyfin (`renderLibs`/`libsOf`),
    `buildHelp()` e tema claro/escuro. O hint do modal (`updateHint`) é montado
    à mão com `innerHTML` a cada digitada — quem mexe nos campos chama
    `hintNow()`, e o `applyI18n()` o refaz para acompanhar a troca de idioma.
