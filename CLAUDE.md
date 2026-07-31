@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Hubstarr é um protótipo de página única que gera `docker-compose.yml`, `.env` e
 `nginx.conf` de uma stack de mídia (*arr + clientes de download + servidor de
 mídia). **Todo o projeto é um único arquivo**: `arr-stack-prototype.html`
-(~1850 linhas: CSS, HTML e um `<script>` inline).
+(~1870 linhas: CSS, HTML e um `<script>` inline).
 
 Não há build, testes, lint, package manager nem backend. Para rodar, abra o
 arquivo no navegador — nada de servidor. O `.mvn/` é resto de outro projeto e
@@ -34,7 +34,8 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    downloads inteira), `dlClient`, `vpn`, `hw` (Jellyfin), `library` (Jellyfin:
    monta a base e mais as pastas que ficaram fora dela), `solver` (Prowlarr;
    ver abaixo), `internal` (gluetun e FlareSolverr: sem rota no nginx e sem
-   botão de link), `noVol`, `derived` (Bazarr herda as subpastas das instâncias de
+   botão de link), `vpnCfg` (gluetun: as credenciais da VPN no modal dele),
+   `noVol`, `derived` (Bazarr herda as subpastas das instâncias de
    Radarr/Sonarr presentes).
    Adicionar um serviço normalmente é acrescentar uma linha aqui + o ícone em
    `ICONS` + as strings `d.<id>` no `I18N`.
@@ -74,7 +75,7 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
 8. **ZIP** — `makeZip()` é uma implementação própria do formato (método
    "store", CRC32 manual), justamente para não depender de biblioteca externa.
 
-## Três padrões que se repetem
+## Quatro padrões que se repetem
 
 **Ajuda por campo.** Marcar uma `.row` de qualquer modal com
 `data-help="<chave do I18N>"` basta: `buildHelp()` põe um `?` na terceira coluna
@@ -88,6 +89,13 @@ resolvido e expande o que for digitado: `expandVars()` troca `${BASE_MEDIA}`,
 `dataOf()` faz o caminho de volta — devolve a subpasta e, quando o caminho sai
 das bases, o literal em `abs`. Campo que aceita caminho deve usar os dois, não
 `slug()` no valor cru.
+
+**Campo de um serviço fica no modal dele.** O Ambiente é só o que vale para a
+stack inteira. O que é de um container vai para o "Editar" dele, num bloco
+escondido atrás de uma flag do `SERVICES` — `library` traz as pastas do
+Jellyfin, `vpnCfg` traz as credenciais da VPN, e as portas do host vivem no
+modal do nginx. Já foram duas mudanças nessa direção; não faça o caminho de
+volta.
 
 **Serviço que entra sozinho.** Um checkbox no modal pode arrastar outro serviço
 para a stack no momento do save — `vpn` traz o `gluetun` (obrigatório, porque o
