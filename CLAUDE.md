@@ -39,15 +39,19 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    instâncias), e os mapas de variáveis de ambiente `INSTANCE_ENV`,
    `URLBASE_ENV`, `APIKEY_ENV`.
 4. **Estado** — três globais mutáveis: `added` (instâncias,
-   `{id,title,data,abs,vpn,hw,solver}` — `abs` só quando o caminho da mídia
-   sai das bases, e aí é ele que vai literal para o compose), `picked` (id no combobox), `editing` (key
-   em edição). `DEFAULTS` guarda o ambiente global (caminhos base, PUID/PGID,
-   TZ, portas do host, TLS, VPN, API key). Nem tudo que está no `DEFAULTS` se
-   edita no Ambiente: as portas do host saem no modal do nginx.
+   `{id,title,data,abs,vpn,hw,solver}` — `abs` só quando o caminho da mídia sai
+   das bases, e aí é ele que vai literal para o compose), `picked` (id no
+   combobox), `editing` (key em edição). `DEFAULTS` guarda o ambiente global
+   (caminhos base, PUID/PGID, TZ, portas do host, TLS, VPN, API key). Nem tudo
+   que está no `DEFAULTS` se edita no Ambiente: as portas do host saem no modal
+   do nginx.
 5. **Derivações** — `slug()` → `cname()` (container_name = chave do serviço =
    pasta de config), `route()`, `url()`, `cfgPath`/`dataPath` (com variáveis
    `${...}` do `.env`) e `cfgReal`/`dataReal` (caminhos resolvidos, para o hint
    do modal). Alterar `cname` afeta compose, nginx e `.env` ao mesmo tempo.
+   Quem monta pasta de outro serviço passa por `derivedMounts()` (Bazarr) e
+   `extraLibs()` (Jellyfin) — os dois já devolvem o caminho certo de cada
+   instância, literal ou com variável; não remonte `${BASE_MEDIA}/…` na mão.
 6. **UI** — `renderCombo()`, `renderItems()`, modal de configuração
    (`openModal` + o handler de `#mSave`), modal de ambiente (`openEnv`), modal
    do nginx (`openNgx`), `buildHelp()` e tema claro/escuro.
@@ -59,13 +63,20 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
 8. **ZIP** — `makeZip()` é uma implementação própria do formato (método
    "store", CRC32 manual), justamente para não depender de biblioteca externa.
 
-## Dois padrões que se repetem
+## Três padrões que se repetem
 
 **Ajuda por campo.** Marcar uma `.row` de qualquer modal com
 `data-help="<chave do I18N>"` basta: `buildHelp()` põe um `?` na terceira coluna
 do grid e insere abaixo um parágrafo escondido com `data-i18n-html`, que o botão
 liga e desliga e o `applyI18n()` retraduz. Não escreva o parágrafo à mão nem
 deixe hint fixo onde cabe um `data-help`.
+
+**Variável do `.env` na interface.** O campo da subpasta mostra o caminho
+resolvido e expande o que for digitado: `expandVars()` troca `${BASE_MEDIA}`,
+`${DOWNLOAD_BASE}` e `${BASE_CONFIG}` pelo valor atual, preservando o cursor.
+`dataOf()` faz o caminho de volta — devolve a subpasta e, quando o caminho sai
+das bases, o literal em `abs`. Campo que aceita caminho deve usar os dois, não
+`slug()` no valor cru.
 
 **Serviço que entra sozinho.** Um checkbox no modal pode arrastar outro serviço
 para a stack no momento do save — `vpn` traz o `gluetun` (obrigatório, porque o
