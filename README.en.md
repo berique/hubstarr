@@ -6,7 +6,7 @@ Single-page prototype that builds the `docker-compose.yml`, the `.env` and the
 `nginx.conf` for a media stack (*arr apps + download clients + media server),
 with no backend and no external dependencies.
 
-Open `arr-stack-prototype.html` in a browser. That's it — the file is
+Open `hubstarr.html` in a browser. That's it — the file is
 self-contained (the logos are embedded as data URIs). The **Environment** opens
 with it: that is where the base paths everything else uses come from. Once
 closed, it is still behind the button at the top.

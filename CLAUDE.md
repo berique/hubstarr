@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Hubstarr é um protótipo de página única que gera `docker-compose.yml`, `.env` e
 `nginx.conf` de uma stack de mídia (*arr + clientes de download + servidor de
-mídia). **Todo o projeto é um único arquivo**: `arr-stack-prototype.html`
+mídia). **Todo o projeto é um único arquivo**: `hubstarr.html`
 (~1870 linhas: CSS, HTML e um `<script>` inline).
 
 Não há build, testes, lint, package manager nem backend. Para rodar, abra o

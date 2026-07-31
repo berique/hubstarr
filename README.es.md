@@ -6,7 +6,7 @@ Prototipo de página única que arma el `docker-compose.yml`, el `.env` y el
 `nginx.conf` de una stack multimedia (*arr + clientes de descarga + servidor
 multimedia), sin backend y sin dependencias externas.
 
-Abre `arr-stack-prototype.html` en el navegador. Eso es todo — el archivo es
+Abre `hubstarr.html` en el navegador. Eso es todo — el archivo es
 autocontenido (los logotipos van incrustados como data URI). El **Entorno** se
 abre junto: de ahí salen las rutas base que usa todo lo demás. Si lo cierras,
 sigue en el botón de arriba.
