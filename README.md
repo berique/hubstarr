@@ -32,6 +32,9 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
   Prowlarr saem no compose com `<APP>__AUTH__APIKEY=${STARR_APIKEY}` e o valor
   fica no `.env`. A chave já nasce sorteada — 16 bytes em hexadecimal, o mesmo
   que `openssl rand -hex 16` — e o botão "Gerar" sorteia outra.
+- **Aceleração de hardware do Jellyfin**: CPU, Intel ou NVIDIA. Intel ganha
+  `devices: /dev/dri:/dev/dri`; NVIDIA, a reserva de GPU em `deploy` e as
+  variáveis `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES`.
 - **HTTPS opcional**, com o certificado e a chave vindos do host.
 - **Ambiente global** (botão no topo): bases de caminho, PUID/PGID, time zone,
   restart policy, API key, TLS e as credenciais do gluetun. A lista de fusos é

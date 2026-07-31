@@ -284,6 +284,14 @@
           <input type="text" id="mData" placeholder="movies">
         </div>
       </div>
+      <div class="row" id="mHwRow"><label for="mHw" data-i18n="m.hw">Aceleração</label>
+        <select id="mHw">
+          <option value="cpu" data-i18n="m.hwCpu"></option>
+          <option value="intel" data-i18n="m.hwIntel"></option>
+          <option value="nvidia" data-i18n="m.hwNvidia"></option>
+        </select>
+      </div>
+      </div>
       <div class="row" id="mVpnRow"><label data-i18n="m.network">Rede</label>
         <label class="check"><input type="checkbox" id="mVpn"> <span data-i18n="m.vpn"></span></label>
       </div>
@@ -372,6 +380,15 @@ const I18N = {
   'm.mediaDir':'Subpasta de mídia',
   'm.dlDir':'Subpasta de downloads',
   'm.network':'Rede',
+  'm.hw':'Aceleração',
+  'm.hwCpu':'Só CPU (sem aceleração)',
+  'm.hwIntel':'Intel — VAAPI / QuickSync',
+  'm.hwNvidia':'NVIDIA — NVENC',
+  'm.hwHint':{cpu:'Transcodifica na CPU.',
+              intel:'Passa <b>/dev/dri</b> para o container.',
+              nvidia:'Reserva a GPU pelo runtime da NVIDIA.'},
+  'items.hwIntel':'Intel',
+  'items.hwNvidia':'NVIDIA',
   'm.vpn':'Rotear pelo container VPN (gluetun)',
   'm.noVol':'sem volumes persistentes',
   'm.cfgAt':p=>` · config em <b>${p}</b>`,
@@ -495,6 +512,15 @@ const I18N = {
   'm.mediaDir':'Media subfolder',
   'm.dlDir':'Downloads subfolder',
   'm.network':'Network',
+  'm.hw':'Acceleration',
+  'm.hwCpu':'CPU only (no acceleration)',
+  'm.hwIntel':'Intel — VAAPI / QuickSync',
+  'm.hwNvidia':'NVIDIA — NVENC',
+  'm.hwHint':{cpu:'Transcodes on the CPU.',
+              intel:'Passes <b>/dev/dri</b> into the container.',
+              nvidia:'Reserves the GPU through the NVIDIA runtime.'},
+  'items.hwIntel':'Intel',
+  'items.hwNvidia':'NVIDIA',
   'm.vpn':'Route through the VPN container (gluetun)',
   'm.noVol':'no persistent volumes',
   'm.cfgAt':p=>` · config at <b>${p}</b>`,
@@ -618,6 +644,15 @@ const I18N = {
   'm.mediaDir':'Subcarpeta multimedia',
   'm.dlDir':'Subcarpeta de descargas',
   'm.network':'Red',
+  'm.hw':'Aceleración',
+  'm.hwCpu':'Solo CPU (sin aceleración)',
+  'm.hwIntel':'Intel — VAAPI / QuickSync',
+  'm.hwNvidia':'NVIDIA — NVENC',
+  'm.hwHint':{cpu:'Transcodifica en la CPU.',
+              intel:'Pasa <b>/dev/dri</b> al contenedor.',
+              nvidia:'Reserva la GPU por el runtime de NVIDIA.'},
+  'items.hwIntel':'Intel',
+  'items.hwNvidia':'NVIDIA',
   'm.vpn':'Enrutar por el contenedor VPN (gluetun)',
   'm.noVol':'sin volúmenes persistentes',
   'm.cfgAt':p=>` · config en <b>${p}</b>`,
@@ -715,7 +750,7 @@ const SERVICES = [
   {id:'bazarr',   name:'Bazarr',    port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr']},
   {id:'qbittorrent',name:'qBittorrent',port:8080, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true},
   {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true},
-  {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:''},
+  {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true},
   {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5'},
   {id:'heimdall', name:'Heimdall',  port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f'},
   {id:'flaresolverr',name:'FlareSolverr',port:8191,img:'ghcr.io/flaresolverr/flaresolverr:latest',color:'#ff7f50',noVol:true},
@@ -931,6 +966,8 @@ function renderItems(){
       <div class="meta">
         <div class="nm">${a.title || s.name}
           ${a.vpn?`<span class="tag">${t('items.viaVpn')}</span>`:''}
+          ${a.hw==='intel' ? `<span class="tag">${t('items.hwIntel')}</span>`
+            : a.hw==='nvidia' ? `<span class="tag">${t('items.hwNvidia')}</span>` : ''}
           ${a.id==='gluetun' ? '' : `<span class="tag">${route(a)} → ${inner(a.id)}</span>`}
         </div>
         <div class="ds">${cname(a)}${(a.title && a.title!==s.name)?' ('+s.name+')':''}${s.noVol?' · '+sdesc(s.id):' · '+cfgReal(a)}${s.media&&!s.noVol?' · '+dataReal(a):''}</div>
@@ -992,7 +1029,8 @@ function updateHint(s){
         ? (s.derived
             ? t('m.follows', s.derived.map(id=>svc(id).name))
             : t('m.mediaAt', t(s.dlClient?'m.downloads':'m.media'),
-                `${s.dlClient?DEFAULTS.dl:DEFAULTS.data}${sub?'/'+sub:''}`)) : '');
+                `${s.dlClient?DEFAULTS.dl:DEFAULTS.data}${sub?'/'+sub:''}`)) : '')
+    + (s.hw ? ' · ' + t('m.hwHint')[$('#mHw').value] : '');
 }
 
 function openModal(id, key){
@@ -1019,6 +1057,8 @@ function openModal(id, key){
   $('#mDataLabel').textContent = t(s.dlClient ? 'm.dlDir' : 'm.mediaDir');
   $('#mDataRow').style.display = (s.media && !s.noVol && !s.derived) ? 'grid' : 'none';
   $('#mVpnRow').style.display = s.vpn ? 'grid' : 'none';
+  $('#mHw').value = cur.hw || 'cpu';
+  $('#mHwRow').style.display = s.hw ? 'grid' : 'none';
   updateHint(s);
   $('#mWarn').textContent = '';
   $('#mSave').textContent = t(isEdit ? 'btn.save' : 'btn.done');
@@ -1030,6 +1070,9 @@ function closeModal(){ $('#backdrop').classList.remove('open'); editing=null; }
 document.querySelectorAll('#mName,#mData').forEach(el=>el.addEventListener('input', ()=>{
   const id = editing || picked; if(id) updateHint(svc(id));
 }));
+$('#mHw').addEventListener('change', ()=>{
+  const id = editing || picked; if(id) updateHint(svc(id));
+});
 
 $('#add').onclick = ()=>{ if(picked) openModal(picked, null); };
 $('#mCancel').onclick = closeModal;
@@ -1045,6 +1088,7 @@ $('#mSave').onclick = ()=>{
   const s = svc(id);
   const useName = isMulti(id) || INSTANCE_ENV[id];
   const cfg = {id, title:(useName ? $('#mName').value.trim() : '') || s.name,
+               hw: s.hw ? $('#mHw').value : 'cpu',
                data:slug($('#mData').value),
                vpn: s.vpn && $('#mVpn').checked};
 
@@ -1201,6 +1245,10 @@ function build(){
         L.push(`      - <span class="v">${INSTANCE_ENV[s.id]}=${a.title}</span>`);
       if(URLBASE_ENV[s.id])
         L.push(`      - <span class="v">${URLBASE_ENV[s.id]}=/${cname(a)}</span>`);
+      if(a.hw==='nvidia'){
+        L.push(`      - <span class="v">NVIDIA_VISIBLE_DEVICES=all</span>`);
+        L.push(`      - <span class="v">NVIDIA_DRIVER_CAPABILITIES=compute,video,utility</span>`);
+      }
       if(APIKEY_ENV[s.id])
         L.push(`      - <span class="v">${APIKEY_ENV[s.id]}=\${${APIKEY_VAR}}</span>`);
     }
@@ -1226,6 +1274,18 @@ function build(){
         (s.dlClient ? '/downloads' : '/data') + (a.data?'/'+a.data:''));
       // *arr também veem a árvore de downloads, para importar do cliente
       if(s.needsDl) bind('${DOWNLOAD_BASE}', '/downloads');
+    }
+    if(a.hw==='intel'){
+      L.push(`    <span class="k">devices</span>:`);
+      L.push(`      - <span class="v">/dev/dri:/dev/dri</span>`);
+    } else if(a.hw==='nvidia'){
+      L.push(`    <span class="k">deploy</span>:`);
+      L.push(`      <span class="k">resources</span>:`);
+      L.push(`        <span class="k">reservations</span>:`);
+      L.push(`          <span class="k">devices</span>:`);
+      L.push(`            - <span class="k">driver</span>: <span class="v">nvidia</span>`);
+      L.push(`              <span class="k">count</span>: <span class="v">all</span>`);
+      L.push(`              <span class="k">capabilities</span>: [<span class="v">gpu</span>]`);
     }
     if(a.vpn){
       L.push(`    <span class="k">network_mode</span>: <span class="v">service:gluetun</span>`);

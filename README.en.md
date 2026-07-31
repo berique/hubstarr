@@ -33,6 +33,9 @@ The combobox lists the available services with their logos and default ports:
   `<APP>__AUTH__APIKEY=${STARR_APIKEY}` and the value stays in `.env`. The key
   is generated up front — 16 random bytes in hex, the same as
   `openssl rand -hex 16` — and the "Generate" button rolls a new one.
+- **Jellyfin hardware acceleration**: CPU, Intel or NVIDIA. Intel gets
+  `devices: /dev/dri:/dev/dri`; NVIDIA gets the GPU reservation under `deploy`
+  plus the `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES` variables.
 - **Optional HTTPS**, with the certificate and key coming from the host.
 - **Global environment** (button at the top): base paths, PUID/PGID, time zone,
   restart policy, API key, TLS and the gluetun credentials. The time zone list

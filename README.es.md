@@ -35,6 +35,9 @@ defecto:
   `<APP>__AUTH__APIKEY=${STARR_APIKEY}` y el valor queda en el `.env`. La clave
   nace sorteada — 16 bytes en hexadecimal, lo mismo que
   `openssl rand -hex 16` — y el botón "Generar" sortea otra.
+- **Aceleración por hardware de Jellyfin**: CPU, Intel o NVIDIA. Intel recibe
+  `devices: /dev/dri:/dev/dri`; NVIDIA, la reserva de GPU en `deploy` y las
+  variables `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES`.
 - **HTTPS opcional**, con el certificado y la clave provenientes del host.
 - **Entorno global** (botón arriba): rutas base, PUID/PGID, zona horaria,
   restart policy, API key, TLS y las credenciales de gluetun. La lista de husos
