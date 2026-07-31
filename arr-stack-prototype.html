@@ -1182,7 +1182,9 @@ function openModal(id, key){
   $('#mInner').textContent = inner(id);   // porta original do serviço, nunca muda
   $('#mVpn').checked = cur.vpn;
   $('#mSolver').checked = cur.solver;
-  $('#mDataBase').textContent = (s.dlClient ? DEFAULTS.dl : DEFAULTS.data) + '/';
+  // o prefixo é a variável do .env, como sai no compose; o caminho resolvido
+  // aparece no hint de baixo
+  $('#mDataBase').textContent = (s.dlClient ? '${DOWNLOAD_BASE}' : '${BASE_MEDIA}') + '/';
   $('#mDataLabel').textContent = t(s.dlClient ? 'm.dlDir' : 'm.mediaDir');
   $('#mDataRow').style.display = (s.media && !s.noVol && !s.derived) ? 'grid' : 'none';
   $('#mVpnRow').style.display = s.vpn ? 'grid' : 'none';
