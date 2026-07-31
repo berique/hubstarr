@@ -36,6 +36,13 @@ The combobox lists the available services with their logos and default ports:
 - **Jellyfin hardware acceleration**: CPU, Intel or NVIDIA. Intel gets
   `devices: /dev/dri:/dev/dri`; NVIDIA gets the GPU reservation under `deploy`
   plus the `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES` variables.
+- **FlareSolverr alongside Prowlarr**: in the Prowlarr modal, a checkbox that
+  is on by default brings FlareSolverr into the stack — it is what solves
+  Cloudflare's anti-bot challenge on protected indexers. Set it up in Prowlarr
+  under *Settings → Indexers → FlareSolverr*, with the URL
+  `http://flaresolverr:8191`. The image behind it is
+  [Byparr](https://github.com/ThePhaseless/Byparr), a drop-in, better-maintained
+  replacement with the same API and the same port.
 - **Per-field help** in the Environment: every row has a `?` that opens an
   explanation of what the value does and how it lands in the generated files.
 - **Optional HTTPS**, with the certificate and key coming from the host.

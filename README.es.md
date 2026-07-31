@@ -38,6 +38,13 @@ defecto:
 - **Aceleración por hardware de Jellyfin**: CPU, Intel o NVIDIA. Intel recibe
   `devices: /dev/dri:/dev/dri`; NVIDIA, la reserva de GPU en `deploy` y las
   variables `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES`.
+- **FlareSolverr junto a Prowlarr**: en el modal de Prowlarr, una casilla
+  marcada por defecto trae FlareSolverr a la stack — es quien resuelve el
+  desafío anti-bot de Cloudflare en los indexadores protegidos. Configúralo en
+  Prowlarr en *Settings → Indexers → FlareSolverr*, con la URL
+  `http://flaresolverr:8191`. La imagen detrás de él es la de
+  [Byparr](https://github.com/ThePhaseless/Byparr), reemplazo directo y más
+  actual, con la misma API y el mismo puerto.
 - **Ayuda por campo** en el Entorno: cada línea tiene un `?` que abre una
   explicación de lo que hace ese valor y de cómo sale en los archivos
   generados.

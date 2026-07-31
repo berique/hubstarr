@@ -35,6 +35,13 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
 - **Aceleração de hardware do Jellyfin**: CPU, Intel ou NVIDIA. Intel ganha
   `devices: /dev/dri:/dev/dri`; NVIDIA, a reserva de GPU em `deploy` e as
   variáveis `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES`.
+- **FlareSolverr junto do Prowlarr**: no modal do Prowlarr, um checkbox
+  marcado por padrão traz o FlareSolverr para a stack — é ele que resolve o
+  desafio anti-bot da Cloudflare nos indexadores protegidos. Configure-o no
+  Prowlarr em *Settings → Indexers → FlareSolverr*, com a URL
+  `http://flaresolverr:8191`. A imagem por trás dele é a do
+  [Byparr](https://github.com/ThePhaseless/Byparr), substituto direto e mais
+  atual, com a mesma API e a mesma porta.
 - **Ajuda por campo** no Ambiente: cada linha tem um `?` que abre uma
   explicação do que aquele valor faz e de como ele sai nos arquivos gerados.
 - **HTTPS opcional**, com o certificado e a chave vindos do host.
