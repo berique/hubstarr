@@ -453,6 +453,7 @@ const I18N = {
   'm.cfgAt':p=>` · config em <b>${p}</b>`,
   'm.follows':names=>` · mídia: acompanha ${names.join(' e ')}`,
   'm.mediaAt':(kind,p)=>` · ${kind} em <b>${p}</b>`,
+  'm.alsoMounts':l=>` · e mais <b>${l.join('</b>, <b>')}</b>, que fic${l.length>1?'aram':'ou'} fora da base`,
   'm.media':'mídia',
   'm.downloads':'downloads',
   'm.warnName':'Título inválido',
@@ -612,6 +613,7 @@ const I18N = {
   'm.cfgAt':p=>` · config at <b>${p}</b>`,
   'm.follows':names=>` · media: follows ${names.join(' and ')}`,
   'm.mediaAt':(kind,p)=>` · ${kind} at <b>${p}</b>`,
+  'm.alsoMounts':l=>` · plus <b>${l.join('</b>, <b>')}</b>, left outside the base`,
   'm.media':'media',
   'm.downloads':'downloads',
   'm.warnName':'Invalid title',
@@ -771,6 +773,7 @@ const I18N = {
   'm.cfgAt':p=>` · config en <b>${p}</b>`,
   'm.follows':names=>` · multimedia: sigue a ${names.join(' y ')}`,
   'm.mediaAt':(kind,p)=>` · ${kind} en <b>${p}</b>`,
+  'm.alsoMounts':l=>` · y además <b>${l.join('</b>, <b>')}</b>, que qued${l.length>1?'aron':'ó'} fuera de la base`,
   'm.media':'multimedia',
   'm.downloads':'descargas',
   'm.warnName':'Título inválido',
@@ -847,6 +850,11 @@ function applyI18n(){
   document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML = t(el.dataset.i18nHtml));
   document.querySelectorAll('[data-i18n-ph]').forEach(el=>el.placeholder = t(el.dataset.i18nPh));
   document.querySelectorAll('[data-i18n-title]').forEach(el=>el.title = t(el.dataset.i18nTitle));
+  // o hint do modal é montado na mão: refaz se ele estiver aberto
+  if($('#backdrop') && $('#backdrop').classList.contains('open')){
+    const id = editing ? (byKey(editing)||{}).id : picked;
+    if(id) updateHint(svc(id));
+  }
 }
 
 function setLang(l){
@@ -1201,6 +1209,9 @@ function updateHint(s){
             ? t('m.follows', s.derived.map(id=>svc(id).name))
             : t('m.mediaAt', t(s.dlClient?'m.downloads':'m.media'),
                 abs || `${s.dlClient?DEFAULTS.dl:DEFAULTS.data}${sub?'/'+sub:''}`)) : '')
+    // quem enxerga a biblioteca inteira também monta o que ficou fora dela
+    + (s.library ? (libs => libs.length ? t('m.alsoMounts', libs.map(l=>l.path)) : '')
+                   (extraLibs({abs})) : '')
     + (s.hw ? ' · ' + t('m.hwHint')[$('#mHw').value] : '');
 }
 
