@@ -38,7 +38,8 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    instâncias), e os mapas de variáveis de ambiente `INSTANCE_ENV`,
    `URLBASE_ENV`, `APIKEY_ENV`.
 4. **Estado** — três globais mutáveis: `added` (instâncias,
-   `{id,title,data,vpn,hw,solver}`), `picked` (id no combobox), `editing` (key
+   `{id,title,data,abs,vpn,hw,solver}` — `abs` só quando o caminho da mídia
+   sai das bases, e aí é ele que vai literal para o compose), `picked` (id no combobox), `editing` (key
    em edição). `DEFAULTS` guarda o ambiente global (caminhos base, PUID/PGID,
    TZ, portas do host, TLS, VPN, API key). Nem tudo que está no `DEFAULTS` se
    edita no Ambiente: as portas do host saem no modal do nginx.

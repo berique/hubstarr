@@ -102,6 +102,12 @@ Las rutas salen como variables resueltas por el `.env`:
   propia subcarpeta (`torrents`, `usenet`); los *arr montan la base entera en
   `/downloads`, para poder importar.
 
+En el modal, el campo de la subcarpeta muestra la ruta ya resuelta y acepta las
+variables: escribir `${BASE_MEDIA}` la cambia por su valor al instante. Apuntar
+fuera de las bases — `/mnt/disco2/peliculas-4k`, por ejemplo — está permitido, y
+entonces el compose sale con esa ruta literal, sin ninguna variable. Bazarr
+acompaña: monta la ruta de cada instancia tal como quedó.
+
 Todos los volúmenes usan la sintaxis larga, con `type: bind` y
 `bind.propagation: rslave`. El puerto siempre es el original del servicio,
 dentro del contenedor: fuera de nginx, no hay puerto de host que elegir, ni

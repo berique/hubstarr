@@ -97,6 +97,12 @@ Os caminhos saem como variáveis resolvidas pelo `.env`:
   subpasta própria (`torrents`, `usenet`); os *arr montam a base inteira em
   `/downloads`, para conseguirem importar.
 
+No modal, o campo da subpasta mostra o caminho já resolvido e aceita as
+variáveis: digitar `${BASE_MEDIA}` troca pelo valor dela na hora. Apontar para
+fora das bases — `/mnt/disco2/filmes-4k`, por exemplo — é permitido, e aí o
+compose sai com esse caminho literal, sem variável nenhuma. O Bazarr acompanha:
+monta o caminho de cada instância como ela ficou.
+
 Todos os volumes usam a sintaxe longa, com `type: bind` e
 `bind.propagation: rslave`. A porta é sempre a original do serviço, dentro do
 container: fora o nginx, não há porta de host para escolher, nem conflito

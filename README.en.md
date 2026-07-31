@@ -98,6 +98,12 @@ Paths come out as variables resolved by `.env`:
   subfolder (`torrents`, `usenet`); the *arr apps mount the whole base at
   `/downloads`, so they can import.
 
+In the modal, the subfolder field shows the resolved path and takes the
+variables: typing `${BASE_MEDIA}` swaps in its value right away. Pointing
+outside the bases — `/mnt/disk2/movies-4k`, say — is allowed, and then the
+compose file carries that literal path, with no variable at all. Bazarr
+follows: it mounts each instance's path as it ended up.
+
 Every volume uses the long syntax, with `type: bind` and
 `bind.propagation: rslave`. The port is always the service's own, inside the
 container: apart from nginx there is no host port to choose, and no conflict
