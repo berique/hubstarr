@@ -54,8 +54,8 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
   *Nomenclatura de filme*, *Nomeação da faixa*: caracteres ilegais,
   dois-pontos, vários episódios e todos os formatos de arquivo e de pasta) —,
   separadas por família: Sonarr, Radarr e Lidarr. As permissões abrem os campos
-  de `chmod` e `chown`, e o Lidarr tem a opção de manter o nome de arquivo
-  existente, que esconde os formatos de faixa. Por
+  de `chmod` e `chown`, e no Lidarr a caixa de nome existente é quem traz os
+  formatos de faixa e a pasta do álbum. Por
   enquanto as escolhas ficam guardadas na interface; nada é aplicado nos apps.
 - **Ambiente global** (botão no topo): bases de caminho, PUID/PGID, time zone,
   restart policy, API key e TLS. A

@@ -1628,8 +1628,7 @@ const NAMING_FIELDS = {
     {k:'movieFolder',    type:'fmt', def:'{Movie Title} ({Release Year})'},
   ],
   lidarr:[
-    // marcado, o Lidarr fica com o nome que o arquivo já tem: os formatos de
-    // faixa somem, porque não seriam usados
+    // é ele que abre os formatos de faixa e a pasta do álbum
     {k:'useExisting',    type:'check', def:false, hint:'cfg.n.useExistingOn'},
     {k:'illegal',        type:'check', def:true},
     {k:'standardTrack',  type:'fmt', file:true,
@@ -1743,7 +1742,8 @@ function renderConfig(){
    renomear, os formatos de arquivo ficam travados — as pastas, não. */
 function namingBlock(id){
   const cfg = CONFIG.mm[id].naming, ren = CONFIG.mm[id].rename;
-  const hidden = cfg.useExisting ? ['standardTrack','multiDiscTrack'] : [];
+  // sem "nome existente" marcado, os formatos de faixa e a pasta do álbum somem
+  const hidden = cfg.useExisting ? [] : ['standardTrack','multiDiscTrack','albumFolder'];
   const row = (f)=>{
     if(hidden.includes(f.k)) return '';
     const off = (f.file && !ren) ? ' disabled' : '';
