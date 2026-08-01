@@ -36,8 +36,8 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    ver abaixo), `internal` (gluetun e FlareSolverr: sem rota no nginx e sem
    botão de link), `noLink` (Heimdall: sem botão de link, mas com rota — ele é a
    raiz, o link seria o endereço da stack), `subpathFix` (Seerr: o `location`
-   dele tira o prefixo e reescreve o que volta), `vpnCfg` (gluetun: as credenciais da
-   VPN no modal dele),
+   dele tira o prefixo e reescreve o que volta), `vpnCfg` (gluetun: as
+   credenciais da VPN no modal dele),
    `webAuth` + `conf` (qBittorrent: usuário/senha/API key no modal dele e a
    `qBittorrent.conf` gerada e montada), `cdh` (SABnzbd: gerenciamento de
    downloads concluídos na Configuração), `noVol`, `derived` (Bazarr herda as
