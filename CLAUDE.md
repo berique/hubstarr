@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Hubstarr é um protótipo de página única que gera `docker-compose.yml`, `.env` e
 `nginx.conf` de uma stack de mídia (*arr + clientes de download + servidor de
 mídia). **Todo o projeto é um único arquivo**: `hubstarr.html`
-(~2660 linhas: CSS, HTML e um `<script>` inline).
+(~2670 linhas: CSS, HTML e um `<script>` inline).
 
 Não há build, testes, lint, package manager nem backend. Para rodar, abra o
 arquivo no navegador — nada de servidor. O `.mvn/` é resto de outro projeto e
@@ -151,7 +151,9 @@ handler de `#mSave`.
   20px da lista vira um ponto laranja, e já foi tentado e revertido.
 - **Logotipo sempre sobre fundo claro**: os SVGs do dashboardicons são
   desenhados para isso e alguns são pretos (Heimdall, SABnzbd, Bazarr), então
-  `--ico-bg` é claro nos dois temas. Não o amarre ao `--panel`.
+  `--ico-bg` é claro nos dois temas. Não o amarre ao `--panel`. O do nginx é a
+  exceção de origem — vem do IconScout (Icon 54) e por isso está creditado na
+  seção de licença dos READMEs; ícone de outra fonte entra com o crédito junto.
 - **Credenciais no formato do app**: a senha do qBittorrent sai em
   PBKDF2-SHA512, 100 mil iterações e sal de 16 bytes, como
   `base64(sal):base64(hash)`; a API key é `qbt_` + 28 caracteres de um alfabeto
