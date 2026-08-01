@@ -25,6 +25,10 @@ defecto:
   descargas y enrutamiento por la VPN.
 - **Copiar el enlace** de cada servicio, ya con el esquema, el dominio y el
   subpath por los que nginx lo va a atender.
+- **Aviso de conflicto**: dos instancias apuntadas a la misma carpeta se pisan
+  al importar, así que la lista lo avisa en rojo, con los nombres y la ruta.
+  Jellyfin, que monta la biblioteca entera, y Bazarr, que sigue a las otras,
+  quedan fuera de la comprobación.
 - **Múltiples instancias** de Sonarr, Radarr, Lidarr, Bazarr y Prowlarr — basta
   con que el título sea distinto. Sonarr y Radarr reciben además
   `SONARR__APP__INSTANCENAME` / `RADARR__APP__INSTANCENAME`.

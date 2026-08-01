@@ -24,6 +24,10 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
   e roteamento pela VPN.
 - **Copiar o link** de cada serviço, já com o esquema, o domínio e o subpath
   pelos quais o nginx vai atendê-lo.
+- **Aviso de conflito**: duas instâncias apontadas para a mesma pasta se
+  atropelam na importação, então a lista avisa em vermelho, com os nomes e o
+  caminho. O Jellyfin, que monta a biblioteca inteira, e o Bazarr, que segue as
+  outras, ficam de fora da checagem.
 - **Múltiplas instâncias** de Sonarr, Radarr, Lidarr, Bazarr e Prowlarr —
   basta o título ser diferente. Sonarr e Radarr recebem também
   `SONARR__APP__INSTANCENAME` / `RADARR__APP__INSTANCENAME`.

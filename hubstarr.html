@@ -535,6 +535,7 @@ const I18N = {
   'items.viaVpn':'via VPN',
   'items.nginxPorts':(a,b)=>`${a} / ${b} no host`,
   'items.routes':n=>`✓ ${n} ${n===1?'rota':'rotas'} no nginx`,
+  'items.samePath':(n,p)=>`⚠ ${n.join(' e ')} apontam para a mesma pasta (${p})`,
 
   'out.containers':n=>`${n} ${n===1?'container':'containers'}`,
   'out.empty':'nenhum serviço adicionado',
@@ -788,6 +789,7 @@ const I18N = {
   'items.viaVpn':'via VPN',
   'items.nginxPorts':(a,b)=>`${a} / ${b} on the host`,
   'items.routes':n=>`✓ ${n} nginx ${n===1?'route':'routes'}`,
+  'items.samePath':(n,p)=>`⚠ ${n.join(' and ')} point at the same folder (${p})`,
 
   'out.containers':n=>`${n} ${n===1?'container':'containers'}`,
   'out.empty':'no services added',
@@ -1041,6 +1043,7 @@ const I18N = {
   'items.viaVpn':'por VPN',
   'items.nginxPorts':(a,b)=>`${a} / ${b} en el host`,
   'items.routes':n=>`✓ ${n} ${n===1?'ruta':'rutas'} en nginx`,
+  'items.samePath':(n,p)=>`⚠ ${n.join(' y ')} apuntan a la misma carpeta (${p})`,
 
   'out.containers':n=>`${n} ${n===1?'contenedor':'contenedores'}`,
   'out.empty':'ningún servicio añadido',
@@ -2403,6 +2406,21 @@ function buildEnv(list){
   return E.join('\n');
 }
 
+/* Duas instâncias apontadas para a mesma pasta se atropelam: cada uma importa
+   por cima da outra. Vale para quem gerencia a própria subpasta — o Jellyfin,
+   que monta a biblioteca inteira, e o Bazarr, que segue as outras, ficam fora. */
+function dupPaths(){
+  const by = new Map();
+  added.forEach(a=>{
+    const s = svc(a.id);
+    if(!s.media || s.noVol || s.derived || s.library) return;
+    const key = dataReal(a);
+    (by.get(key) || by.set(key, []).get(key)).push(a.title || s.name);
+  });
+  return [...by].filter(([, names])=>names.length > 1)
+                .map(([path, names])=>({path, names}));
+}
+
 /* qBittorrent.conf pronta: interface atrás do nginx, pastas iguais às do
    compose e a senha já com hash. */
 function buildQbit(list){
@@ -2452,7 +2470,10 @@ function render(){
   $('.tab[data-tab="qbt"]').style.display = qbt ? '' : 'none';
   if(!qbt && tab === 'qbt') $('.tab[data-tab="yml"]').click();
   const routes = list.filter(a=>!svc(a.id).internal).length;
+  const dup = dupPaths();
   $('#conflicts').innerHTML = !added.length ? ''
+    : dup.length ? dup.map(g=>
+        `<span class="warn">${t('items.samePath', g.names, g.path)}</span>`).join('<br>')
     : `<span class="ok">${t('items.routes', routes)}</span>`;
   $('#stat').textContent = t('out.containers', list.length + 1);   // +1: nginx fixo
   $('#summary').textContent = list.map(a=>a.title||svc(a.id).name).join(' · ') || t('out.empty');

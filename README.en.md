@@ -24,6 +24,10 @@ The combobox lists the available services with their logos and default ports:
   VPN routing.
 - **Copy each service's link**, with the scheme, domain and subpath nginx will
   serve it on.
+- **Conflict warning**: two instances pointed at the same folder step on each
+  other when importing, so the list says so in red, with the names and the
+  path. Jellyfin, which mounts the whole library, and Bazarr, which follows the
+  others, are left out of the check.
 - **Multiple instances** of Sonarr, Radarr, Lidarr, Bazarr and Prowlarr — they
   only need different titles. Sonarr and Radarr also get
   `SONARR__APP__INSTANCENAME` / `RADARR__APP__INSTANCENAME`.
