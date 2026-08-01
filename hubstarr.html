@@ -238,6 +238,7 @@
         <button class="tab" data-tab="env">.env</button>
         <button class="tab" data-tab="nginx">nginx.conf</button>
         <button class="tab" data-tab="qbt" style="display:none">qBittorrent.conf</button>
+        <button class="tab" data-tab="jf" style="display:none">network.xml</button>
       </span>
       <span id="stat"></span>
     </h2>
@@ -245,6 +246,7 @@
     <pre id="outEnv" style="display:none"></pre>
     <pre id="outNginx" style="display:none"></pre>
     <pre id="outQbt" style="display:none"></pre>
+    <pre id="outJf" style="display:none"></pre>
     <div class="bar">
       <span class="hint" id="summary"></span>
       <span class="sp"></span>
@@ -1238,9 +1240,10 @@ const SERVICES = [
   {id:'lidarr',   name:'Lidarr',    port:8686, img:'lscr.io/linuxserver/lidarr:latest',    color:'#1db954', media:true, mdir:'music', needsDl:true},
   {id:'prowlarr', name:'Prowlarr',  port:9696, img:'lscr.io/linuxserver/prowlarr:latest', color:'#e5534b', solver:true},
   {id:'bazarr',   name:'Bazarr',    port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr']},
-  {id:'qbittorrent',name:'qBittorrent',port:8080, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true, webAuth:true, conf:'qBittorrent.conf'},
+  {id:'qbittorrent',name:'qBittorrent',port:8080, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true, webAuth:true, conf:{host:'qBittorrent.conf', target:'/config/qBittorrent/qBittorrent.conf', pane:'#outQbt', tab:'qbt'}},
   {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true, cdh:true},
-  {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true},
+  {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true,
+   conf:{host:'config/config/network.xml', target:'/config/config/network.xml', pane:'#outJf', tab:'jf'}},
   {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5'},
   {id:'heimdall', name:'Heimdall',  port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f'},
   {id:'flaresolverr',name:'FlareSolverr',port:8191,img:'ghcr.io/thephaseless/byparr:latest',color:'#ff7f50',noVol:true, internal:true},
@@ -2242,7 +2245,7 @@ function build(){
       L.push(`    <span class="k">volumes</span>:`);
       bind(cfgPath(a), '/config');
       // config pronta, montada por cima da pasta do container
-      if(s.conf) bind(`${cfgPath(a)}/${s.conf}`, `/config/qBittorrent/${s.conf}`);
+      if(s.conf) bind(`${cfgPath(a)}/${s.conf.host}`, s.conf.target);
       if(s.derived){
         // acompanha as pastas das instâncias de radarr/sonarr já adicionadas
         derivedMounts(s).forEach(m=>bind(m.source, '/data/'+m.name));
@@ -2432,7 +2435,7 @@ function buildQbit(list){
   const c = txt => `<span class="c"># ${txt}</span>`;
   const kv = (k, v) => `<span class="k">${k}</span>=<span class="v">${v}</span>`;
   Q.push(c(`${STACK} — ${t('qbt.head')}`));
-  Q.push(c(t('qbt.mount', `${cfgReal(a)}/${s.conf}`)));
+  Q.push(c(t('qbt.mount', `${cfgReal(a)}/${s.conf.host}`)));
   Q.push(``);
   Q.push(`<span class="k">[BitTorrent]</span>`);
   Q.push(kv('Session\\DefaultSavePath', dl));
@@ -2460,15 +2463,64 @@ function buildQbit(list){
   return Q.join('\n');
 }
 
+/* network.xml do Jellyfin: ele precisa saber o subpath em que o nginx o serve,
+   senão a interface monta os links na raiz. O resto é o padrão dele. */
+function buildJellyfin(list){
+  const a = list.find(x=>x.id === 'jellyfin');
+  if(!a) return '';
+  const X = [];
+  const esc = v => String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const tag = (name, val, ind='  ') =>
+    X.push(`${ind}<span class="k">&lt;${name}&gt;</span><span class="v">${esc(val)}</span>` +
+           `<span class="k">&lt;/${name}&gt;</span>`);
+  const open = (name, ind='  ') => X.push(`${ind}<span class="k">&lt;${name}&gt;</span>`);
+  const close = (name, ind='  ') => X.push(`${ind}<span class="k">&lt;/${name}&gt;</span>`);
+  const empty = (name, ind='  ') => X.push(`${ind}<span class="k">&lt;${name} /&gt;</span>`);
+
+  X.push(`<span class="c">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span>`);
+  X.push(`<span class="k">&lt;NetworkConfiguration</span> ` +
+         `<span class="v">xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ` +
+         `xmlns:xsd="http://www.w3.org/2001/XMLSchema"</span><span class="k">&gt;</span>`);
+  tag('BaseUrl', route(a) === '/' ? '' : route(a));
+  tag('EnableHttps', 'false');
+  tag('RequireHttps', 'false');
+  tag('InternalHttpPort', inner(a.id));
+  tag('InternalHttpsPort', 8920);
+  tag('PublicHttpPort', inner(a.id));
+  tag('PublicHttpsPort', 8920);
+  tag('AutoDiscovery', 'true');
+  tag('EnableIPv4', 'true');
+  tag('EnableIPv6', 'false');
+  tag('EnableRemoteAccess', 'true');
+  open('LocalNetworkSubnets');
+  tag('string', '10.0.0.0/24', '    ');
+  close('LocalNetworkSubnets');
+  empty('LocalNetworkAddresses');
+  empty('KnownProxies');
+  tag('IgnoreVirtualInterfaces', 'true');
+  open('VirtualInterfaceNames');
+  tag('string', 'veth', '    ');
+  close('VirtualInterfaceNames');
+  tag('EnablePublishedServerUriByRequest', 'false');
+  empty('PublishedServerUriBySubnet');
+  empty('RemoteIPFilter');
+  tag('IsRemoteIPFilterBlacklist', 'false');
+  X.push(`<span class="k">&lt;/NetworkConfiguration&gt;</span>`);
+  return X.join('\n');
+}
+
 function render(){
   const {html, list} = build();
   $('#out').innerHTML = html;
   $('#outEnv').innerHTML = buildEnv(list);
   $('#outNginx').innerHTML = buildNginx(list);
-  const qbt = buildQbit(list);
-  $('#outQbt').innerHTML = qbt;
-  $('.tab[data-tab="qbt"]').style.display = qbt ? '' : 'none';
-  if(!qbt && tab === 'qbt') $('.tab[data-tab="yml"]').click();
+  // abas de config: uma por serviço que gera arquivo próprio
+  const confs = {qbt:buildQbit(list), jf:buildJellyfin(list)};
+  Object.entries(confs).forEach(([k, txt])=>{
+    $(PANES[k]).innerHTML = txt;
+    $(`.tab[data-tab="${k}"]`).style.display = txt ? '' : 'none';
+    if(!txt && tab === k) $('.tab[data-tab="yml"]').click();
+  });
   const routes = list.filter(a=>!svc(a.id).internal).length;
   const dup = dupPaths();
   $('#conflicts').innerHTML = !added.length ? ''
@@ -2480,7 +2532,7 @@ function render(){
 }
 
 let tab = 'yml';
-const PANES = {yml:'#out', env:'#outEnv', nginx:'#outNginx', qbt:'#outQbt'};
+const PANES = {yml:'#out', env:'#outEnv', nginx:'#outNginx', qbt:'#outQbt', jf:'#outJf'};
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   tab = t.dataset.tab;
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on', x===t));
@@ -2569,10 +2621,11 @@ $('#dl').onclick = ()=>{
     {name:'.env',               text:plainEnv()+'\n'},
     {name:`nginx/conf.d/${STACK}.conf`, text:plainNginx()+'\n'},
   ];
-  // a config do qBittorrent entra na pasta dele, do jeito que o compose monta
-  const qa = effective().find(x=>svc(x.id).conf);
-  if(qa) files.push({name:`${cname(qa)}/${svc(qa.id).conf}`,
-                     text:$('#outQbt').textContent+'\n'});
+  // as configs próprias entram na pasta de cada serviço, como o compose monta
+  effective().filter(x=>svc(x.id).conf).forEach(x=>{
+    const cf = svc(x.id).conf, txt = $(cf.pane).textContent;
+    if(txt) files.push({name:`${cname(x)}/${cf.host}`, text:txt+'\n'});
+  });
   const blob = makeZip(files);
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob); a.download=`${stack}.zip`; a.click();

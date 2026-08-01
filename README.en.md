@@ -53,6 +53,10 @@ The combobox lists the available services with their logos and default ports:
 - **Per-field help** in the Environment and in the Configuration: every row has
   a `?` that opens an explanation of what the value does — and, in the
   Environment, of how it lands in the generated files.
+- **Jellyfin's network.xml**: with it in the stack, its network configuration
+  comes out too, with `BaseUrl` set to the nginx subpath — without that the UI
+  builds its links at the root and breaks behind the proxy. Mounted at
+  `/config/config/network.xml`.
 - **A ready qBittorrent.conf**: when it is in the stack, a fourth tab generates
   its initial configuration — paths matching the compose file, reverse-proxy
   settings and the credentials in qBittorrent 5.2's own format: the password as
