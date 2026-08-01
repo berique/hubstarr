@@ -419,6 +419,9 @@ const I18N = {
   'cfg.mm.rename':'Renomear ao importar',
   'cfg.mm.perms':'Definir permissões (chmod/chown)',
   'cfg.mm.empty':'Apagar pastas vazias',
+  'cfg.mm.chmod':'chmod da pasta',
+  'cfg.n.useExisting':'Nome existente',
+  'cfg.n.useExistingOn':'o Lidarr usará o nome de arquivo existente se a renomeação estiver desabilitada',
   'cfg.naming.sonarr':'Episode Naming',
   'cfg.naming.radarr':'Nomenclatura de filme',
   'cfg.naming.lidarr':'Nomeação da faixa',
@@ -628,6 +631,9 @@ const I18N = {
   'cfg.mm.rename':'Rename on import',
   'cfg.mm.perms':'Set permissions (chmod/chown)',
   'cfg.mm.empty':'Delete empty folders',
+  'cfg.mm.chmod':'Folder chmod',
+  'cfg.n.useExisting':'Existing name',
+  'cfg.n.useExistingOn':'Lidarr will use the existing file name if renaming is disabled',
   'cfg.naming.sonarr':'Episode Naming',
   'cfg.naming.radarr':'Movie Naming',
   'cfg.naming.lidarr':'Track Naming',
@@ -837,6 +843,9 @@ const I18N = {
   'cfg.mm.rename':'Renombrar al importar',
   'cfg.mm.perms':'Definir permisos (chmod/chown)',
   'cfg.mm.empty':'Borrar carpetas vacías',
+  'cfg.mm.chmod':'chmod de la carpeta',
+  'cfg.n.useExisting':'Nombre existente',
+  'cfg.n.useExistingOn':'Lidarr usará el nombre de archivo existente si el renombrado está deshabilitado',
   'cfg.naming.sonarr':'Episode Naming',
   'cfg.naming.radarr':'Nomenclatura de película',
   'cfg.naming.lidarr':'Nomenclatura de pista',
@@ -1611,6 +1620,9 @@ const NAMING_FIELDS = {
     {k:'movieFolder',    type:'fmt', def:'{Movie Title} ({Release Year})'},
   ],
   lidarr:[
+    // marcado, o Lidarr fica com o nome que o arquivo já tem: os formatos de
+    // faixa somem, porque não seriam usados
+    {k:'useExisting',    type:'check', def:false, hint:'cfg.n.useExistingOn'},
     {k:'illegal',        type:'check', def:true},
     {k:'standardTrack',  type:'fmt', file:true,
      def:'{Album Title}/{track:00} - {Track Title}'},
@@ -1623,7 +1635,7 @@ const NAMING_FIELDS = {
 const namingDefault = id =>
   Object.fromEntries((NAMING_FIELDS[id]||[]).map(f=>[f.k, f.def]));
 const mmDefault = id => ({hardlink:true, rename:true, perms:false, empty:false,
-                          naming:namingDefault(id)});
+                          chmod:'755', naming:namingDefault(id)});
 const CONFIG = {apps:{}, clients:{}, mm:{}};
 
 const arrList    = ()=> added.filter(a=>ARRS.includes(a.id));
@@ -1698,6 +1710,14 @@ function renderConfig(){
       H.push(`<div class="cfgList">` + MM_OPTS.map(o=>
         check(CONFIG.mm[id][o], t('cfg.mm.'+o), `data-kind="mm" data-key="${id}" data-opt="${o}"`)
       ).join('') + `</div>`);
+      // com permissões ligadas, o modo das pastas fica editável
+      if(CONFIG.mm[id].perms)
+        H.push(`<div class="row" style="grid-template-columns:150px 1fr;margin:10px 0 0">
+          <label for="mmChmod-${id}">${t('cfg.mm.chmod')}</label>
+          <input type="text" class="fmt" id="mmChmod-${id}" placeholder="755"
+                 data-kind="mmText" data-key="${id}" data-opt="chmod"
+                 value="${String(CONFIG.mm[id].chmod ?? '').replace(/"/g,'&quot;')}">
+        </div>`);
       H.push(namingBlock(id));
       H.push(`</div>`);
     });
@@ -1711,14 +1731,16 @@ function renderConfig(){
    renomear, os formatos de arquivo ficam travados — as pastas, não. */
 function namingBlock(id){
   const cfg = CONFIG.mm[id].naming, ren = CONFIG.mm[id].rename;
+  const hidden = cfg.useExisting ? ['standardTrack','multiDiscTrack'] : [];
   const row = (f)=>{
+    if(hidden.includes(f.k)) return '';
     const off = (f.file && !ren) ? ' disabled' : '';
     const at = `data-kind="naming" data-key="${id}" data-opt="${f.k}"`;
     const lbl = t('cfg.n.'+f.k);
     if(f.type === 'check')
       return `<div class="row"><label>${lbl}</label>
         <label class="check"><input type="checkbox" ${cfg[f.k]?'checked':''} ${at}${off}>
-          <span class="hint">${t('cfg.n.illegalOn')}</span></label></div>`;
+          <span class="hint">${t(f.hint || 'cfg.n.illegalOn')}</span></label></div>`;
     if(f.type === 'select')
       return `<div class="row"><label for="n-${id}-${f.k}">${lbl}</label>
         <select id="n-${id}-${f.k}" ${at}${off}>${f.opts.map(o=>
@@ -1742,15 +1764,21 @@ $('#cfgBody').onchange = e=>{
   else if(d.kind === 'client') CONFIG.clients[d.key][d.arr] = el.checked;
   else if(d.kind === 'mm'){
     CONFIG.mm[d.key][d.opt] = el.checked;
-    if(d.opt === 'rename') renderConfig();   // libera ou trava os formatos
+    // um refaz os formatos, o outro mostra o campo de chmod
+    if(d.opt === 'rename' || d.opt === 'perms') renderConfig();
   }
-  else if(d.kind === 'naming') CONFIG.mm[d.key].naming[d.opt] = el.checked;
+  else if(d.kind === 'naming'){
+    CONFIG.mm[d.key].naming[d.opt] = el.checked;
+    if(d.opt === 'useExisting') renderConfig();   // esconde ou traz os formatos
+  }
+  else if(d.kind === 'mmText') CONFIG.mm[d.key][d.opt] = el.value;
 };
 // selects e campos de texto da nomenclatura
 $('#cfgBody').oninput = e=>{
   const el = e.target, d = el.dataset;
   if(d.kind === 'naming' && el.type !== 'checkbox')
     CONFIG.mm[d.key].naming[d.opt] = el.value;
+  else if(d.kind === 'mmText') CONFIG.mm[d.key][d.opt] = el.value;
 };
 
 let cfgBackup = null;   // estado de antes de abrir, para o Cancelar desfazer
