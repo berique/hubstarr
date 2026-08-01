@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Hubstarr é um protótipo de página única que gera `docker-compose.yml`, `.env` e
 `nginx.conf` de uma stack de mídia (*arr + clientes de download + servidor de
 mídia). **Todo o projeto é um único arquivo**: `hubstarr.html`
-(~1870 linhas: CSS, HTML e um `<script>` inline).
+(~2570 linhas: CSS, HTML e um `<script>` inline).
 
 Não há build, testes, lint, package manager nem backend. Para rodar, abra o
 arquivo no navegador — nada de servidor. O `.mvn/` é resto de outro projeto e
@@ -35,8 +35,10 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    monta a base e mais as pastas que ficaram fora dela), `solver` (Prowlarr;
    ver abaixo), `internal` (gluetun e FlareSolverr: sem rota no nginx e sem
    botão de link), `vpnCfg` (gluetun: as credenciais da VPN no modal dele),
-   `noVol`, `derived` (Bazarr herda as subpastas das instâncias de
-   Radarr/Sonarr presentes).
+   `webAuth` + `conf` (qBittorrent: usuário/senha/API key no modal dele e a
+   `qBittorrent.conf` gerada e montada), `cdh` (SABnzbd: gerenciamento de
+   downloads concluídos na Configuração), `noVol`, `derived` (Bazarr herda as
+   subpastas das instâncias de Radarr/Sonarr presentes).
    Adicionar um serviço normalmente é acrescentar uma linha aqui + o ícone em
    `ICONS` + as strings `d.<id>` no `I18N`.
 3. **Constantes de convenção** — `STACK`/`NETWORK` (`starrnet`), `NGINX`
@@ -52,12 +54,13 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    (caminhos base, PUID/PGID, TZ, portas do host, TLS, VPN, API key). Nem tudo
    que está no `DEFAULTS` se edita no Ambiente: as portas do host saem no modal
    do nginx e as credenciais da VPN no do gluetun (flag `vpnCfg`) — os dois são
-   de um serviço só, não da stack. `CONFIG` guarda as ligações entre instâncias
-   (o que o Prowlarr configura, quais *arr recebem cada cliente, o Media
-   Management e a nomenclatura por família — os campos de cada app estão em
-   `NAMING_FIELDS`, com os formatos de fábrica); `syncConfig()` o alinha com o `added` a cada
-   abertura do modal, e ele não entra nos arquivos gerados — é protótipo de
-   interface, como o botão "Criar stack".
+   de um serviço só, não da stack. `CONFIG` guarda as ligações entre instâncias:
+   `apps` (o que o Prowlarr configura), `clients[cliente] = {arrs, cats, cdh}`
+   (quem recebe, com que categoria — padrão em `CATEGORY` — e o gerenciamento de
+   downloads concluídos) e `mm[família]` (Media Management mais a nomenclatura,
+   cujos campos estão em `NAMING_FIELDS` com os formatos de fábrica).
+   `syncConfig()` o alinha com o `added` a cada abertura do modal, e ele não
+   entra nos arquivos gerados — é protótipo de interface, como o "Criar stack".
 5. **Derivações** — `slug()` → `cname()` (container_name = chave do serviço =
    pasta de config), `route()`, `url()`, `cfgPath`/`dataPath` (com variáveis
    `${...}` do `.env`) e `cfgReal`/`dataReal` (caminhos resolvidos, para o hint
@@ -141,11 +144,11 @@ handler de `#mSave`.
   desenhados para isso e alguns são pretos (Heimdall, SABnzbd, Bazarr), então
   `--ico-bg` é claro nos dois temas. Não o amarre ao `--panel`.
 - **Credenciais no formato do app**: a senha do qBittorrent sai em
-  PBKDF2-SHA512 com 100 mil iterações e sal de 16 bytes, `base64(sal):base64(hash)`,
-  e a API key é `qbt_` + 28 caracteres de um alfabeto sem os parecidos — os dois
-  conferidos no fonte da 5.2.3 (`base/utils/password.cpp`, `base/utils/apikey.cpp`).
-  Ao mexer nisso, confira no fonte da versão em uso; formato errado vira app que
-  não abre. O hash é assíncrono (WebCrypto): `refreshQbitHash()` devolve a
+  PBKDF2-SHA512, 100 mil iterações e sal de 16 bytes, como
+  `base64(sal):base64(hash)`; a API key é `qbt_` + 28 caracteres de um alfabeto
+  sem os parecidos. Os dois foram conferidos no fonte da 5.2.3 —
+  `base/utils/password.cpp` e `base/utils/apikey.cpp`. Ao mexer nisso, confira
+  no fonte da versão em uso; formato errado vira app que não abre. O hash é assíncrono (WebCrypto): `refreshQbitHash()` devolve a
   promessa e redesenha quando ela chega.
 - **Favicon em três lugares, uma arte só**: o data URI no `<link rel="icon">`
   (o que faz o arquivo aberto do disco ter ícone), o `favicon.ico` da raiz (para
