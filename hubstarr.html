@@ -133,6 +133,11 @@
   .naming .row, .row.perms{grid-template-columns:150px 1fr auto;margin-bottom:8px}
   .row.perms{margin-top:10px}
   .cfgList .opt{display:flex;align-items:center;gap:6px}
+  /* instância do cliente: a caixa e, abaixo, a categoria dela */
+  .cfgList .inst .cat{display:flex;align-items:center;gap:8px;margin:4px 0 2px 24px}
+  .cfgList .inst .cat label{font-size:12px;color:var(--muted)}
+  .cfgList .inst .cat input{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:12px;padding:4px 8px}
   .naming label{font-size:13px}
   input.fmt{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
   /* os formatos usam a linha inteira; os selects não precisam */
@@ -418,7 +423,9 @@ const I18N = {
   'cfg.apps':'Aplicações no Prowlarr',
   'cfg.appsHint':'As instâncias marcadas entram em <i>Settings → Apps</i> do Prowlarr, que passa a empurrar os indexadores para elas.',
   'cfg.clients':'Clientes de download',
-  'cfg.clientsHint':'Para cada cliente, as instâncias que vão recebê-lo em <i>Settings → Download Clients</i>. A categoria de cada uma é o nome do container.',
+  'cfg.clientsHint':'Para cada cliente, as instâncias que vão recebê-lo em <i>Settings → Download Clients</i>. Cada uma tem a própria categoria no cliente.',
+  'cfg.cat':'Categoria',
+  'cfg.cat':'Categoria',
   'cfg.cdh':'Gerenciamento de downloads concluídos',
   'cfg.cdh.completed':'Remoção concluída',
   'cfg.cdh.failed':'Falha na remoção',
@@ -659,7 +666,9 @@ const I18N = {
   'cfg.apps':'Applications in Prowlarr',
   'cfg.appsHint':'The instances you tick land in Prowlarr\'s <i>Settings → Apps</i>, so it pushes indexers to them.',
   'cfg.clients':'Download clients',
-  'cfg.clientsHint':'For each client, the instances that will get it under <i>Settings → Download Clients</i>. Each one\'s category is its container name.',
+  'cfg.clientsHint':'For each client, the instances that will get it under <i>Settings → Download Clients</i>. Each one gets its own category in the client.',
+  'cfg.cat':'Category',
+  'cfg.cat':'Category',
   'cfg.cdh':'Completed Download Handling',
   'cfg.cdh.completed':'Remove completed',
   'cfg.cdh.failed':'Remove failed',
@@ -900,7 +909,9 @@ const I18N = {
   'cfg.apps':'Aplicaciones en Prowlarr',
   'cfg.appsHint':'Las instancias marcadas entran en <i>Settings → Apps</i> de Prowlarr, que pasa a empujarles los indexadores.',
   'cfg.clients':'Clientes de descarga',
-  'cfg.clientsHint':'Para cada cliente, las instancias que lo recibirán en <i>Settings → Download Clients</i>. La categoría de cada una es el nombre del contenedor.',
+  'cfg.clientsHint':'Para cada cliente, las instancias que lo recibirán en <i>Settings → Download Clients</i>. Cada una tiene su propia categoría en el cliente.',
+  'cfg.cat':'Categoría',
+  'cfg.cat':'Categoría',
   'cfg.cdh':'Gestión de descargas completadas',
   'cfg.cdh.completed':'Eliminación completada',
   'cfg.cdh.failed':'Eliminación fallida',
@@ -1687,6 +1698,9 @@ $('#mLibAdd').onclick = ()=>{
    - clients: por cliente de download, quais *arr o recebem
    - mm:      Media Management (avançado), por família de *arr           */
 const ARRS = ['sonarr','radarr','lidarr'];
+// categoria que cada app usa de fábrica no cliente de download
+const CATEGORY = {sonarr:'tv-sonarr', radarr:'radarr', lidarr:'lidarr'};
+const catDefault = a => cname(a) === a.id ? CATEGORY[a.id] : cname(a);
 /* Nomenclatura: os campos que cada app tem em Media Management, com os
    formatos que eles trazem de fábrica. `file:true` marca o que só vale quando
    o app está renomeando; as pastas continuam valendo de qualquer jeito. */
@@ -1748,6 +1762,9 @@ function syncConfig(){
     const st = CONFIG.clients[cname(c)];
     if(!st.arrs) st.arrs = {};
     keep(st.arrs, arrs, true);
+    if(!st.cats) st.cats = {};
+    arrList().forEach(a=>{ if(!(cname(a) in st.cats)) st.cats[cname(a)] = catDefault(a); });
+    Object.keys(st.cats).forEach(k=>{ if(!arrs.includes(k)) delete st.cats[k]; });
     // downloads concluídos: só quem tem a opção, marcada dos dois lados
     if(svc(c.id).cdh && !st.cdh) st.cdh = {completed:true, failed:true};
   });
@@ -1790,10 +1807,18 @@ function renderConfig(){
       H.push(`<div class="box"><div class="nm">${nameOf(c)}
         <span class="hint">${dlHost(c)}:${inner(c.id)}</span></div>`);
       const st = CONFIG.clients[cname(c)];
-      H.push(`<div class="cfgList">` + arrs.map(a=>
-        check(st.arrs[cname(a)], nameOf(a),
-              `data-kind="client" data-key="${cname(c)}" data-arr="${cname(a)}"`)
-      ).join('') + `</div>`);
+      H.push(`<div class="cfgList">` + arrs.map(a=>{
+        const ck = cname(a), on = st.arrs[ck];
+        return `<div class="inst">` +
+          check(on, nameOf(a), `data-kind="client" data-key="${cname(c)}" data-arr="${ck}"`) +
+          `<div class="cat">
+             <label for="cat-${cname(c)}-${ck}">${t('cfg.cat')}</label>
+             <input type="text" id="cat-${cname(c)}-${ck}" data-kind="cat"
+                    data-key="${cname(c)}" data-arr="${ck}"
+                    value="${String(st.cats[ck] ?? '').replace(/"/g,'&quot;')}"
+                    placeholder="${catDefault(a)}"${on ? '' : ' disabled'}>
+           </div></div>`;
+      }).join('') + `</div>`);
       if(st.cdh){
         H.push(`<div class="naming"><div class="nm">${t('cfg.cdh')}</div>
           <div class="cfgList">` + ['completed','failed'].map(o=>
@@ -1879,7 +1904,10 @@ $('#cfgBody').onchange = e=>{
   const el = e.target; if(el.type !== 'checkbox') return;
   const d = el.dataset;
   if(d.kind === 'app')         CONFIG.apps[d.key] = el.checked;
-  else if(d.kind === 'client') CONFIG.clients[d.key].arrs[d.arr] = el.checked;
+  else if(d.kind === 'client'){
+    CONFIG.clients[d.key].arrs[d.arr] = el.checked;
+    renderConfig();                     // libera ou trava a categoria dela
+  }
   else if(d.kind === 'cdh')    CONFIG.clients[d.key].cdh[d.opt] = el.checked;
   else if(d.kind === 'mm'){
     CONFIG.mm[d.key][d.opt] = el.checked;
@@ -1892,12 +1920,13 @@ $('#cfgBody').onchange = e=>{
   }
   else if(d.kind === 'mmText') CONFIG.mm[d.key][d.opt] = el.value;
 };
-// selects e campos de texto da nomenclatura
+// selects e campos de texto: nomenclatura, permissões e categorias
 $('#cfgBody').oninput = e=>{
   const el = e.target, d = el.dataset;
   if(d.kind === 'naming' && el.type !== 'checkbox')
     CONFIG.mm[d.key].naming[d.opt] = el.value;
   else if(d.kind === 'mmText') CONFIG.mm[d.key][d.opt] = el.value;
+  else if(d.kind === 'cat')    CONFIG.clients[d.key].cats[d.arr] = el.value;
 };
 
 let cfgBackup = null;   // estado de antes de abrir, para o Cancelar desfazer

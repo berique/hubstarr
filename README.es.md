@@ -52,9 +52,9 @@ defecto:
   cómo sale en los archivos generados.
 - **HTTPS opcional**, con el certificado y la clave provenientes del host.
 - **Configuración** (botón arriba): elegir qué instancias configurará Prowlarr,
-  qué *arr reciben cada cliente de descarga (qBittorrent, SABnzbd) — con la
-  gestión de descargas completadas en SABnzbd — y las opciones de
-  *Media Management* — hardlink, renombrar, permisos, carpetas
+  qué *arr reciben cada cliente de descarga (qBittorrent, SABnzbd) y con qué
+  categoría — `tv-sonarr`, `radarr`, `lidarr`, editables —, además de la gestión
+  de descargas completadas en SABnzbd, y las opciones de *Media Management* — hardlink, renombrar, permisos, carpetas
   vacías y la nomenclatura completa de cada app (*Episode Naming*,
   *Nomenclatura de película*, *Nomenclatura de pista*: caracteres ilegales, dos
   puntos, varios episodios y todos los formatos de archivo y de carpeta) —,

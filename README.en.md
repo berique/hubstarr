@@ -50,8 +50,9 @@ The combobox lists the available services with their logos and default ports:
   Environment, of how it lands in the generated files.
 - **Optional HTTPS**, with the certificate and key coming from the host.
 - **Configuration** (button at the top): pick which instances Prowlarr will
-  configure, which *arr apps get each download client (qBittorrent, SABnzbd) —
-  with completed download handling on SABnzbd — and the *Media Management*
+  configure, which *arr apps get each download client (qBittorrent, SABnzbd)
+  and under which category — `tv-sonarr`, `radarr`, `lidarr`, all editable —,
+  plus completed download handling on SABnzbd, and the *Media Management*
   options — hardlinks, renaming, permissions, empty
   folders and each app's full naming section (*Episode*, *Movie*, *Track
   Naming*: illegal characters, colon replacement, multi-episode style and every
