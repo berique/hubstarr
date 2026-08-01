@@ -34,7 +34,8 @@ defecto:
   interfaz.
 - **API key** en el Entorno: una sola para toda la stack. Sonarr, Radarr,
   Lidarr y Prowlarr salen en el compose con
-  `<APP>__AUTH__APIKEY=${STARR_APIKEY}` y el valor queda en el `.env`. La clave
+  `<APP>__AUTH__APIKEY=${STARR_APIKEY}`, y SABnzbd con
+  `SAB_API_KEY=${STARR_APIKEY}`; el valor queda en el `.env`. La clave
   nace sorteada — 16 bytes en hexadecimal, lo mismo que
   `openssl rand -hex 16` — y el botón "Generar" sortea otra.
 - **Aceleración por hardware de Jellyfin**: CPU, Intel o NVIDIA. Intel recibe

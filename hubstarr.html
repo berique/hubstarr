@@ -1205,7 +1205,9 @@ const INSTANCE_ENV = {sonarr:'SONARR__APP__INSTANCENAME', radarr:'RADARR__APP__I
 // base URL do app, que precisa bater com o subpath roteado pelo nginx
 // apps que aceitam a chave de API por variável de ambiente
 const APIKEY_ENV = {sonarr:'SONARR__AUTH__APIKEY', radarr:'RADARR__AUTH__APIKEY',
-                    lidarr:'LIDARR__AUTH__APIKEY', prowlarr:'PROWLARR__AUTH__APIKEY'};
+                    lidarr:'LIDARR__AUTH__APIKEY', prowlarr:'PROWLARR__AUTH__APIKEY',
+                    // o SABnzbd entra na mesma chave, para os *arr o alcançarem
+                    sabnzbd:'SAB_API_KEY'};
 // variável única que carrega a chave de todos os *arr
 const APIKEY_VAR = 'STARR_APIKEY';
 // onde o certificado e a chave aparecem dentro do container do nginx

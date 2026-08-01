@@ -32,7 +32,8 @@ The combobox lists the available services with their logos and default ports:
   subpath. Bazarr exposes no such variable — set its base in its own UI.
 - **API key** in the Environment: a single one for the whole stack. Sonarr,
   Radarr, Lidarr and Prowlarr land in the compose file with
-  `<APP>__AUTH__APIKEY=${STARR_APIKEY}` and the value stays in `.env`. The key
+  `<APP>__AUTH__APIKEY=${STARR_APIKEY}`, and SABnzbd with
+  `SAB_API_KEY=${STARR_APIKEY}`; the value stays in `.env`. The key
   is generated up front — 16 random bytes in hex, the same as
   `openssl rand -hex 16` — and the "Generate" button rolls a new one.
 - **Jellyfin hardware acceleration**: CPU, Intel or NVIDIA. Intel gets
