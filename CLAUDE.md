@@ -45,8 +45,8 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    (reverse proxy fixo, fora do combobox, único que publica portas),
    `ROOT_SERVICE` (Heimdall, servido em `/`; com `fixed:true`, o
    `ensureFixed()` o repõe no `added`, e ele fica fora do combobox e sem
-   "Excluir"), `MULTI` (serviços com múltiplas instâncias), e os mapas de variáveis de ambiente `INSTANCE_ENV`,
-   `URLBASE_ENV`, `APIKEY_ENV`.
+   "Excluir"), `MULTI` (serviços com múltiplas instâncias), e os mapas de
+   variáveis de ambiente `INSTANCE_ENV`, `URLBASE_ENV`, `APIKEY_ENV`.
 4. **Estado** — quatro globais mutáveis: `added` (instâncias,
    `{id,title,data,abs,libs,vpn,hw,solver}` — `abs` só quando o caminho da mídia
    sai das bases, e aí é ele que vai literal para o compose; `libs` são as
