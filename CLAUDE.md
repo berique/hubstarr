@@ -79,8 +79,8 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
 7. **Geradores** — `build()` (compose), `buildEnv()`, `buildNginx()`,
    `buildQbit()` e `buildJellyfin()`. Os dois últimos saem só quando o serviço
    está na stack, e a aba aparece e some com ele. Serviço com arquivo próprio
-   traz `conf:{host, target, pane, tab}` no catálogo — `host` é o caminho
-   dentro da pasta de config dele, e é o mesmo no `.zip` e no bind do compose. Eles
+   traz `conf:{host, target, pane, tab}` no catálogo — `host` é o caminho dentro
+   da pasta de config dele, o mesmo no `.zip` e no bind do compose. Eles
    emitem **HTML com spans de realce** (`<span class="k">`/`v`/`c`); o texto
    puro para copiar/baixar vem de `textContent` dos panes (`plain()`,
    `plainEnv()`, `plainNginx()`). Ao editar um gerador, mantenha a marcação e
