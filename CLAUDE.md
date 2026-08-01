@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Hubstarr é um protótipo de página única que gera `docker-compose.yml`, `.env` e
 `nginx.conf` de uma stack de mídia (*arr + clientes de download + servidor de
 mídia). **Todo o projeto é um único arquivo**: `hubstarr.html`
-(~2670 linhas: CSS, HTML e um `<script>` inline).
+(~2720 linhas: CSS, HTML e um `<script>` inline).
 
 Não há build, testes, lint, package manager nem backend. Para rodar, abra o
 arquivo no navegador — nada de servidor. O `.mvn/` é resto de outro projeto e
@@ -35,7 +35,8 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    monta a base e mais as pastas que ficaram fora dela), `solver` (Prowlarr;
    ver abaixo), `internal` (gluetun e FlareSolverr: sem rota no nginx e sem
    botão de link), `noLink` (Heimdall: sem botão de link, mas com rota — ele é a
-   raiz, o link seria o endereço da stack), `vpnCfg` (gluetun: as credenciais da
+   raiz, o link seria o endereço da stack), `subpathFix` (Seerr: o `location`
+   dele tira o prefixo e reescreve o que volta), `vpnCfg` (gluetun: as credenciais da
    VPN no modal dele),
    `webAuth` + `conf` (qBittorrent: usuário/senha/API key no modal dele e a
    `qBittorrent.conf` gerada e montada), `cdh` (SABnzbd: gerenciamento de
