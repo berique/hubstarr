@@ -147,8 +147,9 @@ possível.
 ## Reverse proxy
 
 O nginx é fixo e obrigatório: entra sempre na stack, não aparece no combobox e
-não pode ser removido. O Heimdall também entra sozinho — é o painel de atalhos
-que fica na raiz —, mas esse dá para editar; só não sai da lista. É o único container que publica portas no host — todos
+não pode ser removido. O Heimdall também entra sozinho — é o painel de
+atalhos que fica na raiz —, mas esse dá para editar; só não sai da lista.
+ É o único container que publica portas no host — todos
 os outros ficam só na rede `starrnet`, alcançados pelo nginx por
 `nome-do-container:porta-interna`. Quem roteia pela VPN responde no `gluetun`,
 que é quem detém a rede.
