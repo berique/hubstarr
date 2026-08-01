@@ -33,11 +33,7 @@ The combobox lists the available services with their logos and default ports:
 - **API key** in the Environment: a single one for the whole stack. Sonarr,
   Radarr, Lidarr and Prowlarr land in the compose file with
   `<APP>__AUTH__APIKEY=${STARR_APIKEY}`, and SABnzbd with
-  `SAB_API_KEY=${STARR_APIKEY}`; the value stays in `.env`. qBittorrent, which
-  does not use that key, comes out with `QBT_USERNAME` and `QBT_PASSWORD`
-  pointing at `QBIT_USER`/`QBIT_PASS` in `.env` — the linuxserver image does not
-  read those yet, so for now the password is still the temporary one from the
-  log, changed in the UI. The key
+  `SAB_API_KEY=${STARR_APIKEY}`; the value stays in `.env`. The key
   is generated up front — 16 random bytes in hex, the same as
   `openssl rand -hex 16` — and the "Generate" button rolls a new one.
 - **Jellyfin hardware acceleration**: CPU, Intel or NVIDIA. Intel gets
@@ -53,6 +49,12 @@ The combobox lists the available services with their logos and default ports:
 - **Per-field help** in the Environment and in the Configuration: every row has
   a `?` that opens an explanation of what the value does — and, in the
   Environment, of how it lands in the generated files.
+- **A ready qBittorrent.conf**: when it is in the stack, a fourth tab generates
+  its initial configuration — paths matching the compose file, reverse-proxy
+  settings and the credentials in qBittorrent 5.2's own format: the password as
+  PBKDF2-SHA512 and the API key as `qbt_` plus 28 characters. Username,
+  password and key are edited in its modal, and the file is mounted over
+  `/config`.
 - **Optional HTTPS**, with the certificate and key coming from the host.
 - **Configuration** (button at the top): pick which instances Prowlarr will
   configure, which *arr apps get each download client (qBittorrent, SABnzbd)

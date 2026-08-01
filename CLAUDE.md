@@ -73,7 +73,9 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    `buildHelp()` e tema claro/escuro. O hint do modal (`updateHint`) é montado
    à mão com `innerHTML` a cada digitada — quem mexe nos campos chama
    `hintNow()`, e o `applyI18n()` o refaz para acompanhar a troca de idioma.
-7. **Geradores** — `build()` (compose), `buildEnv()`, `buildNginx()`. Eles
+7. **Geradores** — `build()` (compose), `buildEnv()`, `buildNginx()` e
+   `buildQbit()` (a `qBittorrent.conf`, só quando ele está na stack — a aba
+   aparece e some com ele). Eles
    emitem **HTML com spans de realce** (`<span class="k">`/`v`/`c`); o texto
    puro para copiar/baixar vem de `textContent` dos panes (`plain()`,
    `plainEnv()`, `plainNginx()`). Ao editar um gerador, mantenha a marcação e
@@ -138,6 +140,13 @@ handler de `#mSave`.
 - **Logotipo sempre sobre fundo claro**: os SVGs do dashboardicons são
   desenhados para isso e alguns são pretos (Heimdall, SABnzbd, Bazarr), então
   `--ico-bg` é claro nos dois temas. Não o amarre ao `--panel`.
+- **Credenciais no formato do app**: a senha do qBittorrent sai em
+  PBKDF2-SHA512 com 100 mil iterações e sal de 16 bytes, `base64(sal):base64(hash)`,
+  e a API key é `qbt_` + 28 caracteres de um alfabeto sem os parecidos — os dois
+  conferidos no fonte da 5.2.3 (`base/utils/password.cpp`, `base/utils/apikey.cpp`).
+  Ao mexer nisso, confira no fonte da versão em uso; formato errado vira app que
+  não abre. O hash é assíncrono (WebCrypto): `refreshQbitHash()` devolve a
+  promessa e redesenha quando ela chega.
 - **Favicon em três lugares, uma arte só**: o data URI no `<link rel="icon">`
   (o que faz o arquivo aberto do disco ter ícone), o `favicon.ico` da raiz (para
   quem serve a página) e o `docs/logo.svg` do título do README. Mudou a marca,

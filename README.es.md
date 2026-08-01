@@ -35,11 +35,7 @@ defecto:
 - **API key** en el Entorno: una sola para toda la stack. Sonarr, Radarr,
   Lidarr y Prowlarr salen en el compose con
   `<APP>__AUTH__APIKEY=${STARR_APIKEY}`, y SABnzbd con
-  `SAB_API_KEY=${STARR_APIKEY}`; el valor queda en el `.env`. qBittorrent, que
-  no usa esa clave, sale con `QBT_USERNAME` y `QBT_PASSWORD` apuntando a
-  `QBIT_USER`/`QBIT_PASS` del `.env` — la imagen de linuxserver todavía no lee
-  esas variables, así que por ahora la contraseña sigue siendo la temporal del
-  log, cambiada en la interfaz. La clave
+  `SAB_API_KEY=${STARR_APIKEY}`; el valor queda en el `.env`. La clave
   nace sorteada — 16 bytes en hexadecimal, lo mismo que
   `openssl rand -hex 16` — y el botón "Generar" sortea otra.
 - **Aceleración por hardware de Jellyfin**: CPU, Intel o NVIDIA. Intel recibe
@@ -55,6 +51,12 @@ defecto:
 - **Ayuda por campo** en el Entorno y en la Configuración: cada línea tiene un
   `?` que abre una explicación de lo que hace ese valor — y, en el Entorno, de
   cómo sale en los archivos generados.
+- **qBittorrent.conf lista**: cuando está en la stack, una cuarta pestaña
+  genera su configuración inicial — rutas iguales a las del compose, ajustes de
+  proxy inverso y las credenciales en el formato del propio qBittorrent 5.2: la
+  contraseña en PBKDF2-SHA512 y la API key `qbt_` más 28 caracteres. Usuario,
+  contraseña y clave se editan en su modal, y el archivo se monta sobre
+  `/config`.
 - **HTTPS opcional**, con el certificado y la clave provenientes del host.
 - **Configuración** (botón arriba): elegir qué instancias configurará Prowlarr,
   qué *arr reciben cada cliente de descarga (qBittorrent, SABnzbd) y con qué
