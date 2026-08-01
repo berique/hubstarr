@@ -216,5 +216,7 @@ with the source and under the same license. No warranty — see sections 15 and
 16 of the text.
 
 The service logos belong to their own projects and come from
-[dashboardicons.com](https://dashboardicons.com); the GPL covers Hubstarr, not
-them.
+[dashboardicons.com](https://dashboardicons.com); the nginx one is
+[Nginx](https://iconscout.com/icons/nginx) by
+[Icon 54](https://iconscout.com/contributors/icon-54), on IconScout. The GPL
+covers Hubstarr, not them.

@@ -219,5 +219,7 @@ tiene que ir con el código y bajo la misma licencia. Sin garantía — mira las
 secciones 15 y 16 del texto.
 
 Los logotipos de los servicios son de sus respectivos proyectos y vienen de
-[dashboardicons.com](https://dashboardicons.com); la GPL cubre Hubstarr, no a
-ellos.
+[dashboardicons.com](https://dashboardicons.com); el de nginx es
+[Nginx](https://iconscout.com/icons/nginx), de
+[Icon 54](https://iconscout.com/contributors/icon-54), en IconScout. La GPL
+cubre Hubstarr, no a ellos.
