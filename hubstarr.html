@@ -420,6 +420,8 @@ const I18N = {
   'cfg.mm.perms':'Definir permissões (chmod/chown)',
   'cfg.mm.empty':'Apagar pastas vazias',
   'cfg.mm.chmod':'chmod da pasta',
+  'cfg.mm.chown':'chown do grupo',
+  'cfg.mm.chownPh':'em branco, mantém o grupo atual',
   'cfg.n.useExisting':'Nome existente',
   'cfg.n.useExistingOn':'o Lidarr usará o nome de arquivo existente se a renomeação estiver desabilitada',
   'cfg.naming.sonarr':'Episode Naming',
@@ -632,6 +634,8 @@ const I18N = {
   'cfg.mm.perms':'Set permissions (chmod/chown)',
   'cfg.mm.empty':'Delete empty folders',
   'cfg.mm.chmod':'Folder chmod',
+  'cfg.mm.chown':'chown group',
+  'cfg.mm.chownPh':'empty keeps the current group',
   'cfg.n.useExisting':'Existing name',
   'cfg.n.useExistingOn':'Lidarr will use the existing file name if renaming is disabled',
   'cfg.naming.sonarr':'Episode Naming',
@@ -844,6 +848,8 @@ const I18N = {
   'cfg.mm.perms':'Definir permisos (chmod/chown)',
   'cfg.mm.empty':'Borrar carpetas vacías',
   'cfg.mm.chmod':'chmod de la carpeta',
+  'cfg.mm.chown':'chown del grupo',
+  'cfg.mm.chownPh':'en blanco, mantiene el grupo actual',
   'cfg.n.useExisting':'Nombre existente',
   'cfg.n.useExistingOn':'Lidarr usará el nombre de archivo existente si el renombrado está deshabilitado',
   'cfg.naming.sonarr':'Episode Naming',
@@ -1067,6 +1073,8 @@ function applyI18n(){
     const id = editing ? (byKey(editing)||{}).id : picked;
     if(id) updateHint(svc(id));
   }
+  // o corpo da Configuração também é montado na mão
+  if($('#cfgBack') && $('#cfgBack').classList.contains('open')) renderConfig();
 }
 
 function setLang(l){
@@ -1635,7 +1643,7 @@ const NAMING_FIELDS = {
 const namingDefault = id =>
   Object.fromEntries((NAMING_FIELDS[id]||[]).map(f=>[f.k, f.def]));
 const mmDefault = id => ({hardlink:true, rename:true, perms:false, empty:false,
-                          chmod:'755', naming:namingDefault(id)});
+                          chmod:'755', chown:'', naming:namingDefault(id)});
 const CONFIG = {apps:{}, clients:{}, mm:{}};
 
 const arrList    = ()=> added.filter(a=>ARRS.includes(a.id));
@@ -1710,14 +1718,18 @@ function renderConfig(){
       H.push(`<div class="cfgList">` + MM_OPTS.map(o=>
         check(CONFIG.mm[id][o], t('cfg.mm.'+o), `data-kind="mm" data-key="${id}" data-opt="${o}"`)
       ).join('') + `</div>`);
-      // com permissões ligadas, o modo das pastas fica editável
-      if(CONFIG.mm[id].perms)
-        H.push(`<div class="row" style="grid-template-columns:150px 1fr;margin:10px 0 0">
-          <label for="mmChmod-${id}">${t('cfg.mm.chmod')}</label>
-          <input type="text" class="fmt" id="mmChmod-${id}" placeholder="755"
-                 data-kind="mmText" data-key="${id}" data-opt="chmod"
-                 value="${String(CONFIG.mm[id].chmod ?? '').replace(/"/g,'&quot;')}">
-        </div>`);
+      // com permissões ligadas, o modo e o grupo das pastas ficam editáveis
+      if(CONFIG.mm[id].perms){
+        const pf = (opt, ph) => `<div class="row"
+            style="grid-template-columns:150px 1fr;margin:10px 0 0">
+          <label for="mm-${opt}-${id}">${t('cfg.mm.'+opt)}</label>
+          <input type="text" class="fmt" id="mm-${opt}-${id}" placeholder="${ph}"
+                 data-kind="mmText" data-key="${id}" data-opt="${opt}"
+                 value="${String(CONFIG.mm[id][opt] ?? '').replace(/"/g,'&quot;')}">
+        </div>`;
+        H.push(pf('chmod', '755'));
+        H.push(pf('chown', t('cfg.mm.chownPh')));
+      }
       H.push(namingBlock(id));
       H.push(`</div>`);
     });

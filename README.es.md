@@ -57,9 +57,9 @@ defecto:
   vacías y la nomenclatura completa de cada app (*Episode Naming*,
   *Nomenclatura de película*, *Nomenclatura de pista*: caracteres ilegales, dos
   puntos, varios episodios y todos los formatos de archivo y de carpeta) —,
-  separadas por familia: Sonarr, Radarr y Lidarr. Los permisos abren el campo
-  de `chmod`, y Lidarr puede mantener el nombre de archivo existente, lo que
-  esconde los formatos de pista. Por ahora las
+  separadas por familia: Sonarr, Radarr y Lidarr. Los permisos abren los campos
+  de `chmod` y `chown`, y Lidarr puede mantener el nombre de archivo existente,
+  lo que esconde los formatos de pista. Por ahora las
   opciones se guardan en la interfaz; no se aplica nada en las apps.
 - **Entorno global** (botón arriba): rutas base, PUID/PGID, zona horaria,
   restart policy, API key y TLS. La lista de husos es la IANA entera, que viene
