@@ -140,8 +140,9 @@ handler de `#mSave`.
 - **Cada subpath do nginx casa com a base URL do app**: nos *arr é a variável
   `<APP>__SERVER__URLBASE`; no Jellyfin é o `BaseUrl` do `network.xml`, que por
   isso é gerado; no Seerr, que não tem base URL, é a flag `subpathFix` — o
-  `location` tira o prefixo e reescreve redirects e HTML no caminho de volta. Serviço servido em subpath sem esse ajuste monta os links na
-  raiz e quebra atrás do proxy.
+  `location` tira o prefixo e reescreve redirects e HTML no caminho de volta.
+  Serviço em subpath sem esse ajuste monta os links na raiz e quebra atrás do
+  proxy.
 - **Serviço `internal` não vira rota**: gluetun e FlareSolverr existem para os
   outros containers, então ficam sem `location`, sem link e fora da contagem de
   rotas — mas continuam no compose. Ao acrescentar um serviço assim, use a
