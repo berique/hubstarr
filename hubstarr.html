@@ -1245,7 +1245,7 @@ const SERVICES = [
   {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true,
    conf:{host:'config/config/network.xml', target:'/config/config/network.xml', pane:'#outJf', tab:'jf'}},
   {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5'},
-  {id:'heimdall', name:'Heimdall',  port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f', fixed:true},
+  {id:'heimdall', name:'Heimdall',  port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f', fixed:true, noLink:true},
   {id:'flaresolverr',name:'FlareSolverr',port:8191,img:'ghcr.io/thephaseless/byparr:latest',color:'#ff7f50',noVol:true, internal:true},
   {id:'gluetun',  name:'Gluetun',   port:8000, img:'qmcgaw/gluetun:latest',                color:'#8b98a5', noVol:true, internal:true, vpnCfg:true},
 ];
@@ -1584,7 +1584,7 @@ function renderItems(){
         <div class="ds">${cname(a)}${(a.title && a.title!==s.name)?' ('+s.name+')':''}${s.noVol?' · '+sdesc(s.id):' · '+cfgReal(a)}${s.media&&!s.noVol?' · '+dataReal(a):''}</div>
       </div>
       <div class="acts">
-        ${s.internal ? '' : `<button class="sm" data-act="link"
+        ${(s.internal || s.noLink) ? '' : `<button class="sm" data-act="link"
           title="${t('btn.linkTitle', url(a))}">${t('btn.link')}</button>`}
         <button class="sm" data-act="edit">${t('btn.edit')}</button>
         ${s.fixed ? `<span class="hint">${t('items.fixed')}</span>`
