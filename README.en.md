@@ -45,8 +45,9 @@ The combobox lists the available services with their logos and default ports:
   `http://flaresolverr:8191`. The image behind it is
   [Byparr](https://github.com/ThePhaseless/Byparr), a drop-in, better-maintained
   replacement with the same API and the same port.
-- **Per-field help** in the Environment: every row has a `?` that opens an
-  explanation of what the value does and how it lands in the generated files.
+- **Per-field help** in the Environment and in the Configuration: every row has
+  a `?` that opens an explanation of what the value does — and, in the
+  Environment, of how it lands in the generated files.
 - **Optional HTTPS**, with the certificate and key coming from the host.
 - **Configuration** (button at the top): pick which instances Prowlarr will
   configure, which *arr apps get each download client (qBittorrent, SABnzbd)

@@ -47,9 +47,9 @@ defecto:
   `http://flaresolverr:8191`. La imagen detrás de él es la de
   [Byparr](https://github.com/ThePhaseless/Byparr), reemplazo directo y más
   actual, con la misma API y el mismo puerto.
-- **Ayuda por campo** en el Entorno: cada línea tiene un `?` que abre una
-  explicación de lo que hace ese valor y de cómo sale en los archivos
-  generados.
+- **Ayuda por campo** en el Entorno y en la Configuración: cada línea tiene un
+  `?` que abre una explicación de lo que hace ese valor — y, en el Entorno, de
+  cómo sale en los archivos generados.
 - **HTTPS opcional**, con el certificado y la clave provenientes del host.
 - **Configuración** (botón arriba): elegir qué instancias configurará Prowlarr,
   qué *arr reciben cada cliente de descarga (qBittorrent, SABnzbd) y las

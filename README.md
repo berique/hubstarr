@@ -44,8 +44,9 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
   `http://flaresolverr:8191`. A imagem por trás dele é a do
   [Byparr](https://github.com/ThePhaseless/Byparr), substituto direto e mais
   atual, com a mesma API e a mesma porta.
-- **Ajuda por campo** no Ambiente: cada linha tem um `?` que abre uma
-  explicação do que aquele valor faz e de como ele sai nos arquivos gerados.
+- **Ajuda por campo** no Ambiente e na Configuração: cada linha tem um `?` que
+  abre uma explicação do que aquele valor faz — e, no Ambiente, de como ele sai
+  nos arquivos gerados.
 - **HTTPS opcional**, com o certificado e a chave vindos do host.
 - **Configuração** (botão no topo): escolher quais instâncias o Prowlarr vai
   configurar, quais *arr recebem cada cliente de download (qBittorrent,

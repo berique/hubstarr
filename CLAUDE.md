@@ -87,7 +87,10 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
 `data-help="<chave do I18N>"` basta: `buildHelp()` põe um `?` na terceira coluna
 do grid e insere abaixo um parágrafo escondido com `data-i18n-html`, que o botão
 liga e desliga e o `applyI18n()` retraduz. Não escreva o parágrafo à mão nem
-deixe hint fixo onde cabe um `data-help`.
+deixe hint fixo onde cabe um `data-help`. Em conteúdo remontado — a Configuração
+—, chame `buildHelp(container)` no fim do render; ali o `?` pode vir pronto no
+HTML com o `data-help` no próprio botão, e o parágrafo entra depois do grupo
+(`.cfgList`) em que ele está.
 
 **Variável do `.env` na interface.** O campo da subpasta mostra o caminho
 resolvido e expande o que for digitado: `expandVars()` troca `${BASE_MEDIA}`,

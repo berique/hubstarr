@@ -130,7 +130,9 @@
   .cfgList{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
   .naming{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
   .naming .nm{font-weight:600;margin-bottom:8px}
-  .naming .row{grid-template-columns:150px 1fr;margin-bottom:8px}
+  .naming .row, .row.perms{grid-template-columns:150px 1fr auto;margin-bottom:8px}
+  .row.perms{margin-top:10px}
+  .cfgList .opt{display:flex;align-items:center;gap:6px}
   .naming label{font-size:13px}
   input.fmt{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
   /* os formatos usam a linha inteira; os selects não precisam */
@@ -458,6 +460,28 @@ const I18N = {
   'cfg.opt.scene':'Scene',
   'cfg.opt.range':'Intervalo',
   'cfg.opt.prefixedRange':'Intervalo com prefixo',
+  'cfg.q.hardlink':'Importa criando um hardlink em vez de copiar o arquivo: instantâneo e sem ocupar espaço em dobro. Só funciona quando download e biblioteca estão no mesmo sistema de arquivos — se não estiverem, o app copia sozinho.',
+  'cfg.q.rename':'Renomeia os arquivos ao importar, seguindo os formatos abaixo. Desligado, o arquivo entra com o nome que veio do cliente de download.',
+  'cfg.q.perms':'Depois de importar, ajusta dono e modo dos arquivos. Com PUID/PGID certos no Ambiente, costuma ser desnecessário.',
+  'cfg.q.empty':'Varre a biblioteca e apaga as pastas que ficaram sem nenhum arquivo — depois de excluir uma série ou um filme, por exemplo.',
+  'cfg.q.chmod':'Modo em octal aplicado às pastas criadas, como <b>755</b>. Os arquivos recebem o mesmo, sem o bit de execução.',
+  'cfg.q.chown':'Grupo dono dos arquivos importados. Em branco, o app não mexe no grupo — é o mais comum quando o PGID já está certo.',
+  'cfg.q.illegal':'Caracteres que o sistema de arquivos não aceita (<b>: \\ / * ?</b>). Ligado, eles viram algo parecido; desligado, somem do nome.',
+  'cfg.q.colon':'O que fazer com os dois-pontos, que o Windows não aceita em nome de arquivo. <i>Inteligente</i> escolhe entre hífen e espaço conforme o texto ao redor.',
+  'cfg.q.multiEp':'Como escrever um arquivo que traz vários episódios: <i>Estender</i> vira E01E02, <i>Intervalo</i> vira E01-E02, <i>Repetir</i> repete o prefixo.',
+  'cfg.q.standardEp':'Nome dos episódios de séries comuns, numeradas por temporada e episódio.',
+  'cfg.q.dailyEp':'Nome dos episódios de programas diários, que o Sonarr identifica pela data de exibição em vez do número.',
+  'cfg.q.animeEp':'Nome dos episódios de anime, que costumam ter numeração absoluta e o grupo de legendas no nome.',
+  'cfg.q.seriesFolder':'Nome da pasta de cada série, criada dentro da biblioteca.',
+  'cfg.q.seasonFolder':'Nome das pastas de temporada dentro da pasta da série.',
+  'cfg.q.specialsFolder':'Nome da pasta dos especiais — a temporada 0 da série.',
+  'cfg.q.standardMovie':'Nome do arquivo do filme depois de importado.',
+  'cfg.q.movieFolder':'Nome da pasta de cada filme dentro da biblioteca.',
+  'cfg.q.useExisting':'Marcado, os formatos de faixa e a pasta do álbum ficam disponíveis aqui.',
+  'cfg.q.standardTrack':'Nome das faixas de álbuns de disco único.',
+  'cfg.q.multiDiscTrack':'Nome das faixas quando o álbum tem mais de um disco — o número do disco entra no nome.',
+  'cfg.q.artistFolder':'Nome da pasta de cada artista dentro da biblioteca.',
+  'cfg.q.albumFolder':'Nome da pasta de cada álbum dentro da pasta do artista.',
   'cfg.noProwlarr':'Sem Prowlarr na stack — adicione-o para escolher o que ele configura.',
   'cfg.noArr':'Sem Sonarr, Radarr ou Lidarr na stack.',
   'cfg.noClient':'Sem qBittorrent ou SABnzbd na stack.',
@@ -672,6 +696,28 @@ const I18N = {
   'cfg.opt.scene':'Scene',
   'cfg.opt.range':'Range',
   'cfg.opt.prefixedRange':'Prefixed range',
+  'cfg.q.hardlink':'Imports by making a hardlink instead of copying the file: instant and no second copy on disk. It only works when downloads and library sit on the same filesystem — otherwise the app falls back to copying.',
+  'cfg.q.rename':'Renames files on import, following the formats below. Off, the file keeps the name it came with from the download client.',
+  'cfg.q.perms':'After importing, fixes owner and mode of the files. With the right PUID/PGID in the Environment, this is usually unnecessary.',
+  'cfg.q.empty':'Sweeps the library and removes folders left without any file — after deleting a series or a movie, say.',
+  'cfg.q.chmod':'Octal mode applied to the folders it creates, such as <b>755</b>. Files get the same, minus the execute bit.',
+  'cfg.q.chown':'Group that owns the imported files. Left empty, the app does not touch the group — the common case when PGID is already right.',
+  'cfg.q.illegal':'Characters the filesystem refuses (<b>: \\ / * ?</b>). On, they are replaced with a lookalike; off, they are dropped from the name.',
+  'cfg.q.colon':'What to do with colons, which Windows rejects in file names. <i>Smart replace</i> picks a dash or a space depending on the surrounding text.',
+  'cfg.q.multiEp':'How to write a file holding several episodes: <i>Extend</i> gives E01E02, <i>Range</i> gives E01-E02, <i>Repeat</i> repeats the prefix.',
+  'cfg.q.standardEp':'Name for episodes of regular series, numbered by season and episode.',
+  'cfg.q.dailyEp':'Name for episodes of daily shows, which Sonarr identifies by air date instead of number.',
+  'cfg.q.animeEp':'Name for anime episodes, which usually carry absolute numbering and the release group.',
+  'cfg.q.seriesFolder':'Name of each series folder, created inside the library.',
+  'cfg.q.seasonFolder':'Name of the season folders inside the series folder.',
+  'cfg.q.specialsFolder':'Name of the specials folder — season 0 of the series.',
+  'cfg.q.standardMovie':'Name of the movie file once imported.',
+  'cfg.q.movieFolder':'Name of each movie folder inside the library.',
+  'cfg.q.useExisting':'Ticked, the track formats and the album folder become available here.',
+  'cfg.q.standardTrack':'Name for tracks of single-disc albums.',
+  'cfg.q.multiDiscTrack':'Name for tracks when the album spans more than one disc — the disc number goes into the name.',
+  'cfg.q.artistFolder':'Name of each artist folder inside the library.',
+  'cfg.q.albumFolder':'Name of each album folder inside the artist folder.',
   'cfg.noProwlarr':'No Prowlarr in the stack — add it to pick what it configures.',
   'cfg.noArr':'No Sonarr, Radarr or Lidarr in the stack.',
   'cfg.noClient':'No qBittorrent or SABnzbd in the stack.',
@@ -886,6 +932,28 @@ const I18N = {
   'cfg.opt.scene':'Scene',
   'cfg.opt.range':'Intervalo',
   'cfg.opt.prefixedRange':'Intervalo con prefijo',
+  'cfg.q.hardlink':'Importa creando un hardlink en vez de copiar el archivo: instantáneo y sin ocupar el espacio dos veces. Solo funciona si descargas y biblioteca están en el mismo sistema de archivos — si no, la app copia igual.',
+  'cfg.q.rename':'Renombra los archivos al importar, siguiendo los formatos de abajo. Apagado, el archivo entra con el nombre que trajo del cliente de descarga.',
+  'cfg.q.perms':'Tras importar, ajusta dueño y modo de los archivos. Con el PUID/PGID correcto en el Entorno, suele ser innecesario.',
+  'cfg.q.empty':'Recorre la biblioteca y borra las carpetas que quedaron sin ningún archivo — tras eliminar una serie o una película, por ejemplo.',
+  'cfg.q.chmod':'Modo en octal aplicado a las carpetas que crea, como <b>755</b>. Los archivos reciben el mismo, sin el bit de ejecución.',
+  'cfg.q.chown':'Grupo dueño de los archivos importados. En blanco, la app no toca el grupo — lo habitual cuando el PGID ya está bien.',
+  'cfg.q.illegal':'Caracteres que el sistema de archivos no acepta (<b>: \\ / * ?</b>). Activado, se sustituyen por algo parecido; desactivado, se quitan del nombre.',
+  'cfg.q.colon':'Qué hacer con los dos puntos, que Windows no acepta en nombres de archivo. <i>Inteligente</i> elige entre guion y espacio según el texto alrededor.',
+  'cfg.q.multiEp':'Cómo escribir un archivo con varios episodios: <i>Extender</i> da E01E02, <i>Intervalo</i> da E01-E02, <i>Repetir</i> repite el prefijo.',
+  'cfg.q.standardEp':'Nombre de los episodios de series normales, numeradas por temporada y episodio.',
+  'cfg.q.dailyEp':'Nombre de los episodios de programas diarios, que Sonarr identifica por la fecha de emisión en vez del número.',
+  'cfg.q.animeEp':'Nombre de los episodios de anime, que suelen llevar numeración absoluta y el grupo de publicación.',
+  'cfg.q.seriesFolder':'Nombre de la carpeta de cada serie, creada dentro de la biblioteca.',
+  'cfg.q.seasonFolder':'Nombre de las carpetas de temporada dentro de la carpeta de la serie.',
+  'cfg.q.specialsFolder':'Nombre de la carpeta de especiales — la temporada 0 de la serie.',
+  'cfg.q.standardMovie':'Nombre del archivo de la película una vez importada.',
+  'cfg.q.movieFolder':'Nombre de la carpeta de cada película dentro de la biblioteca.',
+  'cfg.q.useExisting':'Marcado, los formatos de pista y la carpeta del álbum quedan disponibles aquí.',
+  'cfg.q.standardTrack':'Nombre de las pistas de álbumes de un solo disco.',
+  'cfg.q.multiDiscTrack':'Nombre de las pistas cuando el álbum tiene más de un disco — el número del disco entra en el nombre.',
+  'cfg.q.artistFolder':'Nombre de la carpeta de cada artista dentro de la biblioteca.',
+  'cfg.q.albumFolder':'Nombre de la carpeta de cada álbum dentro de la carpeta del artista.',
   'cfg.noProwlarr':'Sin Prowlarr en la stack — añádelo para elegir lo que configura.',
   'cfg.noArr':'Sin Sonarr, Radarr o Lidarr en la stack.',
   'cfg.noClient':'Sin qBittorrent o SABnzbd en la stack.',
@@ -1719,12 +1787,13 @@ function renderConfig(){
       H.push(`<div class="box"><div class="nm">${svc(id).name}
         <span class="hint">${inst}</span></div>`);
       H.push(`<div class="cfgList">` + MM_OPTS.map(o=>
-        check(CONFIG.mm[id][o], t('cfg.mm.'+o), `data-kind="mm" data-key="${id}" data-opt="${o}"`)
+        `<span class="opt">` +
+        check(CONFIG.mm[id][o], t('cfg.mm.'+o), `data-kind="mm" data-key="${id}" data-opt="${o}"`) +
+        `<button type="button" class="help" data-help="cfg.q.${o}">?</button></span>`
       ).join('') + `</div>`);
       // com permissões ligadas, o modo e o grupo das pastas ficam editáveis
       if(CONFIG.mm[id].perms){
-        const pf = (opt, ph) => `<div class="row"
-            style="grid-template-columns:150px 1fr;margin:10px 0 0">
+        const pf = (opt, ph) => `<div class="row perms" data-help="cfg.q.${opt}">
           <label for="mm-${opt}-${id}">${t('cfg.mm.'+opt)}</label>
           <input type="text" class="fmt" id="mm-${opt}-${id}" placeholder="${ph}"
                  data-kind="mmText" data-key="${id}" data-opt="${opt}"
@@ -1740,6 +1809,7 @@ function renderConfig(){
   H.push(`</div>`);
   H.push(`<p class="hint">${t('cfg.hint')}</p>`);
   box.innerHTML = H.join('');
+  buildHelp(box);
 }
 
 /* bloco de nomenclatura de uma família: uma linha por campo do app. Sem
@@ -1752,17 +1822,17 @@ function namingBlock(id){
     if(hidden.includes(f.k)) return '';
     const off = (f.file && !ren) ? ' disabled' : '';
     const at = `data-kind="naming" data-key="${id}" data-opt="${f.k}"`;
-    const lbl = t('cfg.n.'+f.k);
+    const lbl = t('cfg.n.'+f.k), help = ` data-help="cfg.q.${f.k}"`;
     if(f.type === 'check')
-      return `<div class="row"><label>${lbl}</label>
+      return `<div class="row"${help}><label>${lbl}</label>
         <label class="check"><input type="checkbox" ${cfg[f.k]?'checked':''} ${at}${off}>
           <span class="hint">${t(f.hint || 'cfg.n.illegalOn')}</span></label></div>`;
     if(f.type === 'select')
-      return `<div class="row"><label for="n-${id}-${f.k}">${lbl}</label>
+      return `<div class="row"${help}><label for="n-${id}-${f.k}">${lbl}</label>
         <select id="n-${id}-${f.k}" ${at}${off}>${f.opts.map(o=>
           `<option value="${o}"${cfg[f.k]===o?' selected':''}>${t('cfg.opt.'+o)}</option>`
         ).join('')}</select></div>`;
-    return `<div class="row"><label for="n-${id}-${f.k}">${lbl}</label>
+    return `<div class="row"${help}><label for="n-${id}-${f.k}">${lbl}</label>
       <input type="text" class="fmt" id="n-${id}-${f.k}" ${at}${off}
              value="${String(cfg[f.k]??'').replace(/"/g,'&quot;')}"></div>`;
   };
@@ -1833,22 +1903,35 @@ const closeEnv = ()=> $('#envBack').classList.remove('open');
    coluna e um parágrafo logo abaixo, escondido até alguém pedir. O texto sai
    do I18N pela chave do próprio data-help, com data-i18n-html para acompanhar
    a troca de idioma. */
-function buildHelp(){
-  document.querySelectorAll('.modal .row[data-help]').forEach(row=>{
-    const key = row.dataset.help;
+// liga um "?" ao parágrafo que ele mostra, inserido depois de `after`
+function attachHelp(btn, key, after){
+  btn.dataset.i18nTitle = 'btn.help';
+  const p = document.createElement('p');
+  p.className='hint helpTxt'; p.hidden=true; p.dataset.i18nHtml = key;
+  p.innerHTML = t(key);
+  after.after(p);
+  btn.onclick = ()=>{
+    p.hidden = !p.hidden;
+    btn.classList.toggle('on', !p.hidden);
+  };
+}
+
+/* `root` existe por causa da Configuração, que é remontada a cada abertura:
+   ali os "?" já vêm no HTML, com o data-help no próprio botão. */
+function buildHelp(root){
+  (root || document).querySelectorAll('.row[data-help]').forEach(row=>{
+    if(row.dataset.helpOn) return;
+    row.dataset.helpOn = '1';
     const btn = document.createElement('button');
     btn.type='button'; btn.className='help'; btn.textContent='?';
-    btn.dataset.i18nTitle = 'btn.help';
     row.appendChild(btn);
-
-    const p = document.createElement('p');
-    p.className='hint helpTxt'; p.hidden=true; p.dataset.i18nHtml = key;
-    row.after(p);
-
-    btn.onclick = ()=>{
-      p.hidden = !p.hidden;
-      btn.classList.toggle('on', !p.hidden);
-    };
+    attachHelp(btn, row.dataset.help, row);
+  });
+  // botões soltos: o parágrafo entra depois do grupo em que eles estão
+  (root || document).querySelectorAll('button.help[data-help]').forEach(btn=>{
+    if(btn.dataset.helpOn) return;
+    btn.dataset.helpOn = '1';
+    attachHelp(btn, btn.dataset.help, btn.closest('.cfgList') || btn.parentNode);
   });
 }
 buildHelp();
