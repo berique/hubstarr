@@ -419,6 +419,11 @@ const I18N = {
   'cfg.appsHint':'As instâncias marcadas entram em <i>Settings → Apps</i> do Prowlarr, que passa a empurrar os indexadores para elas.',
   'cfg.clients':'Clientes de download',
   'cfg.clientsHint':'Para cada cliente, as instâncias que vão recebê-lo em <i>Settings → Download Clients</i>. A categoria de cada uma é o nome do container.',
+  'cfg.cdh':'Gerenciamento de downloads concluídos',
+  'cfg.cdh.completed':'Remoção concluída',
+  'cfg.cdh.failed':'Falha na remoção',
+  'cfg.q.completed':'Depois de importar, o *arr manda o cliente tirar o download da fila. No usenet é o normal: o arquivo já foi movido para a biblioteca.',
+  'cfg.q.failed':'Download que falhou sai da fila do cliente e é marcado como falho no *arr, que procura outra versão.',
   'cfg.mm':'Media Manager (avançado)',
   'cfg.mmHint':'Vale para todas as instâncias da mesma família. São as opções de <i>Settings → Media Management</i>.',
   'cfg.mm.hardlink':'Hardlink em vez de copiar',
@@ -655,6 +660,11 @@ const I18N = {
   'cfg.appsHint':'The instances you tick land in Prowlarr\'s <i>Settings → Apps</i>, so it pushes indexers to them.',
   'cfg.clients':'Download clients',
   'cfg.clientsHint':'For each client, the instances that will get it under <i>Settings → Download Clients</i>. Each one\'s category is its container name.',
+  'cfg.cdh':'Completed Download Handling',
+  'cfg.cdh.completed':'Remove completed',
+  'cfg.cdh.failed':'Remove failed',
+  'cfg.q.completed':'Once imported, the *arr tells the client to drop the download from the queue. Usual on usenet: the file has already been moved to the library.',
+  'cfg.q.failed':'A failed download leaves the client queue and is marked as failed in the *arr, which then looks for another release.',
   'cfg.mm':'Media Manager (advanced)',
   'cfg.mmHint':'Applies to every instance of the same family. These are the <i>Settings → Media Management</i> options.',
   'cfg.mm.hardlink':'Hardlink instead of copy',
@@ -891,6 +901,11 @@ const I18N = {
   'cfg.appsHint':'Las instancias marcadas entran en <i>Settings → Apps</i> de Prowlarr, que pasa a empujarles los indexadores.',
   'cfg.clients':'Clientes de descarga',
   'cfg.clientsHint':'Para cada cliente, las instancias que lo recibirán en <i>Settings → Download Clients</i>. La categoría de cada una es el nombre del contenedor.',
+  'cfg.cdh':'Gestión de descargas completadas',
+  'cfg.cdh.completed':'Eliminación completada',
+  'cfg.cdh.failed':'Eliminación fallida',
+  'cfg.q.completed':'Tras importar, el *arr le pide al cliente que saque la descarga de la cola. En usenet es lo normal: el archivo ya se movió a la biblioteca.',
+  'cfg.q.failed':'Una descarga fallida sale de la cola del cliente y queda marcada como fallida en el *arr, que busca otra versión.',
   'cfg.mm':'Media Manager (avanzado)',
   'cfg.mmHint':'Vale para todas las instancias de la misma familia. Son las opciones de <i>Settings → Media Management</i>.',
   'cfg.mm.hardlink':'Hardlink en vez de copiar',
@@ -1162,7 +1177,7 @@ const SERVICES = [
   {id:'prowlarr', name:'Prowlarr',  port:9696, img:'lscr.io/linuxserver/prowlarr:latest', color:'#e5534b', solver:true},
   {id:'bazarr',   name:'Bazarr',    port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr']},
   {id:'qbittorrent',name:'qBittorrent',port:8080, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true},
-  {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true},
+  {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true, cdh:true},
   {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true},
   {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5'},
   {id:'heimdall', name:'Heimdall',  port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f'},
@@ -1729,7 +1744,13 @@ function syncConfig(){
   };
   keep(CONFIG.apps, arrs, true);
   keep(CONFIG.clients, clientList().map(cname), ()=>({}));
-  Object.values(CONFIG.clients).forEach(m=>keep(m, arrs, true));
+  clientList().forEach(c=>{
+    const st = CONFIG.clients[cname(c)];
+    if(!st.arrs) st.arrs = {};
+    keep(st.arrs, arrs, true);
+    // downloads concluídos: só quem tem a opção, marcada dos dois lados
+    if(svc(c.id).cdh && !st.cdh) st.cdh = {completed:true, failed:true};
+  });
   const fams = [...new Set(arrList().map(a=>a.id))];
   fams.forEach(id=>{ if(!CONFIG.mm[id]) CONFIG.mm[id] = mmDefault(id); });
   Object.keys(CONFIG.mm).forEach(id=>{ if(!fams.includes(id)) delete CONFIG.mm[id]; });
@@ -1768,10 +1789,21 @@ function renderConfig(){
     cls.forEach(c=>{
       H.push(`<div class="box"><div class="nm">${nameOf(c)}
         <span class="hint">${dlHost(c)}:${inner(c.id)}</span></div>`);
+      const st = CONFIG.clients[cname(c)];
       H.push(`<div class="cfgList">` + arrs.map(a=>
-        check(CONFIG.clients[cname(c)][cname(a)], nameOf(a),
+        check(st.arrs[cname(a)], nameOf(a),
               `data-kind="client" data-key="${cname(c)}" data-arr="${cname(a)}"`)
-      ).join('') + `</div></div>`);
+      ).join('') + `</div>`);
+      if(st.cdh){
+        H.push(`<div class="naming"><div class="nm">${t('cfg.cdh')}</div>
+          <div class="cfgList">` + ['completed','failed'].map(o=>
+            `<span class="opt">` +
+            check(st.cdh[o], t('cfg.cdh.'+o),
+                  `data-kind="cdh" data-key="${cname(c)}" data-opt="${o}"`) +
+            `<button type="button" class="help" data-help="cfg.q.${o}">?</button></span>`
+          ).join('') + `</div></div>`);
+      }
+      H.push(`</div>`);
     });
   }
   H.push(`</div>`);
@@ -1847,7 +1879,8 @@ $('#cfgBody').onchange = e=>{
   const el = e.target; if(el.type !== 'checkbox') return;
   const d = el.dataset;
   if(d.kind === 'app')         CONFIG.apps[d.key] = el.checked;
-  else if(d.kind === 'client') CONFIG.clients[d.key][d.arr] = el.checked;
+  else if(d.kind === 'client') CONFIG.clients[d.key].arrs[d.arr] = el.checked;
+  else if(d.kind === 'cdh')    CONFIG.clients[d.key].cdh[d.opt] = el.checked;
   else if(d.kind === 'mm'){
     CONFIG.mm[d.key][d.opt] = el.checked;
     // um refaz os formatos, o outro mostra o campo de chmod

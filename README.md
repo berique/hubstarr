@@ -50,7 +50,8 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
 - **HTTPS opcional**, com o certificado e a chave vindos do host.
 - **Configuração** (botão no topo): escolher quais instâncias o Prowlarr vai
   configurar, quais *arr recebem cada cliente de download (qBittorrent,
-  SABnzbd) e as opções de *Media Management* — hardlink, renomear, permissões,
+  SABnzbd) — com o gerenciamento de downloads concluídos no SABnzbd — e as
+  opções de *Media Management* — hardlink, renomear, permissões,
   pastas vazias e a nomenclatura completa de cada app (*Episode Naming*,
   *Nomenclatura de filme*, *Nomeação da faixa*: caracteres ilegais,
   dois-pontos, vários episódios e todos os formatos de arquivo e de pasta) —,
