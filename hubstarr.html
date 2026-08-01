@@ -133,6 +133,8 @@
   .naming .row{grid-template-columns:150px 1fr;margin-bottom:8px}
   .naming label{font-size:13px}
   input.fmt{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+  /* os formatos usam a linha inteira; os selects não precisam */
+  .naming select{max-width:320px}
   .cfgList .check{font-size:13px}
 
   /* diretórios extras da biblioteca: uma linha por pasta, com o × ao lado */
@@ -178,6 +180,8 @@
   .modal h3{margin:0;padding:14px 16px;font-size:14px;border-bottom:1px solid var(--line);
      background:var(--panel-2);display:flex;align-items:center;gap:10px}
   .modal .body{padding:16px;overflow:auto}
+  /* a Configuração tem campos demais para 520px: ganha mais folga */
+  #cfgBack .modal{max-width:860px}
 </style>
 </head>
 <body>
