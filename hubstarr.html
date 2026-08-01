@@ -1245,7 +1245,7 @@ const SERVICES = [
   {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true,
    conf:{host:'config/config/network.xml', target:'/config/config/network.xml', pane:'#outJf', tab:'jf'}},
   {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5'},
-  {id:'heimdall', name:'Heimdall',  port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f'},
+  {id:'heimdall', name:'Heimdall',  port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f', fixed:true},
   {id:'flaresolverr',name:'FlareSolverr',port:8191,img:'ghcr.io/thephaseless/byparr:latest',color:'#ff7f50',noVol:true, internal:true},
   {id:'gluetun',  name:'Gluetun',   port:8000, img:'qmcgaw/gluetun:latest',                color:'#8b98a5', noVol:true, internal:true, vpnCfg:true},
 ];
@@ -1408,6 +1408,15 @@ const isMulti = id => MULTI.includes(id);
 
 // serviços adicionados: [{id, title, data, vpn}]
 let added = [];
+
+/* Serviço fixo entra sozinho e não sai: o painel de atalhos é a porta da
+   stack, como o nginx é a entrada dela. Fora do combobox e sem "Excluir". */
+const isFixed = id => !!svc(id).fixed;
+function ensureFixed(){
+  SERVICES.filter(s=>s.fixed).forEach(s=>{
+    if(!has(s.id)) added.unshift(defCfg(s.id));
+  });
+}
 let picked = null;   // id selecionado no combobox
 let editing = null;  // key da instância em edição (null = adicionando)
 
@@ -1507,7 +1516,7 @@ const defCfg = id => ({id, title:svc(id).name, hw:'cpu',
 
 /* ---------- combobox ---------- */
 function renderCombo(){
-  $('#comboList').innerHTML = SERVICES.map(s=>`
+  $('#comboList').innerHTML = SERVICES.filter(s=>!s.fixed).map(s=>`
     <div class="opt ${locked(s.id)?'dis':''}" data-id="${s.id}">
       ${icoHtml(s,'sm')}
       <span><span class="nm">${s.name}</span> <span class="ds">${sdesc(s.id)}</span></span>
@@ -1576,7 +1585,8 @@ function renderItems(){
         ${s.internal ? '' : `<button class="sm" data-act="link"
           title="${t('btn.linkTitle', url(a))}">${t('btn.link')}</button>`}
         <button class="sm" data-act="edit">${t('btn.edit')}</button>
-        <button class="sm danger" data-act="del">${t('btn.del')}</button>
+        ${s.fixed ? `<span class="hint">${t('items.fixed')}</span>`
+                  : `<button class="sm danger" data-act="del">${t('btn.del')}</button>`}
       </div>
     </div>`;
   }).join('') : `<div class="empty">${t('items.empty')}</div>`);
@@ -1615,7 +1625,7 @@ $('#clear').onclick = e=>{
     return;
   }
   clearArmed = false;
-  added = []; picked = null;
+  added = []; ensureFixed(); picked = null;
   renderItems(); renderCombo(); render();
 };
 
@@ -2648,6 +2658,7 @@ $('#langSel').innerHTML = Object.entries(LANGS)
 $('#langSel').value = LANG;
 $('#langSel').onchange = e => setLang(e.target.value);
 
+ensureFixed();
 applyI18n(); renderCombo(); renderItems(); render();
 // a stack inteira depende das bases de caminho: o Ambiente abre junto com a página
 openEnv();

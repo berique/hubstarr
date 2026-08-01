@@ -148,7 +148,9 @@ to worry about.
 ## Reverse proxy
 
 nginx is fixed and mandatory: it is always in the stack, never shows up in the
-combobox and cannot be removed. It is the only container publishing ports on
+combobox and cannot be removed. Heimdall comes in on its own too — it is the
+dashboard sitting at the root — but that one can be edited; it just cannot be
+removed from the list. It is the only container publishing ports on
 the host — everything else stays on the `starrnet` network, reached by nginx at
 `container-name:internal-port`. Whatever routes through the VPN answers at
 `gluetun`, which owns the network.

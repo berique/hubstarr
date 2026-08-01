@@ -150,7 +150,9 @@ conflicto posible.
 ## Reverse proxy
 
 nginx es fijo y obligatorio: siempre entra en la stack, no aparece en el
-combobox y no se puede eliminar. Es el único contenedor que publica puertos en
+combobox y no se puede eliminar. Heimdall también entra solo — es el panel de
+accesos que se queda en la raíz —, pero ese sí se puede editar; solo no sale de
+la lista. Es el único contenedor que publica puertos en
 el host — todos los demás se quedan solo en la red `starrnet`, alcanzados por
 nginx en `nombre-del-contenedor:puerto-interno`. Lo que se enruta por la VPN
 responde en `gluetun`, que es quien tiene la red.

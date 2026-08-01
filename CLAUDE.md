@@ -43,8 +43,9 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    `ICONS` + as strings `d.<id>` no `I18N`.
 3. **Constantes de convenção** — `STACK`/`NETWORK` (`starrnet`), `NGINX`
    (reverse proxy fixo, fora do combobox, único que publica portas),
-   `ROOT_SERVICE` (Heimdall, servido em `/`), `MULTI` (serviços com múltiplas
-   instâncias), e os mapas de variáveis de ambiente `INSTANCE_ENV`,
+   `ROOT_SERVICE` (Heimdall, servido em `/`; ele tem `fixed:true`, então
+   `ensureFixed()` o repõe no `added` e ele não sai do combobox nem tem
+   "Excluir"), `MULTI` (serviços com múltiplas instâncias), e os mapas de variáveis de ambiente `INSTANCE_ENV`,
    `URLBASE_ENV`, `APIKEY_ENV`.
 4. **Estado** — quatro globais mutáveis: `added` (instâncias,
    `{id,title,data,abs,libs,vpn,hw,solver}` — `abs` só quando o caminho da mídia
