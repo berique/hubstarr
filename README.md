@@ -51,8 +51,10 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
 - **qBittorrent.conf pronta**: quando ele está na stack, uma quarta aba gera a
   configuração inicial dele — pastas iguais às do compose, ajustes de proxy
   reverso e as credenciais no formato do próprio qBittorrent 5.2: a senha em
-  PBKDF2-SHA512 e a API key `qbt_` + 28 caracteres. Usuário, senha e chave se
-  editam no modal dele, e o arquivo é montado por cima do `/config`.
+  PBKDF2-SHA512 e a API key `qbt_` + 28 caracteres, derivada da
+  `${STARR_APIKEY}` da stack — a conf é lida por ele, não pelo compose, então a
+  variável não seria expandida ali. Usuário, senha e chave se editam no modal
+  dele, e o arquivo é montado por cima do `/config`.
 - **HTTPS opcional**, com o certificado e a chave vindos do host.
 - **Configuração** (botão no topo): escolher quais instâncias o Prowlarr vai
   configurar, quais *arr recebem cada cliente de download (qBittorrent,

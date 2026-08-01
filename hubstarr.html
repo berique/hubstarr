@@ -657,7 +657,8 @@ const I18N = {
   'qbt.hashing':'calculando o hash da senha…',
   'qbt.proxy':'atrás do nginx: sem autenticação por endereço e com o proxy confiável',
   'qbt.apiKey':'a API key vai no header Authorization: Bearer <chave> — é o que os *arr usam para falar com ele sem sessão',
-  'm.apiKeyWhy':'A chave da API do qBittorrent 5.2, no formato dele: <b>qbt_</b> e mais 28 caracteres. Entra na <b>qBittorrent.conf</b> como <b>WebUI\\APIKey</b> e é usada no header <b>Authorization: Bearer</b>. O botão sorteia outra.',
+  'qbt.apiKeyStack':'a API key vem da ${STARR_APIKEY} do .env, no formato que o qBittorrent exige — ela vai no header Authorization: Bearer <chave>',
+  'm.apiKeyWhy':'A chave da API do qBittorrent 5.2, no formato dele: <b>qbt_</b> e mais 28 caracteres. Vem da chave da stack — a <b>${STARR_APIKEY}</b> do Ambiente — mapeada nesse formato, porque a conf é lida pelo qBittorrent, não pelo compose, e a variável não seria expandida ali. Sortear outra aqui a desliga da chave da stack; apagar o campo volta a acompanhá-la.',
   'm.user':'Usuário',
   'm.pass':'Senha',
   'm.webAuthWhy':'Entram prontos na <b>qBittorrent.conf</b> que o Hubstarr gera: o usuário como está e a senha em PBKDF2, como o próprio qBittorrent a guarda. Assim a interface já sobe com essa credencial, sem a senha temporária do log.',
@@ -909,7 +910,8 @@ const I18N = {
   'qbt.hashing':'hashing the password…',
   'qbt.proxy':'behind nginx: no host-based auth, and the proxy is trusted',
   'qbt.apiKey':'the API key goes in the Authorization: Bearer <key> header — that is how the *arr apps talk to it without a session',
-  'm.apiKeyWhy':'The qBittorrent 5.2 API key, in its own format: <b>qbt_</b> plus 28 characters. It lands in <b>qBittorrent.conf</b> as <b>WebUI\\APIKey</b> and is used in the <b>Authorization: Bearer</b> header. The button rolls a new one.',
+  'qbt.apiKeyStack':'the API key comes from ${STARR_APIKEY} in the .env, in the format qBittorrent requires — it goes in the Authorization: Bearer <key> header',
+  'm.apiKeyWhy':'The qBittorrent 5.2 API key, in its own format: <b>qbt_</b> plus 28 characters. It is derived from the stack key — <b>${STARR_APIKEY}</b> in the Environment — mapped into that format, because the conf is read by qBittorrent, not by compose, so the variable would not be expanded there. Rolling a new one here detaches it from the stack key; clearing the field makes it follow again.',
   'm.user':'Username',
   'm.pass':'Password',
   'm.webAuthWhy':'They go straight into the <b>qBittorrent.conf</b> Hubstarr generates: the username as is, the password as PBKDF2, the way qBittorrent itself stores it. The web UI then comes up with this credential, no temporary password from the log.',
@@ -1161,7 +1163,8 @@ const I18N = {
   'qbt.hashing':'calculando el hash de la contraseña…',
   'qbt.proxy':'detrás de nginx: sin autenticación por dirección y con el proxy de confianza',
   'qbt.apiKey':'la API key va en el header Authorization: Bearer <clave> — es lo que usan los *arr para hablar con él sin sesión',
-  'm.apiKeyWhy':'La clave de API de qBittorrent 5.2, en su formato: <b>qbt_</b> más 28 caracteres. Entra en el <b>qBittorrent.conf</b> como <b>WebUI\\APIKey</b> y se usa en el header <b>Authorization: Bearer</b>. El botón sortea otra.',
+  'qbt.apiKeyStack':'la API key viene de ${STARR_APIKEY} del .env, en el formato que exige qBittorrent — va en el header Authorization: Bearer <clave>',
+  'm.apiKeyWhy':'La clave de API de qBittorrent 5.2, en su formato: <b>qbt_</b> más 28 caracteres. Viene de la clave de la stack — la <b>${STARR_APIKEY}</b> del Entorno — mapeada a ese formato, porque la conf la lee qBittorrent, no compose, y la variable no se expandiría ahí. Sortear otra aquí la desconecta de la clave de la stack; vaciar el campo vuelve a seguirla.',
   'm.user':'Usuario',
   'm.pass':'Contraseña',
   'm.webAuthWhy':'Entran listos en el <b>qBittorrent.conf</b> que genera Hubstarr: el usuario tal cual y la contraseña en PBKDF2, como la guarda el propio qBittorrent. Así la interfaz ya arranca con esa credencial, sin la contraseña temporal del log.',
@@ -1265,6 +1268,14 @@ let QBIT_ITERS = 100000;
 const QBIT_ALPHA = '23456789ABCDEFGHIJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz';
 const qbitApiKey = ()=> 'qbt_' + Array.from(crypto.getRandomValues(new Uint8Array(28)),
   b => QBIT_ALPHA[b % QBIT_ALPHA.length]).join('');
+/* A chave da stack (${STARR_APIKEY}) mapeada no alfabeto do qBittorrent: a
+   conf é um INI lido por ele, não pelo compose, então a variável não seria
+   expandida ali — e um valor fora do formato dele é ignorado. Derivando,
+   continua havendo uma chave só: mudou a do Ambiente, muda esta junto. */
+const qbitKeyFrom = k => 'qbt_' + Array.from(String(k).slice(0, 28).padEnd(28, '0'),
+  ch => QBIT_ALPHA[parseInt(ch, 36) % QBIT_ALPHA.length]).join('');
+// vazio no DEFAULTS = "acompanhe a chave da stack"
+const qbitKey = ()=> DEFAULTS.qbitKey || qbitKeyFrom(DEFAULTS.apiKey);
 let qbitHash = {pass:null, value:''};
 const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
 
@@ -1378,7 +1389,7 @@ const DEFAULTS = {restart:'unless-stopped',
                   // chave de API por app, preenchida no Ambiente
                   apiKey:randKey(),
                   // interface do qBittorrent
-                  qbitUser:'admin', qbitPass:randKey(), qbitKey:qbitApiKey(),
+                  qbitUser:'admin', qbitPass:randKey(), qbitKey:'',
                   // TLS no nginx: caminhos do host, montados só-leitura
                   tls:false, domain:'', cert:'/etc/letsencrypt/live/exemplo/fullchain.pem',
                   tlsKey:'/etc/letsencrypt/live/exemplo/privkey.pem',
@@ -1649,7 +1660,7 @@ function openModal(id, key){
   // as credenciais da VPN vivem no modal do gluetun, não no Ambiente
   $('#mWebAuth').style.display = s.webAuth ? 'block' : 'none';
   if(s.webAuth){ $('#mUser').value = DEFAULTS.qbitUser; $('#mPass').value = DEFAULTS.qbitPass;
-                 $('#mApiKey').value = DEFAULTS.qbitKey; }
+                 $('#mApiKey').value = qbitKey(); }
   $('#mVpnCfg').style.display = s.vpnCfg ? 'block' : 'none';
   if(s.vpnCfg){
     $('#gProv').value=DEFAULTS.vpnProv; $('#gType').value=DEFAULTS.vpnType;
@@ -1720,7 +1731,8 @@ $('#mSave').onclick = ()=>{
   if(s.webAuth){
     Object.assign(DEFAULTS, {qbitUser:$('#mUser').value.trim() || 'admin',
                              qbitPass:$('#mPass').value || DEFAULTS.qbitPass,
-                             qbitKey:$('#mApiKey').value.trim() || DEFAULTS.qbitKey});
+                             qbitKey:(v=>v === qbitKeyFrom(DEFAULTS.apiKey) ? '' : v)
+                                      ($('#mApiKey').value.trim())});
     refreshQbitHash();
   }
   if(s.vpnCfg) Object.assign(DEFAULTS, {
@@ -2418,9 +2430,9 @@ function buildQbit(list){
     Q.push(kv('WebUI\\Password_PBKDF2', `"${qbitHash.value}"`));
   else
     Q.push(c(t('qbt.hashing')));
-  Q.push(kv('WebUI\\APIKey', DEFAULTS.qbitKey));
+  Q.push(kv('WebUI\\APIKey', qbitKey()));
   Q.push(``);
-  Q.push(c(t('qbt.apiKey')));
+  Q.push(c(t(DEFAULTS.qbitKey ? 'qbt.apiKey' : 'qbt.apiKeyStack')));
   Q.push(``);
   Q.push(c(t('qbt.proxy')));
   Q.push(kv('WebUI\\LocalHostAuth', 'false'));

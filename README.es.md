@@ -54,9 +54,10 @@ defecto:
 - **qBittorrent.conf lista**: cuando está en la stack, una cuarta pestaña
   genera su configuración inicial — rutas iguales a las del compose, ajustes de
   proxy inverso y las credenciales en el formato del propio qBittorrent 5.2: la
-  contraseña en PBKDF2-SHA512 y la API key `qbt_` más 28 caracteres. Usuario,
-  contraseña y clave se editan en su modal, y el archivo se monta sobre
-  `/config`.
+  contraseña en PBKDF2-SHA512 y la API key `qbt_` más 28 caracteres, derivada
+  de la `${STARR_APIKEY}` de la stack — la conf la lee qBittorrent, no compose,
+  así que la variable no se expandiría ahí. Usuario, contraseña y clave se
+  editan en su modal, y el archivo se monta sobre `/config`.
 - **HTTPS opcional**, con el certificado y la clave provenientes del host.
 - **Configuración** (botón arriba): elegir qué instancias configurará Prowlarr,
   qué *arr reciben cada cliente de descarga (qBittorrent, SABnzbd) y con qué

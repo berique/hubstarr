@@ -52,9 +52,10 @@ The combobox lists the available services with their logos and default ports:
 - **A ready qBittorrent.conf**: when it is in the stack, a fourth tab generates
   its initial configuration — paths matching the compose file, reverse-proxy
   settings and the credentials in qBittorrent 5.2's own format: the password as
-  PBKDF2-SHA512 and the API key as `qbt_` plus 28 characters. Username,
-  password and key are edited in its modal, and the file is mounted over
-  `/config`.
+  PBKDF2-SHA512 and the API key as `qbt_` plus 28 characters, derived from the
+  stack's `${STARR_APIKEY}` — the conf is read by qBittorrent, not by compose,
+  so the variable would not be expanded there. Username, password and key are
+  edited in its modal, and the file is mounted over `/config`.
 - **Optional HTTPS**, with the certificate and key coming from the host.
 - **Configuration** (button at the top): pick which instances Prowlarr will
   configure, which *arr apps get each download client (qBittorrent, SABnzbd)
