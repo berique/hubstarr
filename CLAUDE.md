@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Hubstarr é um protótipo de página única que gera `docker-compose.yml`, `.env` e
 `nginx.conf` de uma stack de mídia (*arr + clientes de download + servidor de
 mídia). **Todo o projeto é um único arquivo**: `hubstarr.html`
-(~2570 linhas: CSS, HTML e um `<script>` inline).
+(~2660 linhas: CSS, HTML e um `<script>` inline).
 
 Não há build, testes, lint, package manager nem backend. Para rodar, abra o
 arquivo no navegador — nada de servidor. O `.mvn/` é resto de outro projeto e
@@ -65,6 +65,9 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    pasta de config), `route()`, `url()`, `cfgPath`/`dataPath` (com variáveis
    `${...}` do `.env`) e `cfgReal`/`dataReal` (caminhos resolvidos, para o hint
    do modal). Alterar `cname` afeta compose, nginx e `.env` ao mesmo tempo.
+   `dupPaths()` compara os caminhos já resolvidos e avisa, no rodapé da lista,
+   quando duas instâncias caem na mesma pasta — Jellyfin e Bazarr ficam fora,
+   um monta a biblioteca inteira e o outro segue as instâncias.
    Quem monta pasta de outro serviço passa por `derivedMounts()` (Bazarr) e
    `extraLibs()` (Jellyfin, que junta as pastas de fora das outras instâncias
    com as do "+ pasta") — os dois já devolvem o caminho certo de cada instância,
@@ -131,7 +134,10 @@ handler de `#mSave`.
   `container:porta-interna`. Quem roteia pela VPN usa
   `network_mode: service:gluetun` e responde no endereço do gluetun.
 - **Volumes em sintaxe longa**, com `type: bind` e `bind.propagation: rslave`.
-- **Cada subpath do nginx casa com a base URL do app** (`<APP>__SERVER__URLBASE`).
+- **Cada subpath do nginx casa com a base URL do app**: nos *arr é a variável
+  `<APP>__SERVER__URLBASE`; no Jellyfin é o `BaseUrl` do `network.xml`, que por
+  isso é gerado. Serviço servido em subpath sem esse ajuste monta os links na
+  raiz e quebra atrás do proxy.
 - **Serviço `internal` não vira rota**: gluetun e FlareSolverr existem para os
   outros containers, então ficam sem `location`, sem link e fora da contagem de
   rotas — mas continuam no compose. Ao acrescentar um serviço assim, use a
