@@ -148,8 +148,9 @@ handler de `#mSave`.
   `base64(sal):base64(hash)`; a API key é `qbt_` + 28 caracteres de um alfabeto
   sem os parecidos. Os dois foram conferidos no fonte da 5.2.3 —
   `base/utils/password.cpp` e `base/utils/apikey.cpp`. Ao mexer nisso, confira
-  no fonte da versão em uso; formato errado vira app que não abre. O hash é assíncrono (WebCrypto): `refreshQbitHash()` devolve a
-  promessa e redesenha quando ela chega.
+  no fonte da versão em uso; formato errado vira app que não abre. O hash é
+  assíncrono (WebCrypto): `refreshQbitHash()` devolve a promessa e redesenha
+  quando ela chega.
 - **Favicon em três lugares, uma arte só**: o data URI no `<link rel="icon">`
   (o que faz o arquivo aberto do disco ter ícone), o `favicon.ico` da raiz (para
   quem serve a página) e o `docs/logo.svg` do título do README. Mudou a marca,
