@@ -33,7 +33,11 @@ The combobox lists the available services with their logos and default ports:
 - **API key** in the Environment: a single one for the whole stack. Sonarr,
   Radarr, Lidarr and Prowlarr land in the compose file with
   `<APP>__AUTH__APIKEY=${STARR_APIKEY}`, and SABnzbd with
-  `SAB_API_KEY=${STARR_APIKEY}`; the value stays in `.env`. The key
+  `SAB_API_KEY=${STARR_APIKEY}`; the value stays in `.env`. qBittorrent, which
+  does not use that key, comes out with `QBT_USERNAME` and `QBT_PASSWORD`
+  pointing at `QBIT_USER`/`QBIT_PASS` in `.env` — the linuxserver image does not
+  read those yet, so for now the password is still the temporary one from the
+  log, changed in the UI. The key
   is generated up front — 16 random bytes in hex, the same as
   `openssl rand -hex 16` — and the "Generate" button rolls a new one.
 - **Jellyfin hardware acceleration**: CPU, Intel or NVIDIA. Intel gets

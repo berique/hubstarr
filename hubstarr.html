@@ -619,6 +619,8 @@ const I18N = {
   'env.secUser':'usuário e fuso dos containers',
   'env.secVpn':'VPN (gluetun)',
   'env.secApi':'API key (*arr)',
+  'yml.webAuth':'usuário e senha da interface — a imagem do linuxserver ainda não os lê; até ela ler, troque a senha na própria interface (a temporária sai no log do container)',
+  'env.secWeb':'interface do qBittorrent',
   'env.apiHint':'A mesma chave vale para todos os *arr, como um <b>openssl rand -hex 16</b>.',
   'btn.gen':'Gerar',
   'env.secTls':'TLS',
@@ -862,6 +864,8 @@ const I18N = {
   'env.secUser':'container user and time zone',
   'env.secVpn':'VPN (gluetun)',
   'env.secApi':'API key (*arr)',
+  'yml.webAuth':'web UI username and password — the linuxserver image does not read them yet; until it does, change the password in the UI itself (the temporary one is printed in the container log)',
+  'env.secWeb':'qBittorrent web UI',
   'env.apiHint':'One key for every *arr, like an <b>openssl rand -hex 16</b>.',
   'btn.gen':'Generate',
   'env.secTls':'TLS',
@@ -1105,6 +1109,8 @@ const I18N = {
   'env.secUser':'usuario y zona horaria de los contenedores',
   'env.secVpn':'VPN (gluetun)',
   'env.secApi':'API key (*arr)',
+  'yml.webAuth':'usuario y contraseña de la interfaz — la imagen de linuxserver todavía no los lee; hasta que lo haga, cambia la contraseña en la propia interfaz (la temporal sale en el log del contenedor)',
+  'env.secWeb':'interfaz de qBittorrent',
   'env.apiHint':'La misma clave vale para todos los *arr, como un <b>openssl rand -hex 16</b>.',
   'btn.gen':'Generar',
   'env.secTls':'TLS',
@@ -1210,6 +1216,10 @@ const APIKEY_ENV = {sonarr:'SONARR__AUTH__APIKEY', radarr:'RADARR__AUTH__APIKEY'
                     sabnzbd:'SAB_API_KEY'};
 // variável única que carrega a chave de todos os *arr
 const APIKEY_VAR = 'STARR_APIKEY';
+/* credenciais da interface web, para quem não usa a chave da stack. As
+   variáveis do container e as do .env, nessa ordem. */
+const AUTH_ENV = {qbittorrent:{user:['QBT_USERNAME','QBIT_USER'],
+                               pass:['QBT_PASSWORD','QBIT_PASS']}};
 // onde o certificado e a chave aparecem dentro do container do nginx
 const TLS_CERT = '/etc/nginx/certs/fullchain.pem';
 const TLS_KEY  = '/etc/nginx/certs/privkey.pem';
@@ -1299,6 +1309,8 @@ const DEFAULTS = {restart:'unless-stopped',
                   // gluetun
                   // chave de API por app, preenchida no Ambiente
                   apiKey:randKey(),
+                  // interface do qBittorrent
+                  qbitUser:'admin', qbitPass:randKey(),
                   // TLS no nginx: caminhos do host, montados só-leitura
                   tls:false, domain:'', cert:'/etc/letsencrypt/live/exemplo/fullchain.pem',
                   tlsKey:'/etc/letsencrypt/live/exemplo/privkey.pem',
@@ -2123,6 +2135,11 @@ function build(){
       }
       if(APIKEY_ENV[s.id])
         L.push(`      - <span class="v">${APIKEY_ENV[s.id]}=\${${APIKEY_VAR}}</span>`);
+      if(AUTH_ENV[s.id]){
+        L.push(`      <span class="c"># ${t('yml.webAuth')}</span>`);
+        Object.values(AUTH_ENV[s.id]).forEach(([env, v])=>
+          L.push(`      - <span class="v">${env}=\${${v}}</span>`));
+      }
     }
     if(!s.noVol){
       // sintaxe longa: bind mount com propagação rslave
@@ -2274,6 +2291,12 @@ function buildEnv(list){
     E.push(``);
     E.push(`<span class="c"># ${t('env.secApi')}</span>`);
     E.push(`<span class="k">${APIKEY_VAR}</span>=<span class="v">${DEFAULTS.apiKey}</span>`);
+  }
+  if(list.some(a=>AUTH_ENV[a.id])){
+    E.push(``);
+    E.push(`<span class="c"># ${t('env.secWeb')}</span>`);
+    E.push(`<span class="k">QBIT_USER</span>=<span class="v">${DEFAULTS.qbitUser}</span>`);
+    E.push(`<span class="k">QBIT_PASS</span>=<span class="v">${DEFAULTS.qbitPass}</span>`);
   }
   if(DEFAULTS.tls){
     E.push(``);

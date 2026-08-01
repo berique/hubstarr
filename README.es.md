@@ -35,7 +35,11 @@ defecto:
 - **API key** en el Entorno: una sola para toda la stack. Sonarr, Radarr,
   Lidarr y Prowlarr salen en el compose con
   `<APP>__AUTH__APIKEY=${STARR_APIKEY}`, y SABnzbd con
-  `SAB_API_KEY=${STARR_APIKEY}`; el valor queda en el `.env`. La clave
+  `SAB_API_KEY=${STARR_APIKEY}`; el valor queda en el `.env`. qBittorrent, que
+  no usa esa clave, sale con `QBT_USERNAME` y `QBT_PASSWORD` apuntando a
+  `QBIT_USER`/`QBIT_PASS` del `.env` — la imagen de linuxserver todavía no lee
+  esas variables, así que por ahora la contraseña sigue siendo la temporal del
+  log, cambiada en la interfaz. La clave
   nace sorteada — 16 bytes en hexadecimal, lo mismo que
   `openssl rand -hex 16` — y el botón "Generar" sortea otra.
 - **Aceleración por hardware de Jellyfin**: CPU, Intel o NVIDIA. Intel recibe
