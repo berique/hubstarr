@@ -32,8 +32,9 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
   nginx. O Bazarr não expõe essa variável — a base fica na interface dele.
 - **API key** no Ambiente: uma só para toda a stack. Sonarr, Radarr, Lidarr e
   Prowlarr saem no compose com `<APP>__AUTH__APIKEY=${STARR_APIKEY}`, e o
-  SABnzbd com `SAB_API_KEY=${STARR_APIKEY}`; o valor fica no `.env`. A chave já nasce sorteada — 16 bytes em hexadecimal, o mesmo
-  que `openssl rand -hex 16` — e o botão "Gerar" sorteia outra.
+  SABnzbd com `SAB_API_KEY=${STARR_APIKEY}`; o valor fica no `.env`. A chave já
+  nasce sorteada — 16 bytes em hexadecimal, o mesmo que `openssl rand -hex 16`
+  — e o botão "Gerar" sorteia outra.
 - **Aceleração de hardware do Jellyfin**: CPU, Intel ou NVIDIA. Intel ganha
   `devices: /dev/dri:/dev/dri`; NVIDIA, a reserva de GPU em `deploy` e as
   variáveis `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES`.
