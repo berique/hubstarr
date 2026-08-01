@@ -53,8 +53,10 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
   abre uma explicação do que aquele valor faz — e, no Ambiente, de como ele sai
   nos arquivos gerados.
 - **network.xml do Jellyfin**: com ele na stack, sai também a configuração de
-  rede dele, com o `BaseUrl` no subpath do nginx — sem isso a interface monta os
-  links na raiz e quebra atrás do proxy. Montada em `/config/config/network.xml`.
+  rede dele, com o `BaseUrl` no subpath do nginx e o `nginx` em `KnownProxies` —
+  sem o primeiro a interface monta os links na raiz, sem o segundo ele registra
+  o IP do proxy no lugar do IP de quem pediu. Montada em
+  `/config/config/network.xml`.
 - **qBittorrent.conf pronta**: quando ele está na stack, uma quarta aba gera a
   configuração inicial dele — pastas iguais às do compose, ajustes de proxy
   reverso e as credenciais no formato do próprio qBittorrent 5.2: a senha em

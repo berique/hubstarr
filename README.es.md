@@ -56,8 +56,9 @@ defecto:
   `?` que abre una explicación de lo que hace ese valor — y, en el Entorno, de
   cómo sale en los archivos generados.
 - **network.xml de Jellyfin**: con él en la stack, sale también su
-  configuración de red, con el `BaseUrl` en el subpath de nginx — sin eso la
-  interfaz arma los enlaces en la raíz y se rompe detrás del proxy. Montado en
+  configuración de red, con el `BaseUrl` en el subpath de nginx y `nginx` en
+  `KnownProxies` — sin lo primero la interfaz arma los enlaces en la raíz, sin
+  lo segundo registra la IP del proxy en vez de la de quien pidió. Montado en
   `/config/config/network.xml`.
 - **qBittorrent.conf lista**: cuando está en la stack, una cuarta pestaña
   genera su configuración inicial — rutas iguales a las del compose, ajustes de

@@ -2496,7 +2496,11 @@ function buildJellyfin(list){
   tag('string', '10.0.0.0/24', '    ');
   close('LocalNetworkSubnets');
   empty('LocalNetworkAddresses');
-  empty('KnownProxies');
+  // quem chega é sempre o reverse proxy: sem isso o Jellyfin vê o IP dele
+  // no lugar do IP de quem pediu
+  open('KnownProxies');
+  tag('string', NGINX.id, '    ');
+  close('KnownProxies');
   tag('IgnoreVirtualInterfaces', 'true');
   open('VirtualInterfaceNames');
   tag('string', 'veth', '    ');
