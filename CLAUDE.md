@@ -139,7 +139,8 @@ handler de `#mSave`.
 - **Volumes em sintaxe longa**, com `type: bind` e `bind.propagation: rslave`.
 - **Cada subpath do nginx casa com a base URL do app**: nos *arr é a variável
   `<APP>__SERVER__URLBASE`; no Jellyfin é o `BaseUrl` do `network.xml`, que por
-  isso é gerado. Serviço servido em subpath sem esse ajuste monta os links na
+  isso é gerado; no Seerr, que não tem base URL, é a flag `subpathFix` — o
+  `location` tira o prefixo e reescreve redirects e HTML no caminho de volta. Serviço servido em subpath sem esse ajuste monta os links na
   raiz e quebra atrás do proxy.
 - **Serviço `internal` não vira rota**: gluetun e FlareSolverr existem para os
   outros containers, então ficam sem `location`, sem link e fora da contagem de

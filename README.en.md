@@ -171,6 +171,10 @@ Not every service becomes a route: `gluetun` and FlareSolverr only talk to the
 other containers, so they get no `location` and no link button — Prowlarr
 reaches FlareSolverr straight over the stack network.
 
+Seerr is the opposite: it has no base URL at all, so its `location` strips the
+prefix on the way in and rewrites what comes back — the redirect headers and
+the paths it writes into the HTML, through `sub_filter`.
+
 The Environment can turn **TLS** on: `nginx.conf` then gets a `server` on 443
 with `ssl_certificate`, TLSv1.2/1.3, and a block on 80 that only redirects to
 https. The certificate and the key are host paths, entered in the same place,

@@ -650,6 +650,9 @@ const I18N = {
   'env.tlsHint':'Os caminhos são do host e entram no compose como <b>${TLS_CERT}</b> e <b>${TLS_KEY}</b>, montados só-leitura no nginx. Sem TLS, a stack fica só na porta 80.',
   'env.phDomain':'midia.seudominio.com',
   'ngx.redirect':'redireciona http para https',
+  'ngx.stripPath':'o Seerr não conhece o subpath: ele sai daqui',
+  'ngx.redirects':'redirects que ele devolve na raiz',
+  'ngx.subFilter':'e os caminhos que ele escreve no HTML',
   'env.phProvider':'seu-provedor',
   'env.phKey':'SUA_CHAVE_PRIVADA',
   'env.phUser':'usuario',
@@ -904,6 +907,9 @@ const I18N = {
   'env.tlsHint':'These are host paths; they land in the compose file as <b>${TLS_CERT}</b> and <b>${TLS_KEY}</b>, mounted read-only into nginx. Without TLS the stack stays on port 80 only.',
   'env.phDomain':'media.yourdomain.com',
   'ngx.redirect':'redirects http to https',
+  'ngx.stripPath':'Seerr knows nothing about the subpath: it is stripped here',
+  'ngx.redirects':'the redirects it answers with, rooted',
+  'ngx.subFilter':'and the paths it writes into the HTML',
   'env.phProvider':'your-provider',
   'env.phKey':'YOUR_PRIVATE_KEY',
   'env.phUser':'username',
@@ -1158,6 +1164,9 @@ const I18N = {
   'env.tlsHint':'Las rutas son del host y entran en el compose como <b>${TLS_CERT}</b> y <b>${TLS_KEY}</b>, montadas de solo lectura en nginx. Sin TLS, la stack se queda solo en el puerto 80.',
   'env.phDomain':'media.tudominio.com',
   'ngx.redirect':'redirige http a https',
+  'ngx.stripPath':'Seerr no conoce el subpath: se quita aquí',
+  'ngx.redirects':'los redirects que devuelve en la raíz',
+  'ngx.subFilter':'y las rutas que escribe en el HTML',
   'env.phProvider':'tu-proveedor',
   'env.phKey':'TU_CLAVE_PRIVADA',
   'env.phUser':'usuario',
@@ -1244,7 +1253,7 @@ const SERVICES = [
   {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true, cdh:true},
   {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true,
    conf:{host:'config/config/network.xml', target:'/config/config/network.xml', pane:'#outJf', tab:'jf'}},
-  {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5'},
+  {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5', subpathFix:true},
   {id:'heimdall', name:'Heimdall',  port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f', fixed:true, noLink:true},
   {id:'flaresolverr',name:'FlareSolverr',port:8191,img:'ghcr.io/thephaseless/byparr:latest',color:'#ff7f50',noVol:true, internal:true},
   {id:'gluetun',  name:'Gluetun',   port:8000, img:'qmcgaw/gluetun:latest',                color:'#8b98a5', noVol:true, internal:true, vpnCfg:true},
@@ -2360,6 +2369,7 @@ function buildNginx(list){
     N.push(`    <span class="k">proxy_http_version</span> <span class="v">1.1</span>;`);
     N.push(`    <span class="k">proxy_set_header</span> <span class="v">Upgrade $http_upgrade</span>;`);
     N.push(`    <span class="k">proxy_set_header</span> <span class="v">Connection $http_connection</span>;`);
+    if(svc(a.id).subpathFix) subpathFix(N, cname(a));
     N.push(`  }`);
   });
 
@@ -2419,6 +2429,44 @@ function buildEnv(list){
     E.push(`<span class="k">SERVER_COUNTRIES</span>=${val(DEFAULTS.countries, t('env.phCountry'))}`);
   }
   return E.join('\n');
+}
+
+/* O Seerr não tem base URL: servido em subpath, ele responde com caminhos
+   absolutos da raiz. O jeito conhecido é tirar o prefixo na entrada e reescrever
+   o que voltar — os cabeçalhos de redirect e o HTML, pelo sub_filter. */
+function subpathFix(N, name){
+  const k = (key, val) => N.push(`    <span class="k">${key}</span> <span class="v">${val}</span>;`);
+  const c = txt => N.push(`    <span class="c"># ${txt}</span>`);
+  N.push(``);
+  k('set', `$app '${name}'`);
+  c(t('ngx.stripPath'));
+  k('rewrite', `^/${name}/?(.*)$ /$1 break`);
+  N.push(``);
+  c(t('ngx.redirects'));
+  k('proxy_redirect', '^ /$app');
+  k('proxy_redirect', '/setup /$app/setup');
+  k('proxy_redirect', '/login /$app/login');
+  N.push(``);
+  c(t('ngx.subFilter'));
+  k('proxy_set_header', 'Accept-Encoding ""');
+  k('sub_filter_once', 'off');
+  k('sub_filter_types', '*');
+  [[`'href="/"'`, `'href="/$app"'`],
+   [`'href="/login"'`, `'href="/$app/login"'`],
+   [`'href:"/"'`, `'href:"/$app"'`],
+   [`'\\/_next'`, `'\\/$app\\/_next'`],
+   [`'/_next'`, `'/$app/_next'`],
+   [`'/api/v1'`, `'/$app/api/v1'`],
+   [`'/login/plex/loading'`, `'/$app/login/plex/loading'`],
+   [`'/images/'`, `'/$app/images/'`],
+   [`'/imageproxy/'`, `'/$app/imageproxy/'`],
+   [`'/avatarproxy/'`, `'/$app/avatarproxy/'`],
+   [`'/android-'`, `'/$app/android-'`],
+   [`'/apple-'`, `'/$app/apple-'`],
+   [`'/favicon'`, `'/$app/favicon'`],
+   [`'/logo_'`, `'/$app/logo_'`],
+   [`'/site.webmanifest'`, `'/$app/site.webmanifest'`],
+  ].forEach(([from, to])=> k('sub_filter', `${from} ${to}`));
 }
 
 /* Duas instâncias apontadas para a mesma pasta se atropelam: cada uma importa

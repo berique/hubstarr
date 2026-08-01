@@ -170,6 +170,10 @@ Nem todo serviço vira rota: o `gluetun` e o FlareSolverr só conversam com os
 outros containers, então não ganham `location` nem botão de link — o Prowlarr
 fala com o FlareSolverr direto pela rede da stack.
 
+O Seerr é o oposto: não tem base URL nenhuma, então o `location` dele tira o
+prefixo na entrada e reescreve o que volta — os cabeçalhos de redirect e os
+caminhos que ele escreve no HTML, por `sub_filter`.
+
 No Ambiente dá para ligar o **TLS**: o `nginx.conf` passa a ter um `server` na
 443 com `ssl_certificate`, TLSv1.2/1.3 e um bloco na 80 que só redireciona para
 o https. O certificado e a chave são caminhos do host, informados no mesmo
