@@ -204,12 +204,46 @@ os textos estáticos são marcados com `data-i18n` (ou `data-i18n-html`,
 `data-i18n-ph`, `data-i18n-title`). Adicionar um idioma é copiar um dos blocos
 e traduzir os valores.
 
+## Servidor (opcional)
+
+A página continua funcionando sozinha, aberta do disco. Quem quiser que o botão
+"Criar stack" crie a stack de verdade pode subir o servidor que está em
+`backend/` — um binário em Rust que faz o que o navegador não alcança:
+
+```sh
+cd backend
+cargo run --release -- --dir ~/starr
+```
+
+Depois é só abrir <http://127.0.0.1:7878>. A página servida por ele é a mesma
+`hubstarr.html`, embutida no binário, e ela detecta o servidor sozinha: quando
+há um, aparece a etiqueta *servidor* no cabeçalho e três coisas mudam.
+
+- **Criar stack** grava os arquivos gerados na pasta do `--dir` e roda
+  `docker compose up -d`, com a saída num log ao vivo. Ao lado dele aparece
+  **Derrubar**, que roda o `docker compose down`.
+- **A stack fica guardada.** As instâncias, o Ambiente e a Configuração vão
+  para o `hubstarr.json` da mesma pasta e voltam ao recarregar a página.
+- **A Configuração vira realidade.** Com a stack de pé, o botão *Aplicar a
+  Configuração* usa a API de cada app para criar o que só existe no banco
+  deles: o Prowlarr apontando para cada *arr, os clientes de download com a
+  categoria de cada um, e o Media Management com a nomenclatura. É a única
+  parte da interface que não cabe em arquivo — e ela é idempotente, então
+  aplicar de novo depois de mexer na Configuração é o uso normal.
+
+Sem servidor nada disso aparece, e o comportamento é o de sempre: `.zip` e
+deploy simulado. O servidor nunca gera conteúdo — recebe pronto o que a página
+montou, para os geradores continuarem existindo num lugar só.
+
+Opções: `--dir` (pasta dos arquivos, padrão `./stack`), `--addr` (endereço,
+padrão `127.0.0.1:7878`) e `--docker` (o comando, para quem usa podman).
+
 ## Status
 
-Protótipo de interface: o botão "Criar stack" apenas simula o deploy, e as
-escolhas da **Configuração** ainda não viram chamada de API nenhuma. O
-`docker-compose.yml`, o `.env` e o `nginx.conf` gerados, esses sim, são de
-verdade.
+A página sozinha é um protótipo de interface: sem servidor, o botão "Criar
+stack" apenas simula o deploy e as escolhas da **Configuração** não viram
+chamada de API nenhuma. Os arquivos gerados, esses sempre foram de verdade — e
+com o servidor de `backend/` o deploy e a Configuração também passam a ser.
 
 ## Licença
 

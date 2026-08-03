@@ -205,12 +205,47 @@ on some data. In the HTML, static texts are marked with `data-i18n` (or
 `data-i18n-html`, `data-i18n-ph`, `data-i18n-title`). Adding a language means
 copying one of the blocks and translating the values.
 
+## Server (optional)
+
+The page still works on its own, opened straight from disk. If you want the
+"Create stack" button to actually create the stack, run the server under
+`backend/` — a Rust binary doing what the browser cannot reach:
+
+```sh
+cd backend
+cargo run --release -- --dir ~/starr
+```
+
+Then open <http://127.0.0.1:7878>. The page it serves is the very same
+`hubstarr.html`, embedded in the binary, and it detects the server on its own:
+when there is one, a *server* badge shows up in the header and three things
+change.
+
+- **Create stack** writes the generated files into the `--dir` folder and runs
+  `docker compose up -d`, with the output in a live log. Next to it a **Tear
+  down** button appears, running `docker compose down`.
+- **The stack is remembered.** Instances, Environment and Configuration go into
+  `hubstarr.json` in that same folder and come back when the page reloads.
+- **The configuration becomes real.** With the stack up, the *Apply the
+  configuration* button uses each app's API to create what only exists in their
+  database: Prowlarr pointing at every *arr, the download clients with each
+  one's category, and Media Management along with the naming. It is the only
+  part of the interface that does not fit in a file — and it is idempotent, so
+  applying it again after changing the Configuration is the normal use.
+
+Without a server none of that shows up and the behaviour is the usual one: the
+`.zip` and the simulated deploy. The server never generates content — it
+receives what the page built, so the generators keep living in a single place.
+
+Options: `--dir` (folder for the files, default `./stack`), `--addr` (address,
+default `127.0.0.1:7878`) and `--docker` (the command, for podman users).
+
 ## Status
 
-An interface prototype: the "Create stack" button only simulates the deploy,
-and the **Configuration** choices do not turn into any API call yet. The
-generated `docker-compose.yml`, `.env` and `nginx.conf`, on the other hand, are
-the real thing.
+The page on its own is an interface prototype: with no server, the "Create
+stack" button only simulates the deploy and the **Configuration** choices turn
+into no API call. The generated files were always the real thing — and with the
+server under `backend/`, the deploy and the Configuration become real too.
 
 ## License
 

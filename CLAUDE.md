@@ -6,14 +6,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Hubstarr é um protótipo de página única que gera `docker-compose.yml`, `.env` e
 `nginx.conf` de uma stack de mídia (*arr + clientes de download + servidor de
-mídia). **Todo o projeto é um único arquivo**: `hubstarr.html`
-(~2720 linhas: CSS, HTML e um `<script>` inline).
+mídia). **A página é um único arquivo**: `hubstarr.html` (~3140 linhas: CSS,
+HTML e um `<script>` inline), e é ela que é o produto.
 
-Não há build, testes, lint, package manager nem backend. Para rodar, abra o
-arquivo no navegador — nada de servidor. O `.mvn/` é resto de outro projeto e
-está no `.gitignore`.
+A página não tem build, teste, lint nem package manager: para rodar, abra o
+arquivo no navegador. O `.mvn/` é resto de outro projeto e está no `.gitignore`.
 
-O botão "Criar stack" apenas simula o deploy; os arquivos gerados são reais.
+Ao lado dela existe um servidor **opcional** em `backend/` (Rust, axum). Ele não
+é requisito de nada: aberta do disco, a página continua sendo o protótipo de
+sempre — o botão "Criar stack" simula o deploy e a **Configuração** não sai da
+interface. Servida pelo binário, ela detecta o servidor e passa a criar a stack
+de verdade. Veja "Servidor" mais abaixo.
 
 Licença GPL-3.0 (`LICENSE`, texto oficial da FSF). O aviso de copyright fica no
 comentário logo depois do `<!DOCTYPE html>` — não o remova ao mexer no arquivo,
@@ -95,6 +98,42 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
 8. **ZIP** — `makeZip()` é uma implementação própria do formato (método
    "store", CRC32 manual), justamente para não depender de biblioteca externa.
 
+## Servidor
+
+`backend/` é um crate em Rust (axum + tokio + reqwest) que **nunca gera
+conteúdo**: os geradores continuam sendo os do `<script>`, e o servidor recebe
+pronto o que eles montaram. Quebrar isso é duplicar a geração em duas
+linguagens — foi justamente para não fazer isso que o contrato é esse.
+
+- `main.rs` — argumentos (`--dir`, `--addr`, `--docker`), rotas e a página, que
+  entra no binário por `include_str!("../../hubstarr.html")`: uma cópia só do
+  arquivo da raiz, não um fork dele.
+- `files.rs` — grava o que a página mandou. `safe_join` recusa `..`, caminho
+  absoluto e barra invertida; os nomes vêm com subpasta (`nginx/conf.d/…`),
+  então precisam mesmo ser conferidos.
+- `deploy.rs` — `docker compose up -d` / `down`, com as duas saídas copiadas
+  linha a linha para o log.
+- `jobs.rs` — subir a stack e configurar app não cabem numa resposta HTTP:
+  viram trabalho com número, e a página pergunta pelo número.
+- `store.rs` — o estado da página (`added`, `DEFAULTS`, `CONFIG`) em
+  `hubstarr.json`, guardado como veio, sem olhar dentro.
+- `arr.rs` — o consumidor do `CONFIG`, que até então não chegava a arquivo
+  nenhum. Aplica Prowlarr, clientes de download e Media Management pela API dos
+  apps, alcançando-os pelo nginx (mesmo endereço do navegador, então o subpath
+  já está certo) e montando cada recurso a partir do `schema` que o próprio app
+  publica. É idempotente: recurso com aquele nome é atualizado, não duplicado.
+
+Do lado da página, a seção `/* ---------- servidor (opcional) ---------- */`
+tem `detectServer()` (só tenta em `http(s):`), `outFiles()` — a lista de
+arquivos que o `.zip` e o servidor compartilham —, `runJob()` e `configPlan()`.
+O `configPlan()` é onde o `CONFIG` vira nome de campo de API (`NAMING_API`,
+`CAT_FIELD`, `IMPL`); essa tradução fica aqui porque depende do `cname()` e do
+`route()`, que são derivações daqui. `saveState()` é chamado no fim do
+`render()` e não faz nada sem servidor.
+
+Ao mexer nisso, mantenha o caminho sem servidor intacto: `SERVER` nulo tem de
+deixar a página exatamente como ela era.
+
 ## Quatro padrões que se repetem
 
 **Ajuda por campo.** Marcar uma `.row` de qualquer modal com
@@ -128,9 +167,12 @@ handler de `#mSave`.
 
 ## Invariantes a preservar
 
-- **Zero dependências externas em runtime**: os logotipos são data URI, o ZIP é
-  feito à mão, a lista de fusos vem do `Intl` do navegador. Não introduza CDN,
-  fetch nem npm.
+- **Zero dependências externas em runtime na página**: os logotipos são data
+  URI, o ZIP é feito à mão, a lista de fusos vem do `Intl` do navegador. Não
+  introduza CDN nem npm. O único `fetch` permitido é o do servidor opcional, em
+  endereço relativo (`api/…`), e ele tem de falhar em silêncio: aberta do disco
+  a página não pode nem tentar. O crate do `backend/` tem dependências normais
+  de Cargo — o invariante é da página.
 - **Nenhum serviço publica porta no host**, exceto o nginx. Ele ouve em 80/443
   dentro do container e publica no host as portas do modal próprio dele — o
   "Editar" da linha fixa (`DEFAULTS.http`/`https` → `HTTP_PORT`/`HTTPS_PORT` no

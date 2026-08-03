@@ -208,12 +208,50 @@ el HTML, los textos estáticos van marcados con `data-i18n` (o `data-i18n-html`,
 `data-i18n-ph`, `data-i18n-title`). Añadir un idioma es copiar uno de los
 bloques y traducir los valores.
 
+## Servidor (opcional)
+
+La página sigue funcionando sola, abierta desde el disco. Quien quiera que el
+botón "Crear stack" cree la stack de verdad puede levantar el servidor que está
+en `backend/` — un binario en Rust que hace lo que el navegador no alcanza:
+
+```sh
+cd backend
+cargo run --release -- --dir ~/starr
+```
+
+Después basta abrir <http://127.0.0.1:7878>. La página que sirve es la misma
+`hubstarr.html`, incrustada en el binario, y detecta el servidor sola: cuando
+hay uno, aparece la etiqueta *servidor* en la cabecera y cambian tres cosas.
+
+- **Crear stack** graba los archivos generados en la carpeta del `--dir` y
+  ejecuta `docker compose up -d`, con la salida en un registro en vivo. A su
+  lado aparece **Derribar**, que ejecuta `docker compose down`.
+- **La stack queda guardada.** Las instancias, el Entorno y la Configuración
+  van al `hubstarr.json` de esa misma carpeta y vuelven al recargar la página.
+- **La configuración se vuelve real.** Con la stack levantada, el botón
+  *Aplicar la configuración* usa la API de cada app para crear lo que solo
+  existe en su base de datos: Prowlarr apuntando a cada *arr, los clientes de
+  descarga con la categoría de cada uno, y Media Management junto con la
+  nomenclatura. Es la única parte de la interfaz que no cabe en un archivo — y
+  es idempotente, así que aplicarla de nuevo tras tocar la Configuración es el
+  uso normal.
+
+Sin servidor nada de eso aparece y el comportamiento es el de siempre: el
+`.zip` y el despliegue simulado. El servidor nunca genera contenido — recibe ya
+hecho lo que la página montó, para que los generadores sigan existiendo en un
+solo lugar.
+
+Opciones: `--dir` (carpeta de los archivos, por defecto `./stack`), `--addr`
+(dirección, por defecto `127.0.0.1:7878`) y `--docker` (el comando, para quien
+usa podman).
+
 ## Estado
 
-Prototipo de interfaz: el botón "Crear stack" solo simula el despliegue, y las
-opciones de **Configuración** todavía no se vuelven ninguna llamada de API. El
-`docker-compose.yml`, el `.env` y el `nginx.conf` generados, esos sí, son de
-verdad.
+La página sola es un prototipo de interfaz: sin servidor, el botón "Crear
+stack" solo simula el despliegue y las opciones de **Configuración** no se
+vuelven ninguna llamada de API. Los archivos generados siempre fueron de
+verdad — y con el servidor de `backend/`, el despliegue y la Configuración
+también pasan a serlo.
 
 ## Licencia
 
