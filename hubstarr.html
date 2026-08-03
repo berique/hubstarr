@@ -193,6 +193,15 @@
   .modal .body{padding:16px;overflow:auto}
   /* a Configuração tem campos demais para 520px: ganha mais folga */
   #cfgBack .modal{max-width:860px}
+  /* log do servidor: rola sozinho e não empurra o modal */
+  #logBack .modal{max-width:820px}
+  .log{margin:0 0 12px;padding:10px 12px;height:340px;overflow:auto;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+    line-height:1.5;white-space:pre-wrap;word-break:break-word}
+  /* aviso de servidor no cabeçalho */
+  #srv{font-size:11px;padding:2px 8px;border-radius:999px;
+    border:1px solid var(--ok,#3fb950);color:var(--ok,#3fb950)}
 </style>
 </head>
 <body>
@@ -201,6 +210,7 @@
   <div class="logo">H</div>
   <h1 data-i18n="app.title">Hubstarr &middot; Adicionar *arr Stack</h1>
   <span style="flex:1"></span>
+  <span id="srv" hidden data-i18n="srv.on">servidor</span>
   <select id="langSel" style="width:auto;padding:6px 8px" data-i18n-title="app.lang"></select>
   <button id="themeBtn" data-i18n-title="app.theme">🌙</button>
   <button id="cfgBtn" data-i18n="app.cfg">⇄ Configuração</button>
@@ -256,6 +266,7 @@
       <span class="sp"></span>
       <button id="copy" data-i18n="btn.copy">Copiar</button>
       <button id="dl" data-i18n="btn.zip" data-i18n-title="btn.zipHint">Baixar .zip</button>
+      <button id="down" hidden data-i18n="btn.down" data-i18n-title="btn.downHint">Derrubar</button>
       <button class="primary" id="deploy" data-i18n="btn.deploy">Criar stack</button>
     </div>
   </div>
@@ -270,6 +281,20 @@
       <span class="sp"></span>
       <button id="cfgCancel" data-i18n="btn.cancel">Cancelar</button>
       <button class="primary" id="cfgSave" data-i18n="btn.save">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- log do servidor: só aparece quando há um atrás da página -->
+<div class="backdrop" id="logBack">
+  <div class="modal">
+    <h3 id="logTitle"></h3>
+    <pre class="log" id="logOut"></pre>
+    <div class="bar">
+      <span class="hint" id="logState"></span>
+      <span class="sp"></span>
+      <button id="logApply" hidden data-i18n="btn.apply">Aplicar a Configuração</button>
+      <button class="primary" id="logClose" data-i18n="btn.close">Fechar</button>
     </div>
   </div>
 </div>
@@ -576,6 +601,21 @@ const I18N = {
   'btn.deploy':'Criar stack',
   'btn.deploying':'Criando…',
   'btn.deployed':'Stack criada ✓',
+  'btn.deployFail':'Falhou ✗',
+  'btn.down':'Derrubar',
+  'btn.downHint':'Roda um docker compose down na pasta da stack',
+  'btn.apply':'Aplicar a Configuração',
+  'btn.close':'Fechar',
+  'srv.on':'servidor',
+  'srv.at':d=>`Servidor conectado; os arquivos vão para ${d}`,
+  'srv.noDocker':'o docker não respondeu neste servidor',
+  'log.deploy':'Criando a stack',
+  'log.down':'Derrubando a stack',
+  'log.configure':'Aplicando a Configuração nos apps',
+  'log.running':'rodando…',
+  'log.done':'pronto ✓',
+  'log.fail':'falhou ✗',
+  'log.noServer':'o servidor não respondeu',
 
   'env.h':'⚙ Ambiente',
   'env.tz':'Time Zone',
@@ -838,6 +878,21 @@ const I18N = {
   'btn.deploy':'Create stack',
   'btn.deploying':'Creating…',
   'btn.deployed':'Stack created ✓',
+  'btn.deployFail':'Failed ✗',
+  'btn.down':'Tear down',
+  'btn.downHint':'Runs docker compose down in the stack folder',
+  'btn.apply':'Apply the configuration',
+  'btn.close':'Close',
+  'srv.on':'server',
+  'srv.at':d=>`Server connected; files go to ${d}`,
+  'srv.noDocker':'docker did not answer on this server',
+  'log.deploy':'Creating the stack',
+  'log.down':'Tearing the stack down',
+  'log.configure':'Applying the configuration to the apps',
+  'log.running':'running…',
+  'log.done':'done ✓',
+  'log.fail':'failed ✗',
+  'log.noServer':'the server did not answer',
 
   'env.h':'⚙ Environment',
   'env.tz':'Time zone',
@@ -1100,6 +1155,21 @@ const I18N = {
   'btn.deploy':'Crear stack',
   'btn.deploying':'Creando…',
   'btn.deployed':'Stack creada ✓',
+  'btn.deployFail':'Falló ✗',
+  'btn.down':'Derribar',
+  'btn.downHint':'Ejecuta un docker compose down en la carpeta de la stack',
+  'btn.apply':'Aplicar la configuración',
+  'btn.close':'Cerrar',
+  'srv.on':'servidor',
+  'srv.at':d=>`Servidor conectado; los archivos van a ${d}`,
+  'srv.noDocker':'docker no respondió en este servidor',
+  'log.deploy':'Creando la stack',
+  'log.down':'Derribando la stack',
+  'log.configure':'Aplicando la configuración en las apps',
+  'log.running':'ejecutando…',
+  'log.done':'listo ✓',
+  'log.fail':'falló ✗',
+  'log.noServer':'el servidor no respondió',
 
   'env.h':'⚙ Entorno',
   'env.tz':'Zona horaria',
@@ -2736,6 +2806,7 @@ function render(){
     : `<span class="ok">${t('items.routes', routes)}</span>`;
   $('#stat').textContent = t('out.containers', list.length + 1);   // +1: nginx fixo
   $('#summary').textContent = list.map(a=>a.title||svc(a.id).name).join(' · ') || t('out.empty');
+  saveState();   // com servidor atrás, a stack sobrevive ao reload; sem ele, não faz nada
 }
 
 let tab = 'yml';
@@ -2821,8 +2892,9 @@ function makeZip(files){                       // files: [{name, text}]
                   {type:'application/zip'});
 }
 
-$('#dl').onclick = ()=>{
-  const stack = STACK;
+/* Os arquivos da stack, na forma em que saem daqui: o .zip empacota, o
+   servidor grava. Um lugar só, para os dois nunca discordarem. */
+function outFiles(){
   const files = [
     {name:'docker-compose.yml', text:plain()+'\n'},
     {name:'.env',               text:plainEnv()+'\n'},
@@ -2833,16 +2905,220 @@ $('#dl').onclick = ()=>{
     const cf = svc(x.id).conf, txt = $(cf.pane).textContent;
     if(txt) files.push({name:`${cname(x)}/${cf.host}`, text:txt+'\n'});
   });
-  const blob = makeZip(files);
+  return files;
+}
+
+$('#dl').onclick = ()=>{
+  const stack = STACK;
+  const blob = makeZip(outFiles());
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob); a.download=`${stack}.zip`; a.click();
   URL.revokeObjectURL(a.href);
 };
-$('#deploy').onclick = e=>{
-  e.target.textContent=t('btn.deploying'); e.target.disabled=true;
-  setTimeout(()=>{ e.target.textContent=t('btn.deployed');
-    setTimeout(()=>{e.target.textContent=t('btn.deploy');e.target.disabled=false},1800); },900);
+/* ---------- servidor (opcional) ---------- */
+
+/* A página é a mesma com ou sem servidor: aberta do disco ela continua sendo o
+   protótipo de sempre, com o .zip e o "Criar stack" simulado. `SERVER` só fica
+   preenchido quando alguém responde em `api/health`, e cada caminho novo tem o
+   antigo atrás dele. O servidor não gera nada — recebe pronto o que os
+   geradores daqui montaram. */
+let SERVER = null;
+
+const api = (path, opts) => fetch('api/' + path, Object.assign(
+  {headers:{'Content-Type':'application/json'}, cache:'no-store'}, opts || {}));
+
+// o que sobrevive entre sessões: as instâncias, o ambiente e a Configuração
+const stateNow = ()=> ({added, defaults:DEFAULTS, config:CONFIG});
+
+function applyState(s){
+  if(!s || !Array.isArray(s.added)) return false;
+  added = s.added;
+  if(s.defaults) Object.assign(DEFAULTS, s.defaults);
+  if(s.config)   Object.assign(CONFIG, s.config);
+  ensureFixed();
+  return true;
+}
+
+// guarda no servidor sem atrapalhar a digitação: um PUT depois que ela para
+let saveT = 0;
+function saveState(){
+  if(!SERVER) return;
+  clearTimeout(saveT);
+  saveT = setTimeout(()=>{
+    api('state', {method:'PUT', body:JSON.stringify(stateNow())}).catch(()=>{});
+  }, 500);
+}
+
+async function detectServer(){
+  if(!/^https?:$/.test(location.protocol)) return;   // file:// não tem servidor
+  try{
+    const r = await api('health');
+    if(!r.ok) return;
+    SERVER = await r.json();
+  }catch(e){ return; }
+  $('#srv').hidden = false;
+  $('#srv').title  = t('srv.at', SERVER.dir);
+  $('#down').hidden = false;
+  if(!SERVER.docker) $('#srv').title += ' — ' + t('srv.noDocker');
+  if(!SERVER.saved) return;
+  try{                                  // tinha stack guardada: reabre
+    const r = await api('state');
+    if(r.status === 200 && applyState(await r.json())){
+      closeEnv(); applyI18n(); renderCombo(); renderItems(); render();
+    }
+  }catch(e){}
+}
+
+/* ---------- log dos trabalhos ---------- */
+
+const logLine = s =>{
+  const o = $('#logOut');
+  o.textContent += s + '\n';
+  o.scrollTop = o.scrollHeight;
 };
+function openLog(title){
+  $('#logTitle').textContent = title;
+  $('#logOut').textContent = '';
+  $('#logState').textContent = t('log.running');
+  $('#logApply').hidden = true;
+  $('#logBack').classList.add('open');
+}
+$('#logClose').onclick = ()=> $('#logBack').classList.remove('open');
+
+/* Subir a stack baixa imagem e configurar app espera app responder: o servidor
+   devolve o número do trabalho e a página vai buscando o que ele já escreveu. */
+async function runJob(start, title){
+  openLog(title);
+  let head;
+  try{ head = await (await start()).json(); }
+  catch(e){ logLine(String(e)); }
+  if(!head || !head.ok){
+    logLine((head && head.error) || t('log.noServer'));
+    $('#logState').textContent = t('log.fail');
+    return false;
+  }
+  let seen = 0;
+  for(;;){
+    await new Promise(r=>setTimeout(r, 700));
+    let j;
+    try{ j = await (await api('job/' + head.job)).json(); }catch(e){ continue; }
+    j.log.slice(seen).forEach(logLine); seen = j.log.length;
+    if(j.done){
+      $('#logState').textContent = t(j.ok ? 'log.done' : 'log.fail');
+      return j.ok;
+    }
+  }
+}
+
+/* ---------- plano da Configuração ---------- */
+
+/* Aqui o CONFIG da interface vira o nome que cada coisa tem na API do app —
+   é a única tradução que o servidor não teria como fazer, porque depende do
+   `container_name` e do subpath, que são derivados daqui. */
+const ARR_API   = {sonarr:'v3', radarr:'v3', lidarr:'v1'};
+const IMPL      = {sonarr:'Sonarr', radarr:'Radarr', lidarr:'Lidarr',
+                   qbittorrent:'QBittorrent', sabnzbd:'Sabnzbd'};
+const CAT_FIELD = {sonarr:'tvCategory', radarr:'movieCategory', lidarr:'musicCategory'};
+const RENAME_API = {sonarr:'renameEpisodes', radarr:'renameMovies', lidarr:'renameTracks'};
+// nome de cada formato na API; a chave é a mesma do NAMING_FIELDS
+const NAMING_API = {
+  illegal:'replaceIllegalCharacters', colon:'colonReplacementFormat',
+  multiEp:'multiEpisodeStyle',        standardEp:'standardEpisodeFormat',
+  dailyEp:'dailyEpisodeFormat',       animeEp:'animeEpisodeFormat',
+  seriesFolder:'seriesFolderFormat',  seasonFolder:'seasonFolderFormat',
+  specialsFolder:'specialsFolderFormat', standardMovie:'standardMovieFormat',
+  movieFolder:'movieFolderFormat',    standardTrack:'standardTrackFormat',
+  multiDiscTrack:'multiDiscTrackFormat', artistFolder:'artistFolderFormat',
+  albumFolder:'albumFolderFormat',
+};
+
+function configPlan(){
+  syncConfig();
+  const list = effective();
+  const arrs = list.filter(a=>ARRS.includes(a.id));
+  // endereço de dentro da rede: é assim que um container alcança o outro
+  const inNet = a => `http://${a.vpn ? 'gluetun' : cname(a)}:${svc(a.id).port}${route(a)}`;
+
+  const naming = a =>{
+    const mm = CONFIG.mm[a.id] || {}, out = {};
+    out[RENAME_API[a.id]] = !!mm.rename;
+    Object.entries(mm.naming || {}).forEach(([k, v])=>{
+      const f = NAMING_API[k];
+      if(!f) return;                       // useExisting é só da interface
+      // o multi-episódio vai como número, na ordem em que o app os lista
+      out[f] = k === 'multiEp' ? MULTIEP.indexOf(v) : v;
+    });
+    return out;
+  };
+
+  return {
+    base:`http://127.0.0.1:${DEFAULTS.http}`,
+    apiKey: DEFAULTS.apiKey,
+    arrs: arrs.map(a=>{
+      const mm = CONFIG.mm[a.id] || {};
+      return {name:cname(a), route:route(a), api:ARR_API[a.id],
+        mm:{copyUsingHardlinks:!!mm.hardlink, deleteEmptyFolders:!!mm.empty,
+            setPermissionsLinux:!!mm.perms,
+            chmodFolder: mm.chmod || '755', chownGroup: mm.chown || ''},
+        naming: naming(a)};
+    }),
+    prowlarrs: list.filter(a=>a.id === 'prowlarr').map(p=>({
+      name:cname(p), route:route(p), api:'v1',
+      apps: arrs.filter(a=>CONFIG.apps[cname(a)]).map(a=>({
+        name:cname(a), implementation:IMPL[a.id],
+        props:{syncLevel:'fullSync'},
+        fields:{prowlarrUrl:inNet(p), baseUrl:inNet(a), apiKey:DEFAULTS.apiKey},
+      })),
+    })),
+    clients: list.filter(a=>svc(a.id).dlClient).map(c=>{
+      const st = CONFIG.clients[cname(c)] || {arrs:{}, cats:{}};
+      const torrent = !!svc(c.id).conf;      // quem tem conf própria é o qBittorrent
+      return {implementation:IMPL[c.id], label:cname(c),
+        targets: arrs.filter(a=>st.arrs && st.arrs[cname(a)]).map(a=>({
+          arr:route(a), name:cname(c),
+          props:{enable:true, priority:1,
+                 protocol: torrent ? 'torrent' : 'usenet',
+                 removeCompletedDownloads: !!(st.cdh && st.cdh.completed),
+                 removeFailedDownloads:    !!(st.cdh && st.cdh.failed)},
+          fields: Object.assign(
+            {host:dlHost(c), port:svc(c.id).port, useSsl:false,
+             [CAT_FIELD[a.id]]: (st.cats && st.cats[cname(a)]) || catDefault(a)},
+            torrent ? {username:DEFAULTS.qbitUser, password:DEFAULTS.qbitPass}
+                    : {apiKey:DEFAULTS.apiKey}),
+        })),
+      };
+    }),
+  };
+}
+
+const applyConfig = ()=> runJob(
+  ()=> api('configure', {method:'POST', body:JSON.stringify({plan:configPlan()})}),
+  t('log.configure'));
+
+$('#logApply').onclick = ()=>{ $('#logApply').hidden = true; applyConfig(); };
+
+/* ---------- criar e derrubar ---------- */
+
+// sem servidor, o botão continua sendo o do protótipo: encena e volta
+function fakeDeploy(btn){
+  btn.textContent = t('btn.deploying'); btn.disabled = true;
+  setTimeout(()=>{ btn.textContent = t('btn.deployed');
+    setTimeout(()=>{btn.textContent = t('btn.deploy'); btn.disabled = false;}, 1800); }, 900);
+}
+
+$('#deploy').onclick = async e=>{
+  const btn = e.target;
+  if(!SERVER) return fakeDeploy(btn);
+  btn.textContent = t('btn.deploying'); btn.disabled = true;
+  const ok = await runJob(()=> api('deploy', {method:'POST',
+    body:JSON.stringify({files:outFiles(), state:stateNow()})}), t('log.deploy'));
+  // de pé, faz sentido oferecer o que só a API dos apps resolve
+  if(ok) $('#logApply').hidden = false;
+  btn.textContent = t(ok ? 'btn.deployed' : 'btn.deployFail');
+  setTimeout(()=>{btn.textContent = t('btn.deploy'); btn.disabled = false;}, 1800);
+};
+
+$('#down').onclick = ()=> runJob(()=> api('down', {method:'POST'}), t('log.down'));
 
 $('#eTz').innerHTML = TIMEZONES.map(z=>`<option>${z}</option>`).join('');
 
@@ -2856,6 +3132,8 @@ applyI18n(); renderCombo(); renderItems(); render();
 // a stack inteira depende das bases de caminho: o Ambiente abre junto com a página
 openEnv();
 refreshQbitHash();
+// e, se houver um servidor atrás, ele pode ter uma stack guardada para reabrir
+detectServer();
 </script>
 </body>
 </html>
