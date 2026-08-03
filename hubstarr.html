@@ -199,6 +199,22 @@
     background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
     line-height:1.5;white-space:pre-wrap;word-break:break-word}
+  /* aviso colapsável acima dos painéis */
+  .notice{grid-column:1/-1;margin:-4px 0 -4px;background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;font-size:13px;line-height:1.6}
+  .notice>summary{cursor:pointer;padding:10px 14px;color:var(--muted);
+    font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+  .notice[open]>summary{border-bottom:1px solid var(--line);color:var(--txt)}
+  .notice .noticeBody{padding:12px 14px;color:var(--muted)}
+  .notice .noticeBody p{margin:0 0 8px}
+  .notice .noticeBody p:last-child{margin:0}
+  .notice .noticeBody code{background:var(--panel-2);border:1px solid var(--line);
+    border-radius:6px;padding:1px 5px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--txt)}
+  .notice .noticeBody pre{margin:0 0 8px;padding:10px 12px;overflow:auto;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--txt)}
+  .notice .noticeBody a{color:var(--accent)}
   /* aviso de servidor no cabeçalho */
   #srv{font-size:11px;padding:2px 8px;border-radius:999px;
     border:1px solid var(--ok,#3fb950);color:var(--ok,#3fb950)}
@@ -218,6 +234,24 @@
 </header>
 
 <div class="wrap">
+  <!-- aviso acima dos dois painéis, na largura toda -->
+  <details class="notice">
+    <summary data-i18n="docker.h">Precisa instalar o Docker?</summary>
+    <div class="noticeBody" data-i18n-html="docker.body">
+      <p>O Hubstarr só precisa deste navegador; quem precisa do Docker com o plugin Compose são os arquivos que ele gera.</p>
+      <p><b>Linux</b> — o script oficial instala o Docker Engine e o Compose:</p>
+      <pre>curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh</pre>
+      <p>Depois, para usar o <code>docker</code> sem <code>sudo</code>:</p>
+      <pre>sudo usermod -aG docker $USER</pre>
+      <p>Saia e entre de novo na sessão para o grupo valer.</p>
+      <p><b>Windows e macOS</b> — ou Linux, se preferir uma instalação gerenciada com interface gráfica — instale o
+      <a href="https://docs.docker.com/desktop/" target="_blank" rel="noopener">Docker Desktop</a>, que já vem com o Compose.</p>
+      <p>Com o Docker no lugar, descompacte o <code>.zip</code> e suba a stack de dentro da pasta dos arquivos:</p>
+      <pre>docker compose up -d</pre>
+    </div>
+  </details>
+
   <!-- coluna esquerda -->
   <div>
     <div class="card overflow">
@@ -468,6 +502,17 @@ const I18N = {
   'app.lang':'Idioma',
   'app.env':'⚙ Ambiente',
   'app.cfg':'⇄ Configuração',
+  'docker.h':'Precisa instalar o Docker?',
+  'docker.body':'<p>O Hubstarr só precisa deste navegador; quem precisa do Docker com o plugin Compose são os arquivos que ele gera.</p>'+
+    '<p><b>Linux</b> — o script oficial instala o Docker Engine e o Compose:</p>'+
+    '<pre>curl -fsSL https://get.docker.com -o get-docker.sh\nsudo sh get-docker.sh</pre>'+
+    '<p>Depois, para usar o <code>docker</code> sem <code>sudo</code>:</p>'+
+    '<pre>sudo usermod -aG docker $USER</pre>'+
+    '<p>Saia e entre de novo na sessão para o grupo valer.</p>'+
+    '<p><b>Windows e macOS</b> — ou Linux, se preferir uma instalação gerenciada com interface gráfica — instale o '+
+    '<a href="https://docs.docker.com/desktop/" target="_blank" rel="noopener">Docker Desktop</a>, que já vem com o Compose.</p>'+
+    '<p>Com o Docker no lugar, descompacte o <code>.zip</code> e suba a stack de dentro da pasta dos arquivos:</p>'+
+    '<pre>docker compose up -d</pre>',
   'cfg.h':'⇄ Configuração',
   'cfg.apps':'Aplicações no Prowlarr',
   'cfg.appsHint':'As instâncias marcadas entram em <i>Settings → Apps</i> do Prowlarr, que passa a empurrar os indexadores para elas.',
@@ -747,6 +792,17 @@ const I18N = {
   'app.lang':'Language',
   'app.env':'⚙ Environment',
   'app.cfg':'⇄ Configuration',
+  'docker.h':'Need to install Docker?',
+  'docker.body':'<p>Hubstarr itself only needs this browser; it is the files it generates that need Docker with the Compose plugin.</p>'+
+    '<p><b>Linux</b> — the official script installs Docker Engine and Compose:</p>'+
+    '<pre>curl -fsSL https://get.docker.com -o get-docker.sh\nsudo sh get-docker.sh</pre>'+
+    '<p>Then, to use <code>docker</code> without <code>sudo</code>:</p>'+
+    '<pre>sudo usermod -aG docker $USER</pre>'+
+    '<p>Log out and back in for the group to take effect.</p>'+
+    '<p><b>Windows and macOS</b> — or Linux, if you prefer a managed install with a GUI — get '+
+    '<a href="https://docs.docker.com/desktop/" target="_blank" rel="noopener">Docker Desktop</a>, which ships with Compose.</p>'+
+    '<p>With Docker in place, unzip the <code>.zip</code> and bring the stack up from inside the files folder:</p>'+
+    '<pre>docker compose up -d</pre>',
   'cfg.h':'⇄ Configuration',
   'cfg.apps':'Applications in Prowlarr',
   'cfg.appsHint':'The instances you tick land in Prowlarr\'s <i>Settings → Apps</i>, so it pushes indexers to them.',
@@ -1024,6 +1080,17 @@ const I18N = {
   'app.lang':'Idioma',
   'app.env':'⚙ Entorno',
   'app.cfg':'⇄ Configuración',
+  'docker.h':'¿Necesitas instalar Docker?',
+  'docker.body':'<p>Hubstarr solo necesita este navegador; los que necesitan Docker con el plugin Compose son los archivos que genera.</p>'+
+    '<p><b>Linux</b> — el script oficial instala Docker Engine y Compose:</p>'+
+    '<pre>curl -fsSL https://get.docker.com -o get-docker.sh\nsudo sh get-docker.sh</pre>'+
+    '<p>Después, para usar <code>docker</code> sin <code>sudo</code>:</p>'+
+    '<pre>sudo usermod -aG docker $USER</pre>'+
+    '<p>Cierra la sesión y vuelve a entrar para que el grupo tenga efecto.</p>'+
+    '<p><b>Windows y macOS</b> — o Linux, si prefieres una instalación gestionada con interfaz gráfica — instala '+
+    '<a href="https://docs.docker.com/desktop/" target="_blank" rel="noopener">Docker Desktop</a>, que ya trae Compose.</p>'+
+    '<p>Con Docker en su sitio, descomprime el <code>.zip</code> y levanta la stack desde dentro de la carpeta de los archivos:</p>'+
+    '<pre>docker compose up -d</pre>',
   'cfg.h':'⇄ Configuración',
   'cfg.apps':'Aplicaciones en Prowlarr',
   'cfg.appsHint':'Las instancias marcadas entran en <i>Settings → Apps</i> de Prowlarr, que pasa a empujarles los indexadores.',
