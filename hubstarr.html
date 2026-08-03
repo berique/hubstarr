@@ -1516,7 +1516,8 @@ let added = [];
 const isFixed = id => !!svc(id).fixed;
 function ensureFixed(){
   SERVICES.filter(s=>s.fixed).forEach(s=>{
-    if(!has(s.id)) added.unshift(defCfg(s.id));
+    // entra sozinho, então é aqui que ele ganha a linha dele no banco
+    if(!has(s.id)){ const a = defCfg(s.id); added.unshift(a); putInstance(a); }
   });
 }
 let picked = null;   // id selecionado no combobox
@@ -1711,6 +1712,7 @@ $('#items').onclick = e=>{
   } else if(btn.dataset.act==='del'){
     added = added.filter(a=>cname(a)!==key);
     renderItems(); renderCombo(); render();
+    delInstance(key);
   } else {
     const a = byKey(key);
     if(a) openModal(a.id, key);
@@ -1859,13 +1861,17 @@ $('#mSave').onclick = ()=>{
     ovpnUser:$('#gOvpnUser').value.trim(), ovpnPass:$('#gOvpnPass').value.trim(),
     countries:$('#gCountries').value.trim()});
 
+  const was = editing;                  // a chave de antes, se o título mudou
   if(editing) added = added.map(a=>cname(a)===editing?cfg:a);
   else { added.push(cfg); picked=null; }
   // rotear pela VPN exige o gluetun na stack: entra sozinho, na frente de todos
-  if(cfg.vpn && !has('gluetun')) added.unshift(defCfg('gluetun'));
+  const tag = [];
+  if(cfg.vpn && !has('gluetun')){ const g = defCfg('gluetun'); added.unshift(g); tag.push(g); }
   // o resolvedor é opcional: entra na stack junto com quem pediu por ele
-  if(cfg.solver && !has('flaresolverr')) added.push(defCfg('flaresolverr'));
+  if(cfg.solver && !has('flaresolverr')){ const f = defCfg('flaresolverr'); added.push(f); tag.push(f); }
   closeModal(); renderItems(); renderCombo(); render();
+  // uma linha por instância mexida — a editada e as que ela arrastou junto
+  putInstance(cfg, was); tag.forEach(a=>putInstance(a));
 };
 
 /* ---------- nginx: portas publicadas no host ---------- */
@@ -2806,7 +2812,7 @@ function render(){
     : `<span class="ok">${t('items.routes', routes)}</span>`;
   $('#stat').textContent = t('out.containers', list.length + 1);   // +1: nginx fixo
   $('#summary').textContent = list.map(a=>a.title||svc(a.id).name).join(' · ') || t('out.empty');
-  saveState();   // com servidor atrás, a stack sobrevive ao reload; sem ele, não faz nada
+  saveSettings();  // com servidor atrás, a stack sobrevive ao reload; sem ele, não faz nada
 }
 
 let tab = 'yml';
@@ -2927,8 +2933,20 @@ let SERVER = null;
 const api = (path, opts) => fetch('api/' + path, Object.assign(
   {headers:{'Content-Type':'application/json'}, cache:'no-store'}, opts || {}));
 
-// o que sobrevive entre sessões: as instâncias, o ambiente e a Configuração
-const stateNow = ()=> ({added, defaults:DEFAULTS, config:CONFIG});
+/* O banco do servidor tem uma linha por instância, então adicionar, editar e
+   excluir mexem numa linha só — é o `#mSave` e o "Excluir" que chamam. O que
+   vale para a stack inteira (Ambiente, Configuração e a ordem da lista) vai
+   junto no `saveSettings()`, que roda no fim de cada `render()`. */
+function putInstance(a, old){
+  if(!SERVER) return;
+  api('instance', {method:'PUT', body:JSON.stringify(
+    {key:cname(a), old:old || null, ord:added.findIndex(x=>x===a), data:a})}).catch(()=>{});
+}
+
+function delInstance(key){
+  if(!SERVER) return;
+  api('instance/' + encodeURIComponent(key), {method:'DELETE'}).catch(()=>{});
+}
 
 function applyState(s){
   if(!s || !Array.isArray(s.added)) return false;
@@ -2939,13 +2957,17 @@ function applyState(s){
   return true;
 }
 
-// guarda no servidor sem atrapalhar a digitação: um PUT depois que ela para
+/* Guarda no servidor sem atrapalhar a digitação: um PUT depois que ela para.
+   A lista de chaves vai junto porque nem toda mudança no `added` passa pelo
+   modal — o gluetun entra sozinho, o Heimdall é reposto, o "Limpar" esvazia
+   tudo —, e é ela que acerta a ordem e apaga do banco o que saiu. */
 let saveT = 0;
-function saveState(){
+function saveSettings(){
   if(!SERVER) return;
   clearTimeout(saveT);
   saveT = setTimeout(()=>{
-    api('state', {method:'PUT', body:JSON.stringify(stateNow())}).catch(()=>{});
+    api('settings', {method:'PUT', body:JSON.stringify(
+      {defaults:DEFAULTS, config:CONFIG, keys:added.map(cname)})}).catch(()=>{});
   }, 500);
 }
 
@@ -3111,7 +3133,7 @@ $('#deploy').onclick = async e=>{
   if(!SERVER) return fakeDeploy(btn);
   btn.textContent = t('btn.deploying'); btn.disabled = true;
   const ok = await runJob(()=> api('deploy', {method:'POST',
-    body:JSON.stringify({files:outFiles(), state:stateNow()})}), t('log.deploy'));
+    body:JSON.stringify({files:outFiles()})}), t('log.deploy'));
   // de pé, faz sentido oferecer o que só a API dos apps resolve
   if(ok) $('#logApply').hidden = false;
   btn.textContent = t(ok ? 'btn.deployed' : 'btn.deployFail');
