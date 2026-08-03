@@ -1,2 +1,5 @@
 # wrapper do Maven (não faz parte do protótipo)
 .mvn/
+
+# compilação do servidor opcional
+backend/target/
