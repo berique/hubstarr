@@ -24,7 +24,7 @@ use std::sync::Arc;
 use axum::extract::{Path, State};
 use axum::http::{header, StatusCode};
 use axum::response::IntoResponse;
-use axum::routing::{get, post};
+use axum::routing::{delete, get, post, put};
 use axum::{Json, Router};
 use clap::Parser;
 use serde::Deserialize;
@@ -56,6 +56,7 @@ pub struct App {
     dir: PathBuf,
     docker: String,
     jobs: Jobs,
+    db: store::Db,
 }
 
 pub type Ctx = Arc<App>;
@@ -69,17 +70,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     tokio::fs::create_dir_all(&dir).await?;
 
+    let db = store::Db::open(&dir)?;
     let ctx: Ctx = Arc::new(App {
         dir,
         docker: args.docker,
         jobs: Jobs::new(),
+        db,
     });
 
     let app = Router::new()
         .route("/", get(page))
         .route("/favicon.ico", get(favicon))
         .route("/api/health", get(health))
-        .route("/api/state", get(load_state).put(save_state))
+        .route("/api/state", get(load_state))
+        .route("/api/settings", put(save_settings))
+        .route("/api/instance", put(put_instance))
+        .route("/api/instance/:key", delete(del_instance))
         .route("/api/files", post(write_files))
         .route("/api/deploy", post(start_deploy))
         .route("/api/down", post(start_down))
@@ -111,21 +117,60 @@ async fn health(State(ctx): State<Ctx>) -> Json<Value> {
         "version": env!("CARGO_PKG_VERSION"),
         "dir": ctx.dir.display().to_string(),
         "docker": deploy::docker_ok(&ctx.docker).await,
-        "saved": store::path(&ctx.dir).exists(),
+        "saved": ctx.db.has_stack(),
     }))
 }
 
-/// Devolve o estado guardado, ou 204 quando ainda não há nenhum.
+/// Devolve o estado guardado, ou 204 quando o banco ainda está vazio.
 async fn load_state(State(ctx): State<Ctx>) -> Response {
-    match store::load(&ctx.dir).await {
+    match ctx.db.load() {
         Ok(Some(v)) => Json(v).into_response(),
         Ok(None) => StatusCode::NO_CONTENT.into_response(),
         Err(e) => fail(&e),
     }
 }
 
-async fn save_state(State(ctx): State<Ctx>, Json(body): Json<Value>) -> Response {
-    match store::save(&ctx.dir, &body).await {
+/// O que vale para a stack inteira: o Ambiente, a Configuração e a lista de
+/// chaves, que acerta a ordem e apaga o que saiu sem passar pelo modal.
+#[derive(Deserialize)]
+struct Settings {
+    #[serde(default)]
+    defaults: Option<Value>,
+    #[serde(default)]
+    config: Option<Value>,
+    #[serde(default)]
+    keys: Option<Vec<String>>,
+}
+
+async fn save_settings(State(ctx): State<Ctx>, Json(s): Json<Settings>) -> Response {
+    let done = (|| {
+        if let Some(v) = &s.defaults {
+            ctx.db.put_setting("defaults", v)?;
+        }
+        if let Some(v) = &s.config {
+            ctx.db.put_setting("config", v)?;
+        }
+        if let Some(k) = &s.keys {
+            ctx.db.reconcile(k)?;
+        }
+        Ok::<(), String>(())
+    })();
+    match done {
+        Ok(()) => Json(json!({"ok": true})).into_response(),
+        Err(e) => fail(&e),
+    }
+}
+
+/// Um serviço adicionado ou editado: uma linha só, criada ou atualizada.
+async fn put_instance(State(ctx): State<Ctx>, Json(inc): Json<store::InstanceIn>) -> Response {
+    match ctx.db.put_instance(&inc) {
+        Ok(()) => Json(json!({"ok": true})).into_response(),
+        Err(e) => fail(&e),
+    }
+}
+
+async fn del_instance(State(ctx): State<Ctx>, Path(key): Path<String>) -> Response {
+    match ctx.db.delete_instance(&key) {
         Ok(()) => Json(json!({"ok": true})).into_response(),
         Err(e) => fail(&e),
     }
@@ -133,13 +178,12 @@ async fn save_state(State(ctx): State<Ctx>, Json(body): Json<Value>) -> Response
 
 /* ---------- arquivos e deploy ---------- */
 
-/// O que a página manda: os arquivos já prontos e, junto, o estado a guardar.
+/// O que a página manda: os arquivos já prontos. O estado não vem aqui — ele
+/// é gravado a cada adicionar, editar ou excluir, não só na hora do deploy.
 #[derive(Deserialize)]
 pub struct Payload {
     #[serde(default)]
     pub files: Vec<files::OutFile>,
-    #[serde(default)]
-    pub state: Option<Value>,
     /// plano de configuração dos *arr, quando a página pede para aplicar
     #[serde(default)]
     pub plan: Option<arr::Plan>,
@@ -147,13 +191,8 @@ pub struct Payload {
 
 async fn write_files(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Response {
     match files::write_all(&ctx.dir, &p.files).await {
-        Ok(names) => {
-            if let Some(s) = &p.state {
-                let _ = store::save(&ctx.dir, s).await;
-            }
-            Json(json!({"ok": true, "dir": ctx.dir.display().to_string(), "files": names}))
-                .into_response()
-        }
+        Ok(names) => Json(json!({"ok": true, "dir": ctx.dir.display().to_string(), "files": names}))
+            .into_response(),
         Err(e) => fail(&e),
     }
 }
@@ -163,9 +202,6 @@ async fn write_files(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Response
 async fn start_deploy(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Response {
     if let Err(e) = files::write_all(&ctx.dir, &p.files).await {
         return fail(&e);
-    }
-    if let Some(s) = &p.state {
-        let _ = store::save(&ctx.dir, s).await;
     }
     let id = ctx.jobs.spawn({
         let ctx = ctx.clone();

@@ -3,3 +3,6 @@
 
 # compilação do servidor opcional
 backend/target/
+
+# stack criada pelo servidor quando roda com o --dir padrão
+backend/stack/
