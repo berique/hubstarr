@@ -151,6 +151,10 @@
   .libs .lib button:hover{border-color:var(--danger);color:var(--danger)}
   .helpTxt{margin:-4px 0 12px;padding-left:160px}
   .helpTxt[hidden]{display:none}
+  /* o nome que o formato produz, logo abaixo do campo */
+  .prevTxt{margin:-4px 0 8px;padding-left:150px;font-size:12px;word-break:break-all}
+  .prevTxt b{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-weight:400;color:var(--txt)}
 
   .tabs{display:flex;gap:6px}
   .tab{padding:4px 10px;font-size:12px;text-transform:none;letter-spacing:0;
@@ -467,6 +471,7 @@ const I18N = {
   'cfg.naming.lidarr':'Nomeação da faixa',
   'cfg.n.illegal':'Caracteres ilegais',
   'cfg.n.illegalOn':'substituir em vez de remover',
+  'cfg.n.preview':'Fica assim:',
   'cfg.n.colon':'Dois-pontos',
   'cfg.n.multiEp':'Vários episódios',
   'cfg.n.standardEp':'Episódio padrão',
@@ -516,7 +521,7 @@ const I18N = {
   'cfg.q.albumFolder':'Nome da pasta de cada álbum dentro da pasta do artista.<br><b>{Album Title}</b> — título do álbum<br><b>{Release Year}</b> — ano de lançamento',
   /* Lista inteira de variáveis, no "?" do cabeçalho de cada bloco. O trecho
      comum sai de uma chave só, chamada pelas três — por isso são funções. */
-  'cfg.vars.common':'<b>Comuns aos três</b><br><b>{Quality Full}</b> — fonte, resolução e edição (<i>WEBDL-1080p Proper</i>)<br><b>{Quality Title}</b> — só a fonte e a resolução<br><b>{Release Group}</b> — grupo que publicou o arquivo<br><b>{Custom Formats}</b> — formatos personalizados que casaram com a release<br><b>{Original Title}</b> — nome da release, como veio do indexador<br><b>{Original Filename}</b> — nome do arquivo dentro da release<br><b>{MediaInfo VideoCodec}</b>, <b>{MediaInfo VideoDynamicRangeType}</b> — <i>x265</i>, <i>HDR</i>/<i>DV</i><br><b>{MediaInfo AudioCodec}</b>, <b>{MediaInfo AudioChannels}</b> — <i>DTS</i>, <i>5.1</i><br><b>{MediaInfo AudioLanguages}</b>, <b>{MediaInfo SubtitleLanguages}</b> — <i>[PT+EN]</i><br><b>{MediaInfo Simple}</b>, <b>{MediaInfo Full}</b> — pacotes prontos dos anteriores<br><b>Modificadores</b><br><b>:0</b>, <b>:00</b>, <b>:000</b> completam com zeros; <b>{Episode Title:30}</b> corta o texto em 30 caracteres.<br>A lista que manda é a do próprio app, em <i>Media Management → Naming</i>. Token que não existe sai literal no nome do arquivo, em vez de dar erro.',
+  'cfg.vars.common':'<b>Comuns aos três</b><br><b>{Quality Full}</b> — fonte, resolução e edição (<i>WEBDL-1080p Proper</i>)<br><b>{Quality Title}</b> — só a fonte e a resolução<br><b>{Release Group}</b> — grupo que publicou o arquivo<br><b>{Custom Formats}</b> — formatos personalizados que casaram com a release<br><b>{Original Title}</b> — nome da release, como veio do indexador<br><b>{Original Filename}</b> — nome do arquivo dentro da release<br><b>{MediaInfo VideoCodec}</b>, <b>{MediaInfo VideoDynamicRangeType}</b> — <i>x265</i>, <i>HDR</i>/<i>DV</i><br><b>{MediaInfo AudioCodec}</b>, <b>{MediaInfo AudioChannels}</b> — <i>DTS</i>, <i>5.1</i><br><b>{MediaInfo AudioLanguages}</b>, <b>{MediaInfo SubtitleLanguages}</b> — <i>[PT+EN]</i><br><b>{MediaInfo Simple}</b>, <b>{MediaInfo Full}</b> — pacotes prontos dos anteriores<br><b>Modificadores</b><br><b>:0</b>, <b>:00</b>, <b>:000</b> completam com zeros; <b>{Episode Title:30}</b> corta o texto em 30 caracteres.<br>O que estiver dentro das chaves em volta do token é enfeite, e só sai quando o token tem valor: <b>{(Release Year)}</b> vira <i>(1982)</i>, <b>{-Release Group}</b> vira <i>-RlsGrp</i> e <b>{[MediaInfo 3D]}</b> some inteiro num filme que não é 3D. Dá para aninhar (<b>{tmdb-{TmdbId}}</b>) e para fechar o colchete no grupo seguinte (<b>{[MediaInfo AudioCodec}{ MediaInfo AudioChannels]}</b>).<br>A lista que manda é a do próprio app, em <i>Media Management → Naming</i>. Token que não existe sai literal no nome do arquivo, em vez de dar erro.',
   'cfg.vars.sonarr':()=>'Tudo que os campos de formato do Sonarr aceitam.<br><b>Série</b><br><b>{Series Title}</b> — título<br><b>{Series CleanTitle}</b> — sem os caracteres ilegais<br><b>{Series TitleYear}</b> — com o ano (<i>Fargo (2014)</i>)<br><b>{Series TitleThe}</b> — artigo no fim (<i>Office, The</i>)<br><b>{Series TitleFirstCharacter}</b> — primeira letra, para dividir a biblioteca em A/B/C<br><b>{Series Year}</b> — ano de estreia<br><b>{ImdbId}</b>, <b>{TvdbId}</b>, <b>{TmdbId}</b>, <b>{TvMazeId}</b> — identificadores; na pasta, ajudam o Jellyfin a casar a série<br><b>Numeração</b><br><b>{season:00}</b>, <b>{episode:00}</b><br><b>{absolute:000}</b> — número absoluto, o do anime<br><b>{Air-Date}</b> — <i>2024-05-31</i>; <b>{Air Date}</b> usa espaços<br><b>Episódio</b><br><b>{Episode Title}</b>, <b>{Episode CleanTitle}</b><br>'+t('cfg.vars.common'),
   'cfg.vars.radarr':()=>'Tudo que os campos de formato do Radarr aceitam.<br><b>Filme</b><br><b>{Movie Title}</b> — título<br><b>{Movie CleanTitle}</b> — sem os caracteres ilegais<br><b>{Movie TitleThe}</b> — artigo no fim<br><b>{Movie OriginalTitle}</b> — título no idioma original<br><b>{Movie TitleFirstCharacter}</b> — primeira letra, para dividir a biblioteca em A/B/C<br><b>{Movie Collection}</b> — coleção a que o filme pertence, para juntar a saga numa pasta<br><b>{Movie Certification}</b> — classificação etária<br><b>{Release Year}</b> — ano de lançamento<br><b>{Edition Tags}</b> — edição (<i>Extended</i>, <i>Directors Cut</i>)<br><b>{ImdbId}</b>, <b>{TmdbId}</b> — identificadores; na pasta, ajudam o Jellyfin a casar o filme<br>'+t('cfg.vars.common'),
   'cfg.vars.lidarr':()=>'Tudo que os campos de formato do Lidarr aceitam.<br><b>Artista</b><br><b>{Artist Name}</b>, <b>{Artist CleanName}</b>, <b>{Artist NameThe}</b><br><b>{Artist Disambiguation}</b> — desempata artistas de mesmo nome<br><b>{Artist Genre}</b>, <b>{Artist MbId}</b> — gênero e identificador no MusicBrainz<br><b>Álbum</b><br><b>{Album Title}</b>, <b>{Album CleanTitle}</b><br><b>{Album Type}</b> — <i>Album</i>, <i>EP</i>, <i>Live</i><br><b>{Album Disambiguation}</b>, <b>{Release Year}</b>, <b>{Album MbId}</b><br><b>Disco e faixa</b><br><b>{medium:0}</b> — número do disco; <b>{Medium Format}</b> — <i>CD</i>, <i>Vinyl</i><br><b>{track:00}</b>, <b>{Track Title}</b>, <b>{Track CleanTitle}</b><br><b>{Track ArtistName}</b> — o artista da faixa, que numa coletânea não é o do álbum<br><b>Áudio</b><br><b>{MediaInfo AudioBitRate}</b>, <b>{MediaInfo AudioBitsPerSample}</b>, <b>{MediaInfo AudioSampleRate}</b><br>'+t('cfg.vars.common'),
@@ -730,6 +735,7 @@ const I18N = {
   'cfg.naming.lidarr':'Track Naming',
   'cfg.n.illegal':'Illegal characters',
   'cfg.n.illegalOn':'replace instead of removing',
+  'cfg.n.preview':'Comes out as:',
   'cfg.n.colon':'Colon',
   'cfg.n.multiEp':'Multi-episode',
   'cfg.n.standardEp':'Standard episode',
@@ -777,7 +783,7 @@ const I18N = {
   'cfg.q.multiDiscTrack':'Name for tracks when the album spans more than one disc — the disc number goes into the name.<br><b>{Album Title}</b> — album title<br><b>{medium:0}</b> — disc number<br><b>{track:00}</b> — track number<br><b>{Track Title}</b> — track title',
   'cfg.q.artistFolder':'Name of each artist folder inside the library.<br><b>{Artist Name}</b> — artist name',
   'cfg.q.albumFolder':'Name of each album folder inside the artist folder.<br><b>{Album Title}</b> — album title<br><b>{Release Year}</b> — release year',
-  'cfg.vars.common':'<b>Shared by all three</b><br><b>{Quality Full}</b> — source, resolution and edition (<i>WEBDL-1080p Proper</i>)<br><b>{Quality Title}</b> — source and resolution only<br><b>{Release Group}</b> — group that published the file<br><b>{Custom Formats}</b> — custom formats matched by the release<br><b>{Original Title}</b> — release name, as it came from the indexer<br><b>{Original Filename}</b> — file name inside the release<br><b>{MediaInfo VideoCodec}</b>, <b>{MediaInfo VideoDynamicRangeType}</b> — <i>x265</i>, <i>HDR</i>/<i>DV</i><br><b>{MediaInfo AudioCodec}</b>, <b>{MediaInfo AudioChannels}</b> — <i>DTS</i>, <i>5.1</i><br><b>{MediaInfo AudioLanguages}</b>, <b>{MediaInfo SubtitleLanguages}</b> — <i>[PT+EN]</i><br><b>{MediaInfo Simple}</b>, <b>{MediaInfo Full}</b> — ready-made bundles of the above<br><b>Modifiers</b><br><b>:0</b>, <b>:00</b>, <b>:000</b> pad with zeros; <b>{Episode Title:30}</b> truncates the text at 30 characters.<br>The authoritative list is the one in the app itself, under <i>Media Management → Naming</i>. A token that does not exist comes out literally in the file name instead of raising an error.',
+  'cfg.vars.common':'<b>Shared by all three</b><br><b>{Quality Full}</b> — source, resolution and edition (<i>WEBDL-1080p Proper</i>)<br><b>{Quality Title}</b> — source and resolution only<br><b>{Release Group}</b> — group that published the file<br><b>{Custom Formats}</b> — custom formats matched by the release<br><b>{Original Title}</b> — release name, as it came from the indexer<br><b>{Original Filename}</b> — file name inside the release<br><b>{MediaInfo VideoCodec}</b>, <b>{MediaInfo VideoDynamicRangeType}</b> — <i>x265</i>, <i>HDR</i>/<i>DV</i><br><b>{MediaInfo AudioCodec}</b>, <b>{MediaInfo AudioChannels}</b> — <i>DTS</i>, <i>5.1</i><br><b>{MediaInfo AudioLanguages}</b>, <b>{MediaInfo SubtitleLanguages}</b> — <i>[PT+EN]</i><br><b>{MediaInfo Simple}</b>, <b>{MediaInfo Full}</b> — ready-made bundles of the above<br><b>Modifiers</b><br><b>:0</b>, <b>:00</b>, <b>:000</b> pad with zeros; <b>{Episode Title:30}</b> truncates the text at 30 characters.<br>Whatever sits inside the braces around the token is decoration, and only shows up when the token has a value: <b>{(Release Year)}</b> gives <i>(1982)</i>, <b>{-Release Group}</b> gives <i>-RlsGrp</i>, and <b>{[MediaInfo 3D]}</b> disappears entirely on a movie that is not 3D. They can nest (<b>{tmdb-{TmdbId}}</b>) and the closing bracket can live in the next group (<b>{[MediaInfo AudioCodec}{ MediaInfo AudioChannels]}</b>).<br>The authoritative list is the one in the app itself, under <i>Media Management → Naming</i>. A token that does not exist comes out literally in the file name instead of raising an error.',
   'cfg.vars.sonarr':()=>'Everything the Sonarr format fields accept.<br><b>Series</b><br><b>{Series Title}</b> — title<br><b>{Series CleanTitle}</b> — without the illegal characters<br><b>{Series TitleYear}</b> — with the year (<i>Fargo (2014)</i>)<br><b>{Series TitleThe}</b> — article at the end (<i>Office, The</i>)<br><b>{Series TitleFirstCharacter}</b> — first letter, to split the library into A/B/C<br><b>{Series Year}</b> — first-aired year<br><b>{ImdbId}</b>, <b>{TvdbId}</b>, <b>{TmdbId}</b>, <b>{TvMazeId}</b> — identifiers; in the folder they help Jellyfin match the series<br><b>Numbering</b><br><b>{season:00}</b>, <b>{episode:00}</b><br><b>{absolute:000}</b> — absolute number, the anime one<br><b>{Air-Date}</b> — <i>2024-05-31</i>; <b>{Air Date}</b> uses spaces<br><b>Episode</b><br><b>{Episode Title}</b>, <b>{Episode CleanTitle}</b><br>'+t('cfg.vars.common'),
   'cfg.vars.radarr':()=>'Everything the Radarr format fields accept.<br><b>Movie</b><br><b>{Movie Title}</b> — title<br><b>{Movie CleanTitle}</b> — without the illegal characters<br><b>{Movie TitleThe}</b> — article at the end<br><b>{Movie OriginalTitle}</b> — title in the original language<br><b>{Movie TitleFirstCharacter}</b> — first letter, to split the library into A/B/C<br><b>{Movie Collection}</b> — collection the movie belongs to, to keep a saga in one folder<br><b>{Movie Certification}</b> — age rating<br><b>{Release Year}</b> — release year<br><b>{Edition Tags}</b> — edition (<i>Extended</i>, <i>Directors Cut</i>)<br><b>{ImdbId}</b>, <b>{TmdbId}</b> — identifiers; in the folder they help Jellyfin match the movie<br>'+t('cfg.vars.common'),
   'cfg.vars.lidarr':()=>'Everything the Lidarr format fields accept.<br><b>Artist</b><br><b>{Artist Name}</b>, <b>{Artist CleanName}</b>, <b>{Artist NameThe}</b><br><b>{Artist Disambiguation}</b> — tells apart artists sharing a name<br><b>{Artist Genre}</b>, <b>{Artist MbId}</b> — genre and MusicBrainz identifier<br><b>Album</b><br><b>{Album Title}</b>, <b>{Album CleanTitle}</b><br><b>{Album Type}</b> — <i>Album</i>, <i>EP</i>, <i>Live</i><br><b>{Album Disambiguation}</b>, <b>{Release Year}</b>, <b>{Album MbId}</b><br><b>Disc and track</b><br><b>{medium:0}</b> — disc number; <b>{Medium Format}</b> — <i>CD</i>, <i>Vinyl</i><br><b>{track:00}</b>, <b>{Track Title}</b>, <b>{Track CleanTitle}</b><br><b>{Track ArtistName}</b> — the track artist, which on a compilation is not the album one<br><b>Audio</b><br><b>{MediaInfo AudioBitRate}</b>, <b>{MediaInfo AudioBitsPerSample}</b>, <b>{MediaInfo AudioSampleRate}</b><br>'+t('cfg.vars.common'),
@@ -991,6 +997,7 @@ const I18N = {
   'cfg.naming.lidarr':'Nomenclatura de pista',
   'cfg.n.illegal':'Caracteres ilegales',
   'cfg.n.illegalOn':'sustituir en vez de quitar',
+  'cfg.n.preview':'Queda así:',
   'cfg.n.colon':'Dos puntos',
   'cfg.n.multiEp':'Varios episodios',
   'cfg.n.standardEp':'Episodio estándar',
@@ -1038,7 +1045,7 @@ const I18N = {
   'cfg.q.multiDiscTrack':'Nombre de las pistas cuando el álbum tiene más de un disco — el número del disco entra en el nombre.<br><b>{Album Title}</b> — título del álbum<br><b>{medium:0}</b> — número del disco<br><b>{track:00}</b> — número de la pista<br><b>{Track Title}</b> — título de la pista',
   'cfg.q.artistFolder':'Nombre de la carpeta de cada artista dentro de la biblioteca.<br><b>{Artist Name}</b> — nombre del artista',
   'cfg.q.albumFolder':'Nombre de la carpeta de cada álbum dentro de la carpeta del artista.<br><b>{Album Title}</b> — título del álbum<br><b>{Release Year}</b> — año de estreno',
-  'cfg.vars.common':'<b>Comunes a los tres</b><br><b>{Quality Full}</b> — fuente, resolución y edición (<i>WEBDL-1080p Proper</i>)<br><b>{Quality Title}</b> — solo la fuente y la resolución<br><b>{Release Group}</b> — grupo que publicó el archivo<br><b>{Custom Formats}</b> — formatos personalizados que coincidieron con la release<br><b>{Original Title}</b> — nombre de la release, tal como vino del indexador<br><b>{Original Filename}</b> — nombre del archivo dentro de la release<br><b>{MediaInfo VideoCodec}</b>, <b>{MediaInfo VideoDynamicRangeType}</b> — <i>x265</i>, <i>HDR</i>/<i>DV</i><br><b>{MediaInfo AudioCodec}</b>, <b>{MediaInfo AudioChannels}</b> — <i>DTS</i>, <i>5.1</i><br><b>{MediaInfo AudioLanguages}</b>, <b>{MediaInfo SubtitleLanguages}</b> — <i>[PT+EN]</i><br><b>{MediaInfo Simple}</b>, <b>{MediaInfo Full}</b> — paquetes ya hechos con los anteriores<br><b>Modificadores</b><br><b>:0</b>, <b>:00</b>, <b>:000</b> rellenan con ceros; <b>{Episode Title:30}</b> corta el texto en 30 caracteres.<br>La lista que manda es la de la propia app, en <i>Media Management → Naming</i>. Un token que no existe sale literal en el nombre del archivo, en vez de dar error.',
+  'cfg.vars.common':'<b>Comunes a los tres</b><br><b>{Quality Full}</b> — fuente, resolución y edición (<i>WEBDL-1080p Proper</i>)<br><b>{Quality Title}</b> — solo la fuente y la resolución<br><b>{Release Group}</b> — grupo que publicó el archivo<br><b>{Custom Formats}</b> — formatos personalizados que coincidieron con la release<br><b>{Original Title}</b> — nombre de la release, tal como vino del indexador<br><b>{Original Filename}</b> — nombre del archivo dentro de la release<br><b>{MediaInfo VideoCodec}</b>, <b>{MediaInfo VideoDynamicRangeType}</b> — <i>x265</i>, <i>HDR</i>/<i>DV</i><br><b>{MediaInfo AudioCodec}</b>, <b>{MediaInfo AudioChannels}</b> — <i>DTS</i>, <i>5.1</i><br><b>{MediaInfo AudioLanguages}</b>, <b>{MediaInfo SubtitleLanguages}</b> — <i>[PT+EN]</i><br><b>{MediaInfo Simple}</b>, <b>{MediaInfo Full}</b> — paquetes ya hechos con los anteriores<br><b>Modificadores</b><br><b>:0</b>, <b>:00</b>, <b>:000</b> rellenan con ceros; <b>{Episode Title:30}</b> corta el texto en 30 caracteres.<br>Lo que esté dentro de las llaves alrededor del token es adorno, y solo sale cuando el token tiene valor: <b>{(Release Year)}</b> da <i>(1982)</i>, <b>{-Release Group}</b> da <i>-RlsGrp</i> y <b>{[MediaInfo 3D]}</b> desaparece entero en una película que no es 3D. Se pueden anidar (<b>{tmdb-{TmdbId}}</b>) y el corchete de cierre puede ir en el grupo siguiente (<b>{[MediaInfo AudioCodec}{ MediaInfo AudioChannels]}</b>).<br>La lista que manda es la de la propia app, en <i>Media Management → Naming</i>. Un token que no existe sale literal en el nombre del archivo, en vez de dar error.',
   'cfg.vars.sonarr':()=>'Todo lo que aceptan los campos de formato de Sonarr.<br><b>Serie</b><br><b>{Series Title}</b> — título<br><b>{Series CleanTitle}</b> — sin los caracteres ilegales<br><b>{Series TitleYear}</b> — con el año (<i>Fargo (2014)</i>)<br><b>{Series TitleThe}</b> — artículo al final (<i>Office, The</i>)<br><b>{Series TitleFirstCharacter}</b> — primera letra, para dividir la biblioteca en A/B/C<br><b>{Series Year}</b> — año de estreno<br><b>{ImdbId}</b>, <b>{TvdbId}</b>, <b>{TmdbId}</b>, <b>{TvMazeId}</b> — identificadores; en la carpeta ayudan a que Jellyfin reconozca la serie<br><b>Numeración</b><br><b>{season:00}</b>, <b>{episode:00}</b><br><b>{absolute:000}</b> — número absoluto, el del anime<br><b>{Air-Date}</b> — <i>2024-05-31</i>; <b>{Air Date}</b> usa espacios<br><b>Episodio</b><br><b>{Episode Title}</b>, <b>{Episode CleanTitle}</b><br>'+t('cfg.vars.common'),
   'cfg.vars.radarr':()=>'Todo lo que aceptan los campos de formato de Radarr.<br><b>Película</b><br><b>{Movie Title}</b> — título<br><b>{Movie CleanTitle}</b> — sin los caracteres ilegales<br><b>{Movie TitleThe}</b> — artículo al final<br><b>{Movie OriginalTitle}</b> — título en el idioma original<br><b>{Movie TitleFirstCharacter}</b> — primera letra, para dividir la biblioteca en A/B/C<br><b>{Movie Collection}</b> — colección a la que pertenece, para juntar la saga en una carpeta<br><b>{Movie Certification}</b> — clasificación por edad<br><b>{Release Year}</b> — año de estreno<br><b>{Edition Tags}</b> — edición (<i>Extended</i>, <i>Directors Cut</i>)<br><b>{ImdbId}</b>, <b>{TmdbId}</b> — identificadores; en la carpeta ayudan a que Jellyfin reconozca la película<br>'+t('cfg.vars.common'),
   'cfg.vars.lidarr':()=>'Todo lo que aceptan los campos de formato de Lidarr.<br><b>Artista</b><br><b>{Artist Name}</b>, <b>{Artist CleanName}</b>, <b>{Artist NameThe}</b><br><b>{Artist Disambiguation}</b> — distingue artistas con el mismo nombre<br><b>{Artist Genre}</b>, <b>{Artist MbId}</b> — género e identificador en MusicBrainz<br><b>Álbum</b><br><b>{Album Title}</b>, <b>{Album CleanTitle}</b><br><b>{Album Type}</b> — <i>Album</i>, <i>EP</i>, <i>Live</i><br><b>{Album Disambiguation}</b>, <b>{Release Year}</b>, <b>{Album MbId}</b><br><b>Disco y pista</b><br><b>{medium:0}</b> — número del disco; <b>{Medium Format}</b> — <i>CD</i>, <i>Vinyl</i><br><b>{track:00}</b>, <b>{Track Title}</b>, <b>{Track CleanTitle}</b><br><b>{Track ArtistName}</b> — el artista de la pista, que en un recopilatorio no es el del álbum<br><b>Audio</b><br><b>{MediaInfo AudioBitRate}</b>, <b>{MediaInfo AudioBitsPerSample}</b>, <b>{MediaInfo AudioSampleRate}</b><br>'+t('cfg.vars.common'),
@@ -2013,6 +2020,119 @@ function renderConfig(){
   buildHelp(box);
 }
 
+/* Exemplo de cada família, com uma entrada para cada variável listada no "?"
+   do cabeçalho — é dele que sai o nome mostrado abaixo de cada formato. A
+   chave é o nome do token, sem as chaves e sem o modificador. */
+const SAMPLE_COMMON = {
+  'Quality Full':'WEBDL-1080p Proper', 'Quality Title':'WEBDL-1080p',
+  'Release Group':'RlsGrp', 'Custom Formats':'Surround Sound',
+  'MediaInfo VideoCodec':'x265', 'MediaInfo VideoDynamicRangeType':'HDR',
+  'MediaInfo AudioCodec':'DTS', 'MediaInfo AudioChannels':'5.1',
+  'MediaInfo AudioLanguages':'[PT+EN]', 'MediaInfo SubtitleLanguages':'[PT]',
+  'MediaInfo Simple':'x265 DTS', 'MediaInfo Full':'x265 DTS [PT+EN]',
+  // vazio de propósito: é ele que mostra um grupo sumindo inteiro no exemplo
+  'MediaInfo 3D':'',
+};
+const SAMPLE = {
+  sonarr:{...SAMPLE_COMMON,
+    'Series Title':'Fringe', 'Series CleanTitle':'Fringe',
+    'Series TitleYear':'Fringe (2008)', 'Series CleanTitleYear':'Fringe 2008',
+    'Series TitleThe':'Fringe', 'Series TitleFirstCharacter':'F',
+    'Series Year':'2008', 'ImdbId':'tt1119644', 'TvdbId':'82066',
+    'TmdbId':'1413', 'TvMazeId':'234',
+    'season':2, 'episode':5, 'absolute':27,
+    'Air-Date':'2010-09-23', 'Air Date':'2010 09 23',
+    'Episode Title':'Olivia', 'Episode CleanTitle':'Olivia',
+    'Original Title':'Fringe.S02E05.1080p.WEB-DL-RlsGrp',
+    'Original Filename':'fringe.s02e05.1080p.web-dl'},
+  radarr:{...SAMPLE_COMMON,
+    'Quality Full':'Bluray-1080p Proper', 'Quality Title':'Bluray-1080p',
+    'Movie Title':'Blade Runner', 'Movie CleanTitle':'Blade Runner',
+    'Movie TitleThe':'Blade Runner', 'Movie OriginalTitle':'Blade Runner',
+    'Movie TitleFirstCharacter':'B', 'Movie Collection':'Blade Runner',
+    'Movie Certification':'R', 'Release Year':'1982',
+    'Edition Tags':'Final Cut', 'ImdbId':'tt0083658', 'TmdbId':'78',
+    'Original Title':'Blade.Runner.1982.Final.Cut.1080p.BluRay-RlsGrp',
+    'Original Filename':'blade.runner.1982.1080p.bluray'},
+  lidarr:{...SAMPLE_COMMON,
+    'Quality Full':'FLAC', 'Quality Title':'FLAC',
+    'Artist Name':'Radiohead', 'Artist CleanName':'Radiohead',
+    'Artist NameThe':'Radiohead', 'Artist Disambiguation':'banda inglesa',
+    'Artist Genre':'Alternative Rock', 'Artist MbId':'a74b1b7f-71a5',
+    'Album Title':'OK Computer', 'Album CleanTitle':'OK Computer',
+    'Album Type':'Album', 'Album Disambiguation':'remaster',
+    'Release Year':'1997', 'Album MbId':'0b6b4ba0-d36f',
+    'medium':1, 'Medium Format':'CD', 'track':6,
+    'Track Title':'Karma Police', 'Track CleanTitle':'Karma Police',
+    'Track ArtistName':'Radiohead',
+    'MediaInfo AudioBitRate':'1006 kbps', 'MediaInfo AudioBitsPerSample':'16bit',
+    'MediaInfo AudioSampleRate':'44.1kHz',
+    'Original Title':'Radiohead - OK Computer (1997) FLAC',
+    'Original Filename':'06 - karma police'},
+};
+// extensão que fecha o exemplo dos formatos de arquivo; pasta não leva nenhuma
+const SAMPLE_EXT = {sonarr:'.mkv', radarr:'.mkv', lidarr:'.flac'};
+
+/* Troca as variáveis pelo exemplo, como o *arr faz ao renomear.
+
+   Um grupo `{...}` é o token mais o que estiver em volta dele dentro das
+   chaves, e esse enfeite só sai quando o token tem valor: `{(Release Year)}`
+   vira `(1982)`, `{-Release Group}` vira `-RlsGrp` e `{[MediaInfo 3D]}` some
+   inteiro num filme que não é 3D — sem deixar os colchetes vazios para trás.
+   Grupo aninhado (`{tmdb-{TmdbId}}`) se resolve de dentro para fora, e o par
+   `{[MediaInfo AudioCodec}{ MediaInfo AudioChannels]}` fecha o colchete no
+   grupo seguinte, que é como o TRaSH escreve.
+
+   Token que o app não conhece fica literal no nome, `:00` completa com zeros
+   e `:30` corta o texto em 30 caracteres. O nome não diferencia maiúsculas. */
+function fmtSample(id, fmt){
+  const data = SAMPLE[id] || {};
+  // do mais longo para o mais curto, senão `{Movie Title}` casaria dentro de
+  // `{Movie TitleThe}` e o resto do nome viraria enfeite
+  const keys = Object.keys(data).sort((a,b)=>b.length - a.length);
+
+  /* Percorre um texto resolvendo os grupos. `hit` diz se algum token ali
+     dentro tinha valor — null quando não havia grupo nenhum. */
+  function walk(text){
+    let out = '', hit = null, i = 0;
+    while(i < text.length){
+      if(text[i] !== '{'){ out += text[i++]; continue; }
+      let d = 1, j = i + 1;
+      while(j < text.length && d){
+        if(text[j] === '{') d++; else if(text[j] === '}') d--;
+        j++;
+      }
+      if(d){ out += text.slice(i); break; }        // chave sem par: sai literal
+      const g = group(text.slice(i + 1, j - 1));
+      out += g.out; hit = hit === true || g.hit; i = j;
+    }
+    return {out, hit};
+  }
+
+  function group(inner){
+    const w = walk(inner);
+    // tinha grupo dentro: quem manda é ele, e o de fora é só enfeite
+    if(w.hit !== null) return {out: w.hit ? w.out : '', hit: w.hit};
+    const key = keys.find(k => inner.toLowerCase().includes(k.toLowerCase()));
+    if(key === undefined) return {out:`{${inner}}`, hit:true};
+    const at = inner.toLowerCase().indexOf(key.toLowerCase());
+    let rest = inner.slice(at + key.length), mod = '';
+    const m = rest.match(/^:\s*([0-9]+)/);
+    if(m){ mod = m[1]; rest = rest.slice(m[0].length); }
+    let v = String(data[key] ?? '');
+    if(!v) return {out:'', hit:false};             // vazio leva o enfeite junto
+    if(/^0+$/.test(mod))               v = v.padStart(mod.length, '0');
+    else if(/^[1-9][0-9]*$/.test(mod)) v = v.slice(0, +mod);
+    return {out: inner.slice(0, at) + v + rest, hit:true};
+  }
+
+  return walk(String(fmt ?? '')).out;
+}
+const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// linha do exemplo: o nome que aquele formato produz, com extensão se for arquivo
+const prevText = (id, f, val) =>
+  `${t('cfg.n.preview')} <b>${escHtml(fmtSample(id, val) + (f.file ? SAMPLE_EXT[id] : ''))}</b>`;
+
 /* bloco de nomenclatura de uma família: uma linha por campo do app. Sem
    renomear, os formatos de arquivo ficam travados — as pastas, não. */
 function namingBlock(id){
@@ -2033,9 +2153,11 @@ function namingBlock(id){
         <select id="n-${id}-${f.k}" ${at}${off}>${f.opts.map(o=>
           `<option value="${o}"${cfg[f.k]===o?' selected':''}>${t('cfg.opt.'+o)}</option>`
         ).join('')}</select></div>`;
+    // o formato vem seguido do nome que ele produz, refeito a cada digitada
     return `<div class="row"${help}><label for="n-${id}-${f.k}">${lbl}</label>
       <input type="text" class="fmt" id="n-${id}-${f.k}" ${at}${off}
-             value="${String(cfg[f.k]??'').replace(/"/g,'&quot;')}"></div>`;
+             value="${String(cfg[f.k]??'').replace(/"/g,'&quot;')}"></div>
+      <p class="hint prevTxt" id="pv-${id}-${f.k}">${prevText(id, f, cfg[f.k])}</p>`;
   };
   // o "?" do cabeçalho abre a lista inteira de variáveis que o app aceita
   return `<div class="naming"><div class="nm">${t('cfg.naming.'+id)}
@@ -2069,8 +2191,13 @@ $('#cfgBody').onchange = e=>{
 // selects e campos de texto: nomenclatura, permissões e categorias
 $('#cfgBody').oninput = e=>{
   const el = e.target, d = el.dataset;
-  if(d.kind === 'naming' && el.type !== 'checkbox')
+  if(d.kind === 'naming' && el.type !== 'checkbox'){
     CONFIG.mm[d.key].naming[d.opt] = el.value;
+    // só o exemplo se refaz: um renderConfig aqui tiraria o foco do campo
+    const pv = $(`#pv-${d.key}-${d.opt}`),
+          f  = (NAMING_FIELDS[d.key]||[]).find(x=>x.k === d.opt);
+    if(pv && f) pv.innerHTML = prevText(d.key, f, el.value);
+  }
   else if(d.kind === 'mmText') CONFIG.mm[d.key][d.opt] = el.value;
   else if(d.kind === 'cat')    CONFIG.clients[d.key].cats[d.arr] = el.value;
 };
