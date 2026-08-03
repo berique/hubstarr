@@ -88,6 +88,9 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
 
 ## Docker
 
+O resumo desta seção também está na própria página, num aviso colapsável acima
+dos painéis.
+
 O Hubstarr em si só precisa de um navegador; os arquivos que ele gera é que
 precisam do Docker com o plugin Compose. No Linux, o script oficial resolve:
 
@@ -97,7 +100,14 @@ sudo sh get-docker.sh
 ```
 
 No macOS e no Windows — ou no Linux, se preferir uma instalação gerenciada com
-interface gráfica — instale o [Docker Desktop][dd].
+interface gráfica — instale o [Docker Desktop][dd], que já vem com o Compose.
+
+Para usar o `docker` sem `sudo`, ponha o usuário no grupo — a mudança vale na
+sessão seguinte:
+
+```sh
+sudo usermod -aG docker $USER
+```
 
 [dd]: https://docs.docker.com/desktop/
 

@@ -89,6 +89,9 @@ The combobox lists the available services with their logos and default ports:
 
 ## Docker
 
+This section is also summarised on the page itself, in a collapsible notice
+above the panels.
+
 Hubstarr itself only needs a browser; it's the files it generates that need
 Docker with the Compose plugin. On Linux, the official script does it:
 
@@ -98,7 +101,14 @@ sudo sh get-docker.sh
 ```
 
 On macOS and Windows — or on Linux, if you'd rather have a managed install with
-a GUI — install [Docker Desktop][dd].
+a GUI — install [Docker Desktop][dd], which ships with Compose.
+
+To use `docker` without `sudo`, add your user to the group — it takes effect on
+the next session:
+
+```sh
+sudo usermod -aG docker $USER
+```
 
 [dd]: https://docs.docker.com/desktop/
 

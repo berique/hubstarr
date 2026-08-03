@@ -90,6 +90,9 @@ defecto:
 
 ## Docker
 
+El resumen de esta sección también está en la propia página, en un aviso
+plegable encima de los paneles.
+
 Hubstarr en sí solo necesita un navegador; son los archivos que genera los que
 necesitan Docker con el plugin Compose. En Linux, el script oficial lo
 resuelve:
@@ -100,7 +103,14 @@ sudo sh get-docker.sh
 ```
 
 En macOS y Windows — o en Linux, si prefieres una instalación gestionada con
-interfaz gráfica — instala [Docker Desktop][dd].
+interfaz gráfica — instala [Docker Desktop][dd], que ya trae Compose.
+
+Para usar `docker` sin `sudo`, añade tu usuario al grupo — el cambio vale en la
+sesión siguiente:
+
+```sh
+sudo usermod -aG docker $USER
+```
 
 [dd]: https://docs.docker.com/desktop/
 
