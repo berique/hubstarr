@@ -1407,7 +1407,7 @@ const SERVICES = [
   {id:'lidarr',   name:'Lidarr',    port:8686, img:'lscr.io/linuxserver/lidarr:latest',    color:'#1db954', media:true, mdir:'music', needsDl:true},
   {id:'prowlarr', name:'Prowlarr',  port:9696, img:'lscr.io/linuxserver/prowlarr:latest', color:'#e5534b', solver:true},
   {id:'bazarr',   name:'Bazarr',    port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr']},
-  {id:'qbittorrent',name:'qBittorrent',port:8080, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true, webAuth:true, conf:{host:'qBittorrent.conf', target:'/config/qBittorrent/qBittorrent.conf', pane:'#outQbt', tab:'qbt'}},
+  {id:'qbittorrent',name:'qBittorrent',port:8181, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true, webAuth:true, conf:{host:'qBittorrent.conf', target:'/config/qBittorrent/qBittorrent.conf', pane:'#outQbt', tab:'qbt'}},
   {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true, cdh:true},
   {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true,
    conf:{host:'config/config/network.xml', target:'/config/config/network.xml', pane:'#outJf', tab:'jf'}},
@@ -2537,6 +2537,9 @@ function build(){
         L.push(`      - <span class="v">NVIDIA_VISIBLE_DEVICES=all</span>`);
         L.push(`      - <span class="v">NVIDIA_DRIVER_CAPABILITIES=compute,video,utility</span>`);
       }
+      // a imagem do qBittorrent escolhe a porta da WebUI por variável
+      if(s.id==='qbittorrent')
+        L.push(`      - <span class="v">WEBUI_PORT=${s.port}</span>`);
       if(APIKEY_ENV[s.id])
         L.push(`      - <span class="v">${APIKEY_ENV[s.id]}=\${${APIKEY_VAR}}</span>`);
     }
