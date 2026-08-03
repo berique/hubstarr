@@ -223,7 +223,8 @@ há um, aparece a etiqueta *servidor* no cabeçalho e três coisas mudam.
   `docker compose up -d`, com a saída num log ao vivo. Ao lado dele aparece
   **Derrubar**, que roda o `docker compose down`.
 - **A stack fica guardada.** As instâncias, o Ambiente e a Configuração vão
-  para o `hubstarr.json` da mesma pasta e voltam ao recarregar a página.
+  para um SQLite (`stack.db`) na mesma pasta e voltam ao recarregar a página.
+  Cada adicionar, editar ou excluir mexe na linha daquele serviço.
 - **A Configuração vira realidade.** Com a stack de pé, o botão *Aplicar a
   Configuração* usa a API de cada app para criar o que só existe no banco
   deles: o Prowlarr apontando para cada *arr, os clientes de download com a

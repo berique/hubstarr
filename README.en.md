@@ -225,7 +225,8 @@ change.
   `docker compose up -d`, with the output in a live log. Next to it a **Tear
   down** button appears, running `docker compose down`.
 - **The stack is remembered.** Instances, Environment and Configuration go into
-  `hubstarr.json` in that same folder and come back when the page reloads.
+  a SQLite database (`stack.db`) in that same folder and come back when the page
+  reloads. Each add, edit or delete touches that service's row.
 - **The configuration becomes real.** With the stack up, the *Apply the
   configuration* button uses each app's API to create what only exists in their
   database: Prowlarr pointing at every *arr, the download clients with each

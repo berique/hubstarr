@@ -115,8 +115,14 @@ linguagens — foi justamente para não fazer isso que o contrato é esse.
   linha a linha para o log.
 - `jobs.rs` — subir a stack e configurar app não cabem numa resposta HTTP:
   viram trabalho com número, e a página pergunta pelo número.
-- `store.rs` — o estado da página (`added`, `DEFAULTS`, `CONFIG`) em
-  `hubstarr.json`, guardado como veio, sem olhar dentro.
+- `store.rs` — o estado da página em SQLite (`stack.db`, via rusqlite com o
+  sqlite embutido): a tabela `instance`, uma linha por serviço adicionado, e a
+  `setting`, chave/valor para o Ambiente e a Configuração. Aqui o servidor
+  **conhece** o formato do `added` — é o preço de ter tabela em vez de blob.
+  Campo que a página inventar depois cai na coluna `extra`, que é o resto do
+  objeto em JSON e volta espalhado no `GET`, então flag nova no `SERVICES` não
+  exige migração. `reconcile()` recebe só a lista de chaves: acerta a ordem e
+  apaga o que saiu, sem reescrever linha nenhuma.
 - `arr.rs` — o consumidor do `CONFIG`, que até então não chegava a arquivo
   nenhum. Aplica Prowlarr, clientes de download e Media Management pela API dos
   apps, alcançando-os pelo nginx (mesmo endereço do navegador, então o subpath
@@ -128,8 +134,15 @@ tem `detectServer()` (só tenta em `http(s):`), `outFiles()` — a lista de
 arquivos que o `.zip` e o servidor compartilham —, `runJob()` e `configPlan()`.
 O `configPlan()` é onde o `CONFIG` vira nome de campo de API (`NAMING_API`,
 `CAT_FIELD`, `IMPL`); essa tradução fica aqui porque depende do `cname()` e do
-`route()`, que são derivações daqui. `saveState()` é chamado no fim do
-`render()` e não faz nada sem servidor.
+`route()`, que são derivações daqui.
+
+Quem grava o quê: **adicionar, editar e excluir mexem numa linha só** —
+`putInstance()` no fim do `#mSave` (com a chave antiga quando o título mudou, o
+que é um renomear e não uma linha nova) e `delInstance()` no "Excluir". Serviço
+que entra sozinho ganha a linha dele onde entra: no `ensureFixed()` e no próprio
+`#mSave`, para o gluetun e o flaresolverr. O que vale para a stack inteira sai
+no `saveSettings()`, chamado no fim do `render()`, e é ele que manda a lista de
+chaves que serve de rede de segurança. Nada disso faz coisa alguma sem servidor.
 
 Ao mexer nisso, mantenha o caminho sem servidor intacto: `SERVER` nulo tem de
 deixar a página exatamente como ela era.
