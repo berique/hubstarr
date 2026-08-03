@@ -154,6 +154,22 @@ Todos os volumes usam a sintaxe longa, com `type: bind` e
 container: fora o nginx, não há porta de host para escolher, nem conflito
 possível.
 
+| Serviço      | Porta interna | Serviço      | Porta interna |
+| ------------ | ------------- | ------------ | ------------- |
+| Sonarr       | `8989`        | Jellyfin     | `8096`        |
+| Radarr       | `7878`        | Seerr        | `5055`        |
+| Lidarr       | `8686`        | Heimdall     | `80`          |
+| Prowlarr     | `9696`        | FlareSolverr | `8191`        |
+| Bazarr       | `6767`        | Gluetun      | `8000`        |
+| qBittorrent  | `8181`        | Nginx        | `80` / `443`  |
+| SABnzbd      | `8080`        |              |               |
+
+É essa porta que aparece na lista, ao lado do subpath, e que o `proxy_pass` do
+nginx usa. A do qBittorrent é a exceção que não vem de fábrica: ele ouviria na
+8080, a mesma do SABnzbd, então sai com `WEBUI_PORT=8181` no compose e o
+`WebUI\Port` correspondente na conf gerada. O nginx é o único com duas, e são
+as de dentro do container — as publicadas no host saem do modal dele.
+
 ## Reverse proxy
 
 O nginx é fixo e obrigatório: entra sempre na stack, não aparece no combobox e

@@ -157,6 +157,23 @@ Todos los volúmenes usan la sintaxis larga, con `type: bind` y
 dentro del contenedor: fuera de nginx, no hay puerto de host que elegir, ni
 conflicto posible.
 
+| Servicio     | Puerto interno | Servicio     | Puerto interno |
+| ------------ | -------------- | ------------ | -------------- |
+| Sonarr       | `8989`         | Jellyfin     | `8096`         |
+| Radarr       | `7878`         | Seerr        | `5055`         |
+| Lidarr       | `8686`         | Heimdall     | `80`           |
+| Prowlarr     | `9696`         | FlareSolverr | `8191`         |
+| Bazarr       | `6767`         | Gluetun      | `8000`         |
+| qBittorrent  | `8181`         | Nginx        | `80` / `443`   |
+| SABnzbd      | `8080`         |              |                |
+
+Es ese puerto el que aparece en la lista, junto al subpath, y el que usa el
+`proxy_pass` de nginx. El de qBittorrent es la excepción que no viene de
+fábrica: escucharía en el 8080, el mismo del SABnzbd, así que sale con
+`WEBUI_PORT=8181` en el compose y el `WebUI\Port` correspondiente en la conf
+generada. Nginx es el único con dos, y son los de dentro del contenedor — los
+publicados en el host salen de su propio modal.
+
 ## Reverse proxy
 
 nginx es fijo y obligatorio: siempre entra en la stack, no aparece en el
