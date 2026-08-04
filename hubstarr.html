@@ -301,7 +301,6 @@ sudo sh get-docker.sh</pre>
       <button id="copy" data-i18n="btn.copy">Copiar</button>
       <button id="dl" data-i18n="btn.zip" data-i18n-title="btn.zipHint">Baixar .zip</button>
       <button id="down" hidden data-i18n="btn.down" data-i18n-title="btn.downHint">Derrubar</button>
-      <button class="primary" id="deploy" data-i18n="btn.deploy">Criar stack</button>
     </div>
   </div>
 </div>
@@ -643,10 +642,6 @@ const I18N = {
   'vpn.hOvpnUser':'Usuário do OpenVPN no provedor — nem sempre é o mesmo do login do site. Sai como <b>OPENVPN_USER</b>.',
   'vpn.hOvpnPass':'Senha correspondente ao usuário do OpenVPN. Sai como <b>OPENVPN_PASSWORD</b>.',
   'vpn.hCountries':'Países onde o gluetun pode escolher servidor, separados por vírgula. Em branco, ele escolhe em qualquer lugar. Sai como <b>SERVER_COUNTRIES</b>.',
-  'btn.deploy':'Criar stack',
-  'btn.deploying':'Criando…',
-  'btn.deployed':'Stack criada ✓',
-  'btn.deployFail':'Falhou ✗',
   'btn.down':'Derrubar',
   'btn.downHint':'Roda um docker compose down na pasta da stack',
   'btn.apply':'Aplicar a Configuração',
@@ -654,7 +649,6 @@ const I18N = {
   'srv.on':'servidor',
   'srv.at':d=>`Servidor conectado; os arquivos vão para ${d}`,
   'srv.noDocker':'o docker não respondeu neste servidor',
-  'log.deploy':'Criando a stack',
   'log.down':'Derrubando a stack',
   'log.configure':'Aplicando a Configuração nos apps',
   'log.running':'rodando…',
@@ -931,10 +925,6 @@ const I18N = {
   'vpn.hOvpnUser':'Your OpenVPN username at the provider — often not the same as the website login. Lands as <b>OPENVPN_USER</b>.',
   'vpn.hOvpnPass':'The password matching the OpenVPN username. Lands as <b>OPENVPN_PASSWORD</b>.',
   'vpn.hCountries':'Countries gluetun may pick a server in, comma separated. Left empty, it picks anywhere. Lands as <b>SERVER_COUNTRIES</b>.',
-  'btn.deploy':'Create stack',
-  'btn.deploying':'Creating…',
-  'btn.deployed':'Stack created ✓',
-  'btn.deployFail':'Failed ✗',
   'btn.down':'Tear down',
   'btn.downHint':'Runs docker compose down in the stack folder',
   'btn.apply':'Apply the configuration',
@@ -942,7 +932,6 @@ const I18N = {
   'srv.on':'server',
   'srv.at':d=>`Server connected; files go to ${d}`,
   'srv.noDocker':'docker did not answer on this server',
-  'log.deploy':'Creating the stack',
   'log.down':'Tearing the stack down',
   'log.configure':'Applying the configuration to the apps',
   'log.running':'running…',
@@ -1219,10 +1208,6 @@ const I18N = {
   'vpn.hOvpnUser':'Usuario de OpenVPN en el proveedor — muchas veces no es el mismo del login del sitio. Sale como <b>OPENVPN_USER</b>.',
   'vpn.hOvpnPass':'La contraseña correspondiente al usuario de OpenVPN. Sale como <b>OPENVPN_PASSWORD</b>.',
   'vpn.hCountries':'Países donde gluetun puede elegir servidor, separados por comas. En blanco, elige en cualquier lugar. Sale como <b>SERVER_COUNTRIES</b>.',
-  'btn.deploy':'Crear stack',
-  'btn.deploying':'Creando…',
-  'btn.deployed':'Stack creada ✓',
-  'btn.deployFail':'Falló ✗',
   'btn.down':'Derribar',
   'btn.downHint':'Ejecuta un docker compose down en la carpeta de la stack',
   'btn.apply':'Aplicar la configuración',
@@ -1230,7 +1215,6 @@ const I18N = {
   'srv.on':'servidor',
   'srv.at':d=>`Servidor conectado; los archivos van a ${d}`,
   'srv.noDocker':'docker no respondió en este servidor',
-  'log.deploy':'Creando la stack',
   'log.down':'Derribando la stack',
   'log.configure':'Aplicando la configuración en las apps',
   'log.running':'ejecutando…',
@@ -2994,7 +2978,7 @@ $('#dl').onclick = ()=>{
 /* ---------- servidor (opcional) ---------- */
 
 /* A página é a mesma com ou sem servidor: aberta do disco ela continua sendo o
-   protótipo de sempre, com o .zip e o "Criar stack" simulado. `SERVER` só fica
+   protótipo de sempre, com o .zip e mais nada. `SERVER` só fica
    preenchido quando alguém responde em `api/health`, e cada caminho novo tem o
    antigo atrás dele. O servidor não gera nada — recebe pronto o que os
    geradores daqui montaram. */
@@ -3189,26 +3173,7 @@ const applyConfig = ()=> runJob(
 
 $('#logApply').onclick = ()=>{ $('#logApply').hidden = true; applyConfig(); };
 
-/* ---------- criar e derrubar ---------- */
-
-// sem servidor, o botão continua sendo o do protótipo: encena e volta
-function fakeDeploy(btn){
-  btn.textContent = t('btn.deploying'); btn.disabled = true;
-  setTimeout(()=>{ btn.textContent = t('btn.deployed');
-    setTimeout(()=>{btn.textContent = t('btn.deploy'); btn.disabled = false;}, 1800); }, 900);
-}
-
-$('#deploy').onclick = async e=>{
-  const btn = e.target;
-  if(!SERVER) return fakeDeploy(btn);
-  btn.textContent = t('btn.deploying'); btn.disabled = true;
-  const ok = await runJob(()=> api('deploy', {method:'POST',
-    body:JSON.stringify({files:outFiles()})}), t('log.deploy'));
-  // de pé, faz sentido oferecer o que só a API dos apps resolve
-  if(ok) $('#logApply').hidden = false;
-  btn.textContent = t(ok ? 'btn.deployed' : 'btn.deployFail');
-  setTimeout(()=>{btn.textContent = t('btn.deploy'); btn.disabled = false;}, 1800);
-};
+/* ---------- derrubar ---------- */
 
 $('#down').onclick = ()=> runJob(()=> api('down', {method:'POST'}), t('log.down'));
 

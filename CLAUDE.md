@@ -14,9 +14,9 @@ arquivo no navegador. O `.mvn/` é resto de outro projeto e está no `.gitignore
 
 Ao lado dela existe um servidor **opcional** em `backend/` (Rust, axum). Ele não
 é requisito de nada: aberta do disco, a página continua sendo o protótipo de
-sempre — o botão "Criar stack" simula o deploy e a **Configuração** não sai da
-interface. Servida pelo binário, ela detecta o servidor e passa a criar a stack
-de verdade. Veja "Servidor" mais abaixo.
+sempre — gera os arquivos, baixa o `.zip` e a **Configuração** não sai da
+interface. Servida pelo binário, ela detecta o servidor, guarda a stack e
+oferece o "Derrubar". Veja "Servidor" mais abaixo.
 
 Licença GPL-3.0 (`LICENSE`, texto oficial da FSF). O aviso de copyright fica no
 comentário logo depois do `<!DOCTYPE html>` — não o remova ao mexer no arquivo,
@@ -67,7 +67,7 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    downloads concluídos) e `mm[família]` (Media Management mais a nomenclatura,
    cujos campos estão em `NAMING_FIELDS` com os formatos de fábrica).
    `syncConfig()` o alinha com o `added` a cada abertura do modal, e ele não
-   entra nos arquivos gerados — é protótipo de interface, como o "Criar stack".
+   entra nos arquivos gerados — é protótipo de interface.
 5. **Derivações** — `slug()` → `cname()` (container_name = chave do serviço =
    pasta de config), `route()`, `url()`, `cfgPath`/`dataPath` (com variáveis
    `${...}` do `.env`) e `cfgReal`/`dataReal` (caminhos resolvidos, para o hint
