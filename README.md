@@ -42,6 +42,15 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
 - **Aceleração de hardware do Jellyfin**: CPU, Intel ou NVIDIA. Intel ganha
   `devices: /dev/dri:/dev/dri`; NVIDIA, a reserva de GPU em `deploy` e as
   variáveis `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES`.
+- **Tema do theme.park**: os serviços de imagem do linuxserver — Sonarr,
+  Radarr, Lidarr, Prowlarr, Bazarr, qBittorrent, SABnzbd, Jellyfin e Heimdall —
+  saem com `DOCKER_MODS=ghcr.io/themepark-dev/theme.park:<app>`, o mod que
+  aplica o tema na interface deles. No Sonarr e no Radarr o modal ainda traz um
+  campo **Tema**, que vira `TP_ADDON`: *Padrão* usa o addon escuro
+  (`sonarr-darker`), *UHD* troca logotipo e favicon pelos de 4K
+  (`sonarr-4k-logo|sonarr-4k-favicon`) e *Animes* troca só o favicon
+  (`sonarr-anime-favicon`) — útil para distinguir as instâncias de uma stack com
+  mais de um Sonarr ou Radarr.
 - **FlareSolverr junto do Prowlarr**: no modal do Prowlarr, um checkbox
   marcado por padrão traz o FlareSolverr para a stack — é ele que resolve o
   desafio anti-bot da Cloudflare nos indexadores protegidos. Configure-o no

@@ -43,6 +43,15 @@ The combobox lists the available services with their logos and default ports:
 - **Jellyfin hardware acceleration**: CPU, Intel or NVIDIA. Intel gets
   `devices: /dev/dri:/dev/dri`; NVIDIA gets the GPU reservation under `deploy`
   plus the `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES` variables.
+- **theme.park theme**: services on linuxserver images — Sonarr, Radarr,
+  Lidarr, Prowlarr, Bazarr, qBittorrent, SABnzbd, Jellyfin and Heimdall — come
+  out with `DOCKER_MODS=ghcr.io/themepark-dev/theme.park:<app>`, the mod that
+  themes their interface. Sonarr and Radarr also get a **Theme** field in the
+  modal, which becomes `TP_ADDON`: *Default* uses the darker addon
+  (`sonarr-darker`), *UHD* swaps logo and favicon for the 4K ones
+  (`sonarr-4k-logo|sonarr-4k-favicon`) and *Anime* swaps only the favicon
+  (`sonarr-anime-favicon`) — handy to tell instances apart in a stack with more
+  than one Sonarr or Radarr.
 - **FlareSolverr alongside Prowlarr**: in the Prowlarr modal, a checkbox that
   is on by default brings FlareSolverr into the stack — it is what solves
   Cloudflare's anti-bot challenge on protected indexers. Set it up in Prowlarr

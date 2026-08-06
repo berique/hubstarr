@@ -433,6 +433,13 @@ sudo sh get-docker.sh</pre>
           <option value="nvidia" data-i18n="m.hwNvidia"></option>
         </select>
       </div>
+      <div class="row" id="mTpRow" data-help="m.tpWhy"><label for="mTp" data-i18n="m.tp">Tema</label>
+        <select id="mTp">
+          <option value="std" data-i18n="m.tpStd"></option>
+          <option value="uhd" data-i18n="m.tpUhd"></option>
+          <option value="anime" data-i18n="m.tpAnime"></option>
+        </select>
+      </div>
       <div id="mWebAuth">
         <div class="row" data-help="m.webAuthWhy"><label for="mUser" data-i18n="m.user">Usuário</label>
           <input type="text" id="mUser" placeholder="admin"></div>
@@ -707,6 +714,11 @@ const I18N = {
   'm.hwHint':{cpu:'Transcodifica na CPU.',
               intel:'Passa <b>/dev/dri</b> para o container.',
               nvidia:'Reserva a GPU pelo runtime da NVIDIA.'},
+  'm.tp':'Tema',
+  'm.tpStd':'Padrão',
+  'm.tpUhd':'UHD',
+  'm.tpAnime':'Animes',
+  'm.tpWhy':'Variante do tema do theme.park para este app. Sai no compose como <b>TP_ADDON</b>: o <b>Padrão</b> usa o addon escuro, o <b>UHD</b> troca logotipo e favicon pelos de 4K e o <b>Animes</b> troca só o favicon.',
   'items.hwIntel':'Intel',
   'items.hwNvidia':'NVIDIA',
   'm.vpn':'Rotear pelo container VPN (gluetun)',
@@ -990,6 +1002,11 @@ const I18N = {
   'm.hwHint':{cpu:'Transcodes on the CPU.',
               intel:'Passes <b>/dev/dri</b> into the container.',
               nvidia:'Reserves the GPU through the NVIDIA runtime.'},
+  'm.tp':'Theme',
+  'm.tpStd':'Default',
+  'm.tpUhd':'UHD',
+  'm.tpAnime':'Anime',
+  'm.tpWhy':'theme.park theme variant for this app. It lands in the compose file as <b>TP_ADDON</b>: <b>Default</b> uses the darker addon, <b>UHD</b> swaps logo and favicon for the 4K ones, and <b>Anime</b> swaps only the favicon.',
   'items.hwIntel':'Intel',
   'items.hwNvidia':'NVIDIA',
   'm.vpn':'Route through the VPN container (gluetun)',
@@ -1273,6 +1290,11 @@ const I18N = {
   'm.hwHint':{cpu:'Transcodifica en la CPU.',
               intel:'Pasa <b>/dev/dri</b> al contenedor.',
               nvidia:'Reserva la GPU por el runtime de NVIDIA.'},
+  'm.tp':'Tema',
+  'm.tpStd':'Predeterminado',
+  'm.tpUhd':'UHD',
+  'm.tpAnime':'Anime',
+  'm.tpWhy':'Variante del tema de theme.park para esta app. Sale en el compose como <b>TP_ADDON</b>: <b>Predeterminado</b> usa el addon oscuro, <b>UHD</b> cambia logotipo y favicon por los de 4K y <b>Anime</b> cambia solo el favicon.',
   'items.hwIntel':'Intel',
   'items.hwNvidia':'NVIDIA',
   'm.vpn':'Enrutar por el contenedor VPN (gluetun)',
@@ -1386,17 +1408,17 @@ function setLang(l){
 }
 
 const SERVICES = [
-  {id:'sonarr',   name:'Sonarr',    port:8989, img:'lscr.io/linuxserver/sonarr:latest',    color:'#3fb8ea', media:true, mdir:'series', needsDl:true},
-  {id:'radarr',   name:'Radarr',    port:7878, img:'lscr.io/linuxserver/radarr:latest',    color:'#feca57', media:true, mdir:'movies', needsDl:true},
-  {id:'lidarr',   name:'Lidarr',    port:8686, img:'lscr.io/linuxserver/lidarr:latest',    color:'#1db954', media:true, mdir:'music', needsDl:true},
-  {id:'prowlarr', name:'Prowlarr',  port:9696, img:'lscr.io/linuxserver/prowlarr:latest', color:'#e5534b', solver:true},
-  {id:'bazarr',   name:'Bazarr',    port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr']},
-  {id:'qbittorrent',name:'qBittorrent',port:8181, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true, webAuth:true, conf:{host:'qBittorrent.conf', target:'/config/qBittorrent/qBittorrent.conf', pane:'#outQbt', tab:'qbt'}},
-  {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true, cdh:true},
-  {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true,
+  {id:'sonarr',   name:'Sonarr',    port:8989, img:'lscr.io/linuxserver/sonarr:latest',    color:'#3fb8ea', media:true, mdir:'series', needsDl:true, tp:true, tpAddon:true},
+  {id:'radarr',   name:'Radarr',    port:7878, img:'lscr.io/linuxserver/radarr:latest',    color:'#feca57', media:true, mdir:'movies', needsDl:true, tp:true, tpAddon:true},
+  {id:'lidarr',   name:'Lidarr',    port:8686, img:'lscr.io/linuxserver/lidarr:latest',    color:'#1db954', media:true, mdir:'music', needsDl:true, tp:true},
+  {id:'prowlarr', name:'Prowlarr',  port:9696, img:'lscr.io/linuxserver/prowlarr:latest', color:'#e5534b', solver:true, tp:true},
+  {id:'bazarr',   name:'Bazarr',    port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr'], tp:true},
+  {id:'qbittorrent',name:'qBittorrent',port:8181, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true, webAuth:true, tp:true, conf:{host:'qBittorrent.conf', target:'/config/qBittorrent/qBittorrent.conf', pane:'#outQbt', tab:'qbt'}},
+  {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true, cdh:true, tp:true},
+  {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true, tp:true,
    conf:{host:'config/config/network.xml', target:'/config/config/network.xml', pane:'#outJf', tab:'jf'}},
   {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5', subpathFix:true},
-  {id:'heimdall', name:'Heimdall',  port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f', fixed:true, noLink:true},
+  {id:'heimdall', name:'Heimdall',  port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f', fixed:true, noLink:true, tp:true},
   {id:'flaresolverr',name:'FlareSolverr',port:8191,img:'ghcr.io/thephaseless/byparr:latest',color:'#ff7f50',noVol:true, internal:true},
   {id:'gluetun',  name:'Gluetun',   port:8000, img:'qmcgaw/gluetun:latest',                color:'#8b98a5', noVol:true, internal:true, vpnCfg:true},
 ];
@@ -1415,6 +1437,14 @@ const APIKEY_ENV = {sonarr:'SONARR__AUTH__APIKEY', radarr:'RADARR__AUTH__APIKEY'
                     sabnzbd:'SAB_API_KEY'};
 // variável única que carrega a chave de todos os *arr
 const APIKEY_VAR = 'STARR_APIKEY';
+// mod de tema do theme.park; o app vai depois dos dois-pontos (flag tp)
+const THEME_PARK = 'ghcr.io/themepark-dev/theme.park';
+/* Variante do tema, para quem tem a flag tpAddon: cada uma vira a lista de
+   addons daquele app, separada por barra vertical como o mod espera. */
+const TP_ADDONS = {std:  id => [`${id}-darker`],
+                   uhd:  id => [`${id}-4k-logo`, `${id}-4k-favicon`],
+                   anime:id => [`${id}-anime-favicon`]};
+const tpAddon = (id, v) => (TP_ADDONS[v] || TP_ADDONS.std)(id).join('|');
 /* Senha da interface do qBittorrent: ele guarda PBKDF2-SHA512, 100 mil
    iterações, sal de 16 bytes, tudo em base64. O cálculo é assíncrono, então
    fica em cache e a página se redesenha quando ele chega. */
@@ -1663,7 +1693,7 @@ function derivedMounts(s){
 
 // serviço bloqueado no combobox: instância única já adicionada
 const locked = id => !isMulti(id) && has(id);
-const defCfg = id => ({id, title:svc(id).name, hw:'cpu',
+const defCfg = id => ({id, title:svc(id).name, hw:'cpu', tpv:'std',
                        data:svc(id).mdir||'', abs:'', libs:[], vpn:false,
                        // quem aceita o resolvedor de desafios já nasce com ele marcado
                        solver:!!svc(id).solver});
@@ -1844,6 +1874,8 @@ function openModal(id, key){
   $('#mSolverRow').style.display = s.solver ? 'grid' : 'none';
   $('#mHw').value = cur.hw || 'cpu';
   $('#mHwRow').style.display = s.hw ? 'grid' : 'none';
+  $('#mTp').value = cur.tpv || 'std';
+  $('#mTpRow').style.display = s.tpAddon ? 'grid' : 'none';
   updateHint(s);
   $('#mWarn').textContent = '';
   $('#mSave').textContent = t(isEdit ? 'btn.save' : 'btn.done');
@@ -1888,6 +1920,7 @@ $('#mSave').onclick = ()=>{
   const useName = isMulti(id) || INSTANCE_ENV[id];
   const cfg = {id, title:(useName ? $('#mName').value.trim() : '') || s.name,
                hw: s.hw ? $('#mHw').value : 'cpu',
+               tpv: s.tpAddon ? $('#mTp').value : 'std',
                ...dataOf(s),
                libs: s.library ? libsOf() : [],
                vpn: s.vpn && $('#mVpn').checked,
@@ -2513,6 +2546,11 @@ function build(){
       L.push(`      - <span class="v">PUID=\${PUID}</span>`);
       L.push(`      - <span class="v">PGID=\${PGID}</span>`);
       L.push(`      - <span class="v">TZ=\${TZ}</span>`);
+      // tema do theme.park: mod da imagem do linuxserver, um por app
+      if(s.tp)
+        L.push(`      - <span class="v">DOCKER_MODS=${THEME_PARK}:${s.id}</span>`);
+      if(s.tpAddon)
+        L.push(`      - <span class="v">TP_ADDON=${tpAddon(s.id, a.tpv)}</span>`);
       if(INSTANCE_ENV[s.id] && a.title)
         L.push(`      - <span class="v">${INSTANCE_ENV[s.id]}=${a.title}</span>`);
       if(URLBASE_ENV[s.id])

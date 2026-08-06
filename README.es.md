@@ -45,6 +45,15 @@ defecto:
 - **Aceleración por hardware de Jellyfin**: CPU, Intel o NVIDIA. Intel recibe
   `devices: /dev/dri:/dev/dri`; NVIDIA, la reserva de GPU en `deploy` y las
   variables `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES`.
+- **Tema de theme.park**: los servicios con imagen de linuxserver — Sonarr,
+  Radarr, Lidarr, Prowlarr, Bazarr, qBittorrent, SABnzbd, Jellyfin y Heimdall —
+  salen con `DOCKER_MODS=ghcr.io/themepark-dev/theme.park:<app>`, el mod que
+  aplica el tema en su interfaz. En Sonarr y Radarr el modal trae además un
+  campo **Tema**, que se vuelve `TP_ADDON`: *Predeterminado* usa el addon oscuro
+  (`sonarr-darker`), *UHD* cambia logotipo y favicon por los de 4K
+  (`sonarr-4k-logo|sonarr-4k-favicon`) y *Anime* cambia solo el favicon
+  (`sonarr-anime-favicon`) — útil para distinguir las instancias de una stack con
+  más de un Sonarr o Radarr.
 - **FlareSolverr junto a Prowlarr**: en el modal de Prowlarr, una casilla
   marcada por defecto trae FlareSolverr a la stack — es quien resuelve el
   desafío anti-bot de Cloudflare en los indexadores protegidos. Configúralo en
