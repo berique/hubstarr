@@ -46,12 +46,16 @@ The combobox lists the available services with their logos and default ports:
 - **theme.park theme**: services on linuxserver images — Sonarr, Radarr,
   Lidarr, Prowlarr, Bazarr, qBittorrent, SABnzbd, Jellyfin and Heimdall — come
   out with `DOCKER_MODS=ghcr.io/themepark-dev/theme.park:<app>`, the mod that
-  themes their interface. Sonarr and Radarr also get a **Theme** field in the
+  themes their interface. Sonarr and Radarr also get a **Variant** field in the
   modal, which becomes `TP_ADDON`: *Default* uses the darker addon
   (`sonarr-darker`), *UHD* swaps logo and favicon for the 4K ones
-  (`sonarr-4k-logo|sonarr-4k-favicon`) and *Anime* swaps only the favicon
-  (`sonarr-anime-favicon`) — handy to tell instances apart in a stack with more
-  than one Sonarr or Radarr.
+  (`sonarr-4k-logo|sonarr-4k-favicon`) and *Anime* swaps both for the anime ones
+  (`sonarr-anime-logo|sonarr-anime-favicon`) — handy to tell instances apart in
+  a stack with more than one Sonarr or Radarr. Both also have a **Theme**
+  field, the palette in `TP_THEME`: `aquamarine`, `hotline`, `hotpink`,
+  `dracula`, `dark`, `organizr` (the default), `space-gray`, `overseerr` and
+  `nord`. Below the field, a link opens the chosen palette's screenshot in the
+  [theme.park](https://docs.theme-park.dev/) docs, one per app.
 - **FlareSolverr alongside Prowlarr**: in the Prowlarr modal, a checkbox that
   is on by default brings FlareSolverr into the stack — it is what solves
   Cloudflare's anti-bot challenge on protected indexers. Set it up in Prowlarr

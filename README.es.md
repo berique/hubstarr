@@ -49,11 +49,15 @@ defecto:
   Radarr, Lidarr, Prowlarr, Bazarr, qBittorrent, SABnzbd, Jellyfin y Heimdall —
   salen con `DOCKER_MODS=ghcr.io/themepark-dev/theme.park:<app>`, el mod que
   aplica el tema en su interfaz. En Sonarr y Radarr el modal trae además un
-  campo **Tema**, que se vuelve `TP_ADDON`: *Predeterminado* usa el addon oscuro
-  (`sonarr-darker`), *UHD* cambia logotipo y favicon por los de 4K
-  (`sonarr-4k-logo|sonarr-4k-favicon`) y *Anime* cambia solo el favicon
-  (`sonarr-anime-favicon`) — útil para distinguir las instancias de una stack con
-  más de un Sonarr o Radarr.
+  campo **Variante**, que se vuelve `TP_ADDON`: *Predeterminado* usa el addon
+  oscuro (`sonarr-darker`), *UHD* cambia logotipo y favicon por los de 4K
+  (`sonarr-4k-logo|sonarr-4k-favicon`) y *Anime* cambia ambos por los de anime
+  (`sonarr-anime-logo|sonarr-anime-favicon`) — útil para distinguir las
+  instancias de una stack con más de un Sonarr o Radarr. Ambos tienen también un
+  campo **Tema**, la paleta en `TP_THEME`: `aquamarine`, `hotline`, `hotpink`,
+  `dracula`, `dark`, `organizr` (el predeterminado), `space-gray`, `overseerr` y
+  `nord`. Debajo del campo, un enlace abre la captura de la paleta elegida en la
+  documentación de [theme.park](https://docs.theme-park.dev/), una por app.
 - **FlareSolverr junto a Prowlarr**: en el modal de Prowlarr, una casilla
   marcada por defecto trae FlareSolverr a la stack — es quien resuelve el
   desafío anti-bot de Cloudflare en los indexadores protegidos. Configúralo en

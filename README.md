@@ -46,11 +46,15 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
   Radarr, Lidarr, Prowlarr, Bazarr, qBittorrent, SABnzbd, Jellyfin e Heimdall —
   saem com `DOCKER_MODS=ghcr.io/themepark-dev/theme.park:<app>`, o mod que
   aplica o tema na interface deles. No Sonarr e no Radarr o modal ainda traz um
-  campo **Tema**, que vira `TP_ADDON`: *Padrão* usa o addon escuro
+  campo **Variante**, que vira `TP_ADDON`: *Padrão* usa o addon escuro
   (`sonarr-darker`), *UHD* troca logotipo e favicon pelos de 4K
-  (`sonarr-4k-logo|sonarr-4k-favicon`) e *Animes* troca só o favicon
-  (`sonarr-anime-favicon`) — útil para distinguir as instâncias de uma stack com
-  mais de um Sonarr ou Radarr.
+  (`sonarr-4k-logo|sonarr-4k-favicon`) e *Animes* troca os dois pelos de anime
+  (`sonarr-anime-logo|sonarr-anime-favicon`) — útil para distinguir as
+  instâncias de uma stack com mais de um Sonarr ou Radarr. Os dois têm também
+  um campo **Tema**, a paleta em `TP_THEME`: `aquamarine`, `hotline`, `hotpink`,
+  `dracula`, `dark`, `organizr` (o padrão), `space-gray`, `overseerr` e `nord`.
+  Abaixo do campo, um link abre a captura da paleta escolhida na documentação
+  do [theme.park](https://docs.theme-park.dev/), uma por app.
 - **FlareSolverr junto do Prowlarr**: no modal do Prowlarr, um checkbox
   marcado por padrão traz o FlareSolverr para a stack — é ele que resolve o
   desafio anti-bot da Cloudflare nos indexadores protegidos. Configure-o no

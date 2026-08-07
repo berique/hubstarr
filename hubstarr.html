@@ -146,6 +146,8 @@
 
   /* diretórios extras da biblioteca: uma linha por pasta, com o × ao lado */
   .libs{display:grid;gap:6px}
+  /* link para a captura do tema, na documentação do theme.park */
+  #mTpShot{display:block;margin-top:6px;font-size:12px;color:var(--muted)}
   .libs .lib{display:flex;gap:6px}
   .libs .lib button{padding:0 10px;color:var(--muted)}
   .libs .lib button:hover{border-color:var(--danger);color:var(--danger)}
@@ -433,12 +435,18 @@ sudo sh get-docker.sh</pre>
           <option value="nvidia" data-i18n="m.hwNvidia"></option>
         </select>
       </div>
-      <div class="row" id="mTpRow" data-help="m.tpWhy"><label for="mTp" data-i18n="m.tp">Tema</label>
-        <select id="mTp">
-          <option value="std" data-i18n="m.tpStd"></option>
-          <option value="uhd" data-i18n="m.tpUhd"></option>
-          <option value="anime" data-i18n="m.tpAnime"></option>
+      <div class="row" id="mTpvRow" data-help="m.tpvWhy"><label for="mTpv" data-i18n="m.tpv">Variante</label>
+        <select id="mTpv">
+          <option value="std" data-i18n="m.tpvStd"></option>
+          <option value="uhd" data-i18n="m.tpvUhd"></option>
+          <option value="anime" data-i18n="m.tpvAnime"></option>
         </select>
+      </div>
+      <div class="row" id="mTpRow" data-help="m.tpWhy"><label for="mTp" data-i18n="m.tp">Tema</label>
+        <div>
+          <select id="mTp"></select>
+          <a id="mTpShot" target="_blank" rel="noopener" data-i18n="m.tpShot"></a>
+        </div>
       </div>
       <div id="mWebAuth">
         <div class="row" data-help="m.webAuthWhy"><label for="mUser" data-i18n="m.user">Usuário</label>
@@ -714,11 +722,14 @@ const I18N = {
   'm.hwHint':{cpu:'Transcodifica na CPU.',
               intel:'Passa <b>/dev/dri</b> para o container.',
               nvidia:'Reserva a GPU pelo runtime da NVIDIA.'},
+  'm.tpv':'Variante',
   'm.tp':'Tema',
-  'm.tpStd':'Padrão',
-  'm.tpUhd':'UHD',
-  'm.tpAnime':'Animes',
-  'm.tpWhy':'Variante do tema do theme.park para este app. Sai no compose como <b>TP_ADDON</b>: o <b>Padrão</b> usa o addon escuro, o <b>UHD</b> troca logotipo e favicon pelos de 4K e o <b>Animes</b> troca só o favicon.',
+  'm.tpWhy':'Paleta do theme.park aplicada na interface do app, no compose como <b>TP_THEME</b>. O link abre a captura dela na documentação do theme.park.',
+  'm.tpShot':'ver captura ↗',
+  'm.tpvStd':'Padrão',
+  'm.tpvUhd':'UHD',
+  'm.tpvAnime':'Animes',
+  'm.tpvWhy':'Variante do tema do theme.park para este app. Sai no compose como <b>TP_ADDON</b>: o <b>Padrão</b> usa o addon escuro, o <b>UHD</b> troca logotipo e favicon pelos de 4K e o <b>Animes</b> troca os dois pelos de anime.',
   'items.hwIntel':'Intel',
   'items.hwNvidia':'NVIDIA',
   'm.vpn':'Rotear pelo container VPN (gluetun)',
@@ -1002,11 +1013,14 @@ const I18N = {
   'm.hwHint':{cpu:'Transcodes on the CPU.',
               intel:'Passes <b>/dev/dri</b> into the container.',
               nvidia:'Reserves the GPU through the NVIDIA runtime.'},
+  'm.tpv':'Variant',
   'm.tp':'Theme',
-  'm.tpStd':'Default',
-  'm.tpUhd':'UHD',
-  'm.tpAnime':'Anime',
-  'm.tpWhy':'theme.park theme variant for this app. It lands in the compose file as <b>TP_ADDON</b>: <b>Default</b> uses the darker addon, <b>UHD</b> swaps logo and favicon for the 4K ones, and <b>Anime</b> swaps only the favicon.',
+  'm.tpWhy':'theme.park palette applied to the app interface, in the compose file as <b>TP_THEME</b>. The link opens its screenshot in the theme.park docs.',
+  'm.tpShot':'see screenshot ↗',
+  'm.tpvStd':'Default',
+  'm.tpvUhd':'UHD',
+  'm.tpvAnime':'Anime',
+  'm.tpvWhy':'theme.park theme variant for this app. It lands in the compose file as <b>TP_ADDON</b>: <b>Default</b> uses the darker addon, <b>UHD</b> swaps logo and favicon for the 4K ones, and <b>Anime</b> swaps both for the anime ones.',
   'items.hwIntel':'Intel',
   'items.hwNvidia':'NVIDIA',
   'm.vpn':'Route through the VPN container (gluetun)',
@@ -1290,11 +1304,14 @@ const I18N = {
   'm.hwHint':{cpu:'Transcodifica en la CPU.',
               intel:'Pasa <b>/dev/dri</b> al contenedor.',
               nvidia:'Reserva la GPU por el runtime de NVIDIA.'},
+  'm.tpv':'Variante',
   'm.tp':'Tema',
-  'm.tpStd':'Predeterminado',
-  'm.tpUhd':'UHD',
-  'm.tpAnime':'Anime',
-  'm.tpWhy':'Variante del tema de theme.park para esta app. Sale en el compose como <b>TP_ADDON</b>: <b>Predeterminado</b> usa el addon oscuro, <b>UHD</b> cambia logotipo y favicon por los de 4K y <b>Anime</b> cambia solo el favicon.',
+  'm.tpWhy':'Paleta de theme.park aplicada en la interfaz de la app, en el compose como <b>TP_THEME</b>. El enlace abre su captura en la documentación de theme.park.',
+  'm.tpShot':'ver captura ↗',
+  'm.tpvStd':'Predeterminado',
+  'm.tpvUhd':'UHD',
+  'm.tpvAnime':'Anime',
+  'm.tpvWhy':'Variante del tema de theme.park para esta app. Sale en el compose como <b>TP_ADDON</b>: <b>Predeterminado</b> usa el addon oscuro, <b>UHD</b> cambia logotipo y favicon por los de 4K y <b>Anime</b> cambia ambos por los de anime.',
   'items.hwIntel':'Intel',
   'items.hwNvidia':'NVIDIA',
   'm.vpn':'Enrutar por el contenedor VPN (gluetun)',
@@ -1408,8 +1425,8 @@ function setLang(l){
 }
 
 const SERVICES = [
-  {id:'sonarr',   name:'Sonarr',    port:8989, img:'lscr.io/linuxserver/sonarr:latest',    color:'#3fb8ea', media:true, mdir:'series', needsDl:true, tp:true, tpAddon:true},
-  {id:'radarr',   name:'Radarr',    port:7878, img:'lscr.io/linuxserver/radarr:latest',    color:'#feca57', media:true, mdir:'movies', needsDl:true, tp:true, tpAddon:true},
+  {id:'sonarr',   name:'Sonarr',    port:8989, img:'lscr.io/linuxserver/sonarr:latest',    color:'#3fb8ea', media:true, mdir:'series', needsDl:true, tp:true, tpAddon:true, tpTheme:true},
+  {id:'radarr',   name:'Radarr',    port:7878, img:'lscr.io/linuxserver/radarr:latest',    color:'#feca57', media:true, mdir:'movies', needsDl:true, tp:true, tpAddon:true, tpTheme:true},
   {id:'lidarr',   name:'Lidarr',    port:8686, img:'lscr.io/linuxserver/lidarr:latest',    color:'#1db954', media:true, mdir:'music', needsDl:true, tp:true},
   {id:'prowlarr', name:'Prowlarr',  port:9696, img:'lscr.io/linuxserver/prowlarr:latest', color:'#e5534b', solver:true, tp:true},
   {id:'bazarr',   name:'Bazarr',    port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr'], tp:true},
@@ -1443,8 +1460,15 @@ const THEME_PARK = 'ghcr.io/themepark-dev/theme.park';
    addons daquele app, separada por barra vertical como o mod espera. */
 const TP_ADDONS = {std:  id => [`${id}-darker`],
                    uhd:  id => [`${id}-4k-logo`, `${id}-4k-favicon`],
-                   anime:id => [`${id}-anime-favicon`]};
+                   anime:id => [`${id}-anime-logo`, `${id}-anime-favicon`]};
 const tpAddon = (id, v) => (TP_ADDONS[v] || TP_ADDONS.std)(id).join('|');
+/* Paletas do theme.park (flag tpTheme). Nomes próprios do projeto: não passam
+   pelo I18N, e as capturas de cada uma estão em docs.theme-park.dev. */
+const TP_THEMES = ['aquamarine','hotline','hotpink','dracula','dark','organizr',
+                   'space-gray','overseerr','nord'];
+const TP_THEME_DEF = 'organizr';
+const TP_DOCS = 'https://docs.theme-park.dev';
+
 /* Senha da interface do qBittorrent: ele guarda PBKDF2-SHA512, 100 mil
    iterações, sal de 16 bytes, tudo em base64. O cálculo é assíncrono, então
    fica em cache e a página se redesenha quando ele chega. */
@@ -1693,7 +1717,7 @@ function derivedMounts(s){
 
 // serviço bloqueado no combobox: instância única já adicionada
 const locked = id => !isMulti(id) && has(id);
-const defCfg = id => ({id, title:svc(id).name, hw:'cpu', tpv:'std',
+const defCfg = id => ({id, title:svc(id).name, hw:'cpu', tpv:'std', tpt:TP_THEME_DEF,
                        data:svc(id).mdir||'', abs:'', libs:[], vpn:false,
                        // quem aceita o resolvedor de desafios já nasce com ele marcado
                        solver:!!svc(id).solver});
@@ -1874,8 +1898,11 @@ function openModal(id, key){
   $('#mSolverRow').style.display = s.solver ? 'grid' : 'none';
   $('#mHw').value = cur.hw || 'cpu';
   $('#mHwRow').style.display = s.hw ? 'grid' : 'none';
-  $('#mTp').value = cur.tpv || 'std';
-  $('#mTpRow').style.display = s.tpAddon ? 'grid' : 'none';
+  $('#mTpv').value = cur.tpv || 'std';
+  $('#mTpvRow').style.display = s.tpAddon ? 'grid' : 'none';
+  $('#mTp').value = cur.tpt || TP_THEME_DEF;
+  $('#mTpRow').style.display = s.tpTheme ? 'grid' : 'none';
+  if(s.tpTheme) tpShot(s.id);
   updateHint(s);
   $('#mWarn').textContent = '';
   $('#mSave').textContent = t(isEdit ? 'btn.save' : 'btn.done');
@@ -1901,6 +1928,15 @@ function hintNow(){
 document.querySelectorAll('#mName,#mData').forEach(el=>el.addEventListener('input', ()=>{
   const id = editing || picked; if(id) updateHint(svc(id));
 }));
+/* A captura de cada paleta fica na documentação do theme.park: um link, não uma
+   imagem — a página não busca nada de fora, e o repositório não redistribui
+   captura de tela de ninguém. */
+function tpShot(id){
+  $('#mTpShot').href = `${TP_DOCS}/site_assets/${id}/${$('#mTp').value}.png`;
+}
+$('#mTp').addEventListener('change', ()=>{
+  const id = editing ? byKey(editing).id : picked; if(id) tpShot(id);
+});
 $('#mHw').addEventListener('change', ()=>{
   const id = editing || picked; if(id) updateHint(svc(id));
 });
@@ -1920,7 +1956,8 @@ $('#mSave').onclick = ()=>{
   const useName = isMulti(id) || INSTANCE_ENV[id];
   const cfg = {id, title:(useName ? $('#mName').value.trim() : '') || s.name,
                hw: s.hw ? $('#mHw').value : 'cpu',
-               tpv: s.tpAddon ? $('#mTp').value : 'std',
+               tpv: s.tpAddon ? $('#mTpv').value : 'std',
+               tpt: s.tpTheme ? $('#mTp').value : TP_THEME_DEF,
                ...dataOf(s),
                libs: s.library ? libsOf() : [],
                vpn: s.vpn && $('#mVpn').checked,
@@ -2549,6 +2586,8 @@ function build(){
       // tema do theme.park: mod da imagem do linuxserver, um por app
       if(s.tp)
         L.push(`      - <span class="v">DOCKER_MODS=${THEME_PARK}:${s.id}</span>`);
+      if(s.tpTheme)
+        L.push(`      - <span class="v">TP_THEME=${a.tpt || TP_THEME_DEF}</span>`);
       if(s.tpAddon)
         L.push(`      - <span class="v">TP_ADDON=${tpAddon(s.id, a.tpv)}</span>`);
       if(INSTANCE_ENV[s.id] && a.title)
@@ -3216,6 +3255,7 @@ $('#logApply').onclick = ()=>{ $('#logApply').hidden = true; applyConfig(); };
 $('#down').onclick = ()=> runJob(()=> api('down', {method:'POST'}), t('log.down'));
 
 $('#eTz').innerHTML = TIMEZONES.map(z=>`<option>${z}</option>`).join('');
+$('#mTp').innerHTML = TP_THEMES.map(v=>`<option>${v}</option>`).join('');
 
 $('#langSel').innerHTML = Object.entries(LANGS)
   .map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
