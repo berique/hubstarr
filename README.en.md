@@ -6,6 +6,12 @@ Single-page prototype that builds the `docker-compose.yml`, the `.env` and the
 `nginx.conf` for a media stack (*arr apps + download clients + media server),
 with no backend and no external dependencies.
 
+> [!WARNING]
+> **Prototype.** Hubstarr was not designed for production use: the files it
+> generates are a starting point, with no security hardening, backups or
+> monitoring. Review everything — passwords, ports, certificates and
+> permissions — before exposing the stack to any network other than your own.
+
 Open `hubstarr.html` in a browser. That's it — the file is
 self-contained (the logos are embedded as data URIs). The **Environment** opens
 with it: that is where the base paths everything else uses come from. Once

@@ -6,6 +6,12 @@ Protótipo de página única que monta o `docker-compose.yml`, o `.env` e o
 `nginx.conf` de uma stack de mídia (*arr + clientes de download + servidor de
 mídia), sem backend e sem dependências externas.
 
+> [!WARNING]
+> **Protótipo.** O Hubstarr não foi projetado para uso em produção: os arquivos
+> que ele gera são um ponto de partida, sem endurecimento de segurança, backup
+> ou monitoramento. Revise tudo — senhas, portas, certificados e permissões —
+> antes de expor a stack a qualquer rede que não seja a sua.
+
 Abra `hubstarr.html` no navegador. É só isso — o arquivo é
 autocontido (os logotipos vêm embutidos como data URI). O **Ambiente** abre
 junto: é dali que saem as bases de caminho que todo o resto usa. Fechou, ele
