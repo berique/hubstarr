@@ -50,7 +50,7 @@ defecto:
   salen con `DOCKER_MODS=ghcr.io/themepark-dev/theme.park:<app>`, el mod que
   aplica el tema en su interfaz. En Sonarr y Radarr el modal trae además un
   campo **Variante**, que se vuelve `TP_ADDON`: *Predeterminado* usa el addon
-  oscuro (`sonarr-darker`), *UHD* cambia logotipo y favicon por los de 4K
+  oscuro (`sonarr-darker`), *4K* cambia logotipo y favicon por los del addon de 4K
   (`sonarr-4k-logo|sonarr-4k-favicon`) y *Anime* cambia ambos por los de anime
   (`sonarr-anime-logo|sonarr-anime-favicon`) — útil para distinguir las
   instancias de una stack con más de un Sonarr o Radarr. Ambos tienen también un

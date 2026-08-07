@@ -48,7 +48,7 @@ The combobox lists the available services with their logos and default ports:
   out with `DOCKER_MODS=ghcr.io/themepark-dev/theme.park:<app>`, the mod that
   themes their interface. Sonarr and Radarr also get a **Variant** field in the
   modal, which becomes `TP_ADDON`: *Default* uses the darker addon
-  (`sonarr-darker`), *UHD* swaps logo and favicon for the 4K ones
+  (`sonarr-darker`), *4K* swaps logo and favicon for the 4K addon ones
   (`sonarr-4k-logo|sonarr-4k-favicon`) and *Anime* swaps both for the anime ones
   (`sonarr-anime-logo|sonarr-anime-favicon`) — handy to tell instances apart in
   a stack with more than one Sonarr or Radarr. Both also have a **Theme**
