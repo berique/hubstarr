@@ -261,6 +261,21 @@ el HTML, los textos estáticos van marcados con `data-i18n` (o `data-i18n-html`,
 `data-i18n-ph`, `data-i18n-title`). Añadir un idioma es copiar uno de los
 bloques y traducir los valores.
 
+## Wishlist
+
+Lo que todavía no existe, en el orden en que tendría sentido que ocurra:
+
+1. **Un backend que conecte `hubstarr.html` con Docker** — para que la página
+   grabe los archivos y levante la stack, en vez de quedarse en el `.zip`.
+2. **Configuración automática de las stacks desde el backend** — lo que hoy es
+   la **Configuración** en la interfaz (Prowlarr apuntando a cada *arr,
+   clientes de descarga con categoría, Media Management) aplicado por la API de
+   cada app.
+3. **Custom formats y profiles propios de cada stack** — el perfil de calidad y
+   los formatos personalizados que tienen sentido para 4K, anime y demás, ya
+   ligados a la instancia correcta.
+4. **Búsqueda localizada de medios** — poder elegir el idioma de la búsqueda
+   (portugués, español, …) para que los *arr encuentren el lanzamiento correcto.
 
 ## Estado
 

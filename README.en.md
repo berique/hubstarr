@@ -257,6 +257,20 @@ on some data. In the HTML, static texts are marked with `data-i18n` (or
 `data-i18n-html`, `data-i18n-ph`, `data-i18n-title`). Adding a language means
 copying one of the blocks and translating the values.
 
+## Wishlist
+
+What is not there yet, in the order it would make sense to happen:
+
+1. **A backend wiring `hubstarr.html` to Docker** — so the page can write the
+   files and bring the stack up, instead of stopping at the `.zip`.
+2. **Automatic stack configuration from the backend** — what today is the
+   **Configuration** in the interface (Prowlarr pointing at each *arr, download
+   clients with categories, Media Management) applied through each app's API.
+3. **Custom formats and profiles per stack** — the quality profile and custom
+   formats that make sense for 4K, anime and the like, already attached to the
+   right instance.
+4. **Localized media search** — let the search language be picked (Portuguese,
+   Spanish, …) so the *arr apps find the right release.
 
 ## Status
 
