@@ -210,6 +210,26 @@ aparece dentro do `setLang()`, e substituí-la lá dentro leva a recursão
 infinita. A página abre com o modal do Ambiente; numa captura da tela, chame
 `closeEnv()` logo depois.
 
+## Wishlist
+
+O roadmap fica nos três READMEs, numa tabela por marco de versão; o texto
+autoritativo é o do `README.md`, e mexer nele é mexer nos três. Hoje o
+repositório é o **v0.1** — a página sozinha.
+
+- **v0.2** — um backend ligando o `hubstarr.html` ao Docker: gravar os arquivos
+  e subir a stack sem passar pelo `.zip`. Já existiu um, em Rust, removido no
+  `ba54e1a`; o histórico até ali serve de ponto de partida, incluindo o
+  contrato que vale de novo se ele voltar — **o servidor nunca gera conteúdo**,
+  recebe pronto o que os geradores do `<script>` montaram.
+- **v0.3** — aplicar a **Configuração** pela API de cada app. Hoje o `CONFIG` é
+  protótipo de interface e não chega a arquivo nenhum; é ele que vira chamada.
+- **v0.4** — custom formats e profiles por instância (4K, anime, …), ao lado do
+  `NAMING_FIELDS` que já guarda a nomenclatura.
+- **v0.5** — busca localizada de mídia, com o idioma da busca escolhível.
+
+Marco é ordem, não calendário: cada um depende do anterior. Ao propor mudança
+que caia num deles, diga em qual — e não comece o de baixo antes do de cima.
+
 ## Commits
 
 Mensagens em português, no imperativo/terceira pessoa do singular, uma linha
