@@ -249,50 +249,13 @@ on some data. In the HTML, static texts are marked with `data-i18n` (or
 `data-i18n-html`, `data-i18n-ph`, `data-i18n-title`). Adding a language means
 copying one of the blocks and translating the values.
 
-## Server (optional)
-
-The page still works on its own, opened straight from disk. If you want it to
-write the files out and touch the real stack, run the server under
-`backend/` — a Rust binary doing what the browser cannot reach:
-
-```sh
-cd backend
-cargo run --release -- --dir ~/starr
-```
-
-Then open <http://127.0.0.1:7878>. The page it serves is the very same
-`hubstarr.html`, embedded in the binary, and it detects the server on its own:
-when there is one, a *server* badge shows up in the header and three things
-change.
-
-- **Tear down** shows up in the files bar and runs `docker compose down`, with
-  the output in a live log. The end that created the stack from the page is
-  gone from the interface; to bring it up, run `docker compose up -d` in the
-  `--dir` folder.
-- **The stack is remembered.** Instances, Environment and Configuration go into
-  a SQLite database (`stack.db`) in that same folder and come back when the page
-  reloads. Each add, edit or delete touches that service's row.
-- **The configuration becomes real.** The *Apply the configuration* button,
-  which used to show up in the log after creating the stack and today has no
-  trigger, uses each app's API to create what only exists in their
-  database: Prowlarr pointing at every *arr, the download clients with each
-  one's category, and Media Management along with the naming. It is the only
-  part of the interface that does not fit in a file — and it is idempotent, so
-  applying it again after changing the Configuration is the normal use.
-
-Without a server none of that shows up and the behaviour is the usual one:
-generating the files and downloading the `.zip`. The server never generates content — it
-receives what the page built, so the generators keep living in a single place.
-
-Options: `--dir` (folder for the files, default `./stack`), `--addr` (address,
-default `127.0.0.1:7878`) and `--docker` (the command, for podman users).
 
 ## Status
 
-The page on its own is an interface prototype: with no server, the "Create
-stack" button only simulates the deploy and the **Configuration** choices turn
-into no API call. The generated files were always the real thing — and with the
-server under `backend/`, the deploy and the Configuration become real too.
+The page is an interface prototype: the **Configuration** choices are kept in
+it and turn into no API call. The generated files were always the real thing —
+download the `.zip` and run `docker compose up -d` in the folder you unpacked
+it into.
 
 ## License
 

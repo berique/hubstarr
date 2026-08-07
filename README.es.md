@@ -252,53 +252,13 @@ el HTML, los textos estáticos van marcados con `data-i18n` (o `data-i18n-html`,
 `data-i18n-ph`, `data-i18n-title`). Añadir un idioma es copiar uno de los
 bloques y traducir los valores.
 
-## Servidor (opcional)
-
-La página sigue funcionando sola, abierta desde el disco. Quien quiera que
-grabe los archivos y toque la stack de verdad puede levantar el servidor que
-está en `backend/` — un binario en Rust que hace lo que el navegador no alcanza:
-
-```sh
-cd backend
-cargo run --release -- --dir ~/starr
-```
-
-Después basta abrir <http://127.0.0.1:7878>. La página que sirve es la misma
-`hubstarr.html`, incrustada en el binario, y detecta el servidor sola: cuando
-hay uno, aparece la etiqueta *servidor* en la cabecera y cambian tres cosas.
-
-- **Derribar** aparece en la barra de los archivos y ejecuta
-  `docker compose down`, con la salida en un registro en vivo. La punta que
-  creaba la stack desde la página salió de la interfaz; para levantarla,
-  ejecuta `docker compose up -d` en la carpeta del `--dir`.
-- **La stack queda guardada.** Las instancias, el Entorno y la Configuración
-  van a un SQLite (`stack.db`) de esa misma carpeta y vuelven al recargar la
-  página. Cada añadir, editar o eliminar toca la fila de ese servicio.
-- **La configuración se vuelve real.** El botón *Aplicar la configuración*,
-  que aparecía en el registro tras crear la stack y hoy está sin disparador,
-  usa la API de cada app para crear lo que solo
-  existe en su base de datos: Prowlarr apuntando a cada *arr, los clientes de
-  descarga con la categoría de cada uno, y Media Management junto con la
-  nomenclatura. Es la única parte de la interfaz que no cabe en un archivo — y
-  es idempotente, así que aplicarla de nuevo tras tocar la Configuración es el
-  uso normal.
-
-Sin servidor nada de eso aparece y el comportamiento es el de siempre: generar
-los archivos y descargar el `.zip`. El servidor nunca genera contenido — recibe ya
-hecho lo que la página montó, para que los generadores sigan existiendo en un
-solo lugar.
-
-Opciones: `--dir` (carpeta de los archivos, por defecto `./stack`), `--addr`
-(dirección, por defecto `127.0.0.1:7878`) y `--docker` (el comando, para quien
-usa podman).
 
 ## Estado
 
-La página sola es un prototipo de interfaz: sin servidor, el botón "Crear
-stack" solo simula el despliegue y las opciones de **Configuración** no se
-vuelven ninguna llamada de API. Los archivos generados siempre fueron de
-verdad — y con el servidor de `backend/`, el despliegue y la Configuración
-también pasan a serlo.
+La página es un prototipo de interfaz: las opciones de **Configuración** se
+guardan en ella y no se vuelven ninguna llamada de API. Los archivos generados
+siempre fueron de verdad — basta con descargar el `.zip` y ejecutar
+`docker compose up -d` en la carpeta donde se descomprimió.
 
 ## Licencia
 

@@ -195,12 +195,6 @@
   .modal .body{padding:16px;overflow:auto}
   /* a Configuração tem campos demais para 520px: ganha mais folga */
   #cfgBack .modal{max-width:860px}
-  /* log do servidor: rola sozinho e não empurra o modal */
-  #logBack .modal{max-width:820px}
-  .log{margin:0 0 12px;padding:10px 12px;height:340px;overflow:auto;
-    background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
-    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
-    line-height:1.5;white-space:pre-wrap;word-break:break-word}
   /* aviso colapsável acima dos painéis */
   .notice{grid-column:1/-1;margin:-4px 0 -4px;background:var(--panel);border:1px solid var(--line);
     border-radius:10px;font-size:13px;line-height:1.6}
@@ -217,9 +211,6 @@
     background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--txt)}
   .notice .noticeBody a{color:var(--accent)}
-  /* aviso de servidor no cabeçalho */
-  #srv{font-size:11px;padding:2px 8px;border-radius:999px;
-    border:1px solid var(--ok,#3fb950);color:var(--ok,#3fb950)}
 </style>
 </head>
 <body>
@@ -228,7 +219,6 @@
   <div class="logo">H</div>
   <h1 data-i18n="app.title">Hubstarr &middot; Adicionar *arr Stack</h1>
   <span style="flex:1"></span>
-  <span id="srv" hidden data-i18n="srv.on">servidor</span>
   <select id="langSel" style="width:auto;padding:6px 8px" data-i18n-title="app.lang"></select>
   <button id="themeBtn" data-i18n-title="app.theme">🌙</button>
   <button id="cfgBtn" data-i18n="app.cfg">⇄ Configuração</button>
@@ -302,7 +292,6 @@ sudo sh get-docker.sh</pre>
       <span class="sp"></span>
       <button id="copy" data-i18n="btn.copy">Copiar</button>
       <button id="dl" data-i18n="btn.zip" data-i18n-title="btn.zipHint">Baixar .zip</button>
-      <button id="down" hidden data-i18n="btn.down" data-i18n-title="btn.downHint">Derrubar</button>
     </div>
   </div>
 </div>
@@ -316,20 +305,6 @@ sudo sh get-docker.sh</pre>
       <span class="sp"></span>
       <button id="cfgCancel" data-i18n="btn.cancel">Cancelar</button>
       <button class="primary" id="cfgSave" data-i18n="btn.save">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- log do servidor: só aparece quando há um atrás da página -->
-<div class="backdrop" id="logBack">
-  <div class="modal">
-    <h3 id="logTitle"></h3>
-    <pre class="log" id="logOut"></pre>
-    <div class="bar">
-      <span class="hint" id="logState"></span>
-      <span class="sp"></span>
-      <button id="logApply" hidden data-i18n="btn.apply">Aplicar a Configuração</button>
-      <button class="primary" id="logClose" data-i18n="btn.close">Fechar</button>
     </div>
   </div>
 </div>
@@ -657,19 +632,6 @@ const I18N = {
   'vpn.hOvpnUser':'Usuário do OpenVPN no provedor — nem sempre é o mesmo do login do site. Sai como <b>OPENVPN_USER</b>.',
   'vpn.hOvpnPass':'Senha correspondente ao usuário do OpenVPN. Sai como <b>OPENVPN_PASSWORD</b>.',
   'vpn.hCountries':'Países onde o gluetun pode escolher servidor, separados por vírgula. Em branco, ele escolhe em qualquer lugar. Sai como <b>SERVER_COUNTRIES</b>.',
-  'btn.down':'Derrubar',
-  'btn.downHint':'Roda um docker compose down na pasta da stack',
-  'btn.apply':'Aplicar a Configuração',
-  'btn.close':'Fechar',
-  'srv.on':'servidor',
-  'srv.at':d=>`Servidor conectado; os arquivos vão para ${d}`,
-  'srv.noDocker':'o docker não respondeu neste servidor',
-  'log.down':'Derrubando a stack',
-  'log.configure':'Aplicando a Configuração nos apps',
-  'log.running':'rodando…',
-  'log.done':'pronto ✓',
-  'log.fail':'falhou ✗',
-  'log.noServer':'o servidor não respondeu',
 
   'env.h':'⚙ Ambiente',
   'env.tz':'Time Zone',
@@ -948,19 +910,6 @@ const I18N = {
   'vpn.hOvpnUser':'Your OpenVPN username at the provider — often not the same as the website login. Lands as <b>OPENVPN_USER</b>.',
   'vpn.hOvpnPass':'The password matching the OpenVPN username. Lands as <b>OPENVPN_PASSWORD</b>.',
   'vpn.hCountries':'Countries gluetun may pick a server in, comma separated. Left empty, it picks anywhere. Lands as <b>SERVER_COUNTRIES</b>.',
-  'btn.down':'Tear down',
-  'btn.downHint':'Runs docker compose down in the stack folder',
-  'btn.apply':'Apply the configuration',
-  'btn.close':'Close',
-  'srv.on':'server',
-  'srv.at':d=>`Server connected; files go to ${d}`,
-  'srv.noDocker':'docker did not answer on this server',
-  'log.down':'Tearing the stack down',
-  'log.configure':'Applying the configuration to the apps',
-  'log.running':'running…',
-  'log.done':'done ✓',
-  'log.fail':'failed ✗',
-  'log.noServer':'the server did not answer',
 
   'env.h':'⚙ Environment',
   'env.tz':'Time zone',
@@ -1239,19 +1188,6 @@ const I18N = {
   'vpn.hOvpnUser':'Usuario de OpenVPN en el proveedor — muchas veces no es el mismo del login del sitio. Sale como <b>OPENVPN_USER</b>.',
   'vpn.hOvpnPass':'La contraseña correspondiente al usuario de OpenVPN. Sale como <b>OPENVPN_PASSWORD</b>.',
   'vpn.hCountries':'Países donde gluetun puede elegir servidor, separados por comas. En blanco, elige en cualquier lugar. Sale como <b>SERVER_COUNTRIES</b>.',
-  'btn.down':'Derribar',
-  'btn.downHint':'Ejecuta un docker compose down en la carpeta de la stack',
-  'btn.apply':'Aplicar la configuración',
-  'btn.close':'Cerrar',
-  'srv.on':'servidor',
-  'srv.at':d=>`Servidor conectado; los archivos van a ${d}`,
-  'srv.noDocker':'docker no respondió en este servidor',
-  'log.down':'Derribando la stack',
-  'log.configure':'Aplicando la configuración en las apps',
-  'log.running':'ejecutando…',
-  'log.done':'listo ✓',
-  'log.fail':'falló ✗',
-  'log.noServer':'el servidor no respondió',
 
   'env.h':'⚙ Entorno',
   'env.tz':'Zona horaria',
@@ -1621,8 +1557,7 @@ let added = [];
 const isFixed = id => !!svc(id).fixed;
 function ensureFixed(){
   SERVICES.filter(s=>s.fixed).forEach(s=>{
-    // entra sozinho, então é aqui que ele ganha a linha dele no banco
-    if(!has(s.id)){ const a = defCfg(s.id); added.unshift(a); putInstance(a); }
+    if(!has(s.id)) added.unshift(defCfg(s.id));
   });
 }
 let picked = null;   // id selecionado no combobox
@@ -1828,7 +1763,6 @@ $('#items').onclick = e=>{
   } else if(btn.dataset.act==='del'){
     added = added.filter(a=>cname(a)!==key);
     renderItems(); renderCombo(); render();
-    delInstance(key);
   } else {
     const a = byKey(key);
     if(a) openModal(a.id, key);
@@ -2007,17 +1941,13 @@ $('#mSave').onclick = ()=>{
     ovpnUser:$('#gOvpnUser').value.trim(), ovpnPass:$('#gOvpnPass').value.trim(),
     countries:$('#gCountries').value.trim()});
 
-  const was = editing;                  // a chave de antes, se o título mudou
   if(editing) added = added.map(a=>cname(a)===editing?cfg:a);
   else { added.push(cfg); picked=null; }
   // rotear pela VPN exige o gluetun na stack: entra sozinho, na frente de todos
-  const tag = [];
-  if(cfg.vpn && !has('gluetun')){ const g = defCfg('gluetun'); added.unshift(g); tag.push(g); }
+  if(cfg.vpn && !has('gluetun')) added.unshift(defCfg('gluetun'));
   // o resolvedor é opcional: entra na stack junto com quem pediu por ele
-  if(cfg.solver && !has('flaresolverr')){ const f = defCfg('flaresolverr'); added.push(f); tag.push(f); }
+  if(cfg.solver && !has('flaresolverr')) added.push(defCfg('flaresolverr'));
   closeModal(); renderItems(); renderCombo(); render();
-  // uma linha por instância mexida — a editada e as que ela arrastou junto
-  putInstance(cfg, was); tag.forEach(a=>putInstance(a));
 };
 
 /* ---------- nginx: portas publicadas no host ---------- */
@@ -2970,7 +2900,6 @@ function render(){
     : `<span class="ok">${t('items.routes', routes)}</span>`;
   $('#stat').textContent = t('out.containers', list.length + 1);   // +1: nginx fixo
   $('#summary').textContent = list.map(a=>a.title||svc(a.id).name).join(' · ') || t('out.empty');
-  saveSettings();  // com servidor atrás, a stack sobrevive ao reload; sem ele, não faz nada
 }
 
 let tab = 'yml';
@@ -3056,8 +2985,7 @@ function makeZip(files){                       // files: [{name, text}]
                   {type:'application/zip'});
 }
 
-/* Os arquivos da stack, na forma em que saem daqui: o .zip empacota, o
-   servidor grava. Um lugar só, para os dois nunca discordarem. */
+/* Os arquivos da stack, na forma em que o .zip os empacota. */
 function outFiles(){
   const files = [
     {name:'docker-compose.yml', text:plain()+'\n'},
@@ -3079,207 +3007,6 @@ $('#dl').onclick = ()=>{
   a.href=URL.createObjectURL(blob); a.download=`${stack}.zip`; a.click();
   URL.revokeObjectURL(a.href);
 };
-/* ---------- servidor (opcional) ---------- */
-
-/* A página é a mesma com ou sem servidor: aberta do disco ela continua sendo o
-   protótipo de sempre, com o .zip e mais nada. `SERVER` só fica
-   preenchido quando alguém responde em `api/health`, e cada caminho novo tem o
-   antigo atrás dele. O servidor não gera nada — recebe pronto o que os
-   geradores daqui montaram. */
-let SERVER = null;
-
-const api = (path, opts) => fetch('api/' + path, Object.assign(
-  {headers:{'Content-Type':'application/json'}, cache:'no-store'}, opts || {}));
-
-/* O banco do servidor tem uma linha por instância, então adicionar, editar e
-   excluir mexem numa linha só — é o `#mSave` e o "Excluir" que chamam. O que
-   vale para a stack inteira (Ambiente, Configuração e a ordem da lista) vai
-   junto no `saveSettings()`, que roda no fim de cada `render()`. */
-function putInstance(a, old){
-  if(!SERVER) return;
-  api('instance', {method:'PUT', body:JSON.stringify(
-    {key:cname(a), old:old || null, ord:added.findIndex(x=>x===a), data:a})}).catch(()=>{});
-}
-
-function delInstance(key){
-  if(!SERVER) return;
-  api('instance/' + encodeURIComponent(key), {method:'DELETE'}).catch(()=>{});
-}
-
-function applyState(s){
-  if(!s || !Array.isArray(s.added)) return false;
-  added = s.added;
-  if(s.defaults) Object.assign(DEFAULTS, s.defaults);
-  if(s.config)   Object.assign(CONFIG, s.config);
-  ensureFixed();
-  return true;
-}
-
-/* Guarda no servidor sem atrapalhar a digitação: um PUT depois que ela para.
-   A lista de chaves vai junto porque nem toda mudança no `added` passa pelo
-   modal — o gluetun entra sozinho, o Heimdall é reposto, o "Limpar" esvazia
-   tudo —, e é ela que acerta a ordem e apaga do banco o que saiu. */
-let saveT = 0;
-function saveSettings(){
-  if(!SERVER) return;
-  clearTimeout(saveT);
-  saveT = setTimeout(()=>{
-    api('settings', {method:'PUT', body:JSON.stringify(
-      {defaults:DEFAULTS, config:CONFIG, keys:added.map(cname)})}).catch(()=>{});
-  }, 500);
-}
-
-async function detectServer(){
-  if(!/^https?:$/.test(location.protocol)) return;   // file:// não tem servidor
-  try{
-    const r = await api('health');
-    if(!r.ok) return;
-    SERVER = await r.json();
-  }catch(e){ return; }
-  $('#srv').hidden = false;
-  $('#srv').title  = t('srv.at', SERVER.dir);
-  $('#down').hidden = false;
-  if(!SERVER.docker) $('#srv').title += ' — ' + t('srv.noDocker');
-  if(!SERVER.saved) return;
-  try{                                  // tinha stack guardada: reabre
-    const r = await api('state');
-    if(r.status === 200 && applyState(await r.json())){
-      closeEnv(); applyI18n(); renderCombo(); renderItems(); render();
-    }
-  }catch(e){}
-}
-
-/* ---------- log dos trabalhos ---------- */
-
-const logLine = s =>{
-  const o = $('#logOut');
-  o.textContent += s + '\n';
-  o.scrollTop = o.scrollHeight;
-};
-function openLog(title){
-  $('#logTitle').textContent = title;
-  $('#logOut').textContent = '';
-  $('#logState').textContent = t('log.running');
-  $('#logApply').hidden = true;
-  $('#logBack').classList.add('open');
-}
-$('#logClose').onclick = ()=> $('#logBack').classList.remove('open');
-
-/* Subir a stack baixa imagem e configurar app espera app responder: o servidor
-   devolve o número do trabalho e a página vai buscando o que ele já escreveu. */
-async function runJob(start, title){
-  openLog(title);
-  let head;
-  try{ head = await (await start()).json(); }
-  catch(e){ logLine(String(e)); }
-  if(!head || !head.ok){
-    logLine((head && head.error) || t('log.noServer'));
-    $('#logState').textContent = t('log.fail');
-    return false;
-  }
-  let seen = 0;
-  for(;;){
-    await new Promise(r=>setTimeout(r, 700));
-    let j;
-    try{ j = await (await api('job/' + head.job)).json(); }catch(e){ continue; }
-    j.log.slice(seen).forEach(logLine); seen = j.log.length;
-    if(j.done){
-      $('#logState').textContent = t(j.ok ? 'log.done' : 'log.fail');
-      return j.ok;
-    }
-  }
-}
-
-/* ---------- plano da Configuração ---------- */
-
-/* Aqui o CONFIG da interface vira o nome que cada coisa tem na API do app —
-   é a única tradução que o servidor não teria como fazer, porque depende do
-   `container_name` e do subpath, que são derivados daqui. */
-const ARR_API   = {sonarr:'v3', radarr:'v3', lidarr:'v1'};
-const IMPL      = {sonarr:'Sonarr', radarr:'Radarr', lidarr:'Lidarr',
-                   qbittorrent:'QBittorrent', sabnzbd:'Sabnzbd'};
-const CAT_FIELD = {sonarr:'tvCategory', radarr:'movieCategory', lidarr:'musicCategory'};
-const RENAME_API = {sonarr:'renameEpisodes', radarr:'renameMovies', lidarr:'renameTracks'};
-// nome de cada formato na API; a chave é a mesma do NAMING_FIELDS
-const NAMING_API = {
-  illegal:'replaceIllegalCharacters', colon:'colonReplacementFormat',
-  multiEp:'multiEpisodeStyle',        standardEp:'standardEpisodeFormat',
-  dailyEp:'dailyEpisodeFormat',       animeEp:'animeEpisodeFormat',
-  seriesFolder:'seriesFolderFormat',  seasonFolder:'seasonFolderFormat',
-  specialsFolder:'specialsFolderFormat', standardMovie:'standardMovieFormat',
-  movieFolder:'movieFolderFormat',    standardTrack:'standardTrackFormat',
-  multiDiscTrack:'multiDiscTrackFormat', artistFolder:'artistFolderFormat',
-  albumFolder:'albumFolderFormat',
-};
-
-function configPlan(){
-  syncConfig();
-  const list = effective();
-  const arrs = list.filter(a=>ARRS.includes(a.id));
-  // endereço de dentro da rede: é assim que um container alcança o outro
-  const inNet = a => `http://${a.vpn ? 'gluetun' : cname(a)}:${svc(a.id).port}${route(a)}`;
-
-  const naming = a =>{
-    const mm = CONFIG.mm[a.id] || {}, out = {};
-    out[RENAME_API[a.id]] = !!mm.rename;
-    Object.entries(mm.naming || {}).forEach(([k, v])=>{
-      const f = NAMING_API[k];
-      if(!f) return;                       // useExisting é só da interface
-      // o multi-episódio vai como número, na ordem em que o app os lista
-      out[f] = k === 'multiEp' ? MULTIEP.indexOf(v) : v;
-    });
-    return out;
-  };
-
-  return {
-    base:`http://127.0.0.1:${DEFAULTS.http}`,
-    apiKey: DEFAULTS.apiKey,
-    arrs: arrs.map(a=>{
-      const mm = CONFIG.mm[a.id] || {};
-      return {name:cname(a), route:route(a), api:ARR_API[a.id],
-        mm:{copyUsingHardlinks:!!mm.hardlink, deleteEmptyFolders:!!mm.empty,
-            setPermissionsLinux:!!mm.perms,
-            chmodFolder: mm.chmod || '755', chownGroup: mm.chown || ''},
-        naming: naming(a)};
-    }),
-    prowlarrs: list.filter(a=>a.id === 'prowlarr').map(p=>({
-      name:cname(p), route:route(p), api:'v1',
-      apps: arrs.filter(a=>CONFIG.apps[cname(a)]).map(a=>({
-        name:cname(a), implementation:IMPL[a.id],
-        props:{syncLevel:'fullSync'},
-        fields:{prowlarrUrl:inNet(p), baseUrl:inNet(a), apiKey:DEFAULTS.apiKey},
-      })),
-    })),
-    clients: list.filter(a=>svc(a.id).dlClient).map(c=>{
-      const st = CONFIG.clients[cname(c)] || {arrs:{}, cats:{}};
-      const torrent = !!svc(c.id).conf;      // quem tem conf própria é o qBittorrent
-      return {implementation:IMPL[c.id], label:cname(c),
-        targets: arrs.filter(a=>st.arrs && st.arrs[cname(a)]).map(a=>({
-          arr:route(a), name:cname(c),
-          props:{enable:true, priority:1,
-                 protocol: torrent ? 'torrent' : 'usenet',
-                 removeCompletedDownloads: !!(st.cdh && st.cdh.completed),
-                 removeFailedDownloads:    !!(st.cdh && st.cdh.failed)},
-          fields: Object.assign(
-            {host:dlHost(c), port:svc(c.id).port, useSsl:false,
-             [CAT_FIELD[a.id]]: (st.cats && st.cats[cname(a)]) || catDefault(a)},
-            torrent ? {username:DEFAULTS.qbitUser, password:DEFAULTS.qbitPass}
-                    : {apiKey:DEFAULTS.apiKey}),
-        })),
-      };
-    }),
-  };
-}
-
-const applyConfig = ()=> runJob(
-  ()=> api('configure', {method:'POST', body:JSON.stringify({plan:configPlan()})}),
-  t('log.configure'));
-
-$('#logApply').onclick = ()=>{ $('#logApply').hidden = true; applyConfig(); };
-
-/* ---------- derrubar ---------- */
-
-$('#down').onclick = ()=> runJob(()=> api('down', {method:'POST'}), t('log.down'));
 
 $('#eTz').innerHTML = TIMEZONES.map(z=>`<option>${z}</option>`).join('');
 $('#mTp').innerHTML = TP_THEMES.map(v=>`<option>${v}</option>`).join('');
@@ -3294,8 +3021,6 @@ applyI18n(); renderCombo(); renderItems(); render();
 // a stack inteira depende das bases de caminho: o Ambiente abre junto com a página
 openEnv();
 refreshQbitHash();
-// e, se houver um servidor atrás, ele pode ter uma stack guardada para reabrir
-detectServer();
 </script>
 </body>
 </html>
