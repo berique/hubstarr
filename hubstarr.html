@@ -211,6 +211,12 @@
     background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--txt)}
   .notice .noticeBody a{color:var(--accent)}
+  /* aviso fixo: protótipo, não produção */
+  .protoWarn{grid-column:1/-1;margin:-4px 0 -4px;padding:10px 14px;font-size:13px;
+    line-height:1.6;border-radius:10px;color:var(--txt);
+    background:color-mix(in srgb, var(--danger) 12%, var(--panel));
+    border:1px solid var(--danger)}
+  .protoWarn b{color:var(--danger)}
 </style>
 </head>
 <body>
@@ -226,6 +232,8 @@
 </header>
 
 <div class="wrap">
+  <!-- aviso fixo, antes de tudo: o que sai daqui é ponto de partida, não produção -->
+  <p class="protoWarn" data-i18n-html="proto.warn"></p>
   <!-- aviso acima dos dois painéis, na largura toda -->
   <details class="notice">
     <summary data-i18n="docker.h">Precisa instalar o Docker?</summary>
@@ -491,6 +499,7 @@ const I18N = {
   'app.lang':'Idioma',
   'app.env':'⚙ Ambiente',
   'app.cfg':'⇄ Configuração',
+  'proto.warn':'<b>Protótipo.</b> O Hubstarr não foi projetado para uso em produção: os arquivos que ele gera são um ponto de partida, sem endurecimento de segurança, backup ou monitoramento. Revise tudo — senhas, portas, certificados e permissões — antes de expor a stack a qualquer rede que não seja a sua.',
   'docker.h':'Precisa instalar o Docker?',
   'docker.body':'<p>O Hubstarr só precisa deste navegador; quem precisa do Docker com o plugin Compose são os arquivos que ele gera.</p>'+
     '<p><b>Linux</b> — o script oficial instala o Docker Engine e o Compose:</p>'+
@@ -771,6 +780,7 @@ const I18N = {
   'app.lang':'Language',
   'app.env':'⚙ Environment',
   'app.cfg':'⇄ Configuration',
+  'proto.warn':'<b>Prototype.</b> Hubstarr was not designed for production use: the files it generates are a starting point, with no security hardening, backups or monitoring. Review everything — passwords, ports, certificates and permissions — before exposing the stack to any network other than your own.',
   'docker.h':'Need to install Docker?',
   'docker.body':'<p>Hubstarr itself only needs this browser; it is the files it generates that need Docker with the Compose plugin.</p>'+
     '<p><b>Linux</b> — the official script installs Docker Engine and Compose:</p>'+
@@ -1049,6 +1059,7 @@ const I18N = {
   'app.lang':'Idioma',
   'app.env':'⚙ Entorno',
   'app.cfg':'⇄ Configuración',
+  'proto.warn':'<b>Prototipo.</b> Hubstarr no fue diseñado para uso en producción: los archivos que genera son un punto de partida, sin endurecimiento de seguridad, copias de seguridad ni monitorización. Revísalo todo — contraseñas, puertos, certificados y permisos — antes de exponer la stack a cualquier red que no sea la tuya.',
   'docker.h':'¿Necesitas instalar Docker?',
   'docker.body':'<p>Hubstarr solo necesita este navegador; los que necesitan Docker con el plugin Compose son los archivos que genera.</p>'+
     '<p><b>Linux</b> — el script oficial instala Docker Engine y Compose:</p>'+

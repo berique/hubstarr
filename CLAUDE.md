@@ -194,7 +194,7 @@ chromium-browser --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
 ```
 
 `services.png` é 1480×760 e `screenshot.png` acompanha a altura do conteúdo
-(hoje 1195). O mesmo truque, com `--dump-dom` no lugar de `--screenshot`, é a
+(hoje 1323). O mesmo truque, com `--dump-dom` no lugar de `--screenshot`, é a
 maneira de testar mudanças de comportamento sem navegador interativo. Se o
 chromium travar sem escrever nada, passe um `--user-data-dir` próprio.
 
