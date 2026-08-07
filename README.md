@@ -147,9 +147,11 @@ vira um slug (minúsculas, sem acentos, espaços como hífen) usado como
 Os caminhos saem como variáveis resolvidas pelo `.env`:
 
 - `BASE_CONFIG` — raiz das pastas de config, uma por container.
-- `BASE_MEDIA` — biblioteca. Cada *arr monta a própria subpasta
-  (`series`, `movies`, `music`), o Jellyfin monta a base inteira e o Bazarr
-  acompanha as subpastas das instâncias de Radarr/Sonarr presentes na stack.
+- `BASE_MEDIA` — biblioteca. Cada *arr monta a própria subpasta, que nasce com
+  o tipo de conteúdo dele mais o que distingue a instância no título (`Sonarr` →
+  `tv`, `Sonarr 4K` → `tv-4k`, `Radarr [UHD]` → `movies-uhd`) e é editável no
+  modal; o Jellyfin monta a base inteira e o Bazarr acompanha as subpastas das
+  instâncias de Radarr/Sonarr presentes na stack.
 - `DOWNLOAD_BASE` — área de download. qBittorrent e SABnzbd montam uma
   subpasta própria (`torrents`, `usenet`); os *arr montam a base inteira em
   `/downloads`, para conseguirem importar.

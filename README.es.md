@@ -150,9 +150,11 @@ guiones) usado como `container_name`, clave del servicio y carpeta de config:
 Las rutas salen como variables resueltas por el `.env`:
 
 - `BASE_CONFIG` — raíz de las carpetas de config, una por contenedor.
-- `BASE_MEDIA` — la biblioteca. Cada *arr monta su propia subcarpeta
-  (`series`, `movies`, `music`), Jellyfin monta la base entera y Bazarr sigue
-  las subcarpetas de las instancias de Radarr/Sonarr presentes en la stack.
+- `BASE_MEDIA` — la biblioteca. Cada *arr monta su propia subcarpeta, que nace
+  con su tipo de contenido más lo que distingue la instancia en el título
+  (`Sonarr` → `tv`, `Sonarr 4K` → `tv-4k`, `Radarr [UHD]` → `movies-uhd`) y se
+  edita en el modal; Jellyfin monta la base entera y Bazarr sigue las
+  subcarpetas de las instancias de Radarr/Sonarr presentes en la stack.
 - `DOWNLOAD_BASE` — el área de descargas. qBittorrent y SABnzbd montan su
   propia subcarpeta (`torrents`, `usenet`); los *arr montan la base entera en
   `/downloads`, para poder importar.

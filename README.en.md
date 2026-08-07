@@ -148,9 +148,11 @@ a slug (lowercase, no accents, spaces turned into hyphens) used as the
 Paths come out as variables resolved by `.env`:
 
 - `BASE_CONFIG` — root of the config folders, one per container.
-- `BASE_MEDIA` — the library. Each *arr mounts its own subfolder (`series`,
-  `movies`, `music`), Jellyfin mounts the whole base, and Bazarr follows the
-  subfolders of the Radarr/Sonarr instances present in the stack.
+- `BASE_MEDIA` — the library. Each *arr mounts its own subfolder, which starts
+  out as its content type plus whatever tells the instance apart in the title
+  (`Sonarr` → `tv`, `Sonarr 4K` → `tv-4k`, `Radarr [UHD]` → `movies-uhd`) and
+  can be edited in the modal; Jellyfin mounts the whole base, and Bazarr
+  follows the subfolders of the Radarr/Sonarr instances present in the stack.
 - `DOWNLOAD_BASE` — the download area. qBittorrent and SABnzbd mount their own
   subfolder (`torrents`, `usenet`); the *arr apps mount the whole base at
   `/downloads`, so they can import.
