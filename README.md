@@ -257,18 +257,16 @@ e traduzir os valores.
 
 ## Wishlist
 
-O que ainda não existe, na ordem em que faria sentido acontecer:
+O que ainda não existe, na ordem em que faria sentido acontecer. Os marcos são
+versões, não datas: cada um só começa depois do anterior, porque depende dele.
+Hoje o repositório está no **v0.1** — a página sozinha, gerando os arquivos.
 
-1. **Um backend que ligue o `hubstarr.html` ao Docker** — para a página gravar
-   os arquivos e subir a stack, em vez de parar no `.zip`.
-2. **Configuração automática das stacks pelo backend** — o que hoje é a
-   **Configuração** na interface (Prowlarr apontando para cada *arr, clientes
-   de download com categoria, Media Management) aplicado pela API de cada app.
-3. **Custom formats e profiles próprios de cada stack** — o perfil de qualidade
-   e os formatos personalizados que fazem sentido para 4K, anime e afins, já
-   ligados à instância certa.
-4. **Busca localizada de mídia** — deixar escolher o idioma da busca
-   (português, espanhol, …) para que os *arr encontrem o lançamento certo.
+| Marco    | Entrega                                              | Fecha quando                                                                            |
+| -------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| **v0.2** | Backend ligando o `hubstarr.html` ao Docker           | a página grava os arquivos e sobe a stack sem passar pelo `.zip`                          |
+| **v0.3** | Configuração automática das stacks pelo backend       | Prowlarr, clientes de download e Media Management saem da interface e viram chamada de API |
+| **v0.4** | Custom formats e profiles próprios de cada stack      | a instância de 4K, a de anime e as demais nascem com o perfil de qualidade delas           |
+| **v0.5** | Busca localizada de mídia                             | dá para escolher o idioma da busca e os *arr acham o lançamento certo                      |
 
 ## Status
 

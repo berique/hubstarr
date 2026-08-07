@@ -263,19 +263,17 @@ bloques y traducir los valores.
 
 ## Wishlist
 
-Lo que todavía no existe, en el orden en que tendría sentido que ocurra:
+Lo que todavía no existe, en el orden en que tendría sentido que ocurra. Los
+hitos son versiones, no fechas: cada uno solo empieza después del anterior, porque
+depende de él. Hoy el repositorio está en **v0.1** — la página sola, generando los
+archivos.
 
-1. **Un backend que conecte `hubstarr.html` con Docker** — para que la página
-   grabe los archivos y levante la stack, en vez de quedarse en el `.zip`.
-2. **Configuración automática de las stacks desde el backend** — lo que hoy es
-   la **Configuración** en la interfaz (Prowlarr apuntando a cada *arr,
-   clientes de descarga con categoría, Media Management) aplicado por la API de
-   cada app.
-3. **Custom formats y profiles propios de cada stack** — el perfil de calidad y
-   los formatos personalizados que tienen sentido para 4K, anime y demás, ya
-   ligados a la instancia correcta.
-4. **Búsqueda localizada de medios** — poder elegir el idioma de la búsqueda
-   (portugués, español, …) para que los *arr encuentren el lanzamiento correcto.
+| Hito     | Entrega                                              | Se cierra cuando                                                                        |
+| -------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| **v0.2** | Un backend que conecte `hubstarr.html` con Docker     | la página graba los archivos y levanta la stack sin pasar por el `.zip`                    |
+| **v0.3** | Configuración automática de las stacks desde el backend | Prowlarr, clientes de descarga y Media Management salen de la interfaz y son llamadas de API |
+| **v0.4** | Custom formats y profiles propios de cada stack       | la instancia de 4K, la de anime y las demás nacen con su perfil de calidad                 |
+| **v0.5** | Búsqueda localizada de medios                         | se puede elegir el idioma de la búsqueda y los *arr encuentran el lanzamiento correcto     |
 
 ## Estado
 

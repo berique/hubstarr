@@ -259,18 +259,17 @@ copying one of the blocks and translating the values.
 
 ## Wishlist
 
-What is not there yet, in the order it would make sense to happen:
+What is not there yet, in the order it would make sense to happen. The
+milestones are versions, not dates: each one only starts after the previous, because
+it depends on it. The repository is at **v0.1** today — the page alone, generating
+the files.
 
-1. **A backend wiring `hubstarr.html` to Docker** — so the page can write the
-   files and bring the stack up, instead of stopping at the `.zip`.
-2. **Automatic stack configuration from the backend** — what today is the
-   **Configuration** in the interface (Prowlarr pointing at each *arr, download
-   clients with categories, Media Management) applied through each app's API.
-3. **Custom formats and profiles per stack** — the quality profile and custom
-   formats that make sense for 4K, anime and the like, already attached to the
-   right instance.
-4. **Localized media search** — let the search language be picked (Portuguese,
-   Spanish, …) so the *arr apps find the right release.
+| Milestone | Delivers                                          | Done when                                                                          |
+| --------- | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| **v0.2**  | A backend wiring `hubstarr.html` to Docker        | the page writes the files and brings the stack up without going through the `.zip`  |
+| **v0.3**  | Automatic stack configuration from the backend    | Prowlarr, download clients and Media Management leave the interface and become API calls |
+| **v0.4**  | Custom formats and profiles per stack             | the 4K instance, the anime one and the rest are born with their own quality profile |
+| **v0.5**  | Localized media search                            | the search language can be picked and the *arr apps find the right release          |
 
 ## Status
 
