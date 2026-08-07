@@ -2,7 +2,7 @@
 
 *[Português (Brasil)](README.md) · [English](README.en.md) · Español*
 
-[![Licencia: GPL-3.0](https://img.shields.io/badge/licencia-GPL--3.0-blue.svg)](LICENSE)
+[<img src="docs/badge-licencia.svg" alt="Licencia: GPL-3.0" height="20">](LICENSE)
 
 Prototipo de página única que arma el `docker-compose.yml`, el `.env` y el
 `nginx.conf` de una stack multimedia (*arr + clientes de descarga + servidor

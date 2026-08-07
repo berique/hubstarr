@@ -2,7 +2,7 @@
 
 *[Português (Brasil)](README.md) · English · [Español](README.es.md)*
 
-[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
+[<img src="docs/badge-license.svg" alt="License: GPL-3.0" height="20">](LICENSE)
 
 Single-page prototype that builds the `docker-compose.yml`, the `.env` and the
 `nginx.conf` for a media stack (*arr apps + download clients + media server),

@@ -179,7 +179,10 @@ handler de `#mSave`.
 `README.md` (pt-BR) é a fonte; `README.en.md` e `README.es.md` são traduções.
 Mudança de comportamento documentada precisa ir aos três. As capturas em
 `docs/` (`screenshot.png`, `services.png`) refletem a interface atual, e há uma
-seção **Docker** explicando como instalar o que roda os arquivos gerados.
+seção **Docker** explicando como instalar o que roda os arquivos gerados. O
+badge da licença é um SVG local por README (`docs/badge-licen*.svg`, um por
+idioma, com o texto em `textLength` fixo) — nada de shields.io: o repositório
+não busca imagem de fora.
 
 Para refazer as capturas, copie o HTML para um arquivo temporário fora do
 projeto (o chromium do snap não lê `/tmp` nem `/srv`), injete no fim do
