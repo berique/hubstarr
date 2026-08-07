@@ -89,7 +89,9 @@ defecto:
   vacías y la nomenclatura completa de cada app (*Episode Naming*,
   *Nomenclatura de película*, *Nomenclatura de pista*: caracteres ilegales, dos
   puntos, varios episodios y todos los formatos de archivo y de carpeta) —,
-  separadas por familia: Sonarr, Radarr y Lidarr. Los permisos abren los campos
+  separadas por familia: Sonarr, Radarr y Lidarr. Los formatos de episodio y de
+  película ya vienen con los de [TRaSH Guides](https://trash-guides.info), en la
+  variante de Jellyfin con el id de TMDb. Los permisos abren los campos
   de `chmod` y `chown`, y en Lidarr la casilla de nombre existente es la que
   trae los formatos de pista y la carpeta del álbum. Por ahora las
   opciones se guardan en la interfaz; no se aplica nada en las apps.

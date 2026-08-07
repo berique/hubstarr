@@ -65,7 +65,8 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    `apps` (o que o Prowlarr configura), `clients[cliente] = {arrs, cats, cdh}`
    (quem recebe, com que categoria — padrão em `CATEGORY` — e o gerenciamento de
    downloads concluídos) e `mm[família]` (Media Management mais a nomenclatura,
-   cujos campos estão em `NAMING_FIELDS` com os formatos de fábrica).
+   cujos campos estão em `NAMING_FIELDS` — os formatos de episódio e de filme
+  saem de fábrica com os do TRaSH Guides, variante do Jellyfin com id do TMDb).
    `syncConfig()` o alinha com o `added` a cada abertura do modal, e ele não
    entra nos arquivos gerados — é protótipo de interface.
 5. **Derivações** — `slug()` → `cname()` (container_name = chave do serviço =

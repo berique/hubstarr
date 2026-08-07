@@ -86,8 +86,10 @@ The combobox lists the available services with their logos and default ports:
   options — hardlinks, renaming, permissions, empty
   folders and each app's full naming section (*Episode*, *Movie*, *Track
   Naming*: illegal characters, colon replacement, multi-episode style and every
-  file and folder format) — split per family: Sonarr, Radarr and Lidarr.
-  Permissions reveal the `chmod` and `chown` fields, and in Lidarr the existing
+  file and folder format) — split per family: Sonarr, Radarr and Lidarr. The
+  episode and movie formats ship with the [TRaSH
+  Guides](https://trash-guides.info) ones, in the Jellyfin variant with the TMDb
+  id. Permissions reveal the `chmod` and `chown` fields, and in Lidarr the existing
   name box is what brings up the track formats and the album folder. For now
   the choices
   are kept in the interface; nothing is applied to the apps.
