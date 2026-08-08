@@ -37,6 +37,8 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
 - **Créditos**, en el botón junto al título: un modal con todos los proyectos
   que usa la stack — cada app con enlace a su sitio —, más LinuxServer.io de las
   imágenes, theme.park de los temas y el origen de los iconos.
+
+  ![El modal de Créditos, con los proyectos de la stack y el origen de imágenes, temas e iconos](docs/credits.png)
 - **Configurar cada instancia** en un modal: título, subcarpeta multimedia o de
   descargas y enrutamiento por la VPN.
 - **Copiar el enlace** de cada servicio, ya con el esquema, el dominio y el

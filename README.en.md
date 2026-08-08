@@ -35,6 +35,8 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
 - **Credits**, in the button next to the title: a modal with every project the
   stack uses — each app linking to its own site —, plus LinuxServer.io for the
   images, theme.park for the themes and where the icons come from.
+
+  ![The Credits modal, with the stack's projects and where images, themes and icons come from](docs/credits.png)
 - **Configure each instance** in a modal: title, media/downloads subfolder and
   VPN routing.
 - **Copy each service's link**, with the scheme, domain and subpath nginx will
