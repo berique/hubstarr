@@ -197,7 +197,7 @@ chromium-browser --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
 ```
 
 `services.png` é 1480×760 e `screenshot.png` acompanha a altura do conteúdo
-(hoje 1323). O mesmo truque, com `--dump-dom` no lugar de `--screenshot`, é a
+(hoje 1376). O mesmo truque, com `--dump-dom` no lugar de `--screenshot`, é a
 maneira de testar mudanças de comportamento sem navegador interativo. Se o
 chromium travar sem escrever nada, passe um `--user-data-dir` próprio.
 
@@ -225,7 +225,11 @@ repositório é o **v0.1** — a página sozinha.
   protótipo de interface e não chega a arquivo nenhum; é ele que vira chamada.
 - **v0.4** — custom formats e profiles por instância (4K, anime, …), ao lado do
   `NAMING_FIELDS` que já guarda a nomenclatura.
-- **v0.5** — busca localizada de mídia, com o idioma da busca escolhível.
+- **v0.5** — compatibilidade com o TRaSH Guides além da nomenclatura, que já
+  saiu de fábrica: quality definitions, scores de custom format e o resto do
+  guia. O JSON de origem dele (`docs/json/...` no repositório TRaSH-Guides) é
+  a fonte, não a página renderizada.
+- **v0.6** — busca localizada de mídia, com o idioma da busca escolhível.
 
 Marco é ordem, não calendário: cada um depende do anterior. Ao propor mudança
 que caia num deles, diga em qual — e não comece o de baixo antes do de cima.

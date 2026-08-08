@@ -269,7 +269,8 @@ the files.
 | **v0.2**  | A backend wiring `hubstarr.html` to Docker        | the page writes the files and brings the stack up without going through the `.zip`  |
 | **v0.3**  | Automatic stack configuration from the backend    | Prowlarr, download clients and Media Management leave the interface and become API calls |
 | **v0.4**  | Custom formats and profiles per stack             | the 4K instance, the anime one and the rest are born with their own quality profile |
-| **v0.5**  | Localized media search                            | the search language can be picked and the *arr apps find the right release          |
+| **v0.5**  | Compatibility with the TRaSH Guides               | quality definitions, custom format scores and the rest of the guide's recommendations come ready |
+| **v0.6**  | Localized media search                            | the search language can be picked and the *arr apps find the right release          |
 
 ## Status
 

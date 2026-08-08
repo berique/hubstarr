@@ -273,7 +273,8 @@ archivos.
 | **v0.2** | Un backend que conecte `hubstarr.html` con Docker     | la página graba los archivos y levanta la stack sin pasar por el `.zip`                    |
 | **v0.3** | Configuración automática de las stacks desde el backend | Prowlarr, clientes de descarga y Media Management salen de la interfaz y son llamadas de API |
 | **v0.4** | Custom formats y profiles propios de cada stack       | la instancia de 4K, la de anime y las demás nacen con su perfil de calidad                 |
-| **v0.5** | Búsqueda localizada de medios                         | se puede elegir el idioma de la búsqueda y los *arr encuentran el lanzamiento correcto     |
+| **v0.5** | Compatibilidad con TRaSH Guides                       | quality definitions, scores de custom format y el resto de las recomendaciones de la guía ya listas |
+| **v0.6** | Búsqueda localizada de medios                         | se puede elegir el idioma de la búsqueda y los *arr encuentran el lanzamiento correcto     |
 
 ## Estado
 

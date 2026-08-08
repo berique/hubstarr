@@ -266,7 +266,8 @@ Hoje o repositório está no **v0.1** — a página sozinha, gerando os arquivos
 | **v0.2** | Backend ligando o `hubstarr.html` ao Docker           | a página grava os arquivos e sobe a stack sem passar pelo `.zip`                          |
 | **v0.3** | Configuração automática das stacks pelo backend       | Prowlarr, clientes de download e Media Management saem da interface e viram chamada de API |
 | **v0.4** | Custom formats e profiles próprios de cada stack      | a instância de 4K, a de anime e as demais nascem com o perfil de qualidade delas           |
-| **v0.5** | Busca localizada de mídia                             | dá para escolher o idioma da busca e os *arr acham o lançamento certo                      |
+| **v0.5** | Compatibilidade com o TRaSH Guides                    | quality definitions, scores de custom format e as demais recomendações do guia saem prontas |
+| **v0.6** | Busca localizada de mídia                             | dá para escolher o idioma da busca e os *arr acham o lançamento certo                      |
 
 ## Status
 
