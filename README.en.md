@@ -296,3 +296,8 @@ The service logos belong to their own projects and come from
 [Nginx](https://iconscout.com/icons/nginx) by
 [Icon 54](https://iconscout.com/contributors/icon-54), on IconScout. The GPL
 covers Hubstarr, not them.
+
+The app themes come from [theme.park](https://theme-park.dev/), a separate
+project also under GPL-3.0: the image the compose file uses in
+`TP_THEME`/`TP_ADDON`, the palettes listed in the **Theme** field and the
+screenshots Hubstarr shows are all theirs.

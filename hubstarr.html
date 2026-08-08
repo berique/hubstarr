@@ -199,8 +199,10 @@
   #shotBack{z-index:70}
   #shotBack .modal{max-width:1100px;width:auto}
   /* a captura é uma tela inteira: cabe na altura em vez de rolar */
-  #shotImg{display:block;max-width:100%;max-height:calc(90vh - 100px);
+  #shotImg{display:block;max-width:100%;max-height:calc(90vh - 150px);
     width:auto;object-fit:contain;border-radius:6px;margin:0 auto}
+  /* o crédito do theme.park fica logo abaixo da imagem */
+  #shotCredit{margin:8px 0 0;text-align:center}
   #shotImg[hidden]{display:none}
   /* aviso colapsável acima dos painéis */
   .notice{grid-column:1/-1;margin:-4px 0 -4px;background:var(--panel);border:1px solid var(--line);
@@ -505,7 +507,8 @@ sudo sh get-docker.sh</pre>
     <h3><span id="shotTitle"></span><span class="sp"></span>
       <button id="shotClose" data-i18n="btn.close">Fechar</button></h3>
     <div class="body"><img id="shotImg" alt="">
-      <p class="hint" id="shotErr" data-i18n="shot.err" hidden></p></div>
+      <p class="hint" id="shotErr" data-i18n="shot.err" hidden></p>
+      <p class="hint" id="shotCredit" data-i18n-html="shot.credit"></p></div>
   </div>
 </div>
 
@@ -726,10 +729,11 @@ const I18N = {
               nvidia:'Reserva a GPU pelo runtime da NVIDIA.'},
   'm.tpv':'Variante',
   'm.tp':'Tema',
-  'm.tpWhy':'Paleta do theme.park aplicada na interface do app, no compose como <b>TP_THEME</b>. O link mostra a captura dela, vinda da documentação do theme.park.',
+  'm.tpWhy':'Paleta do <a href="https://theme-park.dev/" target="_blank" rel="noopener">theme.park</a> aplicada na interface do app, no compose como <b>TP_THEME</b>. O link mostra a captura dela, vinda da documentação do theme.park.',
   'm.tpShot':'ver captura',
   'shot.h':(app,tema)=>`${app} — ${tema}`,
   'shot.err':'Não foi possível carregar a captura. Ela vem da documentação do theme.park e precisa de conexão.',
+  'shot.credit':'Tema e captura são do <a href="https://theme-park.dev/" target="_blank" rel="noopener">theme.park</a>, sob GPL-3.0.',
   'btn.close':'Fechar',
   'm.tpvStd':'Padrão',
   'm.tpvUhd':'4K',
@@ -1015,10 +1019,11 @@ const I18N = {
               nvidia:'Reserves the GPU through the NVIDIA runtime.'},
   'm.tpv':'Variant',
   'm.tp':'Theme',
-  'm.tpWhy':'theme.park palette applied to the app interface, in the compose file as <b>TP_THEME</b>. The link shows its screenshot, taken from the theme.park docs.',
+  'm.tpWhy':'<a href="https://theme-park.dev/" target="_blank" rel="noopener">theme.park</a> palette applied to the app interface, in the compose file as <b>TP_THEME</b>. The link shows its screenshot, taken from the theme.park docs.',
   'm.tpShot':'see screenshot',
   'shot.h':(app,theme)=>`${app} — ${theme}`,
   'shot.err':'Could not load the screenshot. It comes from the theme.park docs and needs a connection.',
+  'shot.credit':'Theme and screenshot belong to <a href="https://theme-park.dev/" target="_blank" rel="noopener">theme.park</a>, under GPL-3.0.',
   'btn.close':'Close',
   'm.tpvStd':'Default',
   'm.tpvUhd':'4K',
@@ -1304,10 +1309,11 @@ const I18N = {
               nvidia:'Reserva la GPU por el runtime de NVIDIA.'},
   'm.tpv':'Variante',
   'm.tp':'Tema',
-  'm.tpWhy':'Paleta de theme.park aplicada en la interfaz de la app, en el compose como <b>TP_THEME</b>. El enlace muestra su captura, tomada de la documentación de theme.park.',
+  'm.tpWhy':'Paleta de <a href="https://theme-park.dev/" target="_blank" rel="noopener">theme.park</a> aplicada en la interfaz de la app, en el compose como <b>TP_THEME</b>. El enlace muestra su captura, tomada de la documentación de theme.park.',
   'm.tpShot':'ver captura',
   'shot.h':(app,tema)=>`${app} — ${tema}`,
   'shot.err':'No se pudo cargar la captura. Viene de la documentación de theme.park y necesita conexión.',
+  'shot.credit':'El tema y la captura son de <a href="https://theme-park.dev/" target="_blank" rel="noopener">theme.park</a>, bajo GPL-3.0.',
   'btn.close':'Cerrar',
   'm.tpvStd':'Predeterminado',
   'm.tpvUhd':'4K',

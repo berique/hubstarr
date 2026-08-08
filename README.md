@@ -293,3 +293,7 @@ Os logotipos dos serviços são de seus respectivos projetos e vêm do
 [Nginx](https://iconscout.com/icons/nginx), de
 [Icon 54](https://iconscout.com/contributors/icon-54), no IconScout. A GPL
 cobre o Hubstarr, não eles.
+
+Os temas dos apps são do [theme.park](https://theme-park.dev/), projeto à parte,
+também sob GPL-3.0: dele vêm a imagem que o compose usa em `TP_THEME`/`TP_ADDON`,
+as paletas listadas no campo **Tema** e as capturas que o Hubstarr mostra.
