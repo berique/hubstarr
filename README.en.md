@@ -32,6 +32,9 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
 ## What you can do
 
 - **Pick services** from a combobox with logos and add them to the stack.
+- **Credits**, in the button next to the title: a modal with every project the
+  stack uses — each app linking to its own site —, plus LinuxServer.io for the
+  images, theme.park for the themes and where the icons come from.
 - **Configure each instance** in a modal: title, media/downloads subfolder and
   VPN routing.
 - **Copy each service's link**, with the scheme, domain and subpath nginx will

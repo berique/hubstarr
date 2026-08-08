@@ -38,7 +38,9 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    `webAuth` + `conf` (qBittorrent: usuário/senha/API key no modal dele e a
    `qBittorrent.conf` gerada e montada), `cdh` (SABnzbd: gerenciamento de
    downloads concluídos na Configuração), `noVol`, `derived` (Bazarr herda as
-   subpastas das instâncias de Radarr/Sonarr presentes).
+   subpastas das instâncias de Radarr/Sonarr presentes), `site` (endereço do
+   projeto, que é o que põe o serviço na grade dos Créditos) e `credit` (nome
+   a creditar quando ele difere do `name` — o FlareSolverr roda o Byparr).
    Adicionar um serviço normalmente é acrescentar uma linha aqui + o ícone em
    `ICONS` + as strings `d.<id>` no `I18N`.
 3. **Constantes de convenção** — `STACK`/`NETWORK` (`starrnet`), `NGINX`
@@ -77,7 +79,9 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
 6. **UI** — `renderCombo()`, `renderItems()`, modal de configuração
    (`openModal` + o handler de `#mSave`), modal de ambiente (`openEnv`), modal
    do nginx (`openNgx`), modal de configuração (`renderConfig`/`openCfg`, com
-   backup para o Cancelar), lista de pastas do Jellyfin (`renderLibs`/`libsOf`),
+   backup para o Cancelar), modal da captura da paleta (`openShot`) e o dos
+   créditos (`renderCredits`/`openCred`, grade montada do `SERVICES` pelo campo
+   `site`), lista de pastas do Jellyfin (`renderLibs`/`libsOf`),
    `buildHelp()` e tema claro/escuro. O hint do modal (`updateHint`) é montado
    à mão com `innerHTML` a cada digitada — quem mexe nos campos chama
    `hintNow()`, e o `applyI18n()` o refaz para acompanhar a troca de idioma.

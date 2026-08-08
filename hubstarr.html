@@ -195,6 +195,14 @@
   .modal .body{padding:16px;overflow:auto}
   /* a Configuração tem campos demais para 520px: ganha mais folga */
   #cfgBack .modal{max-width:860px}
+  /* créditos: os projetos numa grade de logotipos, o texto abaixo */
+  #credBack .modal{max-width:620px}
+  #credBody p{margin:0 0 12px;font-size:13px;line-height:1.6}
+  .credGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+    gap:6px;margin:0 0 16px}
+  .credApp{display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;
+    border:1px solid transparent;border-radius:8px;color:var(--txt)}
+  .credApp:hover{border-color:var(--line);background:var(--panel-2)}
   /* a captura da paleta é larga: o modal acompanha a imagem */
   #shotBack{z-index:70}
   #shotBack .modal{max-width:1100px;width:auto}
@@ -219,7 +227,8 @@
   .notice .noticeBody pre{margin:0 0 8px;padding:10px 12px;overflow:auto;
     background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--txt)}
-  .notice .noticeBody a{color:var(--accent)}
+  /* links dentro de texto: o padrão do navegador some no tema escuro */
+  .notice .noticeBody a, #credBody p a, #shotCredit a, .helpTxt a{color:var(--accent)}
   /* aviso fixo: protótipo, não produção */
   .protoWarn{grid-column:1/-1;margin:-4px 0 -4px;padding:10px 14px;font-size:13px;
     line-height:1.6;border-radius:10px;color:var(--txt);
@@ -233,6 +242,7 @@
 <header>
   <div class="logo">H</div>
   <h1 data-i18n="app.title">Hubstarr &middot; Adicionar *arr Stack</h1>
+  <button class="sm" id="credBtn" data-i18n="app.credits">♡ Créditos</button>
   <span style="flex:1"></span>
   <select id="langSel" style="width:auto;padding:6px 8px" data-i18n-title="app.lang"></select>
   <button id="themeBtn" data-i18n-title="app.theme">🌙</button>
@@ -500,6 +510,19 @@ sudo sh get-docker.sh</pre>
   </div>
 </div>
 
+<!-- créditos: quem faz o que o Hubstarr só amarra. A lista dos apps é montada
+     do SERVICES (campo site), o resto é texto do I18N -->
+<div class="backdrop" id="credBack">
+  <div class="modal">
+    <h3 data-i18n="cred.h">♡ Créditos</h3>
+    <div class="body" id="credBody"></div>
+    <div class="bar">
+      <span class="sp"></span>
+      <button class="primary" id="credClose" data-i18n="btn.close">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <!-- captura da paleta do theme.park: a imagem vem da documentação deles, mas
      é mostrada aqui em cima do modal do serviço, não em outra janela -->
 <div class="backdrop" id="shotBack">
@@ -522,6 +545,13 @@ const I18N = {
 'pt-BR':{
   'doc.title':'Hubstarr — Adicionar *arr Stack',
   'app.title':'Hubstarr · Adicionar *arr Stack',
+  'app.credits':'♡ Créditos',
+  'cred.h':'♡ Créditos',
+  'cred.intro':'O Hubstarr só escreve arquivos de configuração. O trabalho está nos projetos abaixo — cada um com sua própria licença, seus mantenedores e sua comunidade. Se você usa a stack, apoie quem a faz.',
+  'cred.images':'<b>Imagens dos containers</b> — quase todas são as da <a href="https://www.linuxserver.io/" target="_blank" rel="noopener">LinuxServer.io</a>, que empacota os apps, mantém as tags em dia e documenta cada variável. As de fora são as dos próprios projetos.',
+  'cred.themes':'<b>Temas</b> — as paletas do campo <b>Tema</b>, o mod que as aplica e as capturas delas são do <a href="https://theme-park.dev/" target="_blank" rel="noopener">theme.park</a>.',
+  'cred.icons':'<b>Ícones</b> — os logotipos são dos respectivos projetos e vêm do <a href="https://dashboardicons.com" target="_blank" rel="noopener">dashboardicons.com</a>; o do nginx é <a href="https://iconscout.com/icons/nginx" target="_blank" rel="noopener">Nginx</a>, de <a href="https://iconscout.com/contributors/icon-54" target="_blank" rel="noopener">Icon 54</a>, no IconScout.',
+  'cred.gpl':'O Hubstarr é GPL-3.0; a licença cobre ele, não os projetos creditados aqui.',
   'app.theme':'Alternar tema',
   'app.lang':'Idioma',
   'app.env':'⚙ Ambiente',
@@ -814,6 +844,13 @@ const I18N = {
 'en':{
   'doc.title':'Hubstarr — Add *arr Stack',
   'app.title':'Hubstarr · Add *arr Stack',
+  'app.credits':'♡ Credits',
+  'cred.h':'♡ Credits',
+  'cred.intro':'Hubstarr only writes configuration files. The work is in the projects below — each with its own license, maintainers and community. If you run the stack, support the people who build it.',
+  'cred.images':'<b>Container images</b> — nearly all of them come from <a href="https://www.linuxserver.io/" target="_blank" rel="noopener">LinuxServer.io</a>, who package the apps, keep the tags current and document every variable. The remaining ones are the projects\' own.',
+  'cred.themes':'<b>Themes</b> — the palettes in the <b>Theme</b> field, the mod that applies them and their screenshots are <a href="https://theme-park.dev/" target="_blank" rel="noopener">theme.park</a>\'s.',
+  'cred.icons':'<b>Icons</b> — the logos belong to their projects and come from <a href="https://dashboardicons.com" target="_blank" rel="noopener">dashboardicons.com</a>; the nginx one is <a href="https://iconscout.com/icons/nginx" target="_blank" rel="noopener">Nginx</a> by <a href="https://iconscout.com/contributors/icon-54" target="_blank" rel="noopener">Icon 54</a>, on IconScout.',
+  'cred.gpl':'Hubstarr is GPL-3.0; the license covers it, not the projects credited here.',
   'app.theme':'Toggle theme',
   'app.lang':'Language',
   'app.env':'⚙ Environment',
@@ -1104,6 +1141,13 @@ const I18N = {
 'es':{
   'doc.title':'Hubstarr — Añadir *arr Stack',
   'app.title':'Hubstarr · Añadir *arr Stack',
+  'app.credits':'♡ Créditos',
+  'cred.h':'♡ Créditos',
+  'cred.intro':'Hubstarr solo escribe archivos de configuración. El trabajo está en los proyectos de abajo — cada uno con su licencia, sus mantenedores y su comunidad. Si usas la stack, apoya a quien la hace.',
+  'cred.images':'<b>Imágenes de los contenedores</b> — casi todas son de <a href="https://www.linuxserver.io/" target="_blank" rel="noopener">LinuxServer.io</a>, que empaqueta las apps, mantiene las etiquetas al día y documenta cada variable. Las demás son de los propios proyectos.',
+  'cred.themes':'<b>Temas</b> — las paletas del campo <b>Tema</b>, el mod que las aplica y sus capturas son de <a href="https://theme-park.dev/" target="_blank" rel="noopener">theme.park</a>.',
+  'cred.icons':'<b>Iconos</b> — los logotipos son de sus proyectos y vienen de <a href="https://dashboardicons.com" target="_blank" rel="noopener">dashboardicons.com</a>; el de nginx es <a href="https://iconscout.com/icons/nginx" target="_blank" rel="noopener">Nginx</a>, de <a href="https://iconscout.com/contributors/icon-54" target="_blank" rel="noopener">Icon 54</a>, en IconScout.',
+  'cred.gpl':'Hubstarr es GPL-3.0; la licencia lo cubre a él, no a los proyectos acreditados aquí.',
   'app.theme':'Cambiar tema',
   'app.lang':'Idioma',
   'app.env':'⚙ Entorno',
@@ -1434,19 +1478,19 @@ function setLang(l){
 }
 
 const SERVICES = [
-  {id:'sonarr',   name:'Sonarr',    port:8989, img:'lscr.io/linuxserver/sonarr:latest',    color:'#3fb8ea', media:true, mdir:'tv', needsDl:true, tp:true, tpAddon:true, tpTheme:true},
-  {id:'radarr',   name:'Radarr',    port:7878, img:'lscr.io/linuxserver/radarr:latest',    color:'#feca57', media:true, mdir:'movies', needsDl:true, tp:true, tpAddon:true, tpTheme:true},
-  {id:'lidarr',   name:'Lidarr',    port:8686, img:'lscr.io/linuxserver/lidarr:latest',    color:'#1db954', media:true, mdir:'music', needsDl:true, tp:true},
-  {id:'prowlarr', name:'Prowlarr',  port:9696, img:'lscr.io/linuxserver/prowlarr:latest', color:'#e5534b', solver:true, tp:true},
-  {id:'bazarr',   name:'Bazarr',    port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr'], tp:true},
-  {id:'qbittorrent',name:'qBittorrent',port:8181, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true, webAuth:true, tp:true, conf:{host:'qBittorrent.conf', target:'/config/qBittorrent/qBittorrent.conf', pane:'#outQbt', tab:'qbt'}},
-  {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true, cdh:true, tp:true},
+  {id:'sonarr',   name:'Sonarr',    port:8989, img:'lscr.io/linuxserver/sonarr:latest',    color:'#3fb8ea', media:true, mdir:'tv', needsDl:true, tp:true, tpAddon:true, tpTheme:true, site:'https://sonarr.tv'},
+  {id:'radarr',   name:'Radarr',    port:7878, img:'lscr.io/linuxserver/radarr:latest',    color:'#feca57', media:true, mdir:'movies', needsDl:true, tp:true, tpAddon:true, tpTheme:true, site:'https://radarr.video'},
+  {id:'lidarr',   name:'Lidarr',    port:8686, img:'lscr.io/linuxserver/lidarr:latest',    color:'#1db954', media:true, mdir:'music', needsDl:true, tp:true, site:'https://lidarr.audio'},
+  {id:'prowlarr', name:'Prowlarr',  port:9696, img:'lscr.io/linuxserver/prowlarr:latest', color:'#e5534b', solver:true, tp:true, site:'https://prowlarr.com'},
+  {id:'bazarr',   name:'Bazarr',    port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr'], tp:true, site:'https://www.bazarr.media'},
+  {id:'qbittorrent',name:'qBittorrent',port:8181, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true, webAuth:true, tp:true, conf:{host:'qBittorrent.conf', target:'/config/qBittorrent/qBittorrent.conf', pane:'#outQbt', tab:'qbt'}, site:'https://www.qbittorrent.org'},
+  {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true, cdh:true, tp:true, site:'https://sabnzbd.org'},
   {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true, tp:true,
-   conf:{host:'config/config/network.xml', target:'/config/config/network.xml', pane:'#outJf', tab:'jf'}},
-  {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5', subpathFix:true},
-  {id:'heimdall', name:'Heimdall',  port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f', fixed:true, noLink:true, tp:true},
-  {id:'flaresolverr',name:'FlareSolverr',port:8191,img:'ghcr.io/thephaseless/byparr:latest',color:'#ff7f50',noVol:true, internal:true},
-  {id:'gluetun',  name:'Gluetun',   port:8000, img:'qmcgaw/gluetun:latest',                color:'#8b98a5', noVol:true, internal:true, vpnCfg:true},
+   conf:{host:'config/config/network.xml', target:'/config/config/network.xml', pane:'#outJf', tab:'jf'}, site:'https://jellyfin.org'},
+  {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5', subpathFix:true, site:'https://github.com/seerr-team/seerr'},
+  {id:'heimdall', name:'Heimdall',  port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f', fixed:true, noLink:true, tp:true, site:'https://heimdall.site'},
+  {id:'flaresolverr',name:'FlareSolverr',port:8191,img:'ghcr.io/thephaseless/byparr:latest',color:'#ff7f50',noVol:true, internal:true, site:'https://github.com/ThePhaseless/Byparr', credit:'Byparr'},
+  {id:'gluetun',  name:'Gluetun',   port:8000, img:'qmcgaw/gluetun:latest',                color:'#8b98a5', noVol:true, internal:true, vpnCfg:true, site:'https://github.com/qdm12/gluetun'},
 ];
 const svc = id => SERVICES.find(s=>s.id===id);
 // porta em que o serviço escuta dentro do container — o nginx fala com ela
@@ -2003,7 +2047,7 @@ document.addEventListener('keydown', e=>{
   // a captura fica por cima do modal do serviço: fecha só ela primeiro
   if(e.key==='Escape'){
     if($('#shotBack').classList.contains('open')) return closeShot();
-    closeModal(); closeEnv();
+    closeModal(); closeEnv(); closeCred();
   }
 });
 
@@ -2058,6 +2102,29 @@ function openNgx(){
   $('#nHttp').focus();
 }
 const closeNgx = ()=> $('#ngxBack').classList.remove('open');
+
+/* Créditos: o Hubstarr só escreve arquivos, o trabalho é de quem faz os apps.
+   A grade sai do próprio SERVICES (campo site, mais o nginx, que fica fora do
+   catálogo); o resto — imagens, temas, ícones — é texto do I18N. Serviço novo
+   com site entra aqui sozinho. */
+function renderCredits(){
+  const link = s => `<a class="credApp" href="${s.site}" target="_blank" rel="noopener">
+      ${icoHtml(s, 'sm')}<span>${s.credit || s.name}</span></a>`;
+  $('#credBody').innerHTML =
+    `<p class="hint" data-i18n-html="cred.intro">${t('cred.intro')}</p>
+     <div class="credGrid">${SERVICES.concat(NGINX_CRED).filter(s=>s.site).map(link).join('')}</div>
+     <p data-i18n-html="cred.images">${t('cred.images')}</p>
+     <p data-i18n-html="cred.themes">${t('cred.themes')}</p>
+     <p data-i18n-html="cred.icons">${t('cred.icons')}</p>
+     <p class="hint" data-i18n-html="cred.gpl">${t('cred.gpl')}</p>`;
+}
+// o nginx não está no catálogo (é fixo), mas aparece nos créditos como os outros
+const NGINX_CRED = [{...NGINX, site:'https://nginx.org'}];
+function openCred(){ renderCredits(); $('#credBack').classList.add('open'); }
+const closeCred = ()=> $('#credBack').classList.remove('open');
+$('#credBtn').onclick = openCred;
+$('#credClose').onclick = closeCred;
+$('#credBack').onclick = e=>{ if(e.target.id==='credBack') closeCred(); };
 $('#nCancel').onclick = closeNgx;
 $('#ngxBack').onclick = e=>{ if(e.target.id==='ngxBack') closeNgx(); };
 $('#nSave').onclick = ()=>{

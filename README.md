@@ -32,6 +32,9 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
 ## O que dá para fazer
 
 - **Escolher serviços** num combobox com logotipos e adicioná-los à stack.
+- **Créditos**, no botão ao lado do título: um modal com todos os projetos que
+  a stack usa — cada app com link para o site dele —, mais a LinuxServer.io das
+  imagens, o theme.park dos temas e a origem dos ícones.
 - **Configurar cada instância** num modal: título, subpasta de mídia/downloads
   e roteamento pela VPN.
 - **Copiar o link** de cada serviço, já com o esquema, o domínio e o subpath
