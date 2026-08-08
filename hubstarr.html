@@ -195,6 +195,11 @@
   .modal .body{padding:16px;overflow:auto}
   /* a Configuração tem campos demais para 520px: ganha mais folga */
   #cfgBack .modal{max-width:860px}
+  /* a captura da paleta é larga: o modal acompanha a imagem */
+  #shotBack{z-index:70}
+  #shotBack .modal{max-width:1100px;width:auto}
+  #shotImg{display:block;max-width:100%;border-radius:6px}
+  #shotImg[hidden]{display:none}
   /* aviso colapsável acima dos painéis */
   .notice{grid-column:1/-1;margin:-4px 0 -4px;background:var(--panel);border:1px solid var(--line);
     border-radius:10px;font-size:13px;line-height:1.6}
@@ -491,6 +496,17 @@ sudo sh get-docker.sh</pre>
   </div>
 </div>
 
+<!-- captura da paleta do theme.park: a imagem vem da documentação deles, mas
+     é mostrada aqui em cima do modal do serviço, não em outra janela -->
+<div class="backdrop" id="shotBack">
+  <div class="modal" id="shotModal">
+    <h3><span id="shotTitle"></span><span class="sp"></span>
+      <button id="shotClose" data-i18n="btn.close">Fechar</button></h3>
+    <div class="body"><img id="shotImg" alt="">
+      <p class="hint" id="shotErr" data-i18n="shot.err" hidden></p></div>
+  </div>
+</div>
+
 <script>
 /* ---------- idiomas ----------
    Toda string visível — interface e comentários dos arquivos gerados — sai
@@ -708,8 +724,11 @@ const I18N = {
               nvidia:'Reserva a GPU pelo runtime da NVIDIA.'},
   'm.tpv':'Variante',
   'm.tp':'Tema',
-  'm.tpWhy':'Paleta do theme.park aplicada na interface do app, no compose como <b>TP_THEME</b>. O link abre a captura dela na documentação do theme.park.',
-  'm.tpShot':'ver captura ↗',
+  'm.tpWhy':'Paleta do theme.park aplicada na interface do app, no compose como <b>TP_THEME</b>. O link mostra a captura dela, vinda da documentação do theme.park.',
+  'm.tpShot':'ver captura',
+  'shot.h':(app,tema)=>`${app} — ${tema}`,
+  'shot.err':'Não foi possível carregar a captura. Ela vem da documentação do theme.park e precisa de conexão.',
+  'btn.close':'Fechar',
   'm.tpvStd':'Padrão',
   'm.tpvUhd':'4K',
   'm.tpvAnime':'Animes',
@@ -994,8 +1013,11 @@ const I18N = {
               nvidia:'Reserves the GPU through the NVIDIA runtime.'},
   'm.tpv':'Variant',
   'm.tp':'Theme',
-  'm.tpWhy':'theme.park palette applied to the app interface, in the compose file as <b>TP_THEME</b>. The link opens its screenshot in the theme.park docs.',
-  'm.tpShot':'see screenshot ↗',
+  'm.tpWhy':'theme.park palette applied to the app interface, in the compose file as <b>TP_THEME</b>. The link shows its screenshot, taken from the theme.park docs.',
+  'm.tpShot':'see screenshot',
+  'shot.h':(app,theme)=>`${app} — ${theme}`,
+  'shot.err':'Could not load the screenshot. It comes from the theme.park docs and needs a connection.',
+  'btn.close':'Close',
   'm.tpvStd':'Default',
   'm.tpvUhd':'4K',
   'm.tpvAnime':'Anime',
@@ -1280,8 +1302,11 @@ const I18N = {
               nvidia:'Reserva la GPU por el runtime de NVIDIA.'},
   'm.tpv':'Variante',
   'm.tp':'Tema',
-  'm.tpWhy':'Paleta de theme.park aplicada en la interfaz de la app, en el compose como <b>TP_THEME</b>. El enlace abre su captura en la documentación de theme.park.',
-  'm.tpShot':'ver captura ↗',
+  'm.tpWhy':'Paleta de theme.park aplicada en la interfaz de la app, en el compose como <b>TP_THEME</b>. El enlace muestra su captura, tomada de la documentación de theme.park.',
+  'm.tpShot':'ver captura',
+  'shot.h':(app,tema)=>`${app} — ${tema}`,
+  'shot.err':'No se pudo cargar la captura. Viene de la documentación de theme.park y necesita conexión.',
+  'btn.close':'Cerrar',
   'm.tpvStd':'Predeterminado',
   'm.tpvUhd':'4K',
   'm.tpvAnime':'Anime',
@@ -1390,6 +1415,8 @@ function applyI18n(){
   }
   // o corpo da Configuração também é montado na mão
   if($('#cfgBack') && $('#cfgBack').classList.contains('open')) renderConfig();
+  // e o título da captura, que leva o nome do app e do tema
+  if($('#shotTitle')) shotTitle();
 }
 
 function setLang(l){
@@ -1897,7 +1924,7 @@ function openModal(id, key){
   $('#backdrop').classList.add('open');
   $('#mName').focus();
 }
-function closeModal(){ $('#backdrop').classList.remove('open'); editing=null; }
+function closeModal(){ closeShot(); $('#backdrop').classList.remove('open'); editing=null; }
 
 // troca a variável pelo valor sem tirar o cursor do lugar
 function expandInto(el){
@@ -1925,12 +1952,35 @@ $('#mName').addEventListener('input', ()=>{
 document.querySelectorAll('#mName,#mData').forEach(el=>el.addEventListener('input', ()=>{
   const id = editing || picked; if(id) updateHint(svc(id));
 }));
-/* A captura de cada paleta fica na documentação do theme.park: um link, não uma
-   imagem — a página não busca nada de fora, e o repositório não redistribui
-   captura de tela de ninguém. */
+/* A captura de cada paleta fica na documentação do theme.park: o repositório
+   não redistribui captura de tela de ninguém, então o endereço é deles. Ela
+   só é buscada quando alguém clica em "ver captura", e aparece num modal por
+   cima do do serviço — o href continua ali para quem quiser abrir na mão. */
 function tpShot(id){
   $('#mTpShot').href = `${TP_DOCS}/site_assets/${id}/${$('#mTp').value}.png`;
 }
+/* app e tema da captura aberta: o título é montado à mão e precisa acompanhar
+   a troca de idioma */
+let shotOf = null;
+function shotTitle(){
+  $('#shotTitle').textContent = shotOf ? t('shot.h', shotOf.app, shotOf.theme) : '';
+}
+function openShot(){
+  const id = editing ? byKey(editing).id : picked; if(!id) return;
+  const theme = $('#mTp').value;
+  shotOf = {app:svc(id).name, theme};
+  shotTitle();
+  $('#shotErr').hidden = true;
+  const img = $('#shotImg');
+  img.hidden = false; img.alt = t('shot.h', shotOf.app, theme);
+  img.src = $('#mTpShot').href;
+  $('#shotBack').classList.add('open');
+}
+const closeShot = ()=> $('#shotBack').classList.remove('open');
+$('#mTpShot').onclick = e=>{ e.preventDefault(); openShot(); };
+$('#shotClose').onclick = closeShot;
+$('#shotBack').onclick = e=>{ if(e.target.id==='shotBack') closeShot(); };
+$('#shotImg').onerror = ()=>{ $('#shotImg').hidden = true; $('#shotErr').hidden = false; };
 $('#mTp').addEventListener('change', ()=>{
   const id = editing ? byKey(editing).id : picked; if(id) tpShot(id);
 });
@@ -1942,7 +1992,11 @@ $('#add').onclick = ()=>{ if(picked) openModal(picked, null); };
 $('#mCancel').onclick = closeModal;
 $('#backdrop').onclick = e=>{ if(e.target.id==='backdrop') closeModal(); };
 document.addEventListener('keydown', e=>{
-  if(e.key==='Escape'){ closeModal(); closeEnv(); }
+  // a captura fica por cima do modal do serviço: fecha só ela primeiro
+  if(e.key==='Escape'){
+    if($('#shotBack').classList.contains('open')) return closeShot();
+    closeModal(); closeEnv();
+  }
 });
 
 const warn = msg => $('#mWarn').innerHTML = `<span class="warn">${msg}</span>`;

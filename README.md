@@ -61,8 +61,9 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
   instâncias de uma stack com mais de um Sonarr ou Radarr. Os dois têm também
   um campo **Tema**, a paleta em `TP_THEME`: `aquamarine`, `hotline`, `hotpink`,
   `dracula`, `dark`, `organizr` (o padrão), `space-gray`, `overseerr` e `nord`.
-  Abaixo do campo, um link abre a captura da paleta escolhida na documentação
-  do [theme.park](https://docs.theme-park.dev/), uma por app.
+  Abaixo do campo, um link mostra a captura da paleta escolhida num modal
+  sobre o do serviço; a imagem vem da documentação do
+  [theme.park](https://docs.theme-park.dev/), uma por app.
 - **FlareSolverr junto do Prowlarr**: no modal do Prowlarr, um checkbox
   marcado por padrão traz o FlareSolverr para a stack — é ele que resolve o
   desafio anti-bot da Cloudflare nos indexadores protegidos. Configure-o no

@@ -62,7 +62,8 @@ The combobox lists the available services with their logos and default ports:
   a stack with more than one Sonarr or Radarr. Both also have a **Theme**
   field, the palette in `TP_THEME`: `aquamarine`, `hotline`, `hotpink`,
   `dracula`, `dark`, `organizr` (the default), `space-gray`, `overseerr` and
-  `nord`. Below the field, a link opens the chosen palette's screenshot in the
+  `nord`. Below the field, a link shows the chosen palette's screenshot in a
+  modal over the service's own; the image comes from the
   [theme.park](https://docs.theme-park.dev/) docs, one per app.
 - **FlareSolverr alongside Prowlarr**: in the Prowlarr modal, a checkbox that
   is on by default brings FlareSolverr into the stack — it is what solves

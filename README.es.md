@@ -65,8 +65,9 @@ defecto:
   instancias de una stack con más de un Sonarr o Radarr. Ambos tienen también un
   campo **Tema**, la paleta en `TP_THEME`: `aquamarine`, `hotline`, `hotpink`,
   `dracula`, `dark`, `organizr` (el predeterminado), `space-gray`, `overseerr` y
-  `nord`. Debajo del campo, un enlace abre la captura de la paleta elegida en la
-  documentación de [theme.park](https://docs.theme-park.dev/), una por app.
+  `nord`. Debajo del campo, un enlace muestra la captura de la paleta elegida en
+  un modal sobre el del servicio; la imagen viene de la documentación de
+  [theme.park](https://docs.theme-park.dev/), una por app.
 - **FlareSolverr junto a Prowlarr**: en el modal de Prowlarr, una casilla
   marcada por defecto trae FlareSolverr a la stack — es quien resuelve el
   desafío anti-bot de Cloudflare en los indexadores protegidos. Configúralo en
