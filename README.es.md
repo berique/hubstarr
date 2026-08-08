@@ -27,6 +27,10 @@ defecto:
 
 ![El combobox abierto, mostrando los doce servicios disponibles](docs/services.png)
 
+Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la página:
+
+![El modal con la captura del tema hotline de Sonarr, sobre el modal del servicio](docs/theme.png)
+
 ## Qué se puede hacer
 
 - **Elegir servicios** en un combobox con logotipos y añadirlos a la stack.

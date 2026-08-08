@@ -25,6 +25,10 @@ The combobox lists the available services with their logos and default ports:
 
 ![The open combobox, showing the twelve available services](docs/services.png)
 
+And the **Theme** field shows the chosen palette's screenshot without leaving the page:
+
+![The modal with Sonarr's hotline theme screenshot, over the service modal](docs/theme.png)
+
 ## What you can do
 
 - **Pick services** from a combobox with logos and add them to the stack.

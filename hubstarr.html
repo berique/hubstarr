@@ -198,7 +198,9 @@
   /* a captura da paleta é larga: o modal acompanha a imagem */
   #shotBack{z-index:70}
   #shotBack .modal{max-width:1100px;width:auto}
-  #shotImg{display:block;max-width:100%;border-radius:6px}
+  /* a captura é uma tela inteira: cabe na altura em vez de rolar */
+  #shotImg{display:block;max-width:100%;max-height:calc(90vh - 100px);
+    width:auto;object-fit:contain;border-radius:6px;margin:0 auto}
   #shotImg[hidden]{display:none}
   /* aviso colapsável acima dos painéis */
   .notice{grid-column:1/-1;margin:-4px 0 -4px;background:var(--panel);border:1px solid var(--line);

@@ -25,6 +25,10 @@ O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
 
 ![O combobox aberto, mostrando os doze serviços disponíveis](docs/services.png)
 
+E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
+
+![O modal com a captura do tema hotline do Sonarr, por cima do modal do serviço](docs/theme.png)
+
 ## O que dá para fazer
 
 - **Escolher serviços** num combobox com logotipos e adicioná-los à stack.
