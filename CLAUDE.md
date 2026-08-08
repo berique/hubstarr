@@ -198,7 +198,7 @@ chromium-browser --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
 ```
 
 `services.png` e `theme.png` são 1480×760 e `screenshot.png` acompanha a altura
-do conteúdo (hoje 1587, com a Wishlist aberta). A `theme.png` é a única que
+do conteúdo (hoje 1656, com a Wishlist aberta). A `theme.png` é a única que
 precisa de rede: o modal da captura busca a imagem em `docs.theme-park.dev`.
 O mesmo truque, com `--dump-dom` no lugar de `--screenshot`, é a
 maneira de testar mudanças de comportamento sem navegador interativo. Se o
