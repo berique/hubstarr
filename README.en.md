@@ -173,7 +173,9 @@ cargo run --release
 
 Open `http://127.0.0.1:7878`. The page is the same one — served by the binary,
 which carries it embedded — with two extras: the **server** badge at the top
-and, in the generated files, the **Bring up** and **Tear down** buttons.
+and, in the generated files, the **Bring up** and **Tear down** buttons. On
+load it asks the server whether `docker compose` is there; if it is not, it
+warns and opens the **Need to install Docker?** block for you.
 
 | Option     | Default                   | What it is                                   |
 | ---------- | ------------------------- | -------------------------------------------- |

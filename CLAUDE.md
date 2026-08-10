@@ -229,7 +229,10 @@ a montar YAML no Rust, é sinal de que a mudança pertence à página.
 
 Módulos: `store/` (o modelo, com `migrate.rs` à parte), `files.rs` (grava o que veio, com `safe_join()`
 recusando o que escapa da pasta), `deploy.rs` (`docker compose up -d`/`down` na
-pasta da stack), `jobs.rs` (trabalhos numerados com log incremental, em memória
+pasta da stack, mais o `docker_ok()` que o `api/health` devolve — ele pergunta
+por `docker compose version`, não só pelo docker, porque o plugin é pacote à
+parte e é ele que sobe a stack; sem ele a página abre o bloco "Precisa instalar
+o Docker?" e mostra o aviso `#noDocker`), `jobs.rs` (trabalhos numerados com log incremental, em memória
 — subir a stack baixa imagem e não cabe numa resposta HTTP).
 
 O modelo é **normalizado**, uma tabela por conceito do estado da página:

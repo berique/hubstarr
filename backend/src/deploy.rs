@@ -13,10 +13,13 @@ use tokio::process::Command;
 
 use crate::jobs::Log;
 
-/// O docker responde? É o que a página usa para avisar antes de tentar subir.
+/// O `docker compose` responde? É o que a página usa para avisar antes de
+/// tentar subir. Pergunta pelo plugin, não só pelo docker: é o `compose` que
+/// sobe a stack, e ele é um pacote à parte que pode faltar num docker que
+/// está lá e funcionando.
 pub async fn docker_ok(docker: &str) -> bool {
     Command::new(docker)
-        .arg("version")
+        .args(["compose", "version"])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .status()

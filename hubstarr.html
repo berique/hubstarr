@@ -286,8 +286,10 @@
 <div class="wrap">
   <!-- aviso fixo, antes de tudo: o que sai daqui é ponto de partida, não produção -->
   <p class="protoWarn" data-i18n-html="proto.warn"></p>
+  <!-- só aparece com servidor atrás da página e sem o docker compose nele -->
+  <p class="protoWarn" id="noDocker" hidden data-i18n-html="docker.missing"></p>
   <!-- aviso acima dos dois painéis, na largura toda -->
-  <details class="notice">
+  <details class="notice" id="dockerHelp">
     <summary data-i18n="docker.h">Precisa instalar o Docker?</summary>
     <div class="noticeBody" data-i18n-html="docker.body">
       <p>O Hubstarr só precisa deste navegador; quem precisa do Docker com o plugin Compose são os arquivos que ele gera.</p>
@@ -747,7 +749,8 @@ const I18N = {
   'btn.close':'Fechar',
   'srv.on':'servidor',
   'srv.at':d=>`Servidor conectado; os arquivos vão para ${d}`,
-  'srv.noDocker':'o docker não respondeu neste servidor',
+  'srv.noDocker':'o docker compose não respondeu neste servidor',
+  'docker.missing':'<b>Sem o Docker Compose neste servidor.</b> O Hubstarr continua gerando os arquivos e guardando a stack, mas <b>Subir</b> e <b>Derrubar</b> vão falhar até o plugin Compose estar instalado — veja abaixo como instalá-lo.',
   'log.up':'Subindo a stack',
   'log.down':'Derrubando a stack',
   'log.running':'rodando…',
@@ -1062,7 +1065,8 @@ const I18N = {
   'btn.close':'Close',
   'srv.on':'server',
   'srv.at':d=>`Server connected; files go to ${d}`,
-  'srv.noDocker':'docker did not answer on this server',
+  'srv.noDocker':'docker compose did not answer on this server',
+  'docker.missing':'<b>No Docker Compose on this server.</b> Hubstarr still generates the files and keeps the stack, but <b>Bring up</b> and <b>Tear down</b> will fail until the Compose plugin is installed — see below how to install it.',
   'log.up':'Bringing the stack up',
   'log.down':'Tearing the stack down',
   'log.running':'running…',
@@ -1377,7 +1381,8 @@ const I18N = {
   'btn.close':'Cerrar',
   'srv.on':'servidor',
   'srv.at':d=>`Servidor conectado; los archivos van a ${d}`,
-  'srv.noDocker':'docker no respondió en este servidor',
+  'srv.noDocker':'docker compose no respondió en este servidor',
+  'docker.missing':'<b>Sin Docker Compose en este servidor.</b> Hubstarr sigue generando los archivos y guardando la stack, pero <b>Levantar</b> y <b>Derribar</b> fallarán hasta que el plugin Compose esté instalado — mira abajo cómo instalarlo.',
   'log.up':'Levantando la stack',
   'log.down':'Derribando la stack',
   'log.running':'ejecutando…',
@@ -3489,7 +3494,13 @@ async function detectServer(){
   $('#srv').hidden = false;
   $('#srv').title  = t('srv.at', SERVER.dir);
   $('#up').hidden = $('#down').hidden = false;
-  if(!SERVER.docker) $('#srv').title += ' — ' + t('srv.noDocker');
+  /* sem o docker compose no servidor, o Subir não tem como funcionar: o aviso
+     aparece e o bloco de como instalar abre junto, que é o que resolve */
+  if(!SERVER.docker){
+    $('#srv').title += ' — ' + t('srv.noDocker');
+    $('#noDocker').hidden = false;
+    $('#dockerHelp').open = true;
+  }
   await openStack();
   pollStatus();
   setInterval(pollStatus, 5000);

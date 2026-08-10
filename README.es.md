@@ -176,7 +176,9 @@ cargo run --release
 
 Abre `http://127.0.0.1:7878`. La página es la misma — servida por el binario,
 que la trae embebida — con dos cosas más: el distintivo **servidor** arriba y,
-en los archivos generados, los botones **Levantar** y **Derribar**.
+en los archivos generados, los botones **Levantar** y **Derribar**. Al abrirse
+le pregunta al servidor si hay `docker compose` ahí; si no lo hay, avisa y abre
+ya el bloque **¿Necesitas instalar Docker?**.
 
 | Opción     | Predeterminado            | Qué es                                       |
 | ---------- | ------------------------- | -------------------------------------------- |
