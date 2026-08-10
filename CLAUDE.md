@@ -188,7 +188,10 @@ handler de `#mSave`.
   `base/utils/password.cpp` e `base/utils/apikey.cpp`. Ao mexer nisso, confira
   no fonte da versão em uso; formato errado vira app que não abre. O hash é
   assíncrono (WebCrypto): `refreshQbitHash()` devolve a promessa e redesenha
-  quando ela chega. A API key sai da `${STARR_APIKEY}` mapeada no alfabeto dele
+  quando ela chega. Enquanto ela não chega, o gerador põe um comentário no
+  lugar da linha da senha — por isso o `#dl` e o `#up` dão
+  `await refreshQbitHash()` antes de chamar o `outFiles()`: sem isso dá para
+  gravar uma conf sem senha nenhuma. A API key sai da `${STARR_APIKEY}` mapeada no alfabeto dele
   (`qbitKeyFrom`) — a conf é INI lido pelo app, não pelo compose, então pôr a
   variável ali seria texto morto. `DEFAULTS.qbitKey` vazio significa "acompanhe
   a chave da stack".
