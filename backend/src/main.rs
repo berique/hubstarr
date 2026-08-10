@@ -173,8 +173,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 /* ---------- página ---------- */
 
+/// A página vem embutida no binário, então ela muda a cada recompilação: sem
+/// o `no-store` o navegador serve a cópia velha do cache e a mudança some.
 async fn page() -> impl IntoResponse {
-    ([(header::CONTENT_TYPE, "text/html; charset=utf-8")], PAGE)
+    (
+        [
+            (header::CONTENT_TYPE, "text/html; charset=utf-8"),
+            (header::CACHE_CONTROL, "no-store"),
+        ],
+        PAGE,
+    )
 }
 
 async fn favicon() -> impl IntoResponse {
