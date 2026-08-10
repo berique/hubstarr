@@ -259,11 +259,11 @@ chromium travar sem escrever nada, passe um `--user-data-dir` próprio.
 O favicon não aparece em captura nenhuma: o headless fotografa só o viewport,
 sem a barra de abas.
 
-Ao injetar código, ancore no fim do `<script>` (`openEnv();\n</script>`): a
+Ao injetar código, ancore no fim do `<script>` (`detectServer();\n</script>`): a
 linha `applyI18n(); renderCombo(); renderItems(); render();` sozinha também
 aparece dentro do `setLang()`, e substituí-la lá dentro leva a recursão
-infinita. A página abre com o modal do Ambiente; numa captura da tela, chame
-`closeEnv()` logo depois.
+infinita. A página abre sem modal nenhum; a captura que precisa de um chama o
+`openEnv()`/`openCfg()` dela na injeção.
 
 ## Wishlist
 
