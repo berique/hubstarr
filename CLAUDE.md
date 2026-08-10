@@ -136,8 +136,11 @@ volta.
 a chave em `ICONS` é `<id>-<variante>`, e o `icoKey()` cai no logotipo do app
 quando não há arte para ela. O `icoHtml()` aceita a chave como terceiro
 argumento — é assim que a linha da lista e o `#mTpvIco` do modal mostram o
-logotipo certo. Hoje só o `radarr-uhd` e o `sonarr-uhd` existem; acrescentar uma
-variante é pôr o data URI no `ICONS`, mais nada.
+logotipo certo. As quatro que existem — `radarr-uhd`, `sonarr-uhd`,
+`radarr-anime`, `sonarr-anime` — são o favicon de 144px do addon do theme.park
+reduzido a 96 (o dobro do quadro em que a página desenha), e por isso o
+theme.park está creditado também na linha dos ícones. Acrescentar uma variante
+é pôr o data URI no `ICONS`, mais nada.
 
 **Serviço que entra sozinho.** Um checkbox no modal pode arrastar outro serviço
 para a stack no momento do save — `vpn` traz o `gluetun` (obrigatório, porque o

@@ -354,5 +354,5 @@ cubre Hubstarr, no a ellos.
 
 Los temas de las apps son de [theme.park](https://theme-park.dev/), un proyecto
 aparte, también bajo GPL-3.0: de él vienen la imagen que el compose usa en
-`TP_THEME`/`TP_ADDON`, las paletas del campo **Tema** y las capturas que muestra
-Hubstarr.
+`TP_THEME`/`TP_ADDON`, las paletas del campo **Tema**, las capturas que muestra
+Hubstarr y los logotipos de las variantes 4K y Anime de Sonarr y Radarr.

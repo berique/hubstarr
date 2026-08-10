@@ -348,5 +348,6 @@ covers Hubstarr, not them.
 
 The app themes come from [theme.park](https://theme-park.dev/), a separate
 project also under GPL-3.0: the image the compose file uses in
-`TP_THEME`/`TP_ADDON`, the palettes listed in the **Theme** field and the
-screenshots Hubstarr shows are all theirs.
+`TP_THEME`/`TP_ADDON`, the palettes listed in the **Theme** field, the
+screenshots Hubstarr shows and the 4K and Anime variant logos for Sonarr and
+Radarr are all theirs.
