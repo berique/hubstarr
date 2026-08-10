@@ -22,6 +22,7 @@ use serde_json::{json, Value};
 pub mod config;
 pub mod env;
 pub mod instance;
+pub mod migrate;
 
 pub use instance::InstanceIn;
 
@@ -29,15 +30,18 @@ pub struct Db(Arc<Mutex<Connection>>);
 
 impl Db {
     /// Abre o banco e cria o que faltar. Rodar de novo num banco pronto não
-    /// muda nada — é o mesmo caminho da primeira vez e das seguintes.
-    pub fn open(path: &Path) -> Result<Self, String> {
+    /// muda nada — é o mesmo caminho da primeira vez e das seguintes. Um banco
+    /// do modelo de várias stacks passa antes pela migração, que já monta o
+    /// esquema novo; devolve junto o que ela encontrou, para o `main` contar.
+    pub fn open(path: &Path) -> Result<(Self, Option<migrate::Migrated>), String> {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).map_err(|e| format!("{}: {e}", parent.display()))?;
         }
         let conn = Connection::open(path).map_err(|e| e.to_string())?;
+        let done = migrate::run(&conn)?;
         conn.execute_batch(include_str!("schema.sql"))
             .map_err(|e| e.to_string())?;
-        Ok(Db(Arc::new(Mutex::new(conn))))
+        Ok((Db(Arc::new(Mutex::new(conn))), done))
     }
 
     #[cfg(test)]
@@ -46,6 +50,11 @@ impl Db {
         conn.execute_batch(include_str!("schema.sql"))
             .map_err(|e| e.to_string())?;
         Ok(Db(Arc::new(Mutex::new(conn))))
+    }
+
+    #[cfg(test)]
+    pub fn from_conn(conn: Connection) -> Self {
+        Db(Arc::new(Mutex::new(conn)))
     }
 
     fn lock(&self) -> Result<MutexGuard<'_, Connection>, String> {

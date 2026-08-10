@@ -189,6 +189,11 @@ tablas propias — el estado de la página, normalizado, y no un blob de JSON. E
 una sola, la de la carpeta del `--dir`: para mantener otra, apunta el `--dir`
 y el `--db` a otro sitio.
 
+Una base de una versión anterior, que guardaba varias stacks, se convierte en
+la primera apertura; la stack más antigua es la que se queda, y el servidor
+indica en la salida en qué carpeta escribía cada una de las otras, para que no
+pierdas de vista sus archivos.
+
 > [!WARNING]
 > El servidor ejecuta `docker compose` y escribe en disco: no lo expongas a una
 > red en la que no confíes. De forma predeterminada solo atiende en `127.0.0.1`.

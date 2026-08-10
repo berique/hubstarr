@@ -196,12 +196,23 @@ nenhuma tabela tem `stack_id`. Manter duas é rodar dois servidores, cada um com
 o seu `--dir` e o seu `--db`. Já houve seletor de stack no cabeçalho, com
 `POST`/`DELETE /api/stacks`, e foi removido; não refaça o caminho de volta.
 
+O banco daquela versão é migrado na abertura, pelo `store/migrate.rs`, que roda
+**antes** do `schema.sql` — o `CREATE TABLE IF NOT EXISTS` não mexe em tabela
+que já existe, então as antigas são renomeadas para `old_*`, o esquema novo
+nasce ao lado e a stack de menor id é copiada para dentro dele. As outras se
+perdem, de propósito: não há mais onde guardá-las, e o `dir` de cada uma é
+anunciado na saída. Duas armadilhas do SQLite ali: o `legacy_alter_table` tem
+de estar ligado para o `RENAME` não reescrever as chaves estrangeiras das
+outras tabelas, e o `foreign_keys` tem de ser desligado *depois* do
+`schema.sql`, que o religa — senão nem o `SELECT` das `old_*` nem o `DROP`
+delas passam.
+
 **O contrato, que é o que não pode mudar: o servidor nunca gera conteúdo.** Ele
 recebe pronto o que os geradores do `<script>` montaram (`outFiles()`), grava e
 roda o `docker compose`. Os geradores existem num lugar só — se você for tentado
 a montar YAML no Rust, é sinal de que a mudança pertence à página.
 
-Módulos: `store/` (o modelo), `files.rs` (grava o que veio, com `safe_join()`
+Módulos: `store/` (o modelo, com `migrate.rs` à parte), `files.rs` (grava o que veio, com `safe_join()`
 recusando o que escapa da pasta), `deploy.rs` (`docker compose up -d`/`down` na
 pasta da stack), `jobs.rs` (trabalhos numerados com log incremental, em memória
 — subir a stack baixa imagem e não cabe numa resposta HTTP).

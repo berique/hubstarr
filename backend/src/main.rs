@@ -126,7 +126,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::fs::create_dir_all(&base).await?;
 
     let db_path = args.db;
-    let db = store::Db::open(&db_path)?;
+    let (db, migrated) = store::Db::open(&db_path)?;
+    if let Some(m) = migrated {
+        println!("Banco migrado para o modelo de uma stack só (era o de várias).");
+        println!("  A stack que ficou gravava em {}", m.kept);
+        for d in &m.dropped {
+            println!("  Descartada a stack que gravava em {d} — os arquivos dela ficam onde estão");
+        }
+        if !m.dropped.is_empty() {
+            println!("  Para editar uma delas, rode outro servidor com --dir e --db próprios.");
+        }
+    }
     let ctx: Ctx = Arc::new(App {
         base,
         db_path: db_path.clone(),

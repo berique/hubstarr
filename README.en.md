@@ -186,6 +186,10 @@ Configuration in tables of their own — the page state, normalized, not a JSON
 blob. There is only one, the one in the `--dir` folder: to keep a second one,
 point `--dir` and `--db` somewhere else.
 
+A database from an earlier version, which held several stacks, is converted on
+first open; the oldest stack is the one that stays, and the server prints the
+folder each of the others wrote to, so you do not lose track of their files.
+
 > [!WARNING]
 > The server runs `docker compose` and writes to disk: do not expose it to a
 > network you do not trust. It listens on `127.0.0.1` only by default.
