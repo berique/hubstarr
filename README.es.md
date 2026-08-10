@@ -103,8 +103,9 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   editan en su modal, y el archivo se monta sobre `/config`.
 - **HTTPS opcional**, con el certificado y la clave provenientes del host.
 - **Configuración** (botón arriba): elegir qué instancias configurará Prowlarr,
-  qué *arr reciben cada cliente de descarga (qBittorrent, SABnzbd) y con qué
-  categoría — `tv-sonarr`, `radarr`, `lidarr`, editables —, además de la
+  con qué categoría usa cada *arr cada cliente de descarga — `tv-sonarr`,
+  `radarr`, `lidarr` en qBittorrent, y las categorías de fábrica de SABnzbd
+  (`tv`, `movies`, `music`), todas editables —, además de la
   gestión de descargas completadas en SABnzbd, y las opciones de
   *Media Management* — hardlink, renombrar, permisos, carpetas
   vacías y la nomenclatura completa de cada app (*Episode Naming*,

@@ -143,8 +143,9 @@
   .naming .row, .row.perms{grid-template-columns:150px 1fr auto;margin-bottom:8px}
   .row.perms{margin-top:10px}
   .cfgList .opt{display:flex;align-items:center;gap:6px}
-  /* instância do cliente: a caixa e, abaixo, a categoria dela */
-  .cfgList .inst .cat{display:flex;align-items:center;gap:8px;margin:4px 0 2px 24px}
+  /* instância do cliente: o nome e, abaixo, a categoria dela */
+  .cfgList .inst > .nm{font-size:13px}
+  .cfgList .inst .cat{display:flex;align-items:center;gap:8px;margin:4px 0 2px 12px}
   .cfgList .inst .cat label{font-size:12px;color:var(--muted)}
   .cfgList .inst .cat input{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
     font-size:12px;padding:4px 8px}
@@ -621,7 +622,7 @@ const I18N = {
   'cfg.apps':'Aplicações no Prowlarr',
   'cfg.appsHint':'As instâncias marcadas entram em <i>Settings → Apps</i> do Prowlarr, que passa a empurrar os indexadores para elas.',
   'cfg.clients':'Clientes de download',
-  'cfg.clientsHint':'Para cada cliente, as instâncias que vão recebê-lo em <i>Settings → Download Clients</i>. Cada uma tem a própria categoria no cliente.',
+  'cfg.clientsHint':'Cada cliente entra em <i>Settings → Download Clients</i> de todas as instâncias da stack. O que se escolhe aqui é a categoria com que cada uma o usa — no SABnzbd, as categorias que ele já traz de fábrica.',
   'cfg.cat':'Categoria',
   'cfg.cat':'Categoria',
   'cfg.cdh':'Gerenciamento de downloads concluídos',
@@ -938,7 +939,7 @@ const I18N = {
   'cfg.apps':'Applications in Prowlarr',
   'cfg.appsHint':'The instances you tick land in Prowlarr\'s <i>Settings → Apps</i>, so it pushes indexers to them.',
   'cfg.clients':'Download clients',
-  'cfg.clientsHint':'For each client, the instances that will get it under <i>Settings → Download Clients</i>. Each one gets its own category in the client.',
+  'cfg.clientsHint':'Each client goes into <i>Settings → Download Clients</i> of every instance in the stack. What you pick here is the category each one uses in it — on SABnzbd, the categories it already ships with.',
   'cfg.cat':'Category',
   'cfg.cat':'Category',
   'cfg.cdh':'Completed Download Handling',
@@ -1253,7 +1254,7 @@ const I18N = {
   'cfg.apps':'Aplicaciones en Prowlarr',
   'cfg.appsHint':'Las instancias marcadas entran en <i>Settings → Apps</i> de Prowlarr, que pasa a empujarles los indexadores.',
   'cfg.clients':'Clientes de descarga',
-  'cfg.clientsHint':'Para cada cliente, las instancias que lo recibirán en <i>Settings → Download Clients</i>. Cada una tiene su propia categoría en el cliente.',
+  'cfg.clientsHint':'Cada cliente entra en <i>Settings → Download Clients</i> de todas las instancias de la stack. Lo que se elige aquí es la categoría con la que cada una lo usa — en SABnzbd, las categorías que ya trae de fábrica.',
   'cfg.cat':'Categoría',
   'cfg.cat':'Categoría',
   'cfg.cdh':'Gestión de descargas completadas',
@@ -2298,9 +2299,19 @@ $('#mLibAdd').onclick = ()=>{
    - clients: por cliente de download, quais *arr o recebem
    - mm:      Media Management (avançado), por família de *arr           */
 const ARRS = ['sonarr','radarr','lidarr'];
-// categoria que cada app usa de fábrica no cliente de download
+/* Categoria que cada app usa de fábrica no cliente de download. O padrão
+   segue o nome do app, como no torrent; o SABnzbd tem as categorias dele
+   próprias, que já vêm criadas na instalação (tv, movies, music), e é por elas
+   que ele separa o que baixa. Cliente que não estiver aqui usa o `CATEGORY`. */
 const CATEGORY = {sonarr:'tv-sonarr', radarr:'radarr', lidarr:'lidarr'};
-const catDefault = a => cname(a) === a.id ? CATEGORY[a.id] : cname(a);
+const CLIENT_CATEGORY = {sabnzbd:{sonarr:'tv', radarr:'movies', lidarr:'music'}};
+const catDefault = (a, c) => {
+  const own = c && CLIENT_CATEGORY[c.id];
+  // instância extra (Sonarr [Anime]) não cabe na categoria de fábrica do app:
+  // ela ganha o próprio container_name, que é único
+  if(cname(a) !== a.id) return cname(a);
+  return (own && own[a.id]) || CATEGORY[a.id];
+};
 /* Nomenclatura: os campos que cada app tem em Media Management, com os
    formatos que eles trazem de fábrica. `file:true` marca o que só vale quando
    o app está renomeando; as pastas continuam valendo de qualquer jeito. */
@@ -2365,7 +2376,7 @@ function syncConfig(){
     if(!st.arrs) st.arrs = {};
     keep(st.arrs, arrs, true);
     if(!st.cats) st.cats = {};
-    arrList().forEach(a=>{ if(!(cname(a) in st.cats)) st.cats[cname(a)] = catDefault(a); });
+    arrList().forEach(a=>{ if(!(cname(a) in st.cats)) st.cats[cname(a)] = catDefault(a, c); });
     Object.keys(st.cats).forEach(k=>{ if(!arrs.includes(k)) delete st.cats[k]; });
     // downloads concluídos: só quem tem a opção, marcada dos dois lados
     if(svc(c.id).cdh && !st.cdh) st.cdh = {completed:true, failed:true};
@@ -2409,16 +2420,18 @@ function renderConfig(){
       H.push(`<div class="box"><div class="nm">${nameOf(c)}
         <span class="hint">${dlHost(c)}:${inner(c.id)}</span></div>`);
       const st = CONFIG.clients[cname(c)];
+      // todo *arr da stack recebe o cliente; o que se escolhe aqui é só a
+      // categoria com que cada um entra nele
       H.push(`<div class="cfgList">` + arrs.map(a=>{
-        const ck = cname(a), on = st.arrs[ck];
-        return `<div class="inst">` +
-          check(on, nameOf(a), `data-kind="client" data-key="${cname(c)}" data-arr="${ck}"`) +
-          `<div class="cat">
+        const ck = cname(a);
+        return `<div class="inst">
+          <span class="nm">${nameOf(a)}</span>
+          <div class="cat">
              <label for="cat-${cname(c)}-${ck}">${t('cfg.cat')}</label>
              <input type="text" id="cat-${cname(c)}-${ck}" data-kind="cat"
                     data-key="${cname(c)}" data-arr="${ck}"
                     value="${String(st.cats[ck] ?? '').replace(/"/g,'&quot;')}"
-                    placeholder="${catDefault(a)}"${on ? '' : ' disabled'}>
+                    placeholder="${catDefault(a, c)}">
            </div></div>`;
       }).join('') + `</div>`);
       if(st.cdh){
@@ -2634,10 +2647,6 @@ $('#cfgBody').onchange = e=>{
   const el = e.target; if(el.type !== 'checkbox') return;
   const d = el.dataset;
   if(d.kind === 'app')         CONFIG.apps[d.key] = el.checked;
-  else if(d.kind === 'client'){
-    CONFIG.clients[d.key].arrs[d.arr] = el.checked;
-    renderConfig();                     // libera ou trava a categoria dela
-  }
   else if(d.kind === 'cdh')    CONFIG.clients[d.key].cdh[d.opt] = el.checked;
   else if(d.kind === 'mm'){
     CONFIG.mm[d.key][d.opt] = el.checked;

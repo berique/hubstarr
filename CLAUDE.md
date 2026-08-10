@@ -64,8 +64,12 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    do nginx e as credenciais da VPN no do gluetun (flag `vpnCfg`) — os dois são
    de um serviço só, não da stack. `CONFIG` guarda as ligações entre instâncias:
    `apps` (o que o Prowlarr configura), `clients[cliente] = {arrs, cats, cdh}`
-   (quem recebe, com que categoria — padrão em `CATEGORY` — e o gerenciamento de
-   downloads concluídos) e `mm[família]` (Media Management mais a nomenclatura,
+   (com que categoria cada *arr usa o cliente e o gerenciamento de downloads
+   concluídos; o `arrs` fica todo `true` — a interface não tem mais caixa de
+   quem recebe, porque o cliente entra em todas as instâncias. O padrão da
+   categoria sai do `catDefault()`: o `CATEGORY` por app e, para quem tem
+   categorias próprias, o `CLIENT_CATEGORY` — o SABnzbd usa as dele, `tv`,
+   `movies` e `music`) e `mm[família]` (Media Management mais a nomenclatura,
    cujos campos estão em `NAMING_FIELDS` — os formatos de episódio e de filme
   saem de fábrica com os do TRaSH Guides, variante do Jellyfin com id do TMDb).
    `syncConfig()` o alinha com o `added` a cada abertura do modal, e ele não

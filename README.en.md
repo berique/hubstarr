@@ -100,8 +100,9 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   edited in its modal, and the file is mounted over `/config`.
 - **Optional HTTPS**, with the certificate and key coming from the host.
 - **Configuration** (button at the top): pick which instances Prowlarr will
-  configure, which *arr apps get each download client (qBittorrent, SABnzbd)
-  and under which category — `tv-sonarr`, `radarr`, `lidarr`, all editable —,
+  configure, and the category each *arr uses in each download client —
+  `tv-sonarr`, `radarr`, `lidarr` on qBittorrent, and SABnzbd's stock
+  categories (`tv`, `movies`, `music`), all editable —,
   plus completed download handling on SABnzbd, and the *Media Management*
   options — hardlinks, renaming, permissions, empty
   folders and each app's full naming section (*Episode*, *Movie*, *Track
