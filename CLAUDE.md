@@ -131,6 +131,14 @@ Jellyfin, `vpnCfg` traz as credenciais da VPN, e as portas do host vivem no
 modal do nginx. Já foram duas mudanças nessa direção; não faça o caminho de
 volta.
 
+**Ícone da variante.** Serviço com a flag `tpAddon` tem variante de tema
+(`std`/`uhd`/`anime`, o `TP_ADDONS`), e cada variante pode ter logotipo próprio:
+a chave em `ICONS` é `<id>-<variante>`, e o `icoKey()` cai no logotipo do app
+quando não há arte para ela. O `icoHtml()` aceita a chave como terceiro
+argumento — é assim que a linha da lista e o `#mTpvIco` do modal mostram o
+logotipo certo. Hoje só o `radarr-uhd` e o `sonarr-uhd` existem; acrescentar uma
+variante é pôr o data URI no `ICONS`, mais nada.
+
 **Serviço que entra sozinho.** Um checkbox no modal pode arrastar outro serviço
 para a stack no momento do save — `vpn` traz o `gluetun` (obrigatório, porque o
 `network_mode` depende dele) e `solver` traz o `flaresolverr`. O padrão é o
