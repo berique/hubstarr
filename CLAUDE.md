@@ -220,8 +220,11 @@ fica com os próprios padrões em vez de recebê-los em branco de volta. Esse id
 volta sem perda é o critério do modelo; ao mexer nele, é o que os testes cobrem.
 
 Do lado da página, a seção `/* ---------- servidor (opcional) ---------- */`:
-`detectServer()` só faz algo em `http(s)://`, `putInstance`/`delInstance` mexem
-numa linha por vez, e `saveSettings()` (debounce no fim do `render()`) manda
+`detectServer()` só faz algo em `http(s)://` e chama `theStack()`, que pega a
+stack guardada e cria a primeira quando o banco está vazio — **a interface
+edita uma stack só, sem seletor nem criação**; o esquema continua com uma
+tabela `stack` porque a chave estrangeira das outras sai dela.
+`putInstance`/`delInstance` mexem numa linha por vez, e `saveSettings()` (debounce no fim do `render()`) manda
 Ambiente, Configuração e a lista de chaves — é ela que acerta a ordem e apaga o
 que saiu sem passar pelo modal. A flag `loading` existe para o estado que vem do
 banco não ser gravado de volta enquanto está sendo aplicado.
@@ -271,9 +274,9 @@ O roadmap fica nos três READMEs, numa tabela por marco de versão; o texto
 autoritativo é o do `README.md`, e mexer nele é mexer nos três. Hoje o
 repositório é o **v0.2** — a página, mais o servidor de `backend/`.
 
-- ~~**v0.2**~~ — feito: o backend liga o `hubstarr.html` ao Docker e guarda as
-  stacks. Uma primeira versão dele existiu e foi removida no `ba54e1a`; a de
-  agora é normalizada e guarda várias stacks.
+- ~~**v0.2**~~ — feito: o backend liga o `hubstarr.html` ao Docker e guarda a
+  stack. Uma primeira versão dele existiu e foi removida no `ba54e1a`; a de
+  agora é normalizada.
 - **v0.3** — aplicar a **Configuração** pela API de cada app. Hoje o `CONFIG` é
   protótipo de interface e não chega a arquivo nenhum; é ele que vira chamada.
 - **v0.4** — custom formats e profiles por instância (4K, anime, …), ao lado do

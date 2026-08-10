@@ -171,21 +171,20 @@ cargo run --release
 ```
 
 Open `http://127.0.0.1:7878`. The page is the same one — served by the binary,
-which carries it embedded — with three extras at the top: the **server** badge,
-the stack picker and, in the generated files, the **Bring up** and **Tear down**
-buttons.
+which carries it embedded — with two extras: the **server** badge at the top
+and, in the generated files, the **Bring up** and **Tear down** buttons.
 
 | Option     | Default                   | What it is                                   |
 | ---------- | ------------------------- | -------------------------------------------- |
 | `--addr`   | `127.0.0.1:7878`          | address the server listens on                 |
-| `--dir`    | `./stacks`                | where each stack gets its folder              |
-| `--db`     | `~/.hubstarr/hubstarr.db` | database the stacks are kept in               |
+| `--dir`    | `./stacks`                | where the stack gets its folder               |
+| `--db`     | `~/.hubstarr/hubstarr.db` | database the stack is kept in                 |
 | `--docker` | `docker`                  | the docker command, for podman users          |
 
-Each stack is a row in the database, with its instances, Environment and
+The stack is a row in the database, with its instances, Environment and
 Configuration in tables of their own — the page state, normalized, not a JSON
-blob. The header picker switches the stack being edited; `+` creates another and
-`🗑` deletes it from the database, leaving on disk the files already written.
+blob. There is only one: the server creates it the first time the page opens
+and finds it again on every later visit.
 
 > [!WARNING]
 > The server runs `docker compose` and writes to disk: do not expose it to a

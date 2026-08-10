@@ -169,20 +169,20 @@ cargo run --release
 ```
 
 Abra `http://127.0.0.1:7878`. A página é a mesma — servida pelo binário, que a
-traz embutida —, com três coisas a mais no topo: o selo **servidor**, o seletor
-de stack e, nos arquivos gerados, os botões **Subir** e **Derrubar**.
+traz embutida —, com duas coisas a mais: o selo **servidor** no topo e, nos
+arquivos gerados, os botões **Subir** e **Derrubar**.
 
 | Opção      | Padrão                   | O que é                                        |
 | ---------- | ------------------------ | ---------------------------------------------- |
 | `--addr`   | `127.0.0.1:7878`         | endereço em que o servidor atende               |
-| `--dir`    | `./stacks`               | onde cada stack ganha a pasta dela              |
-| `--db`     | `~/.hubstarr/hubstarr.db`| banco em que as stacks são guardadas            |
+| `--dir`    | `./stacks`               | onde a stack ganha a pasta dela                 |
+| `--db`     | `~/.hubstarr/hubstarr.db`| banco em que a stack é guardada                 |
 | `--docker` | `docker`                 | comando do docker, para quem usa podman         |
 
-Cada stack vira uma linha no banco, com as instâncias, o Ambiente e a
+A stack vira uma linha no banco, com as instâncias, o Ambiente e a
 Configuração em tabelas próprias — o estado da página, normalizado, e não um
-blob de JSON. O seletor do cabeçalho troca a stack em edição; o `+` cria outra
-e o `🗑` apaga a do banco, deixando no disco os arquivos já gravados.
+blob de JSON. Ela é uma só: o servidor a cria na primeira vez que a página
+abre e a reencontra nas seguintes.
 
 > [!WARNING]
 > O servidor roda `docker compose` e escreve em disco: não o exponha a uma

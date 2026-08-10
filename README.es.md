@@ -174,21 +174,20 @@ cargo run --release
 ```
 
 Abre `http://127.0.0.1:7878`. La página es la misma — servida por el binario,
-que la trae embebida — con tres cosas más arriba: el distintivo **servidor**, el
-selector de stack y, en los archivos generados, los botones **Levantar** y
-**Derribar**.
+que la trae embebida — con dos cosas más: el distintivo **servidor** arriba y,
+en los archivos generados, los botones **Levantar** y **Derribar**.
 
 | Opción     | Predeterminado            | Qué es                                       |
 | ---------- | ------------------------- | -------------------------------------------- |
 | `--addr`   | `127.0.0.1:7878`          | dirección en la que atiende el servidor       |
-| `--dir`    | `./stacks`                | dónde cada stack recibe su carpeta            |
-| `--db`     | `~/.hubstarr/hubstarr.db` | base en la que se guardan las stacks          |
+| `--dir`    | `./stacks`                | dónde la stack recibe su carpeta              |
+| `--db`     | `~/.hubstarr/hubstarr.db` | base en la que se guarda la stack             |
 | `--docker` | `docker`                  | comando de docker, para quien usa podman      |
 
-Cada stack es una fila en la base, con sus instancias, el Entorno y la
+La stack es una fila en la base, con sus instancias, el Entorno y la
 Configuración en tablas propias — el estado de la página, normalizado, y no un
-blob de JSON. El selector de la cabecera cambia la stack en edición; el `+` crea
-otra y el `🗑` la borra de la base, dejando en el disco los archivos ya escritos.
+blob de JSON. Es una sola: el servidor la crea la primera vez que se abre la
+página y la reencuentra en las siguientes.
 
 > [!WARNING]
 > El servidor ejecuta `docker compose` y escribe en disco: no lo expongas a una

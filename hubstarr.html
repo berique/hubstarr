@@ -257,11 +257,9 @@
     background:color-mix(in srgb, var(--danger) 12%, var(--panel));
     border:1px solid var(--danger)}
   .protoWarn b{color:var(--danger)}
-  /* aviso de servidor no cabeçalho, e o seletor de stack ao lado dele */
+  /* aviso de servidor no cabeçalho */
   #srv{font-size:11px;padding:2px 8px;border-radius:999px;
     border:1px solid var(--ok,#3fb950);color:var(--ok,#3fb950)}
-  #stackBox{display:flex;align-items:center;gap:4px}
-  #stackSel{width:auto;padding:6px 8px;max-width:180px}
 </style>
 </head>
 <body>
@@ -271,13 +269,8 @@
   <h1 data-i18n="app.title">Hubstarr &middot; Adicionar *arr Stack</h1>
   <button class="sm" id="credBtn" data-i18n="app.credits">♡ Créditos</button>
   <span style="flex:1"></span>
-  <!-- só aparecem com servidor atrás da página -->
+  <!-- só aparece com servidor atrás da página -->
   <span id="srv" hidden data-i18n="srv.on">servidor</span>
-  <span id="stackBox" hidden>
-    <select id="stackSel" data-i18n-title="srv.pick"></select>
-    <button class="sm" id="stackNew" data-i18n-title="srv.newHint">+</button>
-    <button class="sm" id="stackDel" data-i18n-title="srv.delHint">🗑</button>
-  </span>
   <select id="langSel" style="width:auto;padding:6px 8px" data-i18n-title="app.lang"></select>
   <button id="themeBtn" data-i18n-title="app.theme">🌙</button>
   <button id="cfgBtn" data-i18n="app.cfg">⇄ Configuração</button>
@@ -745,11 +738,6 @@ const I18N = {
   'srv.on':'servidor',
   'srv.at':d=>`Servidor conectado; os arquivos vão para ${d}`,
   'srv.noDocker':'o docker não respondeu neste servidor',
-  'srv.pick':'Stack que está sendo editada',
-  'srv.newHint':'Criar outra stack',
-  'srv.delHint':'Excluir esta stack do servidor',
-  'srv.newName':'Nome da nova stack:',
-  'srv.delSure':n=>`Excluir a stack "${n}" do servidor? Os arquivos já gravados ficam onde estão.`,
   'srv.first':'Minha stack',
   'log.up':'Subindo a stack',
   'log.down':'Derrubando a stack',
@@ -1066,11 +1054,6 @@ const I18N = {
   'srv.on':'server',
   'srv.at':d=>`Server connected; files go to ${d}`,
   'srv.noDocker':'docker did not answer on this server',
-  'srv.pick':'Stack being edited',
-  'srv.newHint':'Create another stack',
-  'srv.delHint':'Delete this stack from the server',
-  'srv.newName':'Name for the new stack:',
-  'srv.delSure':n=>`Delete the stack "${n}" from the server? Files already written stay where they are.`,
   'srv.first':'My stack',
   'log.up':'Bringing the stack up',
   'log.down':'Tearing the stack down',
@@ -1387,11 +1370,6 @@ const I18N = {
   'srv.on':'servidor',
   'srv.at':d=>`Servidor conectado; los archivos van a ${d}`,
   'srv.noDocker':'docker no respondió en este servidor',
-  'srv.pick':'Stack que se está editando',
-  'srv.newHint':'Crear otra stack',
-  'srv.delHint':'Eliminar esta stack del servidor',
-  'srv.newName':'Nombre de la nueva stack:',
-  'srv.delSure':n=>`¿Eliminar la stack "${n}" del servidor? Los archivos ya escritos se quedan donde están.`,
   'srv.first':'Mi stack',
   'log.up':'Levantando la stack',
   'log.down':'Derribando la stack',
@@ -3393,8 +3371,8 @@ $('#langSel').onchange = e => setLang(e.target.value);
    atrás dele. O servidor não gera nada — recebe pronto o que os geradores
    daqui montaram.
 
-   Com servidor, a página edita uma stack por vez, escolhida no cabeçalho:
-   `CUR` é o id dela, e é ele que entra em todo caminho da API. */
+   Com servidor, a página edita a stack única que ele guarda: `CUR` é o id
+   dela, e é ele que entra em todo caminho da API. */
 let SERVER = null;
 let CUR = null;
 let loading = false;   // aplicando estado vindo do banco: não gravar de volta
@@ -3441,16 +3419,10 @@ function applyState(s){
   return true;
 }
 
-/* ---------- as stacks guardadas ---------- */
+/* ---------- a stack guardada ---------- */
 
-function renderStacks(list){
-  $('#stackSel').innerHTML = list
-    .map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
-  $('#stackSel').value = CUR;
-}
-
-/* Troca a stack em edição: o que vier do banco entra inteiro, e o que não
-   estiver guardado começa vazio — só com o serviço fixo, como uma página nova. */
+/* Carrega a stack: o que vier do banco entra inteiro, e o que não estiver
+   guardado começa vazio — só com o serviço fixo, como uma página nova. */
 async function openStack(id){
   CUR = id;
   loading = true;
@@ -3468,14 +3440,13 @@ async function openStack(id){
   paintStatus(); pollStatus();
 }
 
-async function listStacks(){
+/* A stack é uma só: pega a que o servidor já tem, e cria a primeira quando
+   o banco ainda está vazio. */
+async function theStack(){
   const list = await (await api('stacks')).json();
-  if(!list.length){
-    const s = await (await api('stacks', {method:'POST',
-      body:JSON.stringify({name:t('srv.first')})})).json();
-    return [s];
-  }
-  return list;
+  if(list.length) return list[0];
+  return await (await api('stacks', {method:'POST',
+    body:JSON.stringify({name:t('srv.first')})})).json();
 }
 
 async function detectServer(){
@@ -3488,41 +3459,14 @@ async function detectServer(){
   document.body.classList.add('srvOn');   // é o que revela os pontos de status
   $('#srv').hidden = false;
   $('#srv').title  = t('srv.at', SERVER.dir);
-  $('#stackBox').hidden = false;
   $('#up').hidden = $('#down').hidden = false;
   if(!SERVER.docker) $('#srv').title += ' — ' + t('srv.noDocker');
   try{
-    const list = await listStacks();
-    CUR = list[0].id;
-    renderStacks(list);
-    await openStack(CUR);
+    await openStack((await theStack()).id);
   }catch(e){}
   pollStatus();
   setInterval(pollStatus, 5000);
 }
-
-$('#stackSel').onchange = e => openStack(Number(e.target.value));
-
-$('#stackNew').onclick = async ()=>{
-  const name = prompt(t('srv.newName'), t('srv.first'));
-  if(!name) return;
-  const s = await (await api('stacks', {method:'POST',
-    body:JSON.stringify({name})})).json();
-  if(!s || !s.id) return;
-  CUR = s.id;
-  renderStacks(await listStacks());
-  await openStack(s.id);
-};
-
-$('#stackDel').onclick = async ()=>{
-  const sel = $('#stackSel');
-  if(!CUR || !confirm(t('srv.delSure', sel.options[sel.selectedIndex].textContent))) return;
-  await api('stacks/' + CUR, {method:'DELETE'});
-  const list = await listStacks();
-  CUR = list[0].id;
-  renderStacks(list);
-  await openStack(CUR);
-};
 
 /* ---------- log dos trabalhos ---------- */
 
