@@ -17,7 +17,7 @@ use serde_json::{json, Map, Value};
 use super::{flag, obj, text, Db};
 
 impl Db {
-    pub fn put_config(&self, stack_id: i64, v: &Value) -> Result<(), String> {
+    pub fn put_config(&self, v: &Value) -> Result<(), String> {
         let c = v
             .as_object()
             .ok_or_else(|| "a Configuração não veio como objeto".to_string())?;
@@ -28,17 +28,14 @@ impl Db {
         let mut conn = self.lock()?;
         let tx = conn.transaction().map_err(|e| e.to_string())?;
         for table in ["cfg_app", "cfg_client", "cfg_mm"] {
-            tx.execute(
-                &format!("DELETE FROM {table} WHERE stack_id = ?1"),
-                params![stack_id],
-            )
+            tx.execute(&format!("DELETE FROM {table}"), [])
             .map_err(|e| e.to_string())?;
         }
 
         for (key, on) in &apps {
             tx.execute(
-                "INSERT INTO cfg_app (stack_id, arr_key, enabled) VALUES (?1,?2,?3)",
-                params![stack_id, key, on.as_bool().unwrap_or(false) as i64],
+                "INSERT INTO cfg_app (arr_key, enabled) VALUES (?1,?2)",
+                params![key, on.as_bool().unwrap_or(false) as i64],
             )
             .map_err(|e| e.to_string())?;
         }
@@ -47,10 +44,9 @@ impl Db {
             let cl = obj(Some(val));
             let cdh = cl.get("cdh").and_then(|v| v.as_object()).cloned();
             tx.execute(
-                "INSERT INTO cfg_client (stack_id, client_key, cdh_completed, cdh_failed)
-                 VALUES (?1,?2,?3,?4)",
+                "INSERT INTO cfg_client (client_key, cdh_completed, cdh_failed)
+                 VALUES (?1,?2,?3)",
                 params![
-                    stack_id,
                     key,
                     cdh.as_ref().map(|m| flag(m, "completed")),
                     cdh.as_ref().map(|m| flag(m, "failed")),
@@ -67,10 +63,9 @@ impl Db {
             keys.dedup();
             for arr in keys {
                 tx.execute(
-                    "INSERT INTO cfg_client_arr (stack_id, client_key, arr_key, enabled, category)
-                     VALUES (?1,?2,?3,?4,?5)",
+                    "INSERT INTO cfg_client_arr (client_key, arr_key, enabled, category)
+                     VALUES (?1,?2,?3,?4)",
                     params![
-                        stack_id,
                         key,
                         arr,
                         arrs.get(arr).and_then(|v| v.as_bool()).unwrap_or(false) as i64,
@@ -85,10 +80,9 @@ impl Db {
             let m = obj(Some(val));
             tx.execute(
                 "INSERT INTO cfg_mm
-                   (stack_id, service_id, hardlink, rename, perms, empty, chmod, chown)
-                 VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
+                   (service_id, hardlink, rename, perms, empty, chmod, chown)
+                 VALUES (?1,?2,?3,?4,?5,?6,?7)",
                 params![
-                    stack_id,
                     sid,
                     flag(&m, "hardlink"),
                     flag(&m, "rename"),
@@ -102,9 +96,8 @@ impl Db {
 
             for (field, value) in &obj(m.get("naming")) {
                 tx.execute(
-                    "INSERT INTO cfg_naming (stack_id, service_id, field, value)
-                     VALUES (?1,?2,?3,?4)",
-                    params![stack_id, sid, field, value.to_string()],
+                    "INSERT INTO cfg_naming (service_id, field, value) VALUES (?1,?2,?3)",
+                    params![sid, field, value.to_string()],
                 )
                 .map_err(|e| e.to_string())?;
             }
@@ -112,13 +105,13 @@ impl Db {
         tx.commit().map_err(|e| e.to_string())
     }
 
-    pub(crate) fn config(&self, stack_id: i64) -> Result<Value, String> {
+    pub(crate) fn config(&self) -> Result<Value, String> {
         let conn = self.lock()?;
 
         let mut apps = Map::new();
-        conn.prepare("SELECT arr_key, enabled FROM cfg_app WHERE stack_id = ?1")
+        conn.prepare("SELECT arr_key, enabled FROM cfg_app")
             .and_then(|mut st| {
-                st.query_map(params![stack_id], |r| {
+                st.query_map([], |r| {
                     Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)? != 0))
                 })?
                 .collect::<Result<Vec<_>, _>>()
@@ -132,10 +125,10 @@ impl Db {
         let mut clients = Map::new();
         let rows = conn
             .prepare(
-                "SELECT client_key, cdh_completed, cdh_failed FROM cfg_client WHERE stack_id = ?1",
+                "SELECT client_key, cdh_completed, cdh_failed FROM cfg_client",
             )
             .and_then(|mut st| {
-                st.query_map(params![stack_id], |r| {
+                st.query_map([], |r| {
                     Ok((
                         r.get::<_, String>(0)?,
                         r.get::<_, Option<i64>>(1)?,
@@ -148,14 +141,14 @@ impl Db {
         let mut per_arr = conn
             .prepare(
                 "SELECT arr_key, enabled, category FROM cfg_client_arr
-                  WHERE stack_id = ?1 AND client_key = ?2 ORDER BY arr_key",
+                  WHERE client_key = ?1 ORDER BY arr_key",
             )
             .map_err(|e| e.to_string())?;
         for (key, done, failed) in rows {
             let mut arrs = Map::new();
             let mut cats = Map::new();
             for row in per_arr
-                .query_map(params![stack_id, key], |r| {
+                .query_map(params![key], |r| {
                     Ok((
                         r.get::<_, String>(0)?,
                         r.get::<_, i64>(1)? != 0,
@@ -182,10 +175,10 @@ impl Db {
         let fams = conn
             .prepare(
                 "SELECT service_id, hardlink, rename, perms, empty, chmod, chown
-                   FROM cfg_mm WHERE stack_id = ?1",
+                   FROM cfg_mm",
             )
             .and_then(|mut st| {
-                st.query_map(params![stack_id], |r| {
+                st.query_map([], |r| {
                     Ok((
                         r.get::<_, String>(0)?,
                         json!({
@@ -203,14 +196,13 @@ impl Db {
             .map_err(|e| e.to_string())?;
         let mut per_field = conn
             .prepare(
-                "SELECT field, value FROM cfg_naming
-                  WHERE stack_id = ?1 AND service_id = ?2",
+                "SELECT field, value FROM cfg_naming WHERE service_id = ?1",
             )
             .map_err(|e| e.to_string())?;
         for (sid, mut fam) in fams {
             let mut naming = Map::new();
             for row in per_field
-                .query_map(params![stack_id, sid], |r| {
+                .query_map(params![sid], |r| {
                     Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
                 })
                 .map_err(|e| e.to_string())?
@@ -234,13 +226,6 @@ impl Db {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::Path;
-
-    fn db() -> (Db, i64) {
-        let db = Db::memory().unwrap();
-        let s = db.create_stack("Casa", Path::new("/srv")).unwrap();
-        (db, s.id)
-    }
 
     fn sample() -> Value {
         json!({
@@ -269,18 +254,18 @@ mod tests {
 
     #[test]
     fn a_configuracao_volta_como_foi() {
-        let (db, s) = db();
-        db.put_config(s, &sample()).unwrap();
-        assert_eq!(db.config(s).unwrap(), sample());
+        let db = Db::memory().unwrap();
+        db.put_config(&sample()).unwrap();
+        assert_eq!(db.config().unwrap(), sample());
     }
 
     #[test]
     fn gravar_de_novo_troca_em_vez_de_somar() {
-        let (db, s) = db();
-        db.put_config(s, &sample()).unwrap();
-        db.put_config(s, &json!({"apps": {"radarr": true}, "clients": {}, "mm": {}}))
+        let db = Db::memory().unwrap();
+        db.put_config(&sample()).unwrap();
+        db.put_config(&json!({"apps": {"radarr": true}, "clients": {}, "mm": {}}))
             .unwrap();
-        let back = db.config(s).unwrap();
+        let back = db.config().unwrap();
         assert_eq!(back["apps"], json!({"radarr": true}));
         assert_eq!(back["clients"], json!({}));
         assert_eq!(back["mm"], json!({}));
@@ -288,9 +273,9 @@ mod tests {
 
     #[test]
     fn sem_cdh_a_chave_nao_aparece() {
-        let (db, s) = db();
-        db.put_config(s, &sample()).unwrap();
-        let back = db.config(s).unwrap();
+        let db = Db::memory().unwrap();
+        db.put_config(&sample()).unwrap();
+        let back = db.config().unwrap();
         assert!(back["clients"]["qbittorrent"].get("cdh").is_none());
         assert_eq!(back["clients"]["sabnzbd"]["cdh"]["completed"], json!(true));
     }

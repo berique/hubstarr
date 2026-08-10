@@ -187,8 +187,14 @@ handler de `#mSave`.
 
 Crate em Rust (axum + rusqlite `bundled`), com a página embutida por
 `include_str!`. `cargo test` roda os testes do modelo e da gravação de arquivos;
-`cargo run` serve tudo em `127.0.0.1:7878`. Opções: `--addr`, `--dir` (onde cada
-stack ganha a pasta dela), `--db` (padrão `~/.hubstarr/hubstarr.db`), `--docker`.
+`cargo run` serve tudo em `127.0.0.1:7878`. Opções: `--addr`, `--dir` (padrão
+`./stack`, a pasta em que os arquivos são gravados), `--db` (padrão
+`~/.hubstarr/hubstarr.db`), `--docker`.
+
+**A stack é uma só**, a da pasta do `--dir`: nenhum caminho da API leva id e
+nenhuma tabela tem `stack_id`. Manter duas é rodar dois servidores, cada um com
+o seu `--dir` e o seu `--db`. Já houve seletor de stack no cabeçalho, com
+`POST`/`DELETE /api/stacks`, e foi removido; não refaça o caminho de volta.
 
 **O contrato, que é o que não pode mudar: o servidor nunca gera conteúdo.** Ele
 recebe pronto o que os geradores do `<script>` montaram (`outFiles()`), grava e
@@ -201,9 +207,10 @@ pasta da stack), `jobs.rs` (trabalhos numerados com log incremental, em memória
 — subir a stack baixa imagem e não cabe numa resposta HTTP).
 
 O modelo é **normalizado**, uma tabela por conceito do estado da página:
-`stack` na raiz, `stack_env` (o `DEFAULTS`, uma coluna por chave, mapeadas em
-`ENV_COLS`), `instance` + `instance_lib` (o `added`), e `cfg_app`,
-`cfg_client`, `cfg_client_arr`, `cfg_mm`, `cfg_naming` (o `CONFIG`). Tudo com
+`stack_env` (o `DEFAULTS`, uma coluna por chave, mapeadas em `ENV_COLS`, numa
+linha só — o `CHECK (id = 1)` é o que a mantém única), `instance` +
+`instance_lib` (o `added`), e `cfg_app`, `cfg_client`, `cfg_client_arr`,
+`cfg_mm`, `cfg_naming` (o `CONFIG`). O que pende de outra tabela vai com
 `ON DELETE CASCADE`. Três coisas a respeitar:
 
 - **A chave da instância é o `cname()`** — o `container_name`. Editar o título
@@ -215,17 +222,15 @@ O modelo é **normalizado**, uma tabela por conceito do estado da página:
   `COLUMNS` o que precisar de coluna de verdade.
 
 `load()` remonta `{added, defaults, config}` na forma exata que a página espera,
-e devolve `None` quando a stack ainda não tem nada guardado — assim a página
+e devolve `None` quando o banco ainda não tem nada guardado — assim a página
 fica com os próprios padrões em vez de recebê-los em branco de volta. Esse ida e
 volta sem perda é o critério do modelo; ao mexer nele, é o que os testes cobrem.
 
 Do lado da página, a seção `/* ---------- servidor (opcional) ---------- */`:
-`detectServer()` só faz algo em `http(s)://` e chama `theStack()`, que pega a
-stack guardada e cria a primeira quando o banco está vazio — **a interface
-edita uma stack só, sem seletor nem criação**; o esquema continua com uma
-tabela `stack` porque a chave estrangeira das outras sai dela.
-`putInstance`/`delInstance` mexem numa linha por vez, e `saveSettings()` (debounce no fim do `render()`) manda
-Ambiente, Configuração e a lista de chaves — é ela que acerta a ordem e apaga o
+`detectServer()` só faz algo em `http(s)://` e chama `openStack()`, que carrega
+o estado guardado — sem id nenhum, porque a stack é a do servidor.
+`putInstance`/`delInstance` mexem numa linha por vez, e `saveSettings()`
+(debounce no fim do `render()`) manda Ambiente, Configuração e a lista de chaves — é ela que acerta a ordem e apaga o
 que saiu sem passar pelo modal. A flag `loading` existe para o estado que vem do
 banco não ser gravado de volta enquanto está sendo aplicado.
 

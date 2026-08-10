@@ -738,7 +738,6 @@ const I18N = {
   'srv.on':'servidor',
   'srv.at':d=>`Servidor conectado; os arquivos vão para ${d}`,
   'srv.noDocker':'o docker não respondeu neste servidor',
-  'srv.first':'Minha stack',
   'log.up':'Subindo a stack',
   'log.down':'Derrubando a stack',
   'log.running':'rodando…',
@@ -1054,7 +1053,6 @@ const I18N = {
   'srv.on':'server',
   'srv.at':d=>`Server connected; files go to ${d}`,
   'srv.noDocker':'docker did not answer on this server',
-  'srv.first':'My stack',
   'log.up':'Bringing the stack up',
   'log.down':'Tearing the stack down',
   'log.running':'running…',
@@ -1370,7 +1368,6 @@ const I18N = {
   'srv.on':'servidor',
   'srv.at':d=>`Servidor conectado; los archivos van a ${d}`,
   'srv.noDocker':'docker no respondió en este servidor',
-  'srv.first':'Mi stack',
   'log.up':'Levantando la stack',
   'log.down':'Derribando la stack',
   'log.running':'ejecutando…',
@@ -3371,29 +3368,27 @@ $('#langSel').onchange = e => setLang(e.target.value);
    atrás dele. O servidor não gera nada — recebe pronto o que os geradores
    daqui montaram.
 
-   Com servidor, a página edita a stack única que ele guarda: `CUR` é o id
-   dela, e é ele que entra em todo caminho da API. */
+   A stack é uma só — a da pasta que o servidor abriu —, então nenhum caminho
+   da API leva id. */
 let SERVER = null;
-let CUR = null;
 let loading = false;   // aplicando estado vindo do banco: não gravar de volta
 
 const api = (path, opts) => fetch('api/' + path, Object.assign(
   {headers:{'Content-Type':'application/json'}, cache:'no-store'}, opts || {}));
-const stackApi = (path, opts) => api('stacks/' + CUR + '/' + path, opts);
 
 /* O banco do servidor tem uma linha por instância, então adicionar, editar e
    excluir mexem numa linha só — é o `#mSave` e o "Excluir" que chamam. O que
    vale para a stack inteira (Ambiente, Configuração e a ordem da lista) vai
    junto no `saveSettings()`, que roda no fim de cada `render()`. */
 function putInstance(a, old){
-  if(!SERVER || !CUR || loading) return;
-  stackApi('instance', {method:'PUT', body:JSON.stringify(
+  if(!SERVER || loading) return;
+  api('instance', {method:'PUT', body:JSON.stringify(
     {key:cname(a), old:old || null, ord:added.findIndex(x=>x===a), data:a})}).catch(()=>{});
 }
 
 function delInstance(key){
-  if(!SERVER || !CUR || loading) return;
-  stackApi('instance/' + encodeURIComponent(key), {method:'DELETE'}).catch(()=>{});
+  if(!SERVER || loading) return;
+  api('instance/' + encodeURIComponent(key), {method:'DELETE'}).catch(()=>{});
 }
 
 /* Guarda no servidor sem atrapalhar a digitação: um PUT depois que ela para.
@@ -3402,10 +3397,10 @@ function delInstance(key){
    tudo —, e é ela que acerta a ordem e apaga do banco o que saiu. */
 let saveT = 0;
 function saveSettings(){
-  if(!SERVER || !CUR || loading) return;
+  if(!SERVER || loading) return;
   clearTimeout(saveT);
   saveT = setTimeout(()=>{
-    stackApi('settings', {method:'PUT', body:JSON.stringify(
+    api('settings', {method:'PUT', body:JSON.stringify(
       {defaults:DEFAULTS, config:CONFIG, keys:added.map(cname)})}).catch(()=>{});
   }, 500);
 }
@@ -3421,32 +3416,21 @@ function applyState(s){
 
 /* ---------- a stack guardada ---------- */
 
-/* Carrega a stack: o que vier do banco entra inteiro, e o que não estiver
-   guardado começa vazio — só com o serviço fixo, como uma página nova. */
-async function openStack(id){
-  CUR = id;
+/* Carrega a stack: o que vier do banco entra inteiro, e o banco vazio começa
+   assim mesmo — só com o serviço fixo, como uma página nova. */
+async function openStack(){
   loading = true;
   added = [];
   try{
-    const r = await stackApi('state');
+    const r = await api('state');
     if(r.status === 200) applyState(await r.json());
   }catch(e){}
-  // o `ensureFixed()` só depois de sair do carregamento: numa stack que ainda
-  // não existe no banco, é ele que grava a linha do serviço fixo
+  // o `ensureFixed()` só depois de sair do carregamento: num banco ainda
+  // vazio, é ele que grava a linha do serviço fixo
   loading = false;
   ensureFixed();
-  closeEnv(); applyI18n(); renderCombo(); renderItems(); render();
-  STATUS = {};        // o status é da stack anterior; some até o próximo poll
+  applyI18n(); renderCombo(); renderItems(); render();
   paintStatus(); pollStatus();
-}
-
-/* A stack é uma só: pega a que o servidor já tem, e cria a primeira quando
-   o banco ainda está vazio. */
-async function theStack(){
-  const list = await (await api('stacks')).json();
-  if(list.length) return list[0];
-  return await (await api('stacks', {method:'POST',
-    body:JSON.stringify({name:t('srv.first')})})).json();
 }
 
 async function detectServer(){
@@ -3461,9 +3445,7 @@ async function detectServer(){
   $('#srv').title  = t('srv.at', SERVER.dir);
   $('#up').hidden = $('#down').hidden = false;
   if(!SERVER.docker) $('#srv').title += ' — ' + t('srv.noDocker');
-  try{
-    await openStack((await theStack()).id);
-  }catch(e){}
+  await openStack();
   pollStatus();
   setInterval(pollStatus, 5000);
 }
@@ -3509,13 +3491,13 @@ async function runJob(start, title){
 }
 
 $('#up').onclick = async ()=>{
-  await runJob(()=> stackApi('deploy',
+  await runJob(()=> api('deploy',
     {method:'POST', body:JSON.stringify({files:outFiles()})}), t('log.up'));
   pollStatus();
 };
 
 $('#down').onclick = async ()=>{
-  await runJob(()=> stackApi('down', {method:'POST'}), t('log.down'));
+  await runJob(()=> api('down', {method:'POST'}), t('log.down'));
   pollStatus();
 };
 
@@ -3526,9 +3508,9 @@ $('#down').onclick = async ()=>{
    5 s, para acompanhar o que muda por fora — um container que morre, um
    `docker stop` no terminal. */
 async function pollStatus(){
-  if(!SERVER || !CUR) return;
+  if(!SERVER) return;
   try{
-    const r = await stackApi('status');
+    const r = await api('status');
     if(!r.ok) return;
     const j = await r.json();
     STATUS = j.services || {};

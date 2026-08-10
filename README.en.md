@@ -177,14 +177,14 @@ and, in the generated files, the **Bring up** and **Tear down** buttons.
 | Option     | Default                   | What it is                                   |
 | ---------- | ------------------------- | -------------------------------------------- |
 | `--addr`   | `127.0.0.1:7878`          | address the server listens on                 |
-| `--dir`    | `./stacks`                | where the stack gets its folder               |
+| `--dir`    | `./stack`                 | folder the generated files are written to     |
 | `--db`     | `~/.hubstarr/hubstarr.db` | database the stack is kept in                 |
 | `--docker` | `docker`                  | the docker command, for podman users          |
 
-The stack is a row in the database, with its instances, Environment and
+The stack lives in the database with its instances, Environment and
 Configuration in tables of their own — the page state, normalized, not a JSON
-blob. There is only one: the server creates it the first time the page opens
-and finds it again on every later visit.
+blob. There is only one, the one in the `--dir` folder: to keep a second one,
+point `--dir` and `--db` somewhere else.
 
 > [!WARNING]
 > The server runs `docker compose` and writes to disk: do not expose it to a

@@ -4,5 +4,6 @@
 # build do servidor
 backend/target/
 
-# stacks gravadas pelo servidor
+# arquivos que o servidor grava (--dir)
+backend/stack/
 backend/stacks/

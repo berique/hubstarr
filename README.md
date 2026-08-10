@@ -175,14 +175,14 @@ arquivos gerados, os botões **Subir** e **Derrubar**.
 | Opção      | Padrão                   | O que é                                        |
 | ---------- | ------------------------ | ---------------------------------------------- |
 | `--addr`   | `127.0.0.1:7878`         | endereço em que o servidor atende               |
-| `--dir`    | `./stacks`               | onde a stack ganha a pasta dela                 |
+| `--dir`    | `./stack`                | pasta em que os arquivos gerados são gravados   |
 | `--db`     | `~/.hubstarr/hubstarr.db`| banco em que a stack é guardada                 |
 | `--docker` | `docker`                 | comando do docker, para quem usa podman         |
 
-A stack vira uma linha no banco, com as instâncias, o Ambiente e a
-Configuração em tabelas próprias — o estado da página, normalizado, e não um
-blob de JSON. Ela é uma só: o servidor a cria na primeira vez que a página
-abre e a reencontra nas seguintes.
+A stack fica no banco com as instâncias, o Ambiente e a Configuração em
+tabelas próprias — o estado da página, normalizado, e não um blob de JSON. Ela
+é uma só, a da pasta do `--dir`: para manter outra, aponte o `--dir` e o
+`--db` para outro lugar.
 
 > [!WARNING]
 > O servidor roda `docker compose` e escreve em disco: não o exponha a uma

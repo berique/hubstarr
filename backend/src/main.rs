@@ -5,7 +5,11 @@
    A página continua sendo o produto: ela é que gera docker-compose.yml, .env e
    nginx.conf, e continua funcionando aberta do disco, sem servidor nenhum. O
    que este binário acrescenta é o que o navegador não alcança sozinho — guardar
-   as stacks entre sessões, gravar os arquivos em disco e subir a stack.
+   a stack entre sessões, gravar os arquivos em disco e subir a stack.
+
+   A stack é uma só: a da pasta do --dir. Nenhum caminho da API leva id, e o
+   banco não tem tabela de stacks — trocar de stack é apontar o --dir e o --db
+   para outro lugar.
 
    Por isso ele nunca gera conteúdo: recebe pronto o que a página montou. Assim
    os geradores continuam existindo num lugar só. */
@@ -38,13 +42,13 @@ const FAVICON: &[u8] = include_bytes!("../../favicon.ico");
 #[command(
     name = "hubstarr",
     version,
-    about = "Servidor do Hubstarr: serve a página, guarda as stacks e sobe a stack no Docker",
+    about = "Servidor do Hubstarr: serve a página, guarda a stack e a sobe no Docker",
     long_about = "\
 Servidor opcional do Hubstarr.
 
 A página continua sendo o produto: é ela que gera o docker-compose.yml, o .env e
 o nginx.conf, e aberta do disco funciona inteira, com o .zip e mais nada. Este
-binário acrescenta o que o navegador não alcança sozinho — guardar as stacks
+binário acrescenta o que o navegador não alcança sozinho — guardar a stack
 entre sessões (em SQLite), gravar os arquivos em disco e rodar o docker compose.
 Ele nunca gera conteúdo: recebe pronto o que os geradores da página montaram.
 
@@ -53,7 +57,7 @@ A página vem embutida no binário; abra o endereço de --addr no navegador.",
 Exemplos:
   hubstarr                            atende só nesta máquina, em 127.0.0.1:7878
   hubstarr --addr 0.0.0.0:7878        atende também na rede local
-  hubstarr --dir /srv/stacks          põe as pastas das stacks em outro lugar
+  hubstarr --dir /srv/stack           põe os arquivos da stack em outro lugar
   hubstarr --docker podman            usa o podman no lugar do docker
 
 Cuidado com o endereço: 127.0.0.1 é sempre a máquina em que o NAVEGADOR está
@@ -74,11 +78,11 @@ struct Args {
     #[arg(long, value_name = "IP:PORTA", default_value = "127.0.0.1:7878")]
     addr: SocketAddr,
 
-    /// Pasta em que cada stack ganha a sua, com os arquivos gerados
-    #[arg(long, value_name = "PASTA", default_value = "./stacks")]
+    /// Pasta em que os arquivos gerados são gravados
+    #[arg(long, value_name = "PASTA", default_value = "./stack")]
     dir: PathBuf,
 
-    /// Banco em que as stacks são guardadas
+    /// Banco em que a stack é guardada
     #[arg(long, value_name = "ARQUIVO", default_value_os_t = default_db())]
     db: PathBuf,
 
@@ -135,22 +139,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/", get(page))
         .route("/favicon.ico", get(favicon))
         .route("/api/health", get(health))
-        .route("/api/stacks", get(list_stacks).post(create_stack))
-        .route("/api/stacks/:id", delete(del_stack))
-        .route("/api/stacks/:id/state", get(load_state))
-        .route("/api/stacks/:id/settings", put(save_settings))
-        .route("/api/stacks/:id/instance", put(put_instance))
-        .route("/api/stacks/:id/instance/:key", delete(del_instance))
-        .route("/api/stacks/:id/files", post(write_files))
-        .route("/api/stacks/:id/deploy", post(start_deploy))
-        .route("/api/stacks/:id/down", post(start_down))
-        .route("/api/stacks/:id/status", get(stack_status))
+        .route("/api/state", get(load_state))
+        .route("/api/settings", put(save_settings))
+        .route("/api/instance", put(put_instance))
+        .route("/api/instance/:key", delete(del_instance))
+        .route("/api/files", post(write_files))
+        .route("/api/deploy", post(start_deploy))
+        .route("/api/down", post(start_down))
+        .route("/api/status", get(stack_status))
         .route("/api/job/:id", get(job_status))
         .with_state(ctx.clone());
 
     let listener = tokio::net::TcpListener::bind(&args.addr).await?;
     println!(
-        "Hubstarr em http://{}  (stacks em {}, banco em {})",
+        "Hubstarr em http://{}  (stack em {}, banco em {})",
         args.addr,
         ctx.base.display(),
         db_path.display()
@@ -179,38 +181,11 @@ async fn health(State(ctx): State<Ctx>) -> Json<Value> {
     }))
 }
 
-/* ---------- stacks ---------- */
+/* ---------- a stack ---------- */
 
-async fn list_stacks(State(ctx): State<Ctx>) -> Response {
-    match ctx.db.stacks() {
-        Ok(v) => Json(v).into_response(),
-        Err(e) => fail(&e),
-    }
-}
-
-/// Cria a stack e a pasta dela. A pasta sai do slug do nome, para quem for
-/// olhar no disco reconhecer qual é qual.
-async fn create_stack(State(ctx): State<Ctx>, Json(n): Json<store::stack::NewStack>) -> Response {
-    let row = match ctx.db.create_stack(&n.name, &ctx.base) {
-        Ok(r) => r,
-        Err(e) => return fail(&e),
-    };
-    if let Err(e) = tokio::fs::create_dir_all(&row.dir).await {
-        return fail(&format!("{}: {e}", row.dir));
-    }
-    Json(row).into_response()
-}
-
-async fn del_stack(State(ctx): State<Ctx>, Path(id): Path<i64>) -> Response {
-    match ctx.db.delete_stack(id) {
-        Ok(()) => Json(json!({"ok": true})).into_response(),
-        Err(e) => fail(&e),
-    }
-}
-
-/// Devolve o estado guardado, ou 204 quando a stack não existe mais.
-async fn load_state(State(ctx): State<Ctx>, Path(id): Path<i64>) -> Response {
-    match ctx.db.load(id) {
+/// Devolve o estado guardado, ou 204 quando ainda não há nada no banco.
+async fn load_state(State(ctx): State<Ctx>) -> Response {
+    match ctx.db.load() {
         Ok(Some(v)) => Json(v).into_response(),
         Ok(None) => StatusCode::NO_CONTENT.into_response(),
         Err(e) => fail(&e),
@@ -229,22 +204,18 @@ struct Settings {
     keys: Option<Vec<String>>,
 }
 
-async fn save_settings(
-    State(ctx): State<Ctx>,
-    Path(id): Path<i64>,
-    Json(s): Json<Settings>,
-) -> Response {
-    let done = (|| {
+async fn save_settings(State(ctx): State<Ctx>, Json(s): Json<Settings>) -> Response {
+    let done = (|| -> Result<(), String> {
         if let Some(v) = &s.defaults {
-            ctx.db.put_env(id, v)?;
+            ctx.db.put_env(v)?;
         }
         if let Some(v) = &s.config {
-            ctx.db.put_config(id, v)?;
+            ctx.db.put_config(v)?;
         }
         if let Some(k) = &s.keys {
-            ctx.db.reconcile(id, k)?;
+            ctx.db.reconcile(k)?;
         }
-        ctx.db.touch(id)
+        Ok(())
     })();
     match done {
         Ok(()) => Json(json!({"ok": true})).into_response(),
@@ -253,19 +224,15 @@ async fn save_settings(
 }
 
 /// Um serviço adicionado ou editado: uma linha só, criada ou atualizada.
-async fn put_instance(
-    State(ctx): State<Ctx>,
-    Path(id): Path<i64>,
-    Json(inc): Json<store::InstanceIn>,
-) -> Response {
-    match ctx.db.put_instance(id, &inc).and_then(|()| ctx.db.touch(id)) {
+async fn put_instance(State(ctx): State<Ctx>, Json(inc): Json<store::InstanceIn>) -> Response {
+    match ctx.db.put_instance(&inc) {
         Ok(()) => Json(json!({"ok": true})).into_response(),
         Err(e) => fail(&e),
     }
 }
 
-async fn del_instance(State(ctx): State<Ctx>, Path((id, key)): Path<(i64, String)>) -> Response {
-    match ctx.db.delete_instance(id, &key).and_then(|()| ctx.db.touch(id)) {
+async fn del_instance(State(ctx): State<Ctx>, Path(key): Path<String>) -> Response {
+    match ctx.db.delete_instance(&key) {
         Ok(()) => Json(json!({"ok": true})).into_response(),
         Err(e) => fail(&e),
     }
@@ -281,18 +248,14 @@ pub struct Payload {
     pub files: Vec<files::OutFile>,
 }
 
-async fn write_files(
-    State(ctx): State<Ctx>,
-    Path(id): Path<i64>,
-    Json(p): Json<Payload>,
-) -> Response {
-    let (dir, cfg) = match stack_paths(&ctx, id) {
+async fn write_files(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Response {
+    let cfg = match config_base(&ctx) {
         Ok(v) => v,
         Err(e) => return fail(&e),
     };
-    match files::write_all(&dir, cfg.as_deref(), &p.files).await {
+    match files::write_all(&ctx.base, cfg.as_deref(), &p.files).await {
         Ok(names) => {
-            Json(json!({"ok": true, "dir": dir.display().to_string(), "files": names}))
+            Json(json!({"ok": true, "dir": ctx.base.display().to_string(), "files": names}))
                 .into_response()
         }
         Err(e) => fail(&e),
@@ -301,45 +264,33 @@ async fn write_files(
 
 /// Grava os arquivos e sobe a stack. Devolve na hora o número do trabalho: o
 /// `docker compose up` baixa imagem, e isso não cabe numa resposta HTTP.
-async fn start_deploy(
-    State(ctx): State<Ctx>,
-    Path(id): Path<i64>,
-    Json(p): Json<Payload>,
-) -> Response {
-    let (dir, cfg) = match stack_paths(&ctx, id) {
+async fn start_deploy(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Response {
+    let cfg = match config_base(&ctx) {
         Ok(v) => v,
         Err(e) => return fail(&e),
     };
-    if let Err(e) = files::write_all(&dir, cfg.as_deref(), &p.files).await {
+    if let Err(e) = files::write_all(&ctx.base, cfg.as_deref(), &p.files).await {
         return fail(&e);
     }
     let job = ctx.jobs.spawn({
         let ctx = ctx.clone();
-        move |log| async move { deploy::up(&ctx.docker, &dir, log).await }
+        move |log| async move { deploy::up(&ctx.docker, &ctx.base, log).await }
     });
     Json(json!({"ok": true, "job": job})).into_response()
 }
 
-async fn start_down(State(ctx): State<Ctx>, Path(id): Path<i64>) -> Response {
-    let dir = match ctx.db.stack_dir(id) {
-        Ok(d) => PathBuf::from(d),
-        Err(e) => return fail(&e),
-    };
+async fn start_down(State(ctx): State<Ctx>) -> Response {
     let job = ctx.jobs.spawn({
         let ctx = ctx.clone();
-        move |log| async move { deploy::down(&ctx.docker, &dir, log).await }
+        move |log| async move { deploy::down(&ctx.docker, &ctx.base, log).await }
     });
     Json(json!({"ok": true, "job": job})).into_response()
 }
 
 /// O estado de cada container da stack. A página pergunta de tempos em tempos
 /// para pintar o ponto de status de cada serviço da lista.
-async fn stack_status(State(ctx): State<Ctx>, Path(id): Path<i64>) -> Response {
-    let dir = match ctx.db.stack_dir(id) {
-        Ok(d) => PathBuf::from(d),
-        Err(e) => return fail(&e),
-    };
-    match deploy::status(&ctx.docker, &dir).await {
+async fn stack_status(State(ctx): State<Ctx>) -> Response {
+    match deploy::status(&ctx.docker, &ctx.base).await {
         Ok(v) => Json(json!({"ok": true, "services": v})).into_response(),
         Err(e) => fail(&e),
     }
@@ -358,13 +309,10 @@ async fn job_status(State(ctx): State<Ctx>, Path(id): Path<u64>) -> Response {
 
 /* ---------- utilidades ---------- */
 
-/// A pasta da stack e a raiz das configurações. A segunda vem do Ambiente
-/// guardado, nunca do que o navegador manda: assim nada escreve fora do que a
-/// própria stack declarou.
-fn stack_paths(ctx: &Ctx, id: i64) -> Result<(PathBuf, Option<PathBuf>), String> {
-    let dir = PathBuf::from(ctx.db.stack_dir(id)?);
-    let cfg = ctx.db.config_base(id)?.map(PathBuf::from);
-    Ok((dir, cfg))
+/// A raiz das configurações, que vem do Ambiente guardado e nunca do que o
+/// navegador manda: assim nada escreve fora do que a própria stack declarou.
+fn config_base(ctx: &Ctx) -> Result<Option<PathBuf>, String> {
+    Ok(ctx.db.config_base()?.map(PathBuf::from))
 }
 
 type Response = axum::response::Response;

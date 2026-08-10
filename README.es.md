@@ -180,14 +180,14 @@ en los archivos generados, los botones **Levantar** y **Derribar**.
 | Opción     | Predeterminado            | Qué es                                       |
 | ---------- | ------------------------- | -------------------------------------------- |
 | `--addr`   | `127.0.0.1:7878`          | dirección en la que atiende el servidor       |
-| `--dir`    | `./stacks`                | dónde la stack recibe su carpeta              |
+| `--dir`    | `./stack`                 | carpeta en la que se graban los archivos      |
 | `--db`     | `~/.hubstarr/hubstarr.db` | base en la que se guarda la stack             |
 | `--docker` | `docker`                  | comando de docker, para quien usa podman      |
 
-La stack es una fila en la base, con sus instancias, el Entorno y la
-Configuración en tablas propias — el estado de la página, normalizado, y no un
-blob de JSON. Es una sola: el servidor la crea la primera vez que se abre la
-página y la reencuentra en las siguientes.
+La stack vive en la base con sus instancias, el Entorno y la Configuración en
+tablas propias — el estado de la página, normalizado, y no un blob de JSON. Es
+una sola, la de la carpeta del `--dir`: para mantener otra, apunta el `--dir`
+y el `--db` a otro sitio.
 
 > [!WARNING]
 > El servidor ejecuta `docker compose` y escribe en disco: no lo expongas a una

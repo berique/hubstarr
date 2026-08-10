@@ -1,9 +1,9 @@
 /* Estado da página, em SQLite.
 
    Uma tabela por coisa que a página tem — as instâncias, o Ambiente, a
-   Configuração —, e uma tabela `stack` na raiz, porque um servidor guarda
-   várias. O banco fica num lugar só (`~/.hubstarr/hubstarr.db`); o que fica na
-   pasta de cada stack são os arquivos gerados, e só eles.
+   Configuração. A stack é uma só, a da pasta do `--dir`, então nenhuma tabela
+   leva id de stack. O banco fica num lugar só (`~/.hubstarr/hubstarr.db`); o
+   que fica na pasta da stack são os arquivos gerados, e só eles.
 
    O servidor conhece o formato do estado da página — é o preço de ter tabela em
    vez de um blob. Os campos que a página inventar depois caem em `extra`, que é
@@ -20,8 +20,8 @@ use rusqlite::Connection;
 use serde_json::{json, Value};
 
 pub mod config;
+pub mod env;
 pub mod instance;
-pub mod stack;
 
 pub use instance::InstanceIn;
 
@@ -52,15 +52,12 @@ impl Db {
         self.0.lock().map_err(|_| "banco travado".to_string())
     }
 
-    /// O estado inteiro de uma stack, na forma que a página espera receber.
-    pub fn load(&self, stack_id: i64) -> Result<Option<Value>, String> {
-        if !self.stack_exists(stack_id)? {
-            return Ok(None);
-        }
-        let added = self.instances(stack_id)?;
-        let defaults = self.env(stack_id)?;
-        let config = self.config(stack_id)?;
-        // stack recém-criada: nada a restaurar, e a página fica com os padrões
+    /// O estado inteiro da stack, na forma que a página espera receber.
+    pub fn load(&self) -> Result<Option<Value>, String> {
+        let added = self.instances()?;
+        let defaults = self.env()?;
+        let config = self.config()?;
+        // banco recém-criado: nada a restaurar, e a página fica com os padrões
         // dela em vez de receber de volta um estado vazio
         let empty = config["apps"].as_object().map_or(true, |m| m.is_empty())
             && config["clients"].as_object().map_or(true, |m| m.is_empty())
@@ -88,45 +85,29 @@ pub(crate) fn obj(v: Option<&Value>) -> serde_json::Map<String, Value> {
     v.and_then(|v| v.as_object()).cloned().unwrap_or_default()
 }
 
-/// Um slug no mesmo espírito do `slug()` da página: minúsculas, sem acento,
-/// o que não for alfanumérico vira `-`.
-pub fn slug(t: &str) -> String {
-    let mut out = String::new();
-    let mut dash = false;
-    for c in t.trim().to_lowercase().chars() {
-        let c = deaccent(c);
-        if c.is_ascii_alphanumeric() {
-            out.push(c);
-            dash = false;
-        } else if !out.is_empty() && !dash {
-            out.push('-');
-            dash = true;
-        }
-    }
-    out.trim_matches('-').to_string()
-}
-
-fn deaccent(c: char) -> char {
-    match c {
-        'á' | 'à' | 'ã' | 'â' | 'ä' => 'a',
-        'é' | 'è' | 'ê' | 'ë' => 'e',
-        'í' | 'ì' | 'î' | 'ï' => 'i',
-        'ó' | 'ò' | 'õ' | 'ô' | 'ö' => 'o',
-        'ú' | 'ù' | 'û' | 'ü' => 'u',
-        'ç' => 'c',
-        'ñ' => 'n',
-        c => c,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     #[test]
-    fn slug_segue_o_da_pagina() {
-        assert_eq!(slug("Séries 4K"), "series-4k");
-        assert_eq!(slug("  --Ação!!  "), "acao");
-        assert_eq!(slug("Sonarr"), "sonarr");
+    fn banco_vazio_nao_devolve_estado() {
+        let db = Db::memory().unwrap();
+        assert!(db.load().unwrap().is_none());
+    }
+
+    #[test]
+    fn com_uma_instancia_o_estado_volta_inteiro() {
+        let db = Db::memory().unwrap();
+        db.put_instance(&InstanceIn {
+            key: "sonarr".into(),
+            old: None,
+            ord: 0,
+            data: json!({"id":"sonarr","title":"Sonarr"}),
+        })
+        .unwrap();
+        let st = db.load().unwrap().expect("há uma instância guardada");
+        assert_eq!(st["added"][0]["title"], json!("Sonarr"));
+        assert_eq!(st["defaults"], json!(null));
     }
 }
