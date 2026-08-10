@@ -115,6 +115,11 @@
   .item .acts{display:flex;gap:6px;flex:none}
   .tag{font-size:10px;padding:1px 6px;border-radius:99px;border:1px solid var(--line);
        color:var(--muted);margin-left:6px;vertical-align:1px}
+  /* a variante do tema muda o logotipo do app inteiro: destaca-se das demais
+     etiquetas, que são só informação de rota e de porta */
+  .tag.tpv{color:var(--accent);border-color:var(--accent);font-weight:700;
+    letter-spacing:.04em;text-transform:uppercase;
+    background:color-mix(in srgb, var(--accent) 16%, transparent)}
   .empty{color:var(--muted);border:1px dashed var(--line);border-radius:8px;
          padding:20px;text-align:center}
 
@@ -2007,7 +2012,7 @@ function renderItems(){
       ${dotHtml(cname(a))}${icoHtml(s, '', icoKey(a.id, a.tpv))}
       <div class="meta">
         <div class="nm">${a.title || s.name}
-          ${(s.tpAddon && a.tpv && a.tpv!=='std')?`<span class="tag">${t('m.tpv'+tpvKey(a.tpv))}</span>`:''}
+          ${(s.tpAddon && a.tpv && a.tpv!=='std')?`<span class="tag tpv">${t('m.tpv'+tpvKey(a.tpv))}</span>`:''}
           ${a.vpn?`<span class="tag">${t('items.viaVpn')}</span>`:''}
           ${a.hw==='intel' ? `<span class="tag">${t('items.hwIntel')}</span>`
             : a.hw==='nvidia' ? `<span class="tag">${t('items.hwNvidia')}</span>` : ''}
