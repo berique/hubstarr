@@ -142,9 +142,11 @@
   .naming .nm{font-weight:600;margin-bottom:8px}
   .naming .row, .row.perms{grid-template-columns:150px 1fr auto;margin-bottom:8px}
   .row.perms{margin-top:10px}
-  /* variante do tema: o seletor e o logotipo que ela põe no app */
+  /* variante do tema: o seletor e o logotipo que ela põe no app. O logotipo
+     é maior que o da lista: é aqui que se compara uma variante com a outra. */
   .tpvPick{display:flex;align-items:center;gap:10px}
   .tpvPick select{flex:1}
+  .tpvPick .ico{width:32px;height:32px;border-radius:7px;padding:4px}
   .cfgList .opt{display:flex;align-items:center;gap:6px}
   /* instância do cliente: o nome e, abaixo, a categoria dela */
   .cfgList .inst > .nm{font-size:13px}
@@ -2178,7 +2180,7 @@ function openShot(){
    própria mostra a do app, que é o que o addon deixa em pé. */
 function tpvIco(s){
   const v = $('#mTpv').value;
-  $('#mTpvIco').innerHTML = icoHtml(s, 'sm', icoKey(s.id, v));
+  $('#mTpvIco').innerHTML = icoHtml(s, '', icoKey(s.id, v));
   $('#mTpvIco').title = t('m.tpv') + ': ' + t('m.tpv' + tpvKey(v));
 }
 $('#mTpv').addEventListener('change', ()=>{
