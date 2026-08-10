@@ -101,6 +101,10 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   de la `${STARR_APIKEY}` de la stack — la conf la lee qBittorrent, no compose,
   así que la variable no se expandiría ahí. Usuario, contraseña y clave se
   editan en su modal, y el archivo se monta sobre `/config`.
+- **categories.json de qBittorrent**: junto a la conf sale un segundo archivo
+  con las categorías que la **Configuración** dio a cada *arr, ya creadas
+  cuando arranca. Cada una recibe su subcarpeta dentro de la ruta de descarga
+  — misma partición, así que el *arr sigue haciendo hardlink en vez de copiar.
 - **HTTPS opcional**, con el certificado y la clave provenientes del host.
 - **Configuración** (botón arriba): elegir qué instancias configurará Prowlarr,
   con qué categoría usa cada *arr cada cliente de descarga — `tv-sonarr`,

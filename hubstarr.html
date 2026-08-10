@@ -346,6 +346,7 @@ sudo sh get-docker.sh</pre>
         <button class="tab" data-tab="env">.env</button>
         <button class="tab" data-tab="nginx">nginx.conf</button>
         <button class="tab" data-tab="qbt" style="display:none">qBittorrent.conf</button>
+        <button class="tab" data-tab="qbtcat" style="display:none">categories.json</button>
         <button class="tab" data-tab="jf" style="display:none">network.xml</button>
       </span>
       <span id="stat"></span>
@@ -354,6 +355,7 @@ sudo sh get-docker.sh</pre>
     <pre id="outEnv" style="display:none"></pre>
     <pre id="outNginx" style="display:none"></pre>
     <pre id="outQbt" style="display:none"></pre>
+    <pre id="outQbtCat" style="display:none"></pre>
     <pre id="outJf" style="display:none"></pre>
     <div class="bar">
       <span class="hint" id="summary"></span>
@@ -1594,10 +1596,11 @@ const SERVICES = [
   {id:'lidarr',   name:'Lidarr',    port:8686, img:'lscr.io/linuxserver/lidarr:latest',    color:'#1db954', media:true, mdir:'music', needsDl:true, tp:true, site:'https://lidarr.audio'},
   {id:'prowlarr', name:'Prowlarr',  port:9696, img:'lscr.io/linuxserver/prowlarr:latest', color:'#e5534b', solver:true, tp:true, site:'https://prowlarr.com'},
   {id:'bazarr',   name:'Bazarr',    port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr'], tp:true, site:'https://www.bazarr.media'},
-  {id:'qbittorrent',name:'qBittorrent',port:8181, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true, webAuth:true, tp:true, conf:{host:'qBittorrent.conf', target:'/config/qBittorrent/qBittorrent.conf', pane:'#outQbt', tab:'qbt'}, site:'https://www.qbittorrent.org'},
+  {id:'qbittorrent',name:'qBittorrent',port:8181, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true, webAuth:true, tp:true, conf:[{host:'qBittorrent.conf', target:'/config/qBittorrent/qBittorrent.conf', pane:'#outQbt', tab:'qbt'},
+          {host:'categories.json', target:'/config/qBittorrent/categories.json', pane:'#outQbtCat', tab:'qbtcat'}], site:'https://www.qbittorrent.org'},
   {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true, cdh:true, tp:true, site:'https://sabnzbd.org'},
   {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true, tp:true,
-   conf:{host:'config/config/network.xml', target:'/config/config/network.xml', pane:'#outJf', tab:'jf'}, site:'https://jellyfin.org'},
+   conf:[{host:'config/config/network.xml', target:'/config/config/network.xml', pane:'#outJf', tab:'jf'}], site:'https://jellyfin.org'},
   {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5', subpathFix:true, site:'https://github.com/seerr-team/seerr'},
   {id:'heimdall', name:'Heimdall',  port:80,   img:'lscr.io/linuxserver/heimdall:latest', color:'#d64b3f', fixed:true, noLink:true, tp:true, site:'https://heimdall.site'},
   {id:'flaresolverr',name:'FlareSolverr',port:8191,img:'ghcr.io/thephaseless/byparr:latest',color:'#ff7f50',noVol:true, internal:true, site:'https://github.com/ThePhaseless/Byparr', credit:'Byparr'},
@@ -2931,7 +2934,7 @@ function build(){
       L.push(`    <span class="k">volumes</span>:`);
       bind(cfgPath(a), '/config');
       // config pronta, montada por cima da pasta do container
-      if(s.conf) bind(`${cfgPath(a)}/${s.conf.host}`, s.conf.target);
+      confsOf(s).forEach(cf=> bind(`${cfgPath(a)}/${cf.host}`, cf.target));
       if(s.derived){
         // acompanha as pastas das instâncias de radarr/sonarr já adicionadas
         derivedMounts(s).forEach(m=>bind(m.source, '/data/'+m.name));
@@ -3151,6 +3154,11 @@ function dupPaths(){
 
 /* qBittorrent.conf pronta: interface atrás do nginx, pastas iguais às do
    compose e a senha já com hash. */
+/* Os arquivos próprios de um serviço. É lista porque o qBittorrent gera dois
+   — a conf e as categorias —, e cada um vira um bind no compose, uma aba e um
+   arquivo no .zip. */
+const confsOf = s => s.conf || [];
+
 function buildQbit(list){
   const a = list.find(x=>svc(x.id).conf);
   if(!a) return '';
@@ -3160,7 +3168,7 @@ function buildQbit(list){
   const c = txt => `<span class="c"># ${txt}</span>`;
   const kv = (k, v) => `<span class="k">${k}</span>=<span class="v">${v}</span>`;
   Q.push(c(`${STACK} — ${t('qbt.head')}`));
-  Q.push(c(t('qbt.mount', `${cfgReal(a)}/${s.conf.host}`)));
+  Q.push(c(t('qbt.mount', `${cfgReal(a)}/${confsOf(s)[0].host}`)));
   Q.push(``);
   Q.push(`<span class="k">[BitTorrent]</span>`);
   Q.push(kv('Session\\DefaultSavePath', dl));
@@ -3186,6 +3194,33 @@ function buildQbit(list){
   Q.push(kv('WebUI\\TrustedReverseProxiesList', NGINX.id));
   Q.push(kv('WebUI\\HostHeaderValidation', 'false'));
   return Q.join('\n');
+}
+
+/* categories.json do qBittorrent: as categorias que a Configuração deu a cada
+   *arr, já criadas quando ele sobe. Cada uma ganha a subpasta dela dentro do
+   caminho de download — mesma partição, então o *arr continua conseguindo
+   fazer hardlink em vez de copiar.
+
+   É JSON de verdade, lido pelo app: sem comentário, sem variável do .env, e as
+   chaves saem ordenadas para o arquivo não mudar de ordem a cada render. */
+function buildQbitCats(list){
+  const a = list.find(x=>x.id === 'qbittorrent');
+  if(!a) return '';
+  const dl = '/downloads' + (a.data ? '/'+a.data : '');
+  const st = CONFIG.clients[cname(a)];
+  const cats = [...new Set(arrList()
+    .map(x=>String((st && st.cats && st.cats[cname(x)]) || catDefault(x, a)).trim())
+    .filter(Boolean))].sort();
+  if(!cats.length) return '';
+  // JSON primeiro (aspas e barras), HTML depois: o pane guarda marcação
+  const esc = x => escHtml(String(x).replace(/\\/g,'\\\\').replace(/"/g,'\\"'));
+  const k = txt => `<span class="k">${txt}</span>`;
+  const v = txt => `<span class="v">${txt}</span>`;
+  const body = cats.map(cat=>
+    `    ${k(`"${esc(cat)}"`)}: {\n` +
+    `        ${k('"save_path"')}: ${v(`"${esc(dl + '/' + cat)}"`)}\n` +
+    `    }`).join(',\n');
+  return `{\n${body}\n}`;
 }
 
 /* network.xml do Jellyfin: ele precisa saber o subpath em que o nginx o serve,
@@ -3244,7 +3279,7 @@ function render(){
   $('#outEnv').innerHTML = buildEnv(list);
   $('#outNginx').innerHTML = buildNginx(list);
   // abas de config: uma por serviço que gera arquivo próprio
-  const confs = {qbt:buildQbit(list), jf:buildJellyfin(list)};
+  const confs = {qbt:buildQbit(list), qbtcat:buildQbitCats(list), jf:buildJellyfin(list)};
   Object.entries(confs).forEach(([k, txt])=>{
     $(PANES[k]).innerHTML = txt;
     $(`.tab[data-tab="${k}"]`).style.display = txt ? '' : 'none';
@@ -3262,7 +3297,8 @@ function render(){
 }
 
 let tab = 'yml';
-const PANES = {yml:'#out', env:'#outEnv', nginx:'#outNginx', qbt:'#outQbt', jf:'#outJf'};
+const PANES = {yml:'#out', env:'#outEnv', nginx:'#outNginx', qbt:'#outQbt',
+               qbtcat:'#outQbtCat', jf:'#outJf'};
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   tab = t.dataset.tab;
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on', x===t));
@@ -3387,10 +3423,10 @@ function outFiles(){
     {name:`nginx/conf.d/${STACK}.conf`, text:plainNginx()+'\n', base:'config'},
   ];
   // as configs próprias entram na pasta de cada serviço, como o compose monta
-  effective().filter(x=>svc(x.id).conf).forEach(x=>{
-    const cf = svc(x.id).conf, txt = $(cf.pane).textContent;
+  effective().forEach(x=> confsOf(svc(x.id)).forEach(cf=>{
+    const txt = $(cf.pane).textContent;
     if(txt) files.push({name:`${cname(x)}/${cf.host}`, text:txt+'\n', base:'config'});
-  });
+  }));
   return files;
 }
 

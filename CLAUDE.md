@@ -95,10 +95,14 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    à mão com `innerHTML` a cada digitada — quem mexe nos campos chama
    `hintNow()`, e o `applyI18n()` o refaz para acompanhar a troca de idioma.
 7. **Geradores** — `build()` (compose), `buildEnv()`, `buildNginx()`,
-   `buildQbit()` e `buildJellyfin()`. Os dois últimos saem só quando o serviço
+   `buildQbit()`, `buildQbitCats()` (o `categories.json`, único que sai em JSON:
+   sem comentário e sem variável, com as chaves ordenadas para o arquivo não
+   mudar de ordem a cada render) e `buildJellyfin()`. Os dois últimos saem só quando o serviço
    está na stack, e a aba aparece e some com ele. Serviço com arquivo próprio
-   traz `conf:{host, target, pane, tab}` no catálogo — `host` é o caminho dentro
-   da pasta de config dele, o mesmo no `.zip` e no bind do compose. Eles
+   traz `conf:[{host, target, pane, tab}, …]` no catálogo — é **lista**, porque o
+   qBittorrent gera dois (a conf e o `categories.json`), e o `confsOf()` é quem
+   a percorre no bind do compose, no `outFiles()` e nas abas. `host` é o caminho
+   dentro da pasta de config dele, o mesmo no `.zip` e no bind do compose. Eles
    emitem **HTML com spans de realce** (`<span class="k">`/`v`/`c`); o texto
    puro para copiar/baixar vem de `textContent` dos panes (`plain()`,
    `plainEnv()`, `plainNginx()`). Ao editar um gerador, mantenha a marcação e
