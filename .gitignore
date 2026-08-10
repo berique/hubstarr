@@ -1,2 +1,8 @@
 # wrapper do Maven (não faz parte do protótipo)
 .mvn/
+
+# build do servidor
+backend/target/
+
+# stacks gravadas pelo servidor
+backend/stacks/
