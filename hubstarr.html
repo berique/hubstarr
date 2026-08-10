@@ -99,6 +99,16 @@
   .items{display:flex;flex-direction:column;gap:8px}
   .item{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);
         border-radius:8px;background:var(--panel-2)}
+  /* ponto de status do container: só aparece com servidor atrás da página,
+     porque é ele que sabe o que está no ar */
+  .stDot{width:9px;height:9px;border-radius:50%;flex:none;display:none;
+         border:1px solid var(--muted);background:transparent}
+  body.srvOn .stDot{display:block}
+  .stDot[data-st="running"]{background:var(--accent-2);border-color:var(--accent-2);
+         box-shadow:0 0 0 3px color-mix(in srgb, var(--accent-2) 22%, transparent)}
+  .stDot[data-st="unhealthy"]{background:var(--c-ph);border-color:var(--c-ph)}
+  .stDot[data-st="stopped"]{border-color:var(--danger)}
+  .stDot[data-st="none"]{border-style:dashed;opacity:.55}
   .item .meta{flex:1;min-width:0}
   .item .nm{font-weight:600}
   .item .ds{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -176,6 +186,12 @@
   button.primary{background:var(--accent);border-color:var(--accent);color:#08111d;font-weight:600}
   button.primary:hover{filter:brightness(1.1)}
   button.sm{padding:5px 10px;font-size:12px}
+  /* o "Link" é âncora de verdade — abre em aba nova e ainda dá o "copiar
+     endereço do link" do próprio navegador —, mas se veste de botão */
+  a.btn{display:inline-flex;align-items:center;padding:5px 10px;font-size:12px;
+    line-height:normal;border-radius:7px;border:1px solid var(--line);
+    background:var(--panel-2);color:var(--txt);text-decoration:none}
+  a.btn:hover{border-color:var(--accent)}
   button.danger:hover{border-color:var(--danger);color:var(--danger)}
   .bar{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line);
        background:var(--panel-2);align-items:center}
@@ -212,6 +228,12 @@
   /* o crédito do theme.park fica logo abaixo da imagem */
   #shotCredit{margin:8px 0 0;text-align:center}
   #shotImg[hidden]{display:none}
+  /* log do servidor: rola sozinho e não empurra o modal */
+  #logBack .modal{max-width:820px}
+  .log{margin:0 0 12px;padding:10px 12px;height:340px;overflow:auto;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+    line-height:1.5;white-space:pre-wrap;word-break:break-word}
   /* aviso colapsável acima dos painéis */
   .notice{grid-column:1/-1;margin:-4px 0 -4px;background:var(--panel);border:1px solid var(--line);
     border-radius:10px;font-size:13px;line-height:1.6}
@@ -235,6 +257,11 @@
     background:color-mix(in srgb, var(--danger) 12%, var(--panel));
     border:1px solid var(--danger)}
   .protoWarn b{color:var(--danger)}
+  /* aviso de servidor no cabeçalho, e o seletor de stack ao lado dele */
+  #srv{font-size:11px;padding:2px 8px;border-radius:999px;
+    border:1px solid var(--ok,#3fb950);color:var(--ok,#3fb950)}
+  #stackBox{display:flex;align-items:center;gap:4px}
+  #stackSel{width:auto;padding:6px 8px;max-width:180px}
 </style>
 </head>
 <body>
@@ -244,6 +271,13 @@
   <h1 data-i18n="app.title">Hubstarr &middot; Adicionar *arr Stack</h1>
   <button class="sm" id="credBtn" data-i18n="app.credits">♡ Créditos</button>
   <span style="flex:1"></span>
+  <!-- só aparecem com servidor atrás da página -->
+  <span id="srv" hidden data-i18n="srv.on">servidor</span>
+  <span id="stackBox" hidden>
+    <select id="stackSel" data-i18n-title="srv.pick"></select>
+    <button class="sm" id="stackNew" data-i18n-title="srv.newHint">+</button>
+    <button class="sm" id="stackDel" data-i18n-title="srv.delHint">🗑</button>
+  </span>
   <select id="langSel" style="width:auto;padding:6px 8px" data-i18n-title="app.lang"></select>
   <button id="themeBtn" data-i18n-title="app.theme">🌙</button>
   <button id="cfgBtn" data-i18n="app.cfg">⇄ Configuração</button>
@@ -325,6 +359,21 @@ sudo sh get-docker.sh</pre>
       <span class="sp"></span>
       <button id="copy" data-i18n="btn.copy">Copiar</button>
       <button id="dl" data-i18n="btn.zip" data-i18n-title="btn.zipHint">Baixar .zip</button>
+      <button class="primary" id="up" hidden data-i18n="btn.up" data-i18n-title="btn.upHint">Subir</button>
+      <button id="down" hidden data-i18n="btn.down" data-i18n-title="btn.downHint">Derrubar</button>
+    </div>
+  </div>
+</div>
+
+<!-- log do servidor: só aparece quando há um atrás da página -->
+<div class="backdrop" id="logBack">
+  <div class="modal">
+    <h3 id="logTitle"></h3>
+    <pre class="log" id="logOut"></pre>
+    <div class="bar">
+      <span class="hint" id="logState"></span>
+      <span class="sp"></span>
+      <button class="primary" id="logClose" data-i18n="btn.close">Fechar</button>
     </div>
   </div>
 </div>
@@ -673,8 +722,7 @@ const I18N = {
   'btn.edit':'Editar',
   'btn.del':'Excluir',
   'btn.link':'Link',
-  'btn.linkTitle':url=>`Copiar ${url}`,
-  'btn.linkOk':'✓',
+  'btn.linkTitle':url=>`Abrir ${url} numa aba nova`,
   'items.empty':'Nenhum serviço adicionado.<br>Escolha um no combobox acima e clique em <b>Adicionar</b>.',
   'items.fixed':'fixo',
   'items.viaVpn':'via VPN',
@@ -686,8 +734,33 @@ const I18N = {
   'out.empty':'nenhum serviço adicionado',
   'btn.copy':'Copiar',
   'btn.copied':'Copiado ✓',
+  'btn.copyFail':'não deu para copiar',
   'btn.zip':'Baixar .zip',
   'btn.zipHint':'Descompacte e suba com "docker compose up -d". Sem Docker: curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh — no macOS/Windows, instale o Docker Desktop.',
+  'btn.up':'Subir',
+  'btn.upHint':'Grava os arquivos na pasta da stack e roda um docker compose up -d',
+  'btn.down':'Derrubar',
+  'btn.downHint':'Roda um docker compose down na pasta da stack',
+  'btn.close':'Fechar',
+  'srv.on':'servidor',
+  'srv.at':d=>`Servidor conectado; os arquivos vão para ${d}`,
+  'srv.noDocker':'o docker não respondeu neste servidor',
+  'srv.pick':'Stack que está sendo editada',
+  'srv.newHint':'Criar outra stack',
+  'srv.delHint':'Excluir esta stack do servidor',
+  'srv.newName':'Nome da nova stack:',
+  'srv.delSure':n=>`Excluir a stack "${n}" do servidor? Os arquivos já gravados ficam onde estão.`,
+  'srv.first':'Minha stack',
+  'log.up':'Subindo a stack',
+  'log.down':'Derrubando a stack',
+  'log.running':'rodando…',
+  'log.done':'pronto ✓',
+  'log.fail':'falhou ✗',
+  'log.noServer':'o servidor não respondeu',
+  'st.up':s=>`No ar${s?' — '+s:''}`,
+  'st.down':s=>`Parado${s?' — '+s:''}`,
+  'st.unhealthy':s=>`No ar, mas sem passar no healthcheck${s?' — '+s:''}`,
+  'st.none':'Container não criado — a stack ainda não subiu',
   'btn.help':'O que é isso?',
   'env.hIds':'Usuário e grupo do host que os containers assumem para escrever nos volumes. Saem no <b>.env</b> como <b>PUID</b>/<b>PGID</b>; no seu usuário, veja com <b>id -u</b> e <b>id -g</b>.',
   'env.hTz':'Fuso dos containers, em <b>TZ</b> — mexe nos horários de log, agendamento e renomeio. A lista é a IANA inteira; o valor inicial é o desta máquina.',
@@ -970,8 +1043,7 @@ const I18N = {
   'btn.edit':'Edit',
   'btn.del':'Remove',
   'btn.link':'Link',
-  'btn.linkTitle':url=>`Copy ${url}`,
-  'btn.linkOk':'✓',
+  'btn.linkTitle':url=>`Open ${url} in a new tab`,
   'items.empty':'No services added.<br>Pick one in the combobox above and click <b>Add</b>.',
   'items.fixed':'fixed',
   'items.viaVpn':'via VPN',
@@ -983,8 +1055,33 @@ const I18N = {
   'out.empty':'no services added',
   'btn.copy':'Copy',
   'btn.copied':'Copied ✓',
+  'btn.copyFail':'could not copy',
   'btn.zip':'Download .zip',
   'btn.zipHint':'Unzip it and bring the stack up with "docker compose up -d". No Docker yet: curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh — on macOS/Windows, install Docker Desktop.',
+  'btn.up':'Bring up',
+  'btn.upHint':'Writes the files to the stack folder and runs docker compose up -d',
+  'btn.down':'Tear down',
+  'btn.downHint':'Runs docker compose down in the stack folder',
+  'btn.close':'Close',
+  'srv.on':'server',
+  'srv.at':d=>`Server connected; files go to ${d}`,
+  'srv.noDocker':'docker did not answer on this server',
+  'srv.pick':'Stack being edited',
+  'srv.newHint':'Create another stack',
+  'srv.delHint':'Delete this stack from the server',
+  'srv.newName':'Name for the new stack:',
+  'srv.delSure':n=>`Delete the stack "${n}" from the server? Files already written stay where they are.`,
+  'srv.first':'My stack',
+  'log.up':'Bringing the stack up',
+  'log.down':'Tearing the stack down',
+  'log.running':'running…',
+  'log.done':'done ✓',
+  'log.fail':'failed ✗',
+  'log.noServer':'the server did not answer',
+  'st.up':s=>`Up${s?' — '+s:''}`,
+  'st.down':s=>`Stopped${s?' — '+s:''}`,
+  'st.unhealthy':s=>`Up, but failing its healthcheck${s?' — '+s:''}`,
+  'st.none':'Container not created — the stack has not been brought up yet',
   'btn.help':'What is this?',
   'env.hIds':'Host user and group the containers take on to write in the volumes. They land in <b>.env</b> as <b>PUID</b>/<b>PGID</b>; for your own user, check <b>id -u</b> and <b>id -g</b>.',
   'env.hTz':'Container time zone, as <b>TZ</b> — it drives log timestamps, scheduling and renaming. The list is the whole IANA database; the initial value is this machine\'s.',
@@ -1267,8 +1364,7 @@ const I18N = {
   'btn.edit':'Editar',
   'btn.del':'Eliminar',
   'btn.link':'Link',
-  'btn.linkTitle':url=>`Copiar ${url}`,
-  'btn.linkOk':'✓',
+  'btn.linkTitle':url=>`Abrir ${url} en una pestaña nueva`,
   'items.empty':'Ningún servicio añadido.<br>Elige uno en el combobox de arriba y pulsa <b>Añadir</b>.',
   'items.fixed':'fijo',
   'items.viaVpn':'por VPN',
@@ -1280,8 +1376,33 @@ const I18N = {
   'out.empty':'ningún servicio añadido',
   'btn.copy':'Copiar',
   'btn.copied':'Copiado ✓',
+  'btn.copyFail':'no se pudo copiar',
   'btn.zip':'Descargar .zip',
   'btn.zipHint':'Descomprímelo y levanta la stack con "docker compose up -d". Sin Docker: curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh — en macOS/Windows, instala Docker Desktop.',
+  'btn.up':'Levantar',
+  'btn.upHint':'Escribe los archivos en la carpeta de la stack y ejecuta docker compose up -d',
+  'btn.down':'Derribar',
+  'btn.downHint':'Ejecuta un docker compose down en la carpeta de la stack',
+  'btn.close':'Cerrar',
+  'srv.on':'servidor',
+  'srv.at':d=>`Servidor conectado; los archivos van a ${d}`,
+  'srv.noDocker':'docker no respondió en este servidor',
+  'srv.pick':'Stack que se está editando',
+  'srv.newHint':'Crear otra stack',
+  'srv.delHint':'Eliminar esta stack del servidor',
+  'srv.newName':'Nombre de la nueva stack:',
+  'srv.delSure':n=>`¿Eliminar la stack "${n}" del servidor? Los archivos ya escritos se quedan donde están.`,
+  'srv.first':'Mi stack',
+  'log.up':'Levantando la stack',
+  'log.down':'Derribando la stack',
+  'log.running':'ejecutando…',
+  'log.done':'listo ✓',
+  'log.fail':'falló ✗',
+  'log.noServer':'el servidor no respondió',
+  'st.up':s=>`En marcha${s?' — '+s:''}`,
+  'st.down':s=>`Parado${s?' — '+s:''}`,
+  'st.unhealthy':s=>`En marcha, pero sin pasar el healthcheck${s?' — '+s:''}`,
+  'st.none':'Contenedor no creado — la stack todavía no se levantó',
   'btn.help':'¿Qué es esto?',
   'env.hIds':'Usuario y grupo del host que los contenedores asumen para escribir en los volúmenes. Salen en el <b>.env</b> como <b>PUID</b>/<b>PGID</b>; para tu usuario, mira <b>id -u</b> e <b>id -g</b>.',
   'env.hTz':'Zona horaria de los contenedores, como <b>TZ</b> — afecta a los horarios de log, la programación y el renombrado. La lista es la IANA entera; el valor inicial es el de esta máquina.',
@@ -1674,7 +1795,8 @@ let added = [];
 const isFixed = id => !!svc(id).fixed;
 function ensureFixed(){
   SERVICES.filter(s=>s.fixed).forEach(s=>{
-    if(!has(s.id)) added.unshift(defCfg(s.id));
+    // entra sozinho, então é aqui que ele ganha a linha dele no banco
+    if(!has(s.id)){ const a = defCfg(s.id); added.unshift(a); putInstance(a); }
   });
 }
 let picked = null;   // id selecionado no combobox
@@ -1824,11 +1946,44 @@ document.addEventListener('click', e=>{
 });
 
 /* ---------- lista de serviços ---------- */
+/* ---------- ponto de status ---------- */
+
+/* O que o servidor respondeu no último `pollStatus()`: `cname` → estado do
+   container. Sem servidor o mapa fica vazio e o CSS esconde os pontos, então a
+   lista é a de sempre para quem abriu a página do disco. */
+let STATUS = {};
+
+function dotOf(key){
+  const s = STATUS[key];
+  if(!s)                        return {st:'none',      tip:t('st.none')};
+  if(s.health === 'unhealthy')  return {st:'unhealthy', tip:t('st.unhealthy', s.status)};
+  if(s.state === 'running')     return {st:'running',   tip:t('st.up', s.status)};
+  return {st:'stopped', tip:t('st.down', s.status || s.state)};
+}
+
+const attr = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+  .replace(/</g,'&lt;');
+
+const dotHtml = key =>{
+  const d = dotOf(key);
+  return `<span class="stDot" data-st="${d.st}" data-dot="${attr(key)}" title="${attr(d.tip)}"></span>`;
+};
+
+/* Repinta sem remontar a lista: o `renderItems()` refaz o HTML inteiro, e a
+   cada 5 s isso apagaria foco e seleção de quem estivesse mexendo nela. */
+function paintStatus(){
+  document.querySelectorAll('.stDot').forEach(el=>{
+    const d = dotOf(el.dataset.dot);
+    el.dataset.st = d.st;
+    el.title = d.tip;
+  });
+}
+
 function renderItems(){
   const box = $('#items');
   // o reverse proxy é fixo: aparece sempre, sem editar nem excluir
   const fixed = `<div class="item">
-      ${icoHtml(NGINX)}
+      ${dotHtml(NGINX.id)}${icoHtml(NGINX)}
       <div class="meta">
         <div class="nm">${NGINX.name}
           <span class="tag">${t('items.nginxPorts', DEFAULTS.http, DEFAULTS.https)}</span>
@@ -1842,7 +1997,7 @@ function renderItems(){
   box.innerHTML = fixed + (added.length ? added.map(a=>{
     const s = svc(a.id);
     return `<div class="item" data-key="${cname(a)}">
-      ${icoHtml(s)}
+      ${dotHtml(cname(a))}${icoHtml(s)}
       <div class="meta">
         <div class="nm">${a.title || s.name}
           ${a.vpn?`<span class="tag">${t('items.viaVpn')}</span>`:''}
@@ -1853,8 +2008,9 @@ function renderItems(){
         <div class="ds">${cname(a)}${(a.title && a.title!==s.name)?' ('+s.name+')':''}${s.noVol?' · '+sdesc(s.id):' · '+cfgReal(a)}${s.media&&!s.noVol?' · '+dataReal(a):''}</div>
       </div>
       <div class="acts">
-        ${(s.internal || s.noLink) ? '' : `<button class="sm" data-act="link"
-          title="${t('btn.linkTitle', url(a))}">${t('btn.link')}</button>`}
+        ${(s.internal || s.noLink) ? '' : `<a class="btn" href="${attr(url(a))}"
+          target="_blank" rel="noopener noreferrer"
+          title="${attr(t('btn.linkTitle', url(a)))}">${t('btn.link')}</a>`}
         <button class="sm" data-act="edit">${t('btn.edit')}</button>
         ${s.fixed ? `<span class="hint">${t('items.fixed')}</span>`
                   : `<button class="sm danger" data-act="del">${t('btn.del')}</button>`}
@@ -1870,16 +2026,11 @@ $('#items').onclick = e=>{
   const btn = e.target.closest('button[data-act]'); if(!btn) return;
   if(btn.dataset.act==='ngx') return openNgx();
   const key = btn.closest('.item').dataset.key;
-  if(btn.dataset.act==='link'){
-    const a = byKey(key); if(!a) return;
-    const label = btn.textContent;
-    navigator.clipboard.writeText(url(a)).then(()=>{
-      btn.textContent = t('btn.linkOk');
-      setTimeout(()=>{ btn.textContent = label; }, 1200);
-    }).catch(()=>{});
-  } else if(btn.dataset.act==='del'){
+  // o "Link" é uma âncora: quem navega é o navegador, não este handler
+  if(btn.dataset.act==='del'){
     added = added.filter(a=>cname(a)!==key);
     renderItems(); renderCombo(); render();
+    delInstance(key);
   } else {
     const a = byKey(key);
     if(a) openModal(a.id, key);
@@ -2085,13 +2236,17 @@ $('#mSave').onclick = ()=>{
     ovpnUser:$('#gOvpnUser').value.trim(), ovpnPass:$('#gOvpnPass').value.trim(),
     countries:$('#gCountries').value.trim()});
 
+  const was = editing;                  // a chave de antes, se o título mudou
   if(editing) added = added.map(a=>cname(a)===editing?cfg:a);
   else { added.push(cfg); picked=null; }
   // rotear pela VPN exige o gluetun na stack: entra sozinho, na frente de todos
-  if(cfg.vpn && !has('gluetun')) added.unshift(defCfg('gluetun'));
+  const tag = [];
+  if(cfg.vpn && !has('gluetun')){ const g = defCfg('gluetun'); added.unshift(g); tag.push(g); }
   // o resolvedor é opcional: entra na stack junto com quem pediu por ele
-  if(cfg.solver && !has('flaresolverr')) added.push(defCfg('flaresolverr'));
+  if(cfg.solver && !has('flaresolverr')){ const f = defCfg('flaresolverr'); added.push(f); tag.push(f); }
   closeModal(); renderItems(); renderCombo(); render();
+  // uma linha por instância mexida — a editada e as que ela arrastou junto
+  putInstance(cfg, was); tag.forEach(a=>putInstance(a));
 };
 
 /* ---------- nginx: portas publicadas no host ---------- */
@@ -3067,6 +3222,7 @@ function render(){
     : `<span class="ok">${t('items.routes', routes)}</span>`;
   $('#stat').textContent = t('out.containers', list.length + 1);   // +1: nginx fixo
   $('#summary').textContent = list.map(a=>a.title||svc(a.id).name).join(' · ') || t('out.empty');
+  saveSettings();  // com servidor atrás, a stack sobrevive ao reload; sem ele, não faz nada
 }
 
 let tab = 'yml';
@@ -3089,9 +3245,38 @@ function download(name, text, type){
   a.download=name; a.click(); URL.revokeObjectURL(a.href);
 }
 
+/* Copiar para a área de transferência, com e sem contexto seguro.
+
+   A `navigator.clipboard` só existe em https ou em localhost. Servida por http
+   num endereço de rede — que é como o servidor opcional costuma ser aberto —
+   ela vem `undefined`, e a chamada estoura antes de qualquer `.catch()`. Por
+   isso o caminho antigo continua aqui atrás: um textarea fora da tela e o
+   `execCommand('copy')`, que não exige contexto seguro. */
+async function copyText(txt){
+  try{
+    if(navigator.clipboard && window.isSecureContext){
+      await navigator.clipboard.writeText(txt);
+      return true;
+    }
+  }catch(e){ /* negado ou indisponível: cai no jeito antigo */ }
+
+  const ta = document.createElement('textarea');
+  ta.value = txt;
+  ta.setAttribute('readonly', '');
+  ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0';
+  document.body.appendChild(ta);
+  ta.select();
+  ta.setSelectionRange(0, txt.length);
+  let ok = false;
+  try{ ok = document.execCommand('copy'); }catch(e){}
+  ta.remove();
+  return ok;
+}
+
 $('#copy').onclick = async e=>{
-  await navigator.clipboard.writeText($(PANES[tab]).textContent);
-  e.target.textContent=t('btn.copied'); setTimeout(()=>e.target.textContent=t('btn.copy'),1500);
+  const ok = await copyText($(PANES[tab]).textContent);
+  e.target.textContent = t(ok ? 'btn.copied' : 'btn.copyFail');
+  setTimeout(()=>e.target.textContent=t('btn.copy'), 1500);
 };
 /* ZIP mínimo (método "store", sem compressão) — evita dependências externas */
 const CRC_TABLE = (()=>{
@@ -3152,17 +3337,23 @@ function makeZip(files){                       // files: [{name, text}]
                   {type:'application/zip'});
 }
 
-/* Os arquivos da stack, na forma em que o .zip os empacota. */
+/* Os arquivos da stack, na forma em que saem daqui: o .zip empacota, o
+   servidor grava. Um lugar só, para os dois nunca discordarem. */
+/* O `base` diz de qual raiz o caminho pende, e é o que o servidor obedece ao
+   gravar: `stack` é a pasta de onde o compose é rodado, `config` é o
+   `BASE_CONFIG` do Ambiente — de onde o próprio compose monta as configurações
+   nos containers. O .zip ignora o campo e empacota a árvore inteira, que é como
+   ela sempre saiu daqui. */
 function outFiles(){
   const files = [
-    {name:'docker-compose.yml', text:plain()+'\n'},
-    {name:'.env',               text:plainEnv()+'\n'},
-    {name:`nginx/conf.d/${STACK}.conf`, text:plainNginx()+'\n'},
+    {name:'docker-compose.yml', text:plain()+'\n',     base:'stack'},
+    {name:'.env',               text:plainEnv()+'\n',  base:'stack'},
+    {name:`nginx/conf.d/${STACK}.conf`, text:plainNginx()+'\n', base:'config'},
   ];
   // as configs próprias entram na pasta de cada serviço, como o compose monta
   effective().filter(x=>svc(x.id).conf).forEach(x=>{
     const cf = svc(x.id).conf, txt = $(cf.pane).textContent;
-    if(txt) files.push({name:`${cname(x)}/${cf.host}`, text:txt+'\n'});
+    if(txt) files.push({name:`${cname(x)}/${cf.host}`, text:txt+'\n', base:'config'});
   });
   return files;
 }
@@ -3183,11 +3374,219 @@ $('#langSel').innerHTML = Object.entries(LANGS)
 $('#langSel').value = LANG;
 $('#langSel').onchange = e => setLang(e.target.value);
 
+/* ---------- servidor (opcional) ---------- */
+
+/* A página é a mesma com ou sem servidor: aberta do disco ela continua sendo o
+   protótipo de sempre, com o .zip e mais nada. `SERVER` só fica preenchido
+   quando alguém responde em `api/health`, e cada caminho novo tem o antigo
+   atrás dele. O servidor não gera nada — recebe pronto o que os geradores
+   daqui montaram.
+
+   Com servidor, a página edita uma stack por vez, escolhida no cabeçalho:
+   `CUR` é o id dela, e é ele que entra em todo caminho da API. */
+let SERVER = null;
+let CUR = null;
+let loading = false;   // aplicando estado vindo do banco: não gravar de volta
+
+const api = (path, opts) => fetch('api/' + path, Object.assign(
+  {headers:{'Content-Type':'application/json'}, cache:'no-store'}, opts || {}));
+const stackApi = (path, opts) => api('stacks/' + CUR + '/' + path, opts);
+
+/* O banco do servidor tem uma linha por instância, então adicionar, editar e
+   excluir mexem numa linha só — é o `#mSave` e o "Excluir" que chamam. O que
+   vale para a stack inteira (Ambiente, Configuração e a ordem da lista) vai
+   junto no `saveSettings()`, que roda no fim de cada `render()`. */
+function putInstance(a, old){
+  if(!SERVER || !CUR || loading) return;
+  stackApi('instance', {method:'PUT', body:JSON.stringify(
+    {key:cname(a), old:old || null, ord:added.findIndex(x=>x===a), data:a})}).catch(()=>{});
+}
+
+function delInstance(key){
+  if(!SERVER || !CUR || loading) return;
+  stackApi('instance/' + encodeURIComponent(key), {method:'DELETE'}).catch(()=>{});
+}
+
+/* Guarda no servidor sem atrapalhar a digitação: um PUT depois que ela para.
+   A lista de chaves vai junto porque nem toda mudança no `added` passa pelo
+   modal — o gluetun entra sozinho, o Heimdall é reposto, o "Limpar" esvazia
+   tudo —, e é ela que acerta a ordem e apaga do banco o que saiu. */
+let saveT = 0;
+function saveSettings(){
+  if(!SERVER || !CUR || loading) return;
+  clearTimeout(saveT);
+  saveT = setTimeout(()=>{
+    stackApi('settings', {method:'PUT', body:JSON.stringify(
+      {defaults:DEFAULTS, config:CONFIG, keys:added.map(cname)})}).catch(()=>{});
+  }, 500);
+}
+
+function applyState(s){
+  if(!s || !Array.isArray(s.added)) return false;
+  added = s.added;
+  if(s.defaults) Object.assign(DEFAULTS, s.defaults);
+  if(s.config)   Object.assign(CONFIG, s.config);
+  ensureFixed();
+  return true;
+}
+
+/* ---------- as stacks guardadas ---------- */
+
+function renderStacks(list){
+  $('#stackSel').innerHTML = list
+    .map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  $('#stackSel').value = CUR;
+}
+
+/* Troca a stack em edição: o que vier do banco entra inteiro, e o que não
+   estiver guardado começa vazio — só com o serviço fixo, como uma página nova. */
+async function openStack(id){
+  CUR = id;
+  loading = true;
+  added = [];
+  try{
+    const r = await stackApi('state');
+    if(r.status === 200) applyState(await r.json());
+  }catch(e){}
+  // o `ensureFixed()` só depois de sair do carregamento: numa stack que ainda
+  // não existe no banco, é ele que grava a linha do serviço fixo
+  loading = false;
+  ensureFixed();
+  closeEnv(); applyI18n(); renderCombo(); renderItems(); render();
+  STATUS = {};        // o status é da stack anterior; some até o próximo poll
+  paintStatus(); pollStatus();
+}
+
+async function listStacks(){
+  const list = await (await api('stacks')).json();
+  if(!list.length){
+    const s = await (await api('stacks', {method:'POST',
+      body:JSON.stringify({name:t('srv.first')})})).json();
+    return [s];
+  }
+  return list;
+}
+
+async function detectServer(){
+  if(!/^https?:$/.test(location.protocol)) return;   // file:// não tem servidor
+  try{
+    const r = await api('health');
+    if(!r.ok) return;
+    SERVER = await r.json();
+  }catch(e){ return; }
+  document.body.classList.add('srvOn');   // é o que revela os pontos de status
+  $('#srv').hidden = false;
+  $('#srv').title  = t('srv.at', SERVER.dir);
+  $('#stackBox').hidden = false;
+  $('#up').hidden = $('#down').hidden = false;
+  if(!SERVER.docker) $('#srv').title += ' — ' + t('srv.noDocker');
+  try{
+    const list = await listStacks();
+    CUR = list[0].id;
+    renderStacks(list);
+    await openStack(CUR);
+  }catch(e){}
+  pollStatus();
+  setInterval(pollStatus, 5000);
+}
+
+$('#stackSel').onchange = e => openStack(Number(e.target.value));
+
+$('#stackNew').onclick = async ()=>{
+  const name = prompt(t('srv.newName'), t('srv.first'));
+  if(!name) return;
+  const s = await (await api('stacks', {method:'POST',
+    body:JSON.stringify({name})})).json();
+  if(!s || !s.id) return;
+  CUR = s.id;
+  renderStacks(await listStacks());
+  await openStack(s.id);
+};
+
+$('#stackDel').onclick = async ()=>{
+  const sel = $('#stackSel');
+  if(!CUR || !confirm(t('srv.delSure', sel.options[sel.selectedIndex].textContent))) return;
+  await api('stacks/' + CUR, {method:'DELETE'});
+  const list = await listStacks();
+  CUR = list[0].id;
+  renderStacks(list);
+  await openStack(CUR);
+};
+
+/* ---------- log dos trabalhos ---------- */
+
+const logLine = s =>{
+  const o = $('#logOut');
+  o.textContent += s + '\n';
+  o.scrollTop = o.scrollHeight;
+};
+function openLog(title){
+  $('#logTitle').textContent = title;
+  $('#logOut').textContent = '';
+  $('#logState').textContent = t('log.running');
+  $('#logBack').classList.add('open');
+}
+$('#logClose').onclick = ()=> $('#logBack').classList.remove('open');
+
+/* Subir a stack baixa imagem: o servidor devolve o número do trabalho e a
+   página vai buscando o que ele já escreveu. */
+async function runJob(start, title){
+  openLog(title);
+  let head;
+  try{ head = await (await start()).json(); }
+  catch(e){ logLine(String(e)); }
+  if(!head || !head.ok){
+    logLine((head && head.error) || t('log.noServer'));
+    $('#logState').textContent = t('log.fail');
+    return false;
+  }
+  let seen = 0;
+  for(;;){
+    await new Promise(r=>setTimeout(r, 700));
+    let j;
+    try{ j = await (await api('job/' + head.job)).json(); }catch(e){ continue; }
+    j.log.slice(seen).forEach(logLine); seen = j.log.length;
+    if(j.done){
+      $('#logState').textContent = t(j.ok ? 'log.done' : 'log.fail');
+      return j.ok;
+    }
+  }
+}
+
+$('#up').onclick = async ()=>{
+  await runJob(()=> stackApi('deploy',
+    {method:'POST', body:JSON.stringify({files:outFiles()})}), t('log.up'));
+  pollStatus();
+};
+
+$('#down').onclick = async ()=>{
+  await runJob(()=> stackApi('down', {method:'POST'}), t('log.down'));
+  pollStatus();
+};
+
+/* ---------- status dos containers ---------- */
+
+/* Quem está no ar é coisa do docker, não da página: o servidor roda um
+   `compose ps` na pasta da stack e devolve o estado de cada container. A cada
+   5 s, para acompanhar o que muda por fora — um container que morre, um
+   `docker stop` no terminal. */
+async function pollStatus(){
+  if(!SERVER || !CUR) return;
+  try{
+    const r = await stackApi('status');
+    if(!r.ok) return;
+    const j = await r.json();
+    STATUS = j.services || {};
+    paintStatus();
+  }catch(e){ /* servidor caiu: os pontos ficam como estavam */ }
+}
+
 ensureFixed();
 applyI18n(); renderCombo(); renderItems(); render();
 // a stack inteira depende das bases de caminho: o Ambiente abre junto com a página
 openEnv();
 refreshQbitHash();
+detectServer();
 </script>
 </body>
 </html>
