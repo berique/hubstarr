@@ -6,7 +6,9 @@
 
 Single-page prototype that builds the `docker-compose.yml`, the `.env` and the
 `nginx.conf` for a media stack (*arr apps + download clients + media server),
-with no backend and no external dependencies.
+with no external dependencies. The page works on its own, opened from disk; an
+[optional server](#optional-server) keeps the stacks in SQLite and brings the
+stack up in Docker without going through the `.zip`.
 
 > [!WARNING]
 > **Prototype.** Hubstarr was not designed for production use: the files it
@@ -152,6 +154,43 @@ holding the files:
 docker compose up -d
 ```
 
+## Optional server
+
+The page is still the product: it is the one generating the files, and opened
+from disk it works in full, with the `.zip` and nothing else. The server in
+`backend/` adds what the browser cannot reach on its own — **keeping the stacks
+between sessions**, writing the files to disk and bringing the stack up in
+Docker. It never generates content: it receives ready-made whatever the page's
+generators built.
+
+Building and running it needs [Rust](https://rustup.rs):
+
+```sh
+cd backend
+cargo run --release
+```
+
+Open `http://127.0.0.1:7878`. The page is the same one — served by the binary,
+which carries it embedded — with three extras at the top: the **server** badge,
+the stack picker and, in the generated files, the **Bring up** and **Tear down**
+buttons.
+
+| Option     | Default                   | What it is                                   |
+| ---------- | ------------------------- | -------------------------------------------- |
+| `--addr`   | `127.0.0.1:7878`          | address the server listens on                 |
+| `--dir`    | `./stacks`                | where each stack gets its folder              |
+| `--db`     | `~/.hubstarr/hubstarr.db` | database the stacks are kept in               |
+| `--docker` | `docker`                  | the docker command, for podman users          |
+
+Each stack is a row in the database, with its instances, Environment and
+Configuration in tables of their own — the page state, normalized, not a JSON
+blob. The header picker switches the stack being edited; `+` creates another and
+`🗑` deletes it from the database, leaving on disk the files already written.
+
+> [!WARNING]
+> The server runs `docker compose` and writes to disk: do not expose it to a
+> network you do not trust. It listens on `127.0.0.1` only by default.
+
 ## Generated conventions
 
 The stack and network names are fixed: `starrnet`. Each instance title becomes
@@ -271,12 +310,12 @@ copying one of the blocks and translating the values.
 
 What is not there yet, in the order it would make sense to happen. The
 milestones are versions, not dates: each one only starts after the previous, because
-it depends on it. The repository is at **v0.1** today — the page alone, generating
-the files.
+it depends on it. The repository is at **v0.2** today — the page, plus the
+optional server that keeps the stacks and brings them up in Docker.
 
 | Milestone | Delivers                                          | Done when                                                                          |
 | --------- | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| **v0.2**  | A backend wiring `hubstarr.html` to Docker        | the page writes the files and brings the stack up without going through the `.zip`  |
+| ~~**v0.2**~~ | ~~A backend wiring `hubstarr.html` to Docker~~ | ✅ the page writes the files and brings the stack up without going through the `.zip` |
 | **v0.3**  | Automatic stack configuration from the backend    | Prowlarr, download clients and Media Management leave the interface and become API calls |
 | **v0.4**  | Custom formats and profiles per stack             | the 4K instance, the anime one and the rest are born with their own quality profile |
 | **v0.5**  | Compatibility with the TRaSH Guides               | quality definitions, custom format scores and the rest of the guide's recommendations come ready |
@@ -284,10 +323,11 @@ the files.
 
 ## Status
 
-The page is an interface prototype: the **Configuration** choices are kept in
-it and turn into no API call. The generated files were always the real thing —
-download the `.zip` and run `docker compose up -d` in the folder you unpacked
-it into.
+The page is an interface prototype: the **Configuration** choices are kept — in
+the page, and in the database when a server is there — but still turn into no
+API call; that is v0.3. The generated files were always the real thing —
+download the `.zip` and run `docker compose up -d` in the folder you unpacked it
+into, or let the server do both.
 
 ## License
 

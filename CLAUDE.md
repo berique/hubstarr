@@ -6,11 +6,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Hubstarr é um protótipo de página única que gera `docker-compose.yml`, `.env` e
 `nginx.conf` de uma stack de mídia (*arr + clientes de download + servidor de
-mídia). **A página é um único arquivo**: `hubstarr.html` (~3030 linhas: CSS,
+mídia). **A página é um único arquivo**: `hubstarr.html` (~3200 linhas: CSS,
 HTML e um `<script>` inline), e é ela que é o produto.
 
 A página não tem build, teste, lint nem package manager: para rodar, abra o
 arquivo no navegador. O `.mvn/` é resto de outro projeto e está no `.gitignore`.
+
+Em `backend/` há um **servidor opcional** em Rust (v0.2): guarda as stacks em
+SQLite, grava os arquivos e sobe a stack no Docker. Ele tem build e testes
+(`cd backend && cargo test`), mas a página continua funcionando inteira sem
+ele — ver "Servidor" mais abaixo.
 
 Licença GPL-3.0 (`LICENSE`, texto oficial da FSF). O aviso de copyright fica no
 comentário logo depois do `<!DOCTYPE html>` — não o remova ao mexer no arquivo,
@@ -178,6 +183,49 @@ handler de `#mSave`.
   mude os três — o `.ico` sai do SVG, rasterizado em 16…256. O `<link>` do
   `.ico` vem antes do SVG de propósito: o SVG tem precedência.
 
+## Servidor (`backend/`)
+
+Crate em Rust (axum + rusqlite `bundled`), com a página embutida por
+`include_str!`. `cargo test` roda os testes do modelo e da gravação de arquivos;
+`cargo run` serve tudo em `127.0.0.1:7878`. Opções: `--addr`, `--dir` (onde cada
+stack ganha a pasta dela), `--db` (padrão `~/.hubstarr/hubstarr.db`), `--docker`.
+
+**O contrato, que é o que não pode mudar: o servidor nunca gera conteúdo.** Ele
+recebe pronto o que os geradores do `<script>` montaram (`outFiles()`), grava e
+roda o `docker compose`. Os geradores existem num lugar só — se você for tentado
+a montar YAML no Rust, é sinal de que a mudança pertence à página.
+
+Módulos: `store/` (o modelo), `files.rs` (grava o que veio, com `safe_join()`
+recusando o que escapa da pasta), `deploy.rs` (`docker compose up -d`/`down` na
+pasta da stack), `jobs.rs` (trabalhos numerados com log incremental, em memória
+— subir a stack baixa imagem e não cabe numa resposta HTTP).
+
+O modelo é **normalizado**, uma tabela por conceito do estado da página:
+`stack` na raiz, `stack_env` (o `DEFAULTS`, uma coluna por chave, mapeadas em
+`ENV_COLS`), `instance` + `instance_lib` (o `added`), e `cfg_app`,
+`cfg_client`, `cfg_client_arr`, `cfg_mm`, `cfg_naming` (o `CONFIG`). Tudo com
+`ON DELETE CASCADE`. Três coisas a respeitar:
+
+- **A chave da instância é o `cname()`** — o `container_name`. Editar o título
+  muda a chave, então o `PUT` carrega o `old` e o editar vira um renomear.
+- **`cfg_mm` é por `service_id`**, não por instância: Media Management é por
+  família, como na página.
+- **`instance.extra`** guarda o que não virou coluna e volta espalhado no
+  objeto. Uma flag nova no `SERVICES` não exige migração — só acrescente à
+  `COLUMNS` o que precisar de coluna de verdade.
+
+`load()` remonta `{added, defaults, config}` na forma exata que a página espera,
+e devolve `None` quando a stack ainda não tem nada guardado — assim a página
+fica com os próprios padrões em vez de recebê-los em branco de volta. Esse ida e
+volta sem perda é o critério do modelo; ao mexer nele, é o que os testes cobrem.
+
+Do lado da página, a seção `/* ---------- servidor (opcional) ---------- */`:
+`detectServer()` só faz algo em `http(s)://`, `putInstance`/`delInstance` mexem
+numa linha por vez, e `saveSettings()` (debounce no fim do `render()`) manda
+Ambiente, Configuração e a lista de chaves — é ela que acerta a ordem e apaga o
+que saiu sem passar pelo modal. A flag `loading` existe para o estado que vem do
+banco não ser gravado de volta enquanto está sendo aplicado.
+
 ## READMEs
 
 `README.md` (pt-BR) é a fonte; `README.en.md` e `README.es.md` são traduções.
@@ -221,13 +269,11 @@ infinita. A página abre com o modal do Ambiente; numa captura da tela, chame
 
 O roadmap fica nos três READMEs, numa tabela por marco de versão; o texto
 autoritativo é o do `README.md`, e mexer nele é mexer nos três. Hoje o
-repositório é o **v0.1** — a página sozinha.
+repositório é o **v0.2** — a página, mais o servidor de `backend/`.
 
-- **v0.2** — um backend ligando o `hubstarr.html` ao Docker: gravar os arquivos
-  e subir a stack sem passar pelo `.zip`. Já existiu um, em Rust, removido no
-  `ba54e1a`; o histórico até ali serve de ponto de partida, incluindo o
-  contrato que vale de novo se ele voltar — **o servidor nunca gera conteúdo**,
-  recebe pronto o que os geradores do `<script>` montaram.
+- ~~**v0.2**~~ — feito: o backend liga o `hubstarr.html` ao Docker e guarda as
+  stacks. Uma primeira versão dele existiu e foi removida no `ba54e1a`; a de
+  agora é normalizada e guarda várias stacks.
 - **v0.3** — aplicar a **Configuração** pela API de cada app. Hoje o `CONFIG` é
   protótipo de interface e não chega a arquivo nenhum; é ele que vira chamada.
 - **v0.4** — custom formats e profiles por instância (4K, anime, …), ao lado do

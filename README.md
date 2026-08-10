@@ -6,7 +6,9 @@
 
 Protótipo de página única que monta o `docker-compose.yml`, o `.env` e o
 `nginx.conf` de uma stack de mídia (*arr + clientes de download + servidor de
-mídia), sem backend e sem dependências externas.
+mídia), sem dependências externas. A página funciona sozinha, aberta do disco;
+um [servidor opcional](#servidor-opcional) guarda as stacks em SQLite e sobe a
+stack no Docker sem passar pelo `.zip`.
 
 > [!WARNING]
 > **Protótipo.** O Hubstarr não foi projetado para uso em produção: os arquivos
@@ -151,6 +153,41 @@ dos arquivos:
 docker compose up -d
 ```
 
+## Servidor (opcional)
+
+A página continua sendo o produto: é ela que gera os arquivos, e aberta do
+disco funciona inteira, com o `.zip` e mais nada. O servidor em `backend/`
+acrescenta o que o navegador não alcança sozinho — **guardar as stacks entre
+sessões**, gravar os arquivos em disco e subir a stack no Docker. Ele nunca
+gera conteúdo: recebe pronto o que os geradores da página montaram.
+
+Compilar e rodar precisa do [Rust](https://rustup.rs):
+
+```sh
+cd backend
+cargo run --release
+```
+
+Abra `http://127.0.0.1:7878`. A página é a mesma — servida pelo binário, que a
+traz embutida —, com três coisas a mais no topo: o selo **servidor**, o seletor
+de stack e, nos arquivos gerados, os botões **Subir** e **Derrubar**.
+
+| Opção      | Padrão                   | O que é                                        |
+| ---------- | ------------------------ | ---------------------------------------------- |
+| `--addr`   | `127.0.0.1:7878`         | endereço em que o servidor atende               |
+| `--dir`    | `./stacks`               | onde cada stack ganha a pasta dela              |
+| `--db`     | `~/.hubstarr/hubstarr.db`| banco em que as stacks são guardadas            |
+| `--docker` | `docker`                 | comando do docker, para quem usa podman         |
+
+Cada stack vira uma linha no banco, com as instâncias, o Ambiente e a
+Configuração em tabelas próprias — o estado da página, normalizado, e não um
+blob de JSON. O seletor do cabeçalho troca a stack em edição; o `+` cria outra
+e o `🗑` apaga a do banco, deixando no disco os arquivos já gravados.
+
+> [!WARNING]
+> O servidor roda `docker compose` e escreve em disco: não o exponha a uma
+> rede em que você não confie. O padrão é atender só em `127.0.0.1`.
+
 ## Convenções geradas
 
 O nome da stack e o da rede são fixos: `starrnet`. O título de cada instância
@@ -269,11 +306,12 @@ e traduzir os valores.
 
 O que ainda não existe, na ordem em que faria sentido acontecer. Os marcos são
 versões, não datas: cada um só começa depois do anterior, porque depende dele.
-Hoje o repositório está no **v0.1** — a página sozinha, gerando os arquivos.
+Hoje o repositório está no **v0.2** — a página, mais o servidor opcional que
+guarda as stacks e as sobe no Docker.
 
 | Marco    | Entrega                                              | Fecha quando                                                                            |
 | -------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| **v0.2** | Backend ligando o `hubstarr.html` ao Docker           | a página grava os arquivos e sobe a stack sem passar pelo `.zip`                          |
+| ~~**v0.2**~~ | ~~Backend ligando o `hubstarr.html` ao Docker~~   | ✅ a página grava os arquivos e sobe a stack sem passar pelo `.zip`                       |
 | **v0.3** | Configuração automática das stacks pelo backend       | Prowlarr, clientes de download e Media Management saem da interface e viram chamada de API |
 | **v0.4** | Custom formats e profiles próprios de cada stack      | a instância de 4K, a de anime e as demais nascem com o perfil de qualidade delas           |
 | **v0.5** | Compatibilidade com o TRaSH Guides                    | quality definitions, scores de custom format e as demais recomendações do guia saem prontas |
@@ -282,9 +320,10 @@ Hoje o repositório está no **v0.1** — a página sozinha, gerando os arquivos
 ## Status
 
 A página é um protótipo de interface: as escolhas da **Configuração** ficam
-guardadas nela e não viram chamada de API nenhuma. Os arquivos gerados, esses
-sempre foram de verdade — é baixar o `.zip` e rodar o `docker compose up -d` na
-pasta onde ele foi aberto.
+guardadas — na página, e no banco quando há servidor — mas ainda não viram
+chamada de API nenhuma; isso é o v0.3. Os arquivos gerados, esses sempre foram
+de verdade — é baixar o `.zip` e rodar o `docker compose up -d` na pasta onde
+ele foi aberto, ou deixar o servidor fazer os dois.
 
 ## Licença
 
