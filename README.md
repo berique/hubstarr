@@ -235,6 +235,11 @@ família, tudo pela API deles, mostrando o que passou. O botão **Aplicar na
 stack**, no modal da Configuração, faz o mesmo sem subir nada — é o caminho
 para reaplicar depois de mexer nas escolhas.
 
+Com o **FlareSolverr** na stack, o Prowlarr também recebe o proxy dele em
+*Settings → Indexers → Indexer Proxies*, com a etiqueta **flaresolverr**. Falta
+só marcar essa etiqueta nos indexadores que precisam dele — é assim que o
+Prowlarr decide quando usar o resolvedor.
+
 No Prowlarr, o Settings → Download Clients ganha **um registro por cliente**,
 todos na categoria `prowlarr`: o que ele pega é avulso, não veio de um *arr,
 então fica junto e separado do que cada instância baixa. E as categorias passam

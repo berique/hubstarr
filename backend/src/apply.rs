@@ -37,10 +37,22 @@ pub struct Req {
     /// o Prowlarr da stack, quando ele está nela
     #[serde(default)]
     prowlarr: Option<Prowlarr>,
+    /// o resolvedor de desafios da Cloudflare, quando ele está na stack
+    #[serde(default)]
+    solver: Option<Solver>,
     /// Media Management e nomenclatura, por família — como na página, é por
     /// app e não por instância
     #[serde(default)]
     mm: Map<String, Value>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Solver {
+    /// o título da instância, que é o nome do registro no Prowlarr
+    name: String,
+    /// como o Prowlarr o alcança na rede da stack: `http://flaresolverr:8191`
+    url: String,
 }
 
 #[derive(Deserialize)]
@@ -310,6 +322,9 @@ pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
     if let Some(p) = &req.prowlarr {
         falhas += clientes_do_prowlarr(&http, &base, &req, p, &log).await;
         falhas += applications(&http, &base, &req, p, &log).await;
+        if let Some(sv) = &req.solver {
+            falhas += indexer_proxy(&http, &base, &req, p, sv, &log).await;
+        }
     }
     // as categorias que os *arr e o Prowlarr vão pedir precisam existir dentro
     // do cliente
@@ -424,6 +439,114 @@ async fn clientes_do_prowlarr(
         }
     }
     falhas
+}
+
+/* O resolvedor de desafios no Prowlarr, em Settings → Indexers → Indexer
+   Proxies. Sem isso, indexador atrás do desafio anti-bot da Cloudflare volta
+   vazio ou com erro, e a página só sabia dizer como configurá-lo à mão.
+
+   O Prowlarr casa proxy com indexador **por etiqueta**: o proxy vale para os
+   indexadores que tiverem a etiqueta dele. Então aqui a etiqueta
+   `flaresolverr` é criada (ou reaproveitada) e o registro nasce com ela — o que
+   sobra para quem usa é marcar a etiqueta nos indexadores que precisam, que é
+   justamente a escolha que o Hubstarr não tem como fazer por ninguém. */
+const TAG_SOLVER: &str = "flaresolverr";
+
+async fn indexer_proxy(
+    http: &reqwest::Client,
+    base: &str,
+    req: &Req,
+    prowlarr: &Prowlarr,
+    solver: &Solver,
+    log: &Log,
+) -> usize {
+    let tag_url = format!("{base}{}/api/v1/tag", prowlarr.route);
+    let tag = match etiqueta(http, &tag_url, &req.api_key, TAG_SOLVER).await {
+        Ok(id) => id,
+        Err(e) => {
+            log.line(format!("Prowlarr → etiqueta {TAG_SOLVER}: {e}"));
+            return 1;
+        }
+    };
+
+    let url = format!("{base}{}/api/v1/indexerproxy", prowlarr.route);
+    let atuais = match list(http, &url, &req.api_key).await {
+        Ok(v) => v,
+        Err(e) => {
+            log.line(format!("Prowlarr → {}: {e}", solver.name));
+            return 1;
+        }
+    };
+    let body = json!({
+        "name": solver.name,
+        "implementation": "FlareSolverr",
+        "implementationName": "FlareSolverr",
+        "configContract": "FlareSolverrSettings",
+        "fields": [
+            field("host", json!(solver.url)),
+            // o desafio leva alguns segundos; o padrão do Prowlarr é 60
+            field("requestTimeout", json!(60)),
+        ],
+        "tags": [tag],
+    });
+    let existente = atuais
+        .iter()
+        .find(|c| c.get("name").and_then(|n| n.as_str()) == Some(solver.name.as_str()))
+        .and_then(|c| c.get("id").and_then(|i| i.as_i64()));
+    match send(http, &url, &req.api_key, existente, body).await {
+        Ok(()) => {
+            log.line(format!(
+                "Prowlarr → {} [{TAG_SOLVER}]: {}",
+                solver.name,
+                if existente.is_some() { "atualizado" } else { "registrado" }
+            ));
+            0
+        }
+        Err(e) => {
+            log.line(format!("Prowlarr → {}: {e}", solver.name));
+            1
+        }
+    }
+}
+
+/// O id da etiqueta com este rótulo, criando-a se ainda não existir. O Prowlarr
+/// guarda o rótulo em minúsculas, e é assim que ele é procurado.
+async fn etiqueta(
+    http: &reqwest::Client,
+    url: &str,
+    key: &str,
+    rotulo: &str,
+) -> Result<i64, String> {
+    let atuais = list(http, url, key).await?;
+    if let Some(id) = atuais
+        .iter()
+        .find(|t| {
+            t.get("label")
+                .and_then(|l| l.as_str())
+                .map(|l| l.eq_ignore_ascii_case(rotulo))
+                .unwrap_or(false)
+        })
+        .and_then(|t| t.get("id").and_then(|i| i.as_i64()))
+    {
+        return Ok(id);
+    }
+    let r = http
+        .post(url)
+        .header("X-Api-Key", key)
+        .header("Content-Type", "application/json")
+        .body(json!({"label": rotulo}).to_string())
+        .send()
+        .await
+        .map_err(|e| format!("não respondeu ({e})"))?;
+    let st = r.status();
+    let txt = r.text().await.unwrap_or_default();
+    if !st.is_success() {
+        return Err(erro(st, &txt));
+    }
+    serde_json::from_str::<Value>(&txt)
+        .ok()
+        .and_then(|v| v.get("id").and_then(|i| i.as_i64()))
+        .ok_or_else(|| "o Prowlarr não devolveu o id da etiqueta".to_string())
 }
 
 /* As categorias dentro do próprio cliente de download.
@@ -1102,6 +1225,7 @@ mod tests {
             arrs,
             clients,
             prowlarr: None,
+            solver: None,
             mm: Map::new(),
         };
         assert!(!req(vec![], vec![qbit()]).tem_o_que_fazer());

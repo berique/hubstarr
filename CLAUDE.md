@@ -290,6 +290,14 @@ o Docker?" e mostra o aviso `#noDocker`), `apply.rs` (v0.3: a Configuração int
 aplicada pela API — clientes de download em cada *arr **e no próprio Prowlarr**,
 cada *arr no Prowlarr, e o Media Management mais a nomenclatura de cada família.
 
+Com o FlareSolverr na stack, ele também entra no Prowlarr, em Settings →
+Indexers → Indexer Proxies, com a **etiqueta `flaresolverr`** — criada ali
+mesmo, se não existir. A etiqueta não é enfeite: o Prowlarr casa proxy com
+indexador por ela, e escolher quais indexadores precisam do resolvedor é a parte
+que fica com quem usa. O endereço é o interno (`http://<cname>:8191`), porque o
+serviço é `internal` e não tem rota no nginx; o nome do registro é o título da
+instância, então a stack que roda o Byparr com outro nome aparece com ele.
+
 No Prowlarr, o Settings → Download Clients recebe **um registro por cliente**,
 todos na categoria `CAT_PROWLARR` (`prowlarr`): o que ele pega é avulso, não veio
 de instância nenhuma, então fica junto e separado do que cada *arr baixa. O campo

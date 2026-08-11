@@ -236,6 +236,11 @@ naming, all through their APIs, reporting what went through as it goes. The
 without bringing anything up — it is the way to reapply after changing the
 choices.
 
+With **FlareSolverr** in the stack, Prowlarr also gets its proxy under
+*Settings → Indexers → Indexer Proxies*, tagged **flaresolverr**. All that is
+left is putting that tag on the indexers that need it — that is how Prowlarr
+decides when to use the solver.
+
 In Prowlarr, Settings → Download Clients gets **one entry per client**, all on
 the `prowlarr` category: what it grabs is loose — it did not come from an *arr —
 so it stays together, apart from what each instance downloads. And the

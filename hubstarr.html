@@ -873,7 +873,7 @@ const I18N = {
   'm.solver':'Incluir o FlareSolverr na stack',
   'm.dlKey':'API key',
   'm.dlKeyWhy':'A chave da API deste cliente, que os *arr usam para falar com ele. Diferente da senha da interface, ela é o próprio app que gera na primeira subida — copie de <i>Config → General</i> e cole aqui. Ela não vai para arquivo nenhum: serve só para o <b>Aplicar na stack</b> da Configuração registrar o cliente nos *arr.',
-  'm.solverWhy':'Vários indexadores ficam atrás do desafio anti-bot da Cloudflare, e o Prowlarr sozinho esbarra nele: a busca volta vazia ou com erro. O <b>FlareSolverr</b> resolve o desafio num navegador headless e devolve a página ao Prowlarr. Marcando aqui, ele entra na stack junto; depois é só apontar o Prowlarr para ele em <i>Settings → Indexers → FlareSolverr</i>, com a URL <b>http://flaresolverr:8191</b>. A imagem usada é a do <b>Byparr</b>, um substituto direto e mais atual, com a mesma API e a mesma porta. Sem indexador protegido pela Cloudflare, dá para deixar desmarcado.',
+  'm.solverWhy':'Vários indexadores ficam atrás do desafio anti-bot da Cloudflare, e o Prowlarr sozinho esbarra nele: a busca volta vazia ou com erro. O <b>FlareSolverr</b> resolve o desafio num navegador headless e devolve a página ao Prowlarr. Marcando aqui, ele entra na stack junto — e o <b>Subir</b> já o registra no Prowlarr, em <i>Settings → Indexers → Indexer Proxies</i>, com a etiqueta <b>flaresolverr</b>. O que sobra é marcar essa etiqueta nos indexadores que precisam dele: é o Prowlarr que casa proxy e indexador por etiqueta, e quais precisam só você sabe. A imagem usada é a do <b>Byparr</b>, um substituto direto e mais atual, com a mesma API e a mesma porta. Sem indexador protegido pela Cloudflare, dá para deixar desmarcado.',
   'm.libs':'Outras pastas',
   'm.libAdd':'+ pasta',
   'm.libRemove':'Remover',
@@ -1227,7 +1227,7 @@ const I18N = {
   'm.solver':'Add FlareSolverr to the stack',
   'm.dlKey':'API key',
   'm.dlKeyWhy':'This client\'s API key, the one the *arr apps use to talk to it. Unlike the web UI password, the app itself generates it on first boot — copy it from <i>Config → General</i> and paste it here. It goes into no file: it only serves the Configuration\'s <b>Apply to the stack</b>, which registers the client in every *arr.',
-  'm.solverWhy':'Plenty of indexers sit behind Cloudflare\'s anti-bot challenge, and Prowlarr alone runs straight into it: searches come back empty or failing. <b>FlareSolverr</b> solves the challenge in a headless browser and hands the page back to Prowlarr. Tick this and it joins the stack; then point Prowlarr at it under <i>Settings → Indexers → FlareSolverr</i>, with the URL <b>http://flaresolverr:8191</b>. The image behind it is <b>Byparr</b>, a drop-in, better-maintained replacement with the same API and the same port. With no Cloudflare-protected indexer, you can leave it off.',
+  'm.solverWhy':'Plenty of indexers sit behind Cloudflare\'s anti-bot challenge, and Prowlarr alone runs straight into it: searches come back empty or failing. <b>FlareSolverr</b> solves the challenge in a headless browser and hands the page back to Prowlarr. Tick this and it joins the stack — and <b>Bring up</b> already registers it in Prowlarr, under <i>Settings → Indexers → Indexer Proxies</i>, with the <b>flaresolverr</b> tag. What is left is putting that tag on the indexers that need it: Prowlarr matches proxy to indexer by tag, and which ones need it only you know. The image behind it is <b>Byparr</b>, a drop-in, better-maintained replacement with the same API and the same port. With no Cloudflare-protected indexer, you can leave it off.',
   'm.libs':'Other folders',
   'm.libAdd':'+ folder',
   'm.libRemove':'Remove',
@@ -1581,7 +1581,7 @@ const I18N = {
   'm.solver':'Incluir FlareSolverr en la stack',
   'm.dlKey':'API key',
   'm.dlKeyWhy':'La clave de API de este cliente, la que los *arr usan para hablar con él. A diferencia de la contraseña de la interfaz, la genera el propio app en el primer arranque — cópiala de <i>Config → General</i> y pégala aquí. No va a ningún archivo: sirve solo para el <b>Aplicar en la stack</b> de la Configuración, que registra el cliente en cada *arr.',
-  'm.solverWhy':'Varios indexadores están detrás del desafío anti-bot de Cloudflare, y Prowlarr solo choca con él: la búsqueda vuelve vacía o con error. <b>FlareSolverr</b> resuelve el desafío en un navegador headless y le devuelve la página a Prowlarr. Al marcarlo, entra en la stack junto; luego basta apuntar Prowlarr hacia él en <i>Settings → Indexers → FlareSolverr</i>, con la URL <b>http://flaresolverr:8191</b>. La imagen que usa es la de <b>Byparr</b>, un reemplazo directo y más actual, con la misma API y el mismo puerto. Sin ningún indexador protegido por Cloudflare, se puede dejar sin marcar.',
+  'm.solverWhy':'Varios indexadores están detrás del desafío anti-bot de Cloudflare, y Prowlarr solo choca con él: la búsqueda vuelve vacía o con error. <b>FlareSolverr</b> resuelve el desafío en un navegador headless y le devuelve la página a Prowlarr. Al marcarlo, entra en la stack junto — y el <b>Levantar</b> ya lo registra en Prowlarr, en <i>Settings → Indexers → Indexer Proxies</i>, con la etiqueta <b>flaresolverr</b>. Lo que queda es poner esa etiqueta en los indexadores que lo necesitan: Prowlarr casa proxy e indexador por etiqueta, y cuáles lo necesitan solo lo sabes tú. La imagen que usa es la de <b>Byparr</b>, un reemplazo directo y más actual, con la misma API y el mismo puerto. Sin ningún indexador protegido por Cloudflare, se puede dejar sin marcar.',
   'm.libs':'Otras carpetas',
   'm.libAdd':'+ carpeta',
   'm.libRemove':'Quitar',
@@ -3989,6 +3989,12 @@ function applyPayload(){
     // o Media Management vai como está: é por família, e quem traduz cada
     // opção para o nome que a API usa é o servidor
     mm: CONFIG.mm,
+    /* O resolvedor de desafios, quando ele está na stack: o Prowlarr fala com
+       ele por dentro da rede, sem passar pelo nginx — ele é `internal`. */
+    solver: (()=>{
+      const f = added.find(a=>a.id === 'flaresolverr');
+      return f ? {name: nameOf(f), url: `http://${cname(f)}:${inner(f.id)}`} : null;
+    })(),
     prowlarr: (()=>{
       const p = added.find(a=>a.id === 'prowlarr');
       return p ? {route:route(p), url:internalUrl(p)} : null;
