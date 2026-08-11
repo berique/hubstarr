@@ -734,7 +734,7 @@ const I18N = {
   'cfg.noProwlarr':'Sem Prowlarr na stack — adicione-o para escolher o que ele configura.',
   'cfg.noArr':'Sem Sonarr, Radarr ou Lidarr na stack.',
   'cfg.noClient':'Sem qBittorrent ou SABnzbd na stack.',
-  'cfg.hint':'Protótipo: as escolhas ficam guardadas aqui, mas ainda não são aplicadas nos apps.',
+  'cfg.hint':'As escolhas ficam guardadas aqui. Com servidor, o <b>Subir</b> as aplica nos apps assim que eles respondem, e o <b>Aplicar na stack</b> reaplica sem subir nada.',
 
   'services.h':'Serviços',
   'services.count':n=>`${n} adicionados`,
@@ -1060,7 +1060,7 @@ const I18N = {
   'cfg.noProwlarr':'No Prowlarr in the stack — add it to pick what it configures.',
   'cfg.noArr':'No Sonarr, Radarr or Lidarr in the stack.',
   'cfg.noClient':'No qBittorrent or SABnzbd in the stack.',
-  'cfg.hint':'Prototype: the choices are kept here, but not applied to the apps yet.',
+  'cfg.hint':'The choices are kept here. With a server, <b>Bring up</b> applies them to the apps as soon as they answer, and <b>Apply to the stack</b> reapplies them without bringing anything up.',
 
   'services.h':'Services',
   'services.count':n=>`${n} added`,
@@ -1386,7 +1386,7 @@ const I18N = {
   'cfg.noProwlarr':'Sin Prowlarr en la stack — añádelo para elegir lo que configura.',
   'cfg.noArr':'Sin Sonarr, Radarr o Lidarr en la stack.',
   'cfg.noClient':'Sin qBittorrent o SABnzbd en la stack.',
-  'cfg.hint':'Prototipo: las opciones se guardan aquí, pero todavía no se aplican en las apps.',
+  'cfg.hint':'Las opciones se guardan aquí. Con servidor, el <b>Levantar</b> las aplica en las apps en cuanto responden, y el <b>Aplicar en la stack</b> las vuelve a aplicar sin levantar nada.',
 
   'services.h':'Servicios',
   'services.count':n=>`${n} añadidos`,
@@ -2632,7 +2632,7 @@ function renderConfig(){
     });
   }
   H.push(`</div>`);
-  H.push(`<p class="hint">${t('cfg.hint')}</p>`);
+  H.push(`<p class="hint" data-i18n-html="cfg.hint">${t('cfg.hint')}</p>`);
   box.innerHTML = H.join('');
   buildHelp(box);
 }
