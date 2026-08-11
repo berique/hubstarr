@@ -3306,10 +3306,14 @@ function buildNginx(list){
   const name = DEFAULTS.domain || '_';
   N.push(``);
 
+  /* `default_server` porque a conf é montada como um arquivo dentro do
+     `conf.d`, ao lado do `default.conf` que vem na imagem: sem isso é o dele
+     que atende quem chega sem casar com o `server_name`, e a stack inteira
+     responde a página de boas-vindas do nginx. */
   if(DEFAULTS.tls){
     // porta 80 só existe para mandar todo mundo para o https
     N.push(`<span class="k">server</span> {`);
-    N.push(`  <span class="k">listen</span> <span class="v">80</span>;`);
+    N.push(`  <span class="k">listen</span> <span class="v">80 default_server</span>;`);
     N.push(`  <span class="k">server_name</span> <span class="v">${name}</span>;`);
     N.push(`  <span class="c"># ${t('ngx.redirect')}</span>`);
     // o destino leva a porta do host, não a de dentro do container
@@ -3321,10 +3325,10 @@ function buildNginx(list){
 
   N.push(`<span class="k">server</span> {`);
   if(DEFAULTS.tls){
-    N.push(`  <span class="k">listen</span> <span class="v">443 ssl</span>;`);
+    N.push(`  <span class="k">listen</span> <span class="v">443 ssl default_server</span>;`);
     N.push(`  <span class="k">http2</span> <span class="v">on</span>;`);
   } else {
-    N.push(`  <span class="k">listen</span> <span class="v">80</span>;`);
+    N.push(`  <span class="k">listen</span> <span class="v">80 default_server</span>;`);
   }
   N.push(`  <span class="k">server_name</span> <span class="v">${name}</span>;`);
   if(DEFAULTS.tls){
