@@ -121,7 +121,11 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   filme já vêm com os do [TRaSH Guides](https://trash-guides.info), na variante
   do Jellyfin com o id do TMDb. As permissões abrem os campos
   de `chmod` e `chown`, e no Lidarr a caixa de nome existente é quem traz os
-  formatos de faixa e a pasta do álbum. Com mais de um Sonarr na stack, cada
+  formatos de faixa e a pasta do álbum.
+
+  ![O modal da Configuração, na nomenclatura de episódio do Sonarr](docs/config.png)
+
+  Com mais de um Sonarr na stack, cada
   formato de episódio — **padrão**, **diário** e **anime** — traz a lista das
   instâncias que o recebem: dá para mandar o formato de anime só para o
   *Sonarr [Anime]*, por exemplo. Pelo menos uma instância é obrigatória, porque

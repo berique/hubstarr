@@ -346,8 +346,8 @@ banco não ser gravado de volta enquanto está sendo aplicado.
 
 `README.md` (pt-BR) é a fonte; `README.en.md` e `README.es.md` são traduções.
 Mudança de comportamento documentada precisa ir aos três. As capturas em
-`docs/` (`screenshot.png`, `services.png`, `theme.png`, `credits.png`)
-refletem a interface atual, e há uma seção **Docker** explicando como instalar
+`docs/` (`screenshot.png`, `services.png`, `theme.png`, `credits.png`,
+`config.png`) refletem a interface atual, e há uma seção **Docker** explicando como instalar
 o que roda os arquivos gerados. O badge da licença é um SVG local por README
 (`docs/badge-licen*.svg`, um por idioma, com o texto em `textLength` fixo) — nada de shields.io: o repositório
 não busca imagem de fora.
@@ -357,7 +357,9 @@ projeto (o chromium do snap não lê `/tmp` nem `/srv`), injete no fim do
 `<script>` o que a captura precisa — `setTheme('dark')` (as quatro capturas
 estão no tema escuro), o `added` da stack de exemplo,
 `$('#combo').classList.add('open')`, `openModal('sonarr',null)` mais
-`openShot()` na da paleta, `openCred()` na dos créditos — e rode:
+`openShot()` na da paleta, `openCred()` na dos créditos, `openCfg()` mais o `scrollTop` do `#cfgBody` na
+da Configuração (e um `SERVER` de mentira, senão o "Aplicar na stack" não
+aparece) — e rode:
 
 ```sh
 chromium-browser --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
@@ -365,8 +367,10 @@ chromium-browser --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
   --screenshot=$HOME/out.png "file://$HOME/tmp.html"
 ```
 
-`services.png`, `theme.png` e `credits.png` são 1480×760 e a `screenshot.png`
-acompanha a altura do conteúdo (hoje 1656, com a Wishlist aberta). A
+`services.png`, `theme.png` e `credits.png` são 1480×760, a `config.png` é
+1480×900 — o modal é denso e em 760 não caberia o que ela mostra — e a
+`screenshot.png` acompanha a altura do conteúdo (hoje 1656, com a Wishlist
+aberta). A
 `theme.png` é a única que precisa de rede: o modal da captura busca a imagem
 em `docs.theme-park.dev`. O mesmo truque, com `--dump-dom` no lugar de `--screenshot`, é a
 maneira de testar mudanças de comportamento sem navegador interativo. Se o

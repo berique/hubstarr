@@ -122,7 +122,11 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   episode and movie formats ship with the [TRaSH
   Guides](https://trash-guides.info) ones, in the Jellyfin variant with the TMDb
   id. Permissions reveal the `chmod` and `chown` fields, and in Lidarr the existing
-  name box is what brings up the track formats and the album folder. With more
+  name box is what brings up the track formats and the album folder.
+
+  ![The Configuration modal, on Sonarr's episode naming](docs/config.png)
+
+  With more
   than one Sonarr in the stack, each episode format — **standard**, **daily**
   and **anime** — carries the list of instances that get it: you can send the
   anime format to *Sonarr [Anime]* only, say. At least one instance is
