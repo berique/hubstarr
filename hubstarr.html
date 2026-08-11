@@ -3720,9 +3720,14 @@ async function runJob(start, title){
 
 $('#up').onclick = async ()=>{
   await refreshQbitHash();          // idem: o arquivo gravado precisa da senha
+  /* Subir é a stack inteira de pé: arquivos gravados, containers no ar, as
+     chaves escritas na conf de quem tem `patch` e a Configuração aplicada nos
+     apps assim que eles respondem. O botão da Configuração continua existindo
+     para reaplicar sem subir nada. */
   await runJob(()=> api('deploy',
     {method:'POST', body:JSON.stringify({files:outFiles().filter(f=>!f.patch),
-                                         patches:outPatches()})}), t('log.up'));
+                                         patches:outPatches(),
+                                         config:applyPayload()})}), t('log.up'));
   pollStatus();
 };
 

@@ -299,6 +299,9 @@ pub struct Payload {
     /// chaves a escrever na configuração que o próprio app cria, depois de subir
     #[serde(default)]
     pub patches: Vec<patch::Patch>,
+    /// a Configuração, aplicada assim que os apps respondem
+    #[serde(default)]
+    pub config: Option<apply::Req>,
 }
 
 async fn write_files(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Response {
@@ -332,7 +335,15 @@ async fn start_deploy(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Respons
             /* Só depois de a stack subir: a configuração que vamos mexer é a
                que o próprio app cria, e antes do primeiro `up` ela não existe. */
             let cfg = config_base(&ctx)?;
-            patch::apply_all(&ctx.docker, &ctx.base, cfg.as_deref(), &p.patches, &log).await
+            patch::apply_all(&ctx.docker, &ctx.base, cfg.as_deref(), &p.patches, &log).await?;
+            /* E, com a stack no ar, a Configuração: o Prowlarr aprende os *arr
+               e os clientes de download, e cada *arr aprende os clientes. As
+               credenciais do qBittorrent já foram escritas acima — é o que faz
+               o *arr conseguir falar com ele na hora de validar o registro. */
+            match p.config {
+                Some(cfg) if cfg.tem_o_que_fazer() => apply::download_clients(cfg, log).await,
+                _ => Ok(()),
+            }
         }
     });
     Json(json!({"ok": true, "job": job})).into_response()

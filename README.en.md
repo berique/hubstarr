@@ -214,10 +214,14 @@ yourself, and trims itself past 64 MB, oldest first. Deleting the folder by
 hand breaks nothing: it costs one extra fetch. Opened from disk, with no
 server, the page still fetches every screenshot straight from their docs.
 
-With the stack up, the **Configuration** gains an **Apply to the stack**
-button: the server registers every download client in every *arr, every *arr
-ticked in Prowlarr, and each family's *Media Management* and naming, through
-their APIs, reporting what went through as it goes. The apps are reached through
+**Bring up** leaves the stack configured: as soon as the apps answer, the
+server registers every download client in every *arr **and in Prowlarr
+itself** — which has its own Settings → Download Clients —, every *arr ticked
+under Prowlarr's Settings → Apps, and each family's *Media Management* and
+naming, all through their APIs, reporting what went through as it goes. The
+**Apply to the stack** button, in the Configuration modal, does the same
+without bringing anything up — it is the way to reapply after changing the
+choices. The apps are reached through
 nginx, on the port it publishes on the host. Applying again does not duplicate
 — the client is looked up by name and updated in place — and an app that is not
 up yet becomes one line in the log instead of stopping the rest. SABnzbd needs

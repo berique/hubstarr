@@ -110,6 +110,31 @@ struct Cdh {
     failed: bool,
 }
 
+impl Req {
+    /// Há *arr e algo para ligar a eles? O Subir pergunta antes de chamar: numa
+    /// stack sem *arr, não aplicar não é erro nenhum.
+    pub fn tem_o_que_fazer(&self) -> bool {
+        !self.arrs.is_empty()
+            && (!self.clients.is_empty() || self.prowlarr.is_some() || !self.mm.is_empty())
+    }
+}
+
+impl Arr {
+    /// Cópia para a volta dos clientes de download, que não usa o resto.
+    fn clone_alvo(&self) -> Arr {
+        Arr {
+            key: self.key.clone(),
+            name: self.name.clone(),
+            route: self.route.clone(),
+            api: self.api.clone(),
+            cat_field: self.cat_field.clone(),
+            family: self.family.clone(),
+            internal_url: String::new(),
+            sync: false,
+        }
+    }
+}
+
 fn field(name: &str, value: Value) -> Value {
     json!({"name": name, "value": value})
 }
@@ -165,10 +190,7 @@ impl Client {
 /// isso costuma ter acabado de subir a stack, e um app ainda subindo não é
 /// motivo para não configurar o resto.
 pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
-    if req.arrs.is_empty() {
-        return Err("nenhum *arr na stack para configurar".into());
-    }
-    if req.clients.is_empty() && req.prowlarr.is_none() && req.mm.is_empty() {
+    if !req.tem_o_que_fazer() {
         return Err("nada para aplicar nesta stack".into());
     }
     let http = reqwest::Client::builder()
@@ -182,7 +204,30 @@ pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
 
     let base = req.base.trim_end_matches('/').to_string();
     let mut falhas = 0;
-    for arr in &req.arrs {
+
+    /* O Prowlarr recebe os mesmos clientes que os *arr — é por eles que sai o
+       download da busca manual feita nele. O recurso é o mesmo
+       `downloadclient`, então ele entra na volta como mais um alvo; o que muda
+       é o nome do campo de categoria, que ali não é por família. */
+    let alvos: Vec<Arr> = req
+        .arrs
+        .iter()
+        .map(Arr::clone_alvo)
+        .chain(req.prowlarr.iter().map(|p| Arr {
+            key: "prowlarr".into(),
+            name: "Prowlarr".into(),
+            route: p.route.clone(),
+            api: "v1".into(),
+            cat_field: "category".into(),
+            family: "prowlarr".into(),
+            internal_url: String::new(),
+            sync: false,
+        }))
+        .collect();
+
+    esperar_apps(&http, &base, &alvos, &log).await;
+
+    for arr in &alvos {
         let url = format!("{base}{}/api/{}/downloadclient", arr.route, arr.api);
         let atuais = match list(&http, &url, &req.api_key).await {
             Ok(v) => v,
@@ -500,6 +545,31 @@ async fn put_config(
     Err(erro(st, &r.text().await.unwrap_or_default()))
 }
 
+/* Aplicado logo depois do `up`, nenhum app respondeu ainda: eles levam de
+   alguns segundos a um minuto para abrir a API. O `/ping` não pede chave e é
+   o primeiro caminho que eles servem, então é por ele que se pergunta.
+
+   Quem não responder a tempo não interrompe nada — segue como estava, e o erro
+   dele aparece linha a linha no registro de cada ligação. */
+async fn esperar_apps(http: &reqwest::Client, base: &str, alvos: &[Arr], log: &Log) {
+    for alvo in alvos {
+        let url = format!("{base}{}/ping", alvo.route);
+        let mut avisou = false;
+        for _ in 0..45 {
+            match http.get(&url).send().await {
+                Ok(r) if r.status().is_success() => break,
+                _ => {
+                    if !avisou {
+                        log.line(format!("esperando o {} responder…", alvo.name));
+                        avisou = true;
+                    }
+                    tokio::time::sleep(Duration::from_secs(2)).await;
+                }
+            }
+        }
+    }
+}
+
 /// Os clientes que o *arr já tem, para saber o que é registro novo e o que é
 /// atualização.
 async fn list(http: &reqwest::Client, url: &str, key: &str) -> Result<Vec<Value>, String> {
@@ -747,6 +817,43 @@ mod tests {
         assert_eq!(rename("lidarr"), Some("renameTracks"));
         // o Lidarr não tem dois-pontos, e a página também não o oferece lá
         assert!(naming_map("lidarr").iter().all(|(p, _)| *p != "colon"));
+    }
+
+    #[test]
+    fn no_prowlarr_o_cliente_entra_sem_categoria_de_familia() {
+        // o alvo do Prowlarr tem o campo `category`, e o `cats` da página é por
+        // instância de *arr: nenhuma delas casa, então ele entra sem categoria
+        let prow = Arr {
+            key: "prowlarr".into(),
+            name: "Prowlarr".into(),
+            route: "/prowlarr".into(),
+            api: "v1".into(),
+            cat_field: "category".into(),
+            family: "prowlarr".into(),
+            internal_url: String::new(),
+            sync: false,
+        };
+        let b = qbit().body(&prow).unwrap();
+        assert_eq!(val(&b, "category"), "");
+        // e o resto do cliente é o mesmo que vai para os *arr
+        assert_eq!(b["implementation"], "QBittorrent");
+        assert_eq!(val(&b, "host"), "gluetun");
+        assert_eq!(val(&b, "username"), "admin");
+    }
+
+    #[test]
+    fn stack_sem_arr_nao_tem_o_que_aplicar() {
+        let req = |arrs: Vec<Arr>, clients: Vec<Client>| Req {
+            base: "http://127.0.0.1".into(),
+            api_key: "k".into(),
+            arrs,
+            clients,
+            prowlarr: None,
+            mm: Map::new(),
+        };
+        assert!(!req(vec![], vec![qbit()]).tem_o_que_fazer());
+        assert!(!req(vec![arr("sonarr", "tvCategory")], vec![]).tem_o_que_fazer());
+        assert!(req(vec![arr("sonarr", "tvCategory")], vec![qbit()]).tem_o_que_fazer());
     }
 
     #[test]

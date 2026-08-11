@@ -219,10 +219,13 @@ Borrar la carpeta a mano no rompe nada: cuesta una búsqueda más. Abierta desde
 el disco, sin servidor, la página sigue buscando cada captura directamente en
 su documentación.
 
-Con la stack en marcha, la **Configuración** gana el botón **Aplicar en la
-stack**: el servidor registra cada cliente de descarga en cada *arr, cada *arr
-marcado en Prowlarr y el *Media Management* con la nomenclatura de cada familia,
-por su API, y va mostrando lo que pasó. Los apps se alcanzan por el nginx, en el puerto que
+El **Levantar** ya deja la stack configurada: en cuanto los apps responden, el
+servidor registra cada cliente de descarga en cada *arr **y en el propio
+Prowlarr** — que tiene su Settings → Download Clients —, cada *arr marcado en
+Settings → Apps de Prowlarr, y el *Media Management* con la nomenclatura de cada
+familia, todo por su API, mostrando lo que pasó. El botón **Aplicar en la
+stack**, en el modal de la Configuración, hace lo mismo sin levantar nada — es
+el camino para volver a aplicar tras cambiar las opciones. Los apps se alcanzan por el nginx, en el puerto que
 publica en el host. Aplicar de nuevo no duplica — el cliente se busca por el
 nombre y se actualiza en su sitio — y un app que todavía no arrancó es una línea
 del log en vez de interrumpir el resto. SABnzbd necesita su clave de API, la que

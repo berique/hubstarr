@@ -265,8 +265,13 @@ pasta da stack, mais o `docker_ok()` que o `api/health` devolve — ele pergunta
 por `docker compose version`, não só pelo docker, porque o plugin é pacote à
 parte e é ele que sobe a stack; sem ele a página abre o bloco "Precisa instalar
 o Docker?" e mostra o aviso `#noDocker`), `apply.rs` (v0.3: a Configuração inteira
-aplicada pela API — clientes de download em cada *arr, cada *arr no Prowlarr, e
-o Media Management mais a nomenclatura de cada família. Os apps são alcançados
+aplicada pela API — clientes de download em cada *arr **e no próprio Prowlarr**,
+que também tem Settings → Download Clients (mesmo recurso, com `category` no
+lugar do campo por família), cada *arr no Prowlarr, e o Media Management mais a
+nomenclatura de cada família. Quem chama é o **Subir**, sozinho, depois de
+gravar as chaves dos `patch` — e antes de qualquer chamada ele espera cada app
+responder no `/ping`, porque recém-subido nenhum responde e a volta inteira
+falharia por timeout. Os apps são alcançados
 pelo nginx, porque o servidor roda no host e a rede `starrnet` não existe para
 ele; aplicar de novo procura pelo nome e atualiza no lugar, e um app fora do ar
 vira uma linha no log em vez de derrubar a volta inteira. Três coisas para não
@@ -382,7 +387,8 @@ aplicada nos apps.
   stack. Uma primeira versão dele existiu e foi removida no `ba54e1a`; a de
   agora é normalizada.
 - ~~**v0.3**~~ — feito: a **Configuração** é aplicada pela API de cada app, no
-  `apply.rs`, pelo botão "Aplicar na stack" do modal dela — as três partes
+  `apply.rs`, pelo **Subir** (sozinho, quando os apps respondem) e pelo botão
+  "Aplicar na stack" do modal dela, que reaplica sem subir nada — as três partes
   (`CONFIG.clients`, `CONFIG.apps` e `CONFIG.mm`) numa passada só. Duas escolhas
   que não são óbvias: as categorias que o Prowlarr sincroniza por família saem
   explícitas do `sync_categories()`, porque campo vazio ali é um Prowlarr que

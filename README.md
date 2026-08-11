@@ -215,10 +215,13 @@ Apagar a pasta na mão não quebra nada: custa uma busca a mais. Aberta do disco
 sem servidor, a página continua buscando cada captura direto na documentação
 deles.
 
-Com a stack no ar, a **Configuração** ganha o botão **Aplicar na stack**: o
-servidor registra cada cliente de download em cada *arr, cada *arr marcado no
-Prowlarr e o *Media Management* com a nomenclatura de cada família, pela API
-deles, e vai mostrando o que passou. Os apps são alcançados pelo nginx, na porta que ele
+O **Subir** já deixa a stack configurada: assim que os apps respondem, o
+servidor registra cada cliente de download em cada *arr **e no próprio
+Prowlarr** — que tem o Settings → Download Clients dele —, cada *arr marcado em
+Settings → Apps do Prowlarr, e o *Media Management* com a nomenclatura de cada
+família, tudo pela API deles, mostrando o que passou. O botão **Aplicar na
+stack**, no modal da Configuração, faz o mesmo sem subir nada — é o caminho
+para reaplicar depois de mexer nas escolhas. Os apps são alcançados pelo nginx, na porta que ele
 publica no host. Aplicar de novo não duplica — o cliente é procurado pelo nome
 e atualizado no lugar —, e um app que ainda não subiu vira uma linha no log em
 vez de interromper o resto. O SABnzbd precisa da chave de API dele, que é o
