@@ -93,7 +93,7 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    O Media Management é **por família**, com uma exceção: campo do
    `NAMING_FIELDS` marcado com `perInst` vale por instância, e quais delas o
    recebem fica em `mm[família].naming.scope[campo][chave da instância]` — hoje
-   são os três formatos de episódio do Sonarr. O escopo mora *dentro* do
+   são os seis formatos do Sonarr: os três de episódio e as três pastas. O escopo mora *dentro* do
    `naming` de propósito: é o que o `cfg_naming` já guarda inteiro, em JSON, sem
    coluna nem migração. De fábrica toda instância recebe todos os formatos.
    **Pelo menos uma instância marcada no formato padrão é obrigatório** — o

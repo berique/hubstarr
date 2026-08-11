@@ -138,9 +138,10 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   ![El modal de Configuración, en la nomenclatura de episodio de Sonarr](docs/config.png)
 
   Con más de un Sonarr en la
-  stack, cada formato de episodio — **estándar**, **diario** y **anime** — trae
-  la lista de las instancias que lo reciben: se puede mandar el formato de anime
-  solo al *Sonarr [Anime]*, por ejemplo. De fábrica todas las instancias reciben
+  stack, cada formato suyo — los tres de episodio (**estándar**, **diario** y
+  **anime**) y las tres carpetas (**serie**, **temporada** y **especiales**) —
+  trae la lista de las instancias que lo reciben: se puede mandar el formato de
+  anime solo al *Sonarr [Anime]*, por ejemplo. De fábrica todas las instancias reciben
   todos los formatos; al menos una es obligatoria en el formato predeterminado,
   porque el campo es obligatorio en el app, y la que desmarques conserva el
   formato que ya tiene, en vez de perderlo. Las tres partes de la Configuración

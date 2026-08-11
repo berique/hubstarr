@@ -132,9 +132,10 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   ![The Configuration modal, on Sonarr's episode naming](docs/config.png)
 
   With more
-  than one Sonarr in the stack, each episode format — **standard**, **daily**
-  and **anime** — carries the list of instances that get it: you can send the
-  anime format to *Sonarr [Anime]* only, say. Out of the box every instance gets
+  than one Sonarr in the stack, each of its formats — the three episode ones
+  (**standard**, **daily** and **anime**) and the three folders (**series**,
+  **season** and **specials**) — carries the list of instances that get it: you
+  can send the anime format to *Sonarr [Anime]* only, say. Out of the box every instance gets
   every format; at least one is mandatory on the default format, because the
   field is mandatory in the app, and whichever you untick keeps the format it
   already has instead of losing it. All three parts of the Configuration reach

@@ -2562,9 +2562,9 @@ const NAMING_FIELDS = {
      def:'{Series CleanTitleWithoutYear} {(Series Year)} - {Air-Date} - {Episode CleanTitle:90} {[Custom Formats]}{[Quality Full]}{[Mediainfo AudioCodec}{ Mediainfo AudioChannels]}{[MediaInfo VideoDynamicRangeType]}{[Mediainfo VideoCodec]}{-Release Group}'},
     {k:'animeEp',        type:'fmt', file:true, perInst:true,
      def:'{Series CleanTitleWithoutYear} {(Series Year)} - S{season:00}E{episode:00} - {absolute:000} - {Episode CleanTitle:90} {[Custom Formats]}{[Quality Full]}{[Mediainfo AudioCodec}{ Mediainfo AudioChannels]}{MediaInfo AudioLanguages}{[MediaInfo VideoDynamicRangeType]}[{Mediainfo VideoCodec }{MediaInfo VideoBitDepth}bit]{-Release Group}'},
-    {k:'seriesFolder',   type:'fmt', def:'{Series CleanTitleWithoutYear} {(Series Year)} [tmdbid-{TmdbId}]'},
-    {k:'seasonFolder',   type:'fmt', def:'Season {season:00}'},
-    {k:'specialsFolder', type:'fmt', def:'Specials'},
+    {k:'seriesFolder',   type:'fmt', perInst:true, def:'{Series CleanTitleWithoutYear} {(Series Year)} [tmdbid-{TmdbId}]'},
+    {k:'seasonFolder',   type:'fmt', perInst:true, def:'Season {season:00}'},
+    {k:'specialsFolder', type:'fmt', perInst:true, def:'Specials'},
   ],
   radarr:[
     {k:'illegal',        type:'check',  def:true},
