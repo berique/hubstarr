@@ -96,7 +96,9 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    só troca o que chega, e o app mantém o formato que já tinha. A lista só
    aparece com duas instâncias ou mais da família.
 5. **Derivações** — `slug()` → `cname()` (container_name = chave do serviço =
-   pasta de config), `route()`, `url()`, `cfgPath`/`dataPath` (com variáveis
+   pasta de config), `route()`, `url()` (o endereço sai do domínio do Ambiente
+   e, sem ele, do `location.hostname` — quem abriu a página pelo IP da LAN quer
+   os links no mesmo IP; aberta do disco, sobra o `localhost`), `cfgPath`/`dataPath` (com variáveis
    `${...}` do `.env`) e `cfgReal`/`dataReal` (caminhos resolvidos, para o hint
    do modal). Alterar `cname` afeta compose, nginx e `.env` ao mesmo tempo.
    `dupPaths()` compara os caminhos já resolvidos e avisa, no rodapé da lista,

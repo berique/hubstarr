@@ -1956,11 +1956,19 @@ const route = a => '/'+cname(a);
 // endereço pelo qual o serviço vai ser acessado, passando pelo proxy;
 // a porta só aparece quando não é a padrão do esquema
 const hostPort = ()=> DEFAULTS.tls ? DEFAULTS.https : DEFAULTS.http;
+/* O endereço em que a stack é alcançada. O domínio do Ambiente manda, quando
+   há um; sem ele, vale o endereço pelo qual esta página foi aberta — quem
+   chegou aqui pelo IP da LAN quer os links no mesmo IP, e não em `localhost`,
+   que na máquina dele não é a mesma coisa. Aberta do disco não há endereço
+   nenhum, e aí sobra o `localhost` de sempre. */
+const host = () => DEFAULTS.domain
+  || (/^https?:$/.test(location.protocol) && location.hostname)
+  || 'localhost';
 const url = a => publishes(a)
   // porta publicada: o nginx não entra, então nem o TLS dele entra
-  ? 'http://' + (DEFAULTS.domain || 'localhost') + ':' + hostPortOf(a) + '/'
+  ? 'http://' + host() + ':' + hostPortOf(a) + '/'
   : (DEFAULTS.tls ? 'https://' : 'http://')
-  + (DEFAULTS.domain || 'localhost')
+  + host()
   + (hostPort() === (DEFAULTS.tls ? '443' : '80') ? '' : ':'+hostPort())
   + route(a);
 const has = id => added.some(a=>a.id===id);
