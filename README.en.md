@@ -149,6 +149,9 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
 - **Download** `docker-compose.yml`, `.env` and `nginx.conf`
   together in a `.zip` — the button stays in the bar while there is no server;
   with one, **Bring up** is what writes the files.
+- **A walkthrough on the first visit**: a tour of the interface lighting up each
+  area and saying what it does, with **Skip** at any point. Finished or skipped,
+  it does not come back — the mark stays in the browser.
 - **Switch languages** in the selector at the top: Portuguese (Brazil), English
   and Spanish.
 

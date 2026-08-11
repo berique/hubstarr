@@ -245,6 +245,18 @@
   #shotImg[hidden]{display:none}
   /* log do servidor: rola sozinho e não empurra o modal */
   #logBack .modal{max-width:820px}
+  /* passo a passo da primeira visita: um recorte sobre o que está sendo
+     explicado, e o cartão ao lado dele */
+  #tourBack{position:fixed;inset:0;z-index:90}
+  #tourHole{position:absolute;border-radius:10px;border:2px solid var(--accent);
+    box-shadow:0 0 0 9999px rgba(0,0,0,.62);pointer-events:none;
+    transition:top .18s ease,left .18s ease,width .18s ease,height .18s ease}
+  #tourCard{position:absolute;width:min(380px,calc(100vw - 32px));background:var(--panel);
+    border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    box-shadow:0 12px 32px rgba(0,0,0,.45)}
+  #tourCard h4{margin:0 0 6px;font-size:15px}
+  #tourCard p{margin:0 0 12px;font-size:13px;line-height:1.55;color:var(--muted)}
+  #tourCard .bar{margin:0;padding:0;border:0;background:none}
   .log{margin:0 0 12px;padding:10px 12px;height:340px;overflow:auto;
     background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
@@ -378,6 +390,22 @@ sudo sh get-docker.sh</pre>
 </div>
 
 <!-- log do servidor: só aparece quando há um atrás da página -->
+<!-- passo a passo: aparece na primeira visita e não volta depois de visto -->
+<div id="tourBack" hidden>
+  <div id="tourHole"></div>
+  <div id="tourCard">
+    <h4 id="tourTitle"></h4>
+    <p id="tourText"></p>
+    <div class="bar">
+      <span class="hint" id="tourStep"></span>
+      <span class="sp"></span>
+      <button id="tourSkip" data-i18n="tour.skip">Pular</button>
+      <button id="tourPrev" data-i18n="tour.prev">Anterior</button>
+      <button class="primary" id="tourNext" data-i18n="tour.next">Próximo</button>
+    </div>
+  </div>
+</div>
+
 <div class="backdrop" id="logBack">
   <div class="modal">
     <h3 id="logTitle"></h3>
@@ -803,6 +831,41 @@ const I18N = {
   'srv.noDocker':'o docker compose não respondeu neste servidor',
   'btn.noDocker':'O docker compose não respondeu neste servidor: instale-o para subir e derrubar a stack daqui',
   'docker.missing':'<b>Sem o Docker Compose neste servidor.</b> O Hubstarr continua gerando os arquivos e guardando a stack, mas <b>Subir</b> e <b>Derrubar</b> vão falhar até o plugin Compose estar instalado — veja abaixo como instalá-lo.',
+  'tour.skip':'Pular',
+  'tour.prev':'Anterior',
+  'tour.next':'Próximo',
+  'tour.done':'Concluir',
+  'tour.step':(i,n)=>`${i} de ${n}`,
+  'tour.combo.h':'Escolha um serviço',
+  'tour.combo':'A lista traz os apps que a stack sabe montar, com o logotipo e a porta interna de cada um. Serviço que aceita mais de uma instância mostra quantas já existem; o que só entra uma vez aparece como <i>já adicionado</i>.',
+  'tour.add.h':'Adicionar à stack',
+  'tour.add':'Abre o modal do serviço escolhido: título, subpasta de mídia, VPN e o que mais for dele. O título vira o <b>container_name</b>, a pasta de configuração e o subpath do nginx.',
+  'tour.items.h':'A stack montada',
+  'tour.items':'Cada linha é um container. As etiquetas mostram o subpath e a porta interna, a variante do tema e se ele passa pela VPN; os botões <b>Link</b>, <b>Editar</b> e <b>Excluir</b> abrem o app, mudam a instância ou a tiram. O <b>nginx</b> é fixo e entra sozinho.',
+  'tour.clear.h':'Limpar tudo',
+  'tour.clear':'Esvazia a lista. Ele pede confirmação: o primeiro clique arma, o segundo apaga.',
+  'tour.tabs.h':'Os arquivos gerados',
+  'tour.tabs':'Cada aba é um arquivo que sai daqui — <b>docker-compose.yml</b>, <b>.env</b>, <b>nginx.conf</b> e as configurações próprias de quem tem uma. Eles se refazem a cada mudança na lista.',
+  'tour.summary.h':'O resumo da stack',
+  'tour.summary':'Quantos containers, quantas rotas o nginx serve e um aviso em vermelho quando duas instâncias apontam para a mesma pasta — que é o jeito mais fácil de uma importar por cima da outra.',
+  'tour.copy.h':'Copiar',
+  'tour.copy':'Põe na área de transferência o texto da aba aberta, sem o realce.',
+  'tour.dl.h':'Baixar o .zip',
+  'tour.dl':'Empacota todos os arquivos, já na árvore de pastas em que eles vivem. É o caminho de quem usa a página sozinha; com servidor, o botão sai daqui porque o <b>Subir</b> grava os mesmos arquivos.',
+  'tour.up.h':'Subir a stack',
+  'tour.up':'Grava os arquivos, cria as pastas dos volumes, sobe os containers e aplica a <b>Configuração</b> nos apps assim que eles respondem. O log mostra tudo, passo a passo.',
+  'tour.down.h':'Derrubar a stack',
+  'tour.down':'Roda o <code>docker compose down</code> na pasta da stack. Os arquivos e as configurações continuam onde estão.',
+  'tour.cfg.h':'Configuração',
+  'tour.cfg':'As ligações entre os apps: quem o Prowlarr configura, com que categoria cada *arr usa cada cliente de download, e o <i>Media Management</i> com a nomenclatura de cada família. Com servidor, o botão <b>Aplicar na stack</b> manda tudo isso para os apps.',
+  'tour.env.h':'Ambiente',
+  'tour.env':'O que vale para a stack inteira: os caminhos base, PUID/PGID, fuso, política de restart, a chave de API e o TLS. Tudo isso sai no <b>.env</b>.',
+  'tour.cred.h':'Créditos',
+  'tour.cred':'Os projetos que fazem o trabalho de verdade — cada app, as imagens, os temas e os ícones. O Hubstarr só escreve arquivos de configuração.',
+  'tour.lang.h':'Idioma',
+  'tour.lang':'Português, inglês e espanhol, inclusive nos comentários dos arquivos gerados.',
+  'tour.theme.h':'Tema',
+  'tour.theme':'Alterna entre claro e escuro. É só da página; o tema dos apps sai do campo <b>Tema</b> de cada serviço.',
   'log.up':'Subindo a stack',
   'log.down':'Derrubando a stack',
   'log.apply':'Aplicando a Configuração',
@@ -1158,6 +1221,41 @@ const I18N = {
   'srv.noDocker':'docker compose did not answer on this server',
   'btn.noDocker':'docker compose did not answer on this server: install it to bring the stack up and down from here',
   'docker.missing':'<b>No Docker Compose on this server.</b> Hubstarr still generates the files and keeps the stack, but <b>Bring up</b> and <b>Tear down</b> will fail until the Compose plugin is installed — see below how to install it.',
+  'tour.skip':'Skip',
+  'tour.prev':'Back',
+  'tour.next':'Next',
+  'tour.done':'Finish',
+  'tour.step':(i,n)=>`${i} of ${n}`,
+  'tour.combo.h':'Pick a service',
+  'tour.combo':'The list holds the apps the stack knows how to build, each with its logo and internal port. A service that takes more than one instance shows how many exist; one that only goes in once reads <i>already added</i>.',
+  'tour.add.h':'Add to the stack',
+  'tour.add':'Opens the chosen service\'s modal: title, media subfolder, VPN and whatever else is its own. The title becomes the <b>container_name</b>, the configuration folder and the nginx subpath.',
+  'tour.items.h':'The stack you built',
+  'tour.items':'Each row is a container. The tags show the subpath and internal port, the theme variant and whether it routes through the VPN; <b>Link</b>, <b>Edit</b> and <b>Delete</b> open the app, change the instance or drop it. <b>nginx</b> is fixed and comes in on its own.',
+  'tour.clear.h':'Clear all',
+  'tour.clear':'Empties the list. It asks for confirmation: the first click arms it, the second wipes.',
+  'tour.tabs.h':'The generated files',
+  'tour.tabs':'Each tab is a file that comes out of here — <b>docker-compose.yml</b>, <b>.env</b>, <b>nginx.conf</b> and the own configuration of whoever has one. They are rebuilt on every change to the list.',
+  'tour.summary.h':'The stack summary',
+  'tour.summary':'How many containers, how many routes nginx serves, and a warning in red when two instances point at the same folder — the easiest way for one to import over the other.',
+  'tour.copy.h':'Copy',
+  'tour.copy':'Puts the open tab\'s text on the clipboard, without the highlighting.',
+  'tour.dl.h':'Download the .zip',
+  'tour.dl':'Packs every file, already in the folder tree they live in. It is the path for whoever uses the page on its own; with a server the button leaves, because <b>Bring up</b> writes the same files.',
+  'tour.up.h':'Bring the stack up',
+  'tour.up':'Writes the files, creates the volume folders, starts the containers and applies the <b>Configuration</b> to the apps as soon as they answer. The log shows all of it, step by step.',
+  'tour.down.h':'Tear the stack down',
+  'tour.down':'Runs <code>docker compose down</code> in the stack folder. The files and the configurations stay where they are.',
+  'tour.cfg.h':'Configuration',
+  'tour.cfg':'The links between apps: which ones Prowlarr configures, the category each *arr uses in each download client, and <i>Media Management</i> with each family\'s naming. With a server, the <b>Apply to the stack</b> button sends all of it to the apps.',
+  'tour.env.h':'Environment',
+  'tour.env':'What applies to the whole stack: base paths, PUID/PGID, time zone, restart policy, the API key and TLS. All of it lands in the <b>.env</b>.',
+  'tour.cred.h':'Credits',
+  'tour.cred':'The projects doing the real work — every app, the images, the themes and the icons. Hubstarr only writes configuration files.',
+  'tour.lang.h':'Language',
+  'tour.lang':'Portuguese, English and Spanish, including the comments in the generated files.',
+  'tour.theme.h':'Theme',
+  'tour.theme':'Switches between light and dark. It is the page only; the apps\' theme comes from each service\'s <b>Theme</b> field.',
   'log.up':'Bringing the stack up',
   'log.down':'Tearing the stack down',
   'log.apply':'Applying the Configuration',
@@ -1513,6 +1611,41 @@ const I18N = {
   'srv.noDocker':'docker compose no respondió en este servidor',
   'btn.noDocker':'docker compose no respondió en este servidor: instálalo para levantar y derribar la stack desde aquí',
   'docker.missing':'<b>Sin Docker Compose en este servidor.</b> Hubstarr sigue generando los archivos y guardando la stack, pero <b>Levantar</b> y <b>Derribar</b> fallarán hasta que el plugin Compose esté instalado — mira abajo cómo instalarlo.',
+  'tour.skip':'Saltar',
+  'tour.prev':'Anterior',
+  'tour.next':'Siguiente',
+  'tour.done':'Terminar',
+  'tour.step':(i,n)=>`${i} de ${n}`,
+  'tour.combo.h':'Elige un servicio',
+  'tour.combo':'La lista trae las apps que la stack sabe armar, con el logotipo y el puerto interno de cada una. El servicio que acepta más de una instancia muestra cuántas hay; el que solo entra una vez aparece como <i>ya añadido</i>.',
+  'tour.add.h':'Añadir a la stack',
+  'tour.add':'Abre el modal del servicio elegido: título, subcarpeta multimedia, VPN y lo que más sea suyo. El título se vuelve el <b>container_name</b>, la carpeta de configuración y el subpath del nginx.',
+  'tour.items.h':'La stack armada',
+  'tour.items':'Cada línea es un contenedor. Las etiquetas muestran el subpath y el puerto interno, la variante del tema y si pasa por la VPN; los botones <b>Enlace</b>, <b>Editar</b> y <b>Eliminar</b> abren la app, cambian la instancia o la quitan. El <b>nginx</b> es fijo y entra solo.',
+  'tour.clear.h':'Limpiar todo',
+  'tour.clear':'Vacía la lista. Pide confirmación: el primer clic arma, el segundo borra.',
+  'tour.tabs.h':'Los archivos generados',
+  'tour.tabs':'Cada pestaña es un archivo que sale de aquí — <b>docker-compose.yml</b>, <b>.env</b>, <b>nginx.conf</b> y la configuración propia de quien tiene una. Se rehacen con cada cambio en la lista.',
+  'tour.summary.h':'El resumen de la stack',
+  'tour.summary':'Cuántos contenedores, cuántas rutas atiende el nginx y un aviso en rojo cuando dos instancias apuntan a la misma carpeta — la manera más fácil de que una importe encima de la otra.',
+  'tour.copy.h':'Copiar',
+  'tour.copy':'Pone en el portapapeles el texto de la pestaña abierta, sin el resaltado.',
+  'tour.dl.h':'Descargar el .zip',
+  'tour.dl':'Empaqueta todos los archivos, ya en el árbol de carpetas en que viven. Es el camino de quien usa la página sola; con servidor el botón sale, porque el <b>Levantar</b> graba los mismos archivos.',
+  'tour.up.h':'Levantar la stack',
+  'tour.up':'Graba los archivos, crea las carpetas de los volúmenes, levanta los contenedores y aplica la <b>Configuración</b> en las apps en cuanto responden. El log lo muestra todo, paso a paso.',
+  'tour.down.h':'Derribar la stack',
+  'tour.down':'Ejecuta <code>docker compose down</code> en la carpeta de la stack. Los archivos y las configuraciones se quedan donde están.',
+  'tour.cfg.h':'Configuración',
+  'tour.cfg':'Los enlaces entre las apps: a quién configura Prowlarr, con qué categoría usa cada *arr cada cliente de descarga, y el <i>Media Management</i> con la nomenclatura de cada familia. Con servidor, el botón <b>Aplicar en la stack</b> manda todo eso a las apps.',
+  'tour.env.h':'Entorno',
+  'tour.env':'Lo que vale para toda la stack: las rutas base, PUID/PGID, huso horario, política de restart, la clave de API y el TLS. Todo eso sale en el <b>.env</b>.',
+  'tour.cred.h':'Créditos',
+  'tour.cred':'Los proyectos que hacen el trabajo de verdad — cada app, las imágenes, los temas y los iconos. Hubstarr solo escribe archivos de configuración.',
+  'tour.lang.h':'Idioma',
+  'tour.lang':'Portugués, inglés y español, incluso en los comentarios de los archivos generados.',
+  'tour.theme.h':'Tema',
+  'tour.theme':'Alterna entre claro y oscuro. Es solo de la página; el tema de las apps sale del campo <b>Tema</b> de cada servicio.',
   'log.up':'Levantando la stack',
   'log.down':'Derribando la stack',
   'log.apply':'Aplicando la Configuración',
@@ -1705,6 +1838,8 @@ function applyI18n(){
   document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML = t(el.dataset.i18nHtml));
   document.querySelectorAll('[data-i18n-ph]').forEach(el=>el.placeholder = t(el.dataset.i18nPh));
   document.querySelectorAll('[data-i18n-title]').forEach(el=>el.title = t(el.dataset.i18nTitle));
+  // o cartão do passo a passo também é montado na mão
+  if(typeof tourAt !== 'undefined' && tourAt >= 0) showTourStep(tourAt);
   // o hint do modal é montado na mão: refaz se ele estiver aberto
   if($('#backdrop') && $('#backdrop').classList.contains('open')){
     const id = editing ? (byKey(editing)||{}).id : picked;
@@ -3986,6 +4121,95 @@ async function detectServer(){
   setInterval(pollStatus, 5000);
 }
 
+
+/* ---------- passo a passo ---------- */
+
+/* Uma volta pela interface na primeira visita: cada passo acende uma área e
+   diz o que ela faz. Sai a qualquer momento pelo Pular, e não volta depois de
+   concluído ou pulado — a marca fica no `localStorage`, que é do navegador, e
+   não no banco: quem viu a volta foi esta pessoa, não a stack.
+
+   Passo cujo alvo não está na tela — o Subir e o Derrubar sem servidor, por
+   exemplo — simplesmente não entra na volta. */
+const TOUR = [
+  {sel:'#combo',   k:'combo'},
+  {sel:'#add',     k:'add'},
+  {sel:'#items',   k:'items'},
+  {sel:'#clear',   k:'clear'},
+  {sel:'.tabs',    k:'tabs'},
+  {sel:'#summary', k:'summary'},
+  {sel:'#copy',    k:'copy'},
+  {sel:'#dl',      k:'dl'},
+  {sel:'#up',      k:'up'},
+  {sel:'#down',    k:'down'},
+  {sel:'#cfgBtn',  k:'cfg'},
+  {sel:'#envBtn',  k:'env'},
+  {sel:'#credBtn', k:'cred'},
+  {sel:'#langSel', k:'lang'},
+  {sel:'#themeBtn',k:'theme'},
+];
+const TOUR_KEY = 'hubstarr.tour';
+let tourAt = -1, tourSteps = [];
+
+// o navegador pode recusar o armazenamento (file:// em alguns), e aí a volta
+// só não se repete nesta sessão
+let tourVisto = false;
+const tourDone = ()=>{
+  if(tourVisto) return true;
+  try{ return localStorage.getItem(TOUR_KEY) === '1'; }catch(e){ return false; }
+};
+const marcaTour = ()=>{ tourVisto = true; try{ localStorage.setItem(TOUR_KEY, '1'); }catch(e){} };
+
+const tourVisivel = el => !!el && !el.hidden && el.offsetParent !== null;
+
+function startTour(force){
+  if(!force && tourDone()) return;
+  tourSteps = TOUR.filter(p=> tourVisivel($(p.sel)));
+  if(!tourSteps.length) return;
+  $('#tourBack').hidden = false;
+  showTourStep(0);
+}
+
+function showTourStep(i){
+  tourAt = i;
+  const passo = tourSteps[i], el = $(passo.sel);
+  if(!tourVisivel(el)) return endTour();       // sumiu no meio do caminho
+  el.scrollIntoView({block:'center', inline:'nearest'});
+
+  const r = el.getBoundingClientRect(), pad = 6;
+  const hole = $('#tourHole');
+  hole.style.top    = (r.top - pad) + 'px';
+  hole.style.left   = (r.left - pad) + 'px';
+  hole.style.width  = (r.width + pad*2) + 'px';
+  hole.style.height = (r.height + pad*2) + 'px';
+
+  $('#tourTitle').textContent = t('tour.' + passo.k + '.h');
+  $('#tourText').innerHTML    = t('tour.' + passo.k);
+  $('#tourStep').textContent  = t('tour.step', i + 1, tourSteps.length);
+  $('#tourPrev').disabled = i === 0;
+  $('#tourNext').textContent = t(i === tourSteps.length - 1 ? 'tour.done' : 'tour.next');
+
+  // o cartão vai abaixo do alvo, ou acima quando não cabe
+  const card = $('#tourCard'), h = card.offsetHeight || 180;
+  const abaixo = r.bottom + 12 + h < innerHeight;
+  card.style.top  = (abaixo ? r.bottom + 12 : Math.max(12, r.top - 12 - h)) + 'px';
+  card.style.left = Math.min(Math.max(12, r.left), innerWidth - card.offsetWidth - 12) + 'px';
+}
+
+function endTour(){
+  $('#tourBack').hidden = true;
+  tourAt = -1;
+  marcaTour();
+}
+
+$('#tourSkip').onclick = endTour;
+$('#tourPrev').onclick = ()=> showTourStep(Math.max(0, tourAt - 1));
+$('#tourNext').onclick = ()=>
+  tourAt < tourSteps.length - 1 ? showTourStep(tourAt + 1) : endTour();
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape' && !$('#tourBack').hidden) endTour();
+});
+
 /* ---------- log dos trabalhos ---------- */
 
 const logLine = s =>{
@@ -4154,6 +4378,7 @@ async function pollStatus(){
 applyI18n(); renderCombo(); renderItems(); render();
 refreshQbitHash();
 detectServer();
+startTour();
 </script>
 </body>
 </html>

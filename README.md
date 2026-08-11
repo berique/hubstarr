@@ -147,6 +147,9 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
 - **Baixar** `docker-compose.yml`, `.env` e `nginx.conf` juntos
   num `.zip` — o botão fica na barra enquanto não há servidor; com ele, quem
   grava os arquivos é o **Subir**.
+- **Passo a passo na primeira visita**: uma volta pela interface acendendo cada
+  área e dizendo o que ela faz, com **Pular** a qualquer momento. Concluída ou
+  pulada, não aparece de novo — a marca fica no navegador.
 - **Trocar o idioma** no seletor do topo: português (Brasil), inglês e
   espanhol.
 

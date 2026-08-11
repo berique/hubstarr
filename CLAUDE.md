@@ -151,6 +151,21 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    quando alguém responde em `api/health`, porque ali o **Subir** grava os
    mesmos arquivos sem passar pelo pacote.
 
+## Passo a passo da primeira visita
+
+O `TOUR` é uma lista de `{sel, k}`: o seletor da área e a chave das strings
+(`tour.<k>.h` e `tour.<k>` no `I18N`). O `startTour()` monta a volta só com os
+passos cujo alvo está **visível** — o Subir e o Derrubar ficam de fora sem
+servidor, e a volta encurta sozinha —, acende cada um com um recorte
+(`#tourHole`, um `box-shadow` gigante) e põe o cartão acima ou abaixo, conforme
+o espaço. Acrescentar um passo é acrescentar uma linha no `TOUR` e as duas
+strings nos três idiomas.
+
+Ele não volta depois de concluído ou pulado, e a marca fica no `localStorage`
+(`hubstarr.tour`), não no banco: quem viu a volta foi aquele navegador, não a
+stack. O acesso é dentro de `try/catch` — navegador que recuse armazenamento em
+`file://` só a repete na próxima abertura, em vez de quebrar.
+
 ## Quatro padrões que se repetem
 
 **Ajuda por campo.** Marcar uma `.row` de qualquer modal com
