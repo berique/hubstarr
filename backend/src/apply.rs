@@ -34,6 +34,19 @@ pub struct Req {
     api_key: String,
     arrs: Vec<Arr>,
     clients: Vec<Client>,
+    /// o Prowlarr da stack, quando ele está nela
+    #[serde(default)]
+    prowlarr: Option<Prowlarr>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Prowlarr {
+    /// subpath em que o nginx o serve, por onde o servidor fala com ele
+    route: String,
+    /// como o *arr enxerga o Prowlarr dentro da rede da stack, já com a base
+    /// URL dele: `http://prowlarr:9696/prowlarr`
+    url: String,
 }
 
 #[derive(Deserialize)]
@@ -48,6 +61,16 @@ struct Arr {
     api: String,
     /// nome do campo de categoria da família: `tvCategory`, `movieCategory`, …
     cat_field: String,
+    /// a família — `sonarr`, `radarr` ou `lidarr` —, que no Prowlarr escolhe a
+    /// implementação e as categorias sincronizadas
+    family: String,
+    /// como o Prowlarr o alcança dentro da rede da stack, já com a base URL:
+    /// `http://sonarr:8989/sonarr`
+    #[serde(default)]
+    internal_url: String,
+    /// o Prowlarr deve sincronizar com ele? é a caixa da Configuração
+    #[serde(default)]
+    sync: bool,
 }
 
 #[derive(Deserialize)]
@@ -141,8 +164,8 @@ pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
     if req.arrs.is_empty() {
         return Err("nenhum *arr na stack para configurar".into());
     }
-    if req.clients.is_empty() {
-        return Err("nenhum cliente de download na stack para registrar".into());
+    if req.clients.is_empty() && req.prowlarr.is_none() {
+        return Err("nada para aplicar: nem cliente de download, nem Prowlarr".into());
     }
     let http = reqwest::Client::builder()
         .timeout(Duration::from_secs(20))
@@ -196,11 +219,111 @@ pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
             }
         }
     }
+    if let Some(p) = &req.prowlarr {
+        falhas += applications(&http, &base, &req, p, &log).await;
+    }
     if falhas > 0 {
         return Err(format!("{falhas} ligação(ões) não passaram"));
     }
     log.line("Configuração aplicada.");
     Ok(())
+}
+
+/* As categorias do newznab que o Prowlarr sincroniza com cada família. São o
+   padrão dele, e vão explícitas de propósito: o campo aceita ficar vazio, e um
+   `syncCategories` vazio é um Prowlarr que sincroniza indexer nenhum — falha
+   silenciosa, que é a pior de todas aqui. Mexer nisso é mexer no que o app
+   considera "série", "filme" e "música". */
+fn sync_categories(family: &str) -> Vec<u32> {
+    match family {
+        "sonarr" => vec![5000, 5010, 5020, 5030, 5040, 5045, 5050, 5090],
+        "radarr" => vec![2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060, 2070, 2080, 2090],
+        "lidarr" => vec![3000, 3010, 3020, 3030, 3040, 3050, 3060],
+        _ => vec![],
+    }
+}
+
+/// O recurso `applications` do Prowlarr: um *arr para ele sincronizar. Os dois
+/// endereços aqui são internos — de container para container, na rede da
+/// stack —, não os do nginx: quem vai falar com o *arr é o Prowlarr, não o
+/// servidor.
+fn app_body(arr: &Arr, prowlarr_url: &str, api_key: &str) -> Result<Value, String> {
+    let (implementation, contract) = match arr.family.as_str() {
+        "sonarr" => ("Sonarr", "SonarrSettings"),
+        "radarr" => ("Radarr", "RadarrSettings"),
+        "lidarr" => ("Lidarr", "LidarrSettings"),
+        other => return Err(format!("família sem aplicação no Prowlarr: {other}")),
+    };
+    if arr.internal_url.is_empty() {
+        return Err("sem o endereço interno para o Prowlarr chamar".into());
+    }
+    Ok(json!({
+        "name": arr.name,
+        // o Prowlarr manda os indexers e também tira o que saiu; `addOnly`
+        // deixaria lixo para trás a cada mudança
+        "syncLevel": "fullSync",
+        "implementation": implementation,
+        "implementationName": implementation,
+        "configContract": contract,
+        "fields": [
+            field("prowlarrUrl", json!(prowlarr_url)),
+            field("baseUrl", json!(arr.internal_url)),
+            field("apiKey", json!(api_key)),
+            field("syncCategories", json!(sync_categories(&arr.family))),
+        ],
+        "tags": [],
+    }))
+}
+
+/// O Prowlarr sincronizando cada *arr marcado na Configuração. Vale a mesma
+/// regra dos clientes: procura pelo nome, atualiza no lugar, e o que falha
+/// vira linha no log em vez de derrubar o resto.
+async fn applications(
+    http: &reqwest::Client,
+    base: &str,
+    req: &Req,
+    prowlarr: &Prowlarr,
+    log: &Log,
+) -> usize {
+    let url = format!("{base}{}/api/v1/applications", prowlarr.route);
+    let atuais = match list(http, &url, &req.api_key).await {
+        Ok(v) => v,
+        Err(e) => {
+            log.line(format!("Prowlarr: {e}"));
+            return req.arrs.iter().filter(|a| a.sync).count();
+        }
+    };
+    let mut falhas = 0;
+    for arr in req.arrs.iter().filter(|a| a.sync) {
+        let body = match app_body(arr, &prowlarr.url, &req.api_key) {
+            Ok(b) => b,
+            Err(e) => {
+                log.line(format!("Prowlarr → {}: {e}", arr.name));
+                falhas += 1;
+                continue;
+            }
+        };
+        let existente = atuais
+            .iter()
+            .find(|c| c.get("name").and_then(|n| n.as_str()) == Some(arr.name.as_str()))
+            .and_then(|c| c.get("id").and_then(|i| i.as_i64()));
+        match send(http, &url, &req.api_key, existente, body).await {
+            Ok(()) => log.line(format!(
+                "Prowlarr → {}: {}",
+                arr.name,
+                if existente.is_some() {
+                    "atualizado"
+                } else {
+                    "registrado"
+                }
+            )),
+            Err(e) => {
+                log.line(format!("Prowlarr → {}: {e}", arr.name));
+                falhas += 1;
+            }
+        }
+    }
+    falhas
 }
 
 /// Os clientes que o *arr já tem, para saber o que é registro novo e o que é
@@ -292,6 +415,9 @@ mod tests {
             route: format!("/{key}"),
             api: "v3".into(),
             cat_field: cat_field.into(),
+            family: key.split('-').next().unwrap().into(),
+            internal_url: format!("http://{key}:8989/{key}"),
+            sync: true,
         }
     }
 
@@ -366,6 +492,37 @@ mod tests {
         let mut c = qbit();
         c.kind = "transmission".into();
         assert!(c.body(&arr("sonarr", "tvCategory")).is_err());
+    }
+
+    #[test]
+    fn a_aplicacao_do_prowlarr_sai_com_os_dois_enderecos_internos() {
+        let a = arr("sonarr-anime", "tvCategory");
+        let b = app_body(&a, "http://prowlarr:9696/prowlarr", "chave").unwrap();
+        assert_eq!(b["implementation"], "Sonarr");
+        assert_eq!(b["configContract"], "SonarrSettings");
+        assert_eq!(b["syncLevel"], "fullSync");
+        // o nome é o da instância, que é o que distingue duas do mesmo app
+        assert_eq!(b["name"], "sonarr-anime");
+        assert_eq!(val(&b, "prowlarrUrl"), "http://prowlarr:9696/prowlarr");
+        assert_eq!(val(&b, "baseUrl"), "http://sonarr-anime:8989/sonarr-anime");
+        assert_eq!(val(&b, "apiKey"), "chave");
+        // sincronizar categoria nenhuma é um Prowlarr que não sincroniza nada
+        assert!(!val(&b, "syncCategories").as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn sem_endereco_interno_a_aplicacao_para_antes_de_ir_a_rede() {
+        let mut a = arr("radarr", "movieCategory");
+        a.internal_url = String::new();
+        assert!(app_body(&a, "http://prowlarr:9696", "chave").is_err());
+    }
+
+    #[test]
+    fn cada_familia_tem_as_categorias_dela_e_nao_as_da_outra() {
+        assert!(sync_categories("sonarr").iter().all(|c| (5000..6000).contains(c)));
+        assert!(sync_categories("radarr").iter().all(|c| (2000..3000).contains(c)));
+        assert!(sync_categories("lidarr").iter().all(|c| (3000..4000).contains(c)));
+        assert!(sync_categories("bazarr").is_empty());
     }
 
     #[test]

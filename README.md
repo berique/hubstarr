@@ -117,8 +117,7 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   de `chmod` e `chown`, e no Lidarr a caixa de nome existente é quem traz os
   formatos de faixa e a pasta do álbum. Por
   enquanto, das três partes, só os clientes de download chegam aos apps, pelo
-  **Aplicar na stack** — o Prowlarr e o Media Management ficam guardados na
-  interface.
+  **Aplicar na stack** — só o Media Management fica guardado na interface.
 - **Ambiente global** (botão no topo): bases de caminho, PUID/PGID, time zone,
   restart policy, API key e TLS. A
   lista de fusos é a IANA inteira, vinda do próprio navegador, e o valor
@@ -208,8 +207,8 @@ sem servidor, a página continua buscando cada captura direto na documentação
 deles.
 
 Com a stack no ar, a **Configuração** ganha o botão **Aplicar na stack**: o
-servidor registra cada cliente de download em cada *arr, pela API deles, e vai
-mostrando o que passou. Os apps são alcançados pelo nginx, na porta que ele
+servidor registra cada cliente de download em cada *arr e cada *arr marcado no
+Prowlarr, pela API deles, e vai mostrando o que passou. Os apps são alcançados pelo nginx, na porta que ele
 publica no host. Aplicar de novo não duplica — o cliente é procurado pelo nome
 e atualizado no lugar —, e um app que ainda não subiu vira uma linha no log em
 vez de interromper o resto. O SABnzbd precisa da chave de API dele, que é o
@@ -344,7 +343,7 @@ guarda as stacks e as sobe no Docker.
 | Marco    | Entrega                                              | Fecha quando                                                                            |
 | -------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | ~~**v0.2**~~ | ~~Backend ligando o `hubstarr.html` ao Docker~~   | ✅ a página grava os arquivos e sobe a stack sem passar pelo `.zip`                       |
-| **v0.3** | Configuração automática das stacks pelo backend       | 🚧 os clientes de download já entram nos *arr pelo **Aplicar na stack**; faltam Prowlarr e Media Management |
+| **v0.3** | Configuração automática das stacks pelo backend       | 🚧 os clientes de download e o Prowlarr já entram pelo **Aplicar na stack**; falta o Media Management |
 | **v0.4** | Custom formats e profiles próprios de cada stack      | a instância de 4K, a de anime e as demais nascem com o perfil de qualidade delas           |
 | **v0.5** | Compatibilidade com o TRaSH Guides                    | quality definitions, scores de custom format e as demais recomendações do guia saem prontas |
 | **v0.6** | Busca localizada de mídia                             | dá para escolher o idioma da busca e os *arr acham o lançamento certo                      |
@@ -353,8 +352,8 @@ guarda as stacks e as sobe no Docker.
 
 A página é um protótipo de interface: as escolhas da **Configuração** ficam
 guardadas — na página, e no banco quando há servidor — e, das três partes dela,
-só os **clientes de download** já viram chamada de API; o Prowlarr e o Media
-Management ainda param na interface. É o v0.3, em andamento. Os arquivos gerados, esses sempre foram
+os **clientes de download** e o **Prowlarr** já viram chamada de API; só o Media
+Management ainda para na interface. É o v0.3, em andamento. Os arquivos gerados, esses sempre foram
 de verdade — é baixar o `.zip` e rodar o `docker compose up -d` na pasta onde
 ele foi aberto, ou deixar o servidor fazer os dois.
 

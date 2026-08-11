@@ -250,10 +250,14 @@ pasta da stack, mais o `docker_ok()` que o `api/health` devolve — ele pergunta
 por `docker compose version`, não só pelo docker, porque o plugin é pacote à
 parte e é ele que sobe a stack; sem ele a página abre o bloco "Precisa instalar
 o Docker?" e mostra o aviso `#noDocker`), `apply.rs` (v0.3: registra os clientes de
-download na API de cada *arr — alcançados pelo nginx, porque o servidor roda no
-host e a rede `starrnet` não existe para ele; aplicar de novo procura o cliente
-pelo nome e atualiza no lugar, e um app fora do ar vira uma linha no log em vez
-de derrubar a volta inteira), `jobs.rs` (trabalhos numerados com log incremental, em memória
+download na API de cada *arr e cada *arr na do Prowlarr — alcançados pelo
+nginx, porque o servidor roda no host e a rede `starrnet` não existe para ele;
+aplicar de novo procura pelo nome e atualiza no lugar, e um app fora do ar vira
+uma linha no log em vez de derrubar a volta inteira. Cuidado com dois
+endereços diferentes: o servidor fala com os apps pelo nginx, mas o que vai
+*dentro* da aplicação do Prowlarr é o endereço interno, de container para
+container, e com a base URL junto — sem ela a API do *arr fica na raiz, onde
+não existe), `jobs.rs` (trabalhos numerados com log incremental, em memória
 — subir a stack baixa imagem e não cabe numa resposta HTTP), `shots.rs` (cache
 em disco das capturas de paleta do theme.park, ao lado do banco, servido em
 `api/shot/:app/:theme` — o `ok_seg()` recusa segmento que escaparia da pasta ou
@@ -352,9 +356,11 @@ repositório é o **v0.2** — a página, mais o servidor de `backend/`.
   stack. Uma primeira versão dele existiu e foi removida no `ba54e1a`; a de
   agora é normalizada.
 - **v0.3** — aplicar a **Configuração** pela API de cada app. **Em andamento**:
-  os clientes de download já vão (`apply.rs` + o botão "Aplicar na stack" do
-  modal da Configuração); faltam o Prowlarr (`CONFIG.apps`) e o Media Management
-  (`CONFIG.mm`), que entram pelo mesmo caminho. A chave da API do SABnzbd é o
+  os clientes de download e o Prowlarr já vão (`apply.rs` + o botão "Aplicar na
+  stack" do modal da Configuração); falta o Media Management (`CONFIG.mm`), que
+  entra pelo mesmo caminho. As categorias que o Prowlarr sincroniza por família
+  saem explícitas do `sync_categories()`, e não em branco: campo vazio ali é um
+  Prowlarr que não sincroniza indexer nenhum, sem dizer nada. A chave da API do SABnzbd é o
   próprio app que a gera na primeira subida, então ela é um campo do modal dele
   (flag `dlKey`) e mora na instância, não no Ambiente — não vai para arquivo
   nenhum, serve só para o Aplicar.
