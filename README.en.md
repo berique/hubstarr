@@ -134,11 +134,11 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   With more
   than one Sonarr in the stack, each episode format — **standard**, **daily**
   and **anime** — carries the list of instances that get it: you can send the
-  anime format to *Sonarr [Anime]* only, say. At least one instance is
-  mandatory, because the field is mandatory in the app; whichever is left out
-  keeps the format it already has instead of losing it. For now
-  the choices
-  all three parts reach the apps, through **Apply to the stack**.
+  anime format to *Sonarr [Anime]* only, say. Out of the box every instance gets
+  every format; at least one is mandatory on the default format, because the
+  field is mandatory in the app, and whichever you untick keeps the format it
+  already has instead of losing it. All three parts of the Configuration reach
+  the apps, through **Bring up** and **Apply to the stack**.
 - **Global environment** (button at the top): base paths, PUID/PGID — which,
   with a server, already come from the user and group it runs as, the same one
   that creates the stack folders —, time zone,

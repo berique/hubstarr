@@ -140,10 +140,11 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   Con más de un Sonarr en la
   stack, cada formato de episodio — **estándar**, **diario** y **anime** — trae
   la lista de las instancias que lo reciben: se puede mandar el formato de anime
-  solo al *Sonarr [Anime]*, por ejemplo. Al menos una instancia es obligatoria,
-  porque el campo es obligatorio en el app; la que quede fuera conserva el
-  formato que ya tiene, en vez de perderlo. Por ahora las
-  opciones, las tres partes llegan a las apps por el **Aplicar en la stack**.
+  solo al *Sonarr [Anime]*, por ejemplo. De fábrica todas las instancias reciben
+  todos los formatos; al menos una es obligatoria en el formato predeterminado,
+  porque el campo es obligatorio en el app, y la que desmarques conserva el
+  formato que ya tiene, en vez de perderlo. Las tres partes de la Configuración
+  llegan a las apps por el **Levantar** y por el **Aplicar en la stack**.
 - **Entorno global** (botón arriba): rutas base, PUID/PGID — que, con servidor,
   ya vienen con el usuario y el grupo con que se ejecuta, el mismo que crea las
   carpetas de la stack —, zona horaria,
