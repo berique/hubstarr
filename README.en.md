@@ -41,8 +41,10 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   ![The Credits modal, with the stack's projects and where images, themes and icons come from](docs/credits.png)
 - **Configure each instance** in a modal: title, media/downloads subfolder and
   VPN routing.
-- **Copy each service's link**, with the scheme, domain and subpath nginx will
-  serve it on.
+- **Copy each service's link**, with the scheme, address and subpath nginx will
+  serve it on. The address is the Environment's domain when there is one; with
+  none, it is the same one you opened the page on — reach it by the LAN IP and
+  the links come out on that IP, not on `localhost`.
 - **Conflict warning**: two instances pointed at the same folder step on each
   other when importing, so the list says so in red, with the names and the
   path. Jellyfin, which mounts the whole library, and Bazarr, which follows the

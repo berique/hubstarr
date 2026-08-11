@@ -43,8 +43,11 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   ![El modal de Créditos, con los proyectos de la stack y el origen de imágenes, temas e iconos](docs/credits.png)
 - **Configurar cada instancia** en un modal: título, subcarpeta multimedia o de
   descargas y enrutamiento por la VPN.
-- **Copiar el enlace** de cada servicio, ya con el esquema, el dominio y el
-  subpath por los que nginx lo va a atender.
+- **Copiar el enlace** de cada servicio, ya con el esquema, la dirección y el
+  subpath por los que nginx lo va a atender. La dirección es el dominio del
+  Entorno cuando lo hay; sin él, es la misma por la que abriste la página —
+  quien llega por la IP de la LAN recibe los enlaces en esa IP, no en
+  `localhost`.
 - **Aviso de conflicto**: dos instancias apuntadas a la misma carpeta se pisan
   al importar, así que la lista lo avisa en rojo, con los nombres y la ruta.
   Jellyfin, que monta la biblioteca entera, y Bazarr, que sigue a las otras,
