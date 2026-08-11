@@ -102,12 +102,17 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    traz `conf:[{host, target, pane, tab}, …]` no catálogo — é **lista**, porque o
    qBittorrent gera dois (a conf e o `categories.json`), e o `confsOf()` é quem
    a percorre no bind do compose, no `outFiles()` e nas abas. `host` é o caminho
-   dentro da pasta de config dele, o mesmo no bind do compose e no que o
-   servidor grava. Eles
+   dentro da pasta de config dele, o mesmo no `.zip` e no bind do compose. Eles
    emitem **HTML com spans de realce** (`<span class="k">`/`v`/`c`); o texto
-   puro para copiar vem de `textContent` dos panes (`plain()`,
+   puro para copiar/baixar vem de `textContent` dos panes (`plain()`,
    `plainEnv()`, `plainNginx()`). Ao editar um gerador, mantenha a marcação e
    passe strings pelo `t()`.
+8. **ZIP** — `makeZip()` é uma implementação própria do formato (método
+   "store", CRC32 manual), justamente para não depender de biblioteca externa.
+   É a saída de quem não tem servidor: o `detectServer()` esconde o `#dl`
+   quando alguém responde em `api/health`, porque ali o **Subir** grava os
+   mesmos arquivos sem passar pelo pacote.
+
 ## Quatro padrões que se repetem
 
 **Ajuda por campo.** Marcar uma `.row` de qualquer modal com
@@ -152,8 +157,8 @@ handler de `#mSave`.
 
 ## Invariantes a preservar
 
-- **Zero dependências externas em runtime**: os logotipos são data URI e a
-  lista de fusos vem do `Intl` do navegador. Não introduza CDN,
+- **Zero dependências externas em runtime**: os logotipos são data URI, o ZIP é
+  feito à mão, a lista de fusos vem do `Intl` do navegador. Não introduza CDN,
   npm nem `fetch` — aberta do disco, a página tem de funcionar inteira.
 - **Nenhum serviço publica porta no host**, exceto o nginx. Ele ouve em 80/443
   dentro do container e publica no host as portas do modal próprio dele — o
@@ -191,7 +196,7 @@ handler de `#mSave`.
   no fonte da versão em uso; formato errado vira app que não abre. O hash é
   assíncrono (WebCrypto): `refreshQbitHash()` devolve a promessa e redesenha
   quando ela chega. Enquanto ela não chega, o gerador põe um comentário no
-  lugar da linha da senha — por isso o `#up` dá
+  lugar da linha da senha — por isso o `#dl` e o `#up` dão
   `await refreshQbitHash()` antes de chamar o `outFiles()`: sem isso dá para
   gravar uma conf sem senha nenhuma. A API key sai da `${STARR_APIKEY}` mapeada no alfabeto dele
   (`qbitKeyFrom`) — a conf é INI lido pelo app, não pelo compose, então pôr a

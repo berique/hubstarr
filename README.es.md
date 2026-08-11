@@ -7,8 +7,8 @@
 Prototipo de página única que arma el `docker-compose.yml`, el `.env` y el
 `nginx.conf` de una stack multimedia (*arr + clientes de descarga + servidor
 multimedia), sin dependencias externas. La página funciona sola, abierta desde
-el disco; un [servidor opcional](#servidor-opcional) guarda las stacks en
-SQLite, graba los archivos y levanta la stack en Docker.
+el disco; un [servidor opcional](#servidor-opcional) guarda las stacks en SQLite
+y levanta la stack en Docker sin pasar por el `.zip`.
 
 > [!WARNING]
 > **Prototipo.** Hubstarr no fue diseñado para uso en producción: los archivos
@@ -124,9 +124,9 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
 - **Entorno global** (botón arriba): rutas base, PUID/PGID, zona horaria,
   restart policy, API key y TLS. La lista de husos es la IANA entera, que viene
   del propio navegador, y arranca en el huso de la máquina.
-- **Copiar** el `docker-compose.yml`, el `.env`, el
-  `nginx/conf.d/starrnet.conf` y la configuración propia de cada servicio, una
-  por pestaña. Con servidor, es él quien los graba en disco.
+- **Descargar** `docker-compose.yml`, `.env` y `nginx/conf.d/starrnet.conf`
+  juntos en un `.zip` — el botón se queda en la barra mientras no hay servidor;
+  con él, quien graba los archivos es **Levantar**.
 - **Cambiar el idioma** en el selector de arriba: portugués (Brasil), inglés y
   español.
 
@@ -156,8 +156,8 @@ sudo usermod -aG docker $USER
 
 [dd]: https://docs.docker.com/desktop/
 
-Con Docker en su sitio, copia los archivos generados a una carpeta y levanta
-la stack desde dentro de ella:
+Con Docker en su sitio, descomprime el `.zip` y levanta la stack desde la
+carpeta de los archivos:
 
 ```sh
 docker compose up -d
@@ -166,12 +166,12 @@ docker compose up -d
 ## Servidor opcional
 
 La página sigue siendo el producto: es ella la que genera los archivos, y
-abierta desde el disco funciona entera — muestra cada uno de ellos y deja
-copiarlos, y nada más. El servidor de
+abierta desde el disco funciona entera, con el `.zip` y nada más. El servidor de
 `backend/` añade lo que el navegador no alcanza solo — **guardar las stacks
-entre sesiones**, grabar los archivos en disco y levantar la stack en Docker.
-Nunca genera contenido: recibe ya listo lo que armaron los generadores de la
-página.
+entre sesiones**, grabar los archivos en disco y levantar la stack en Docker;
+con él en marcha, el botón del `.zip` sale de la barra, porque **Levantar** graba
+los mismos archivos. Nunca genera contenido: recibe ya listo lo que armaron los
+generadores de la página.
 
 Compilarlo y ejecutarlo necesita [Rust](https://rustup.rs):
 
@@ -352,7 +352,7 @@ aplicada en las apps.
 
 | Hito     | Entrega                                              | Se cierra cuando                                                                        |
 | -------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| ~~**v0.2**~~ | ~~Un backend que conecte `hubstarr.html` con Docker~~ | ✅ la página graba los archivos y levanta la stack sola                                 |
+| ~~**v0.2**~~ | ~~Un backend que conecte `hubstarr.html` con Docker~~ | ✅ la página graba los archivos y levanta la stack sin pasar por el `.zip`              |
 | ~~**v0.3**~~ | ~~Configuración automática de las stacks desde el backend~~ | ✅ Prowlarr, clientes de descarga y Media Management salen de la interfaz y son llamadas de API |
 | **v0.4** | Custom formats y profiles propios de cada stack       | la instancia de 4K, la de anime y las demás nacen con su perfil de calidad                 |
 | **v0.5** | Compatibilidad con TRaSH Guides                       | quality definitions, scores de custom format y el resto de las recomendaciones de la guía ya listas |
@@ -364,9 +364,9 @@ La página es un prototipo de interfaz, pero la **Configuración** ya no es solo
 interfaz: las opciones se guardan — en ella, y en la base cuando hay servidor —
 y, con servidor y la stack en marcha, sus tres partes se vuelven llamadas de API
 por el **Aplicar en la stack**. Los archivos generados siempre
-fueron de verdad — basta con copiar cada uno a una carpeta y ejecutar
-`docker compose up -d` dentro de ella, o dejar que el servidor haga las dos
-cosas.
+fueron de verdad — basta con descargar el `.zip` y ejecutar
+`docker compose up -d` en la carpeta donde se descomprimió, o dejar que el
+servidor haga las dos cosas.
 
 ## Licencia
 

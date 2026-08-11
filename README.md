@@ -7,8 +7,8 @@
 Protótipo de página única que monta o `docker-compose.yml`, o `.env` e o
 `nginx.conf` de uma stack de mídia (*arr + clientes de download + servidor de
 mídia), sem dependências externas. A página funciona sozinha, aberta do disco;
-um [servidor opcional](#servidor-opcional) guarda as stacks em SQLite, grava os
-arquivos e sobe a stack no Docker.
+um [servidor opcional](#servidor-opcional) guarda as stacks em SQLite e sobe a
+stack no Docker sem passar pelo `.zip`.
 
 > [!WARNING]
 > **Protótipo.** O Hubstarr não foi projetado para uso em produção: os arquivos
@@ -122,9 +122,9 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   restart policy, API key e TLS. A
   lista de fusos é a IANA inteira, vinda do próprio navegador, e o valor
   inicial é o fuso da máquina.
-- **Copiar** o `docker-compose.yml`, o `.env`, o `nginx/conf.d/starrnet.conf` e
-  as configurações de cada serviço, um por aba. Com servidor, é ele quem os
-  grava em disco.
+- **Baixar** `docker-compose.yml`, `.env` e `nginx/conf.d/starrnet.conf` juntos
+  num `.zip` — o botão fica na barra enquanto não há servidor; com ele, quem
+  grava os arquivos é o **Subir**.
 - **Trocar o idioma** no seletor do topo: português (Brasil), inglês e
   espanhol.
 
@@ -153,8 +153,8 @@ sudo usermod -aG docker $USER
 
 [dd]: https://docs.docker.com/desktop/
 
-Com o Docker no lugar, copie os arquivos gerados para uma pasta e suba a stack
-de dentro dela:
+Com o Docker no lugar, descompacte o `.zip` e suba a stack de dentro da pasta
+dos arquivos:
 
 ```sh
 docker compose up -d
@@ -163,9 +163,11 @@ docker compose up -d
 ## Servidor (opcional)
 
 A página continua sendo o produto: é ela que gera os arquivos, e aberta do
-disco funciona inteira — mostra cada um deles e deixa copiá-los, e nada mais. O servidor em `backend/`
+disco funciona inteira, com o `.zip` e mais nada. O servidor em `backend/`
 acrescenta o que o navegador não alcança sozinho — **guardar as stacks entre
-sessões**, gravar os arquivos em disco e subir a stack no Docker. Ele nunca
+sessões**, gravar os arquivos em disco e subir a stack no Docker; com ele no
+ar, o botão do `.zip` sai da barra, porque o **Subir** grava os mesmos
+arquivos. Ele nunca
 gera conteúdo: recebe pronto o que os geradores da página montaram.
 
 Compilar e rodar precisa do [Rust](https://rustup.rs):
@@ -344,7 +346,7 @@ as stacks e as sobe no Docker, e a Configuração aplicada nos apps.
 
 | Marco    | Entrega                                              | Fecha quando                                                                            |
 | -------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| ~~**v0.2**~~ | ~~Backend ligando o `hubstarr.html` ao Docker~~   | ✅ a página grava os arquivos e sobe a stack sozinha                                     |
+| ~~**v0.2**~~ | ~~Backend ligando o `hubstarr.html` ao Docker~~   | ✅ a página grava os arquivos e sobe a stack sem passar pelo `.zip`                       |
 | ~~**v0.3**~~ | ~~Configuração automática das stacks pelo backend~~ | ✅ Prowlarr, clientes de download e Media Management saem da interface e viram chamada de API |
 | **v0.4** | Custom formats e profiles próprios de cada stack      | a instância de 4K, a de anime e as demais nascem com o perfil de qualidade delas           |
 | **v0.5** | Compatibilidade com o TRaSH Guides                    | quality definitions, scores de custom format e as demais recomendações do guia saem prontas |
@@ -356,8 +358,8 @@ A página é um protótipo de interface, mas a **Configuração** não é mais s
 interface: as escolhas ficam guardadas — na página, e no banco quando há
 servidor — e, com servidor e a stack no ar, as três partes dela viram chamada de
 API pelo **Aplicar na stack**. Os arquivos gerados, esses sempre foram
-de verdade — é copiar cada um para uma pasta e rodar o `docker compose up -d`
-dentro dela, ou deixar o servidor fazer os dois.
+de verdade — é baixar o `.zip` e rodar o `docker compose up -d` na pasta onde
+ele foi aberto, ou deixar o servidor fazer os dois.
 
 ## Licença
 
