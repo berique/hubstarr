@@ -762,6 +762,7 @@ const I18N = {
   'srv.on':'servidor',
   'srv.at':d=>`Servidor conectado; os arquivos vão para ${d}`,
   'srv.noDocker':'o docker compose não respondeu neste servidor',
+  'btn.noDocker':'O docker compose não respondeu neste servidor: instale-o para subir e derrubar a stack daqui',
   'docker.missing':'<b>Sem o Docker Compose neste servidor.</b> O Hubstarr continua gerando os arquivos e guardando a stack, mas <b>Subir</b> e <b>Derrubar</b> vão falhar até o plugin Compose estar instalado — veja abaixo como instalá-lo.',
   'log.up':'Subindo a stack',
   'log.down':'Derrubando a stack',
@@ -1079,6 +1080,7 @@ const I18N = {
   'srv.on':'server',
   'srv.at':d=>`Server connected; files go to ${d}`,
   'srv.noDocker':'docker compose did not answer on this server',
+  'btn.noDocker':'docker compose did not answer on this server: install it to bring the stack up and down from here',
   'docker.missing':'<b>No Docker Compose on this server.</b> Hubstarr still generates the files and keeps the stack, but <b>Bring up</b> and <b>Tear down</b> will fail until the Compose plugin is installed — see below how to install it.',
   'log.up':'Bringing the stack up',
   'log.down':'Tearing the stack down',
@@ -1396,6 +1398,7 @@ const I18N = {
   'srv.on':'servidor',
   'srv.at':d=>`Servidor conectado; los archivos van a ${d}`,
   'srv.noDocker':'docker compose no respondió en este servidor',
+  'btn.noDocker':'docker compose no respondió en este servidor: instálalo para levantar y derribar la stack desde aquí',
   'docker.missing':'<b>Sin Docker Compose en este servidor.</b> Hubstarr sigue generando los archivos y guardando la stack, pero <b>Levantar</b> y <b>Derribar</b> fallarán hasta que el plugin Compose esté instalado — mira abajo cómo instalarlo.',
   'log.up':'Levantando la stack',
   'log.down':'Derribando la stack',
@@ -3564,12 +3567,20 @@ async function detectServer(){
   $('#srv').hidden = false;
   $('#srv').title  = t('srv.at', SERVER.dir);
   $('#up').hidden = $('#down').hidden = false;
-  /* sem o docker compose no servidor, o Subir não tem como funcionar: o aviso
-     aparece e o bloco de como instalar abre junto, que é o que resolve */
+  /* sem o docker compose no servidor, nem o Subir nem o Derrubar têm como
+     funcionar: os dois ficam desabilitados, o aviso aparece e o bloco de como
+     instalar abre junto, que é o que resolve. A dica dos botões troca de chave
+     em vez de virar `title` na mão — quem a escreve é o `applyI18n()`, a cada
+     troca de idioma. */
   if(!SERVER.docker){
     $('#srv').title += ' — ' + t('srv.noDocker');
     $('#noDocker').hidden = false;
     $('#dockerHelp').open = true;
+    ['#up','#down'].forEach(sel=>{
+      $(sel).disabled = true;
+      $(sel).dataset.i18nTitle = 'btn.noDocker';
+    });
+    applyI18n();
   }
   await openStack();
   pollStatus();
