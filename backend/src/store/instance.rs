@@ -6,8 +6,8 @@
    não uma linha nova.
 
    Cada adicionar, editar ou excluir mexe numa linha só; o `reconcile()` é a
-   rede de segurança para o que não passa pelo modal — o gluetun que entra
-   sozinho, o Heimdall que é reposto, o "Limpar" que esvazia tudo. */
+   rede de segurança para o que não passa pelo modal — o gluetun e o
+   flaresolverr que entram sozinhos, o "Limpar" que esvazia tudo. */
 
 use rusqlite::params;
 use serde::Deserialize;

@@ -36,8 +36,7 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    downloads inteira), `dlClient`, `vpn`, `hw` (Jellyfin), `library` (Jellyfin:
    monta a base e mais as pastas que ficaram fora dela), `solver` (Prowlarr;
    ver abaixo), `internal` (gluetun e FlareSolverr: sem rota no nginx e sem
-   botão de link), `noLink` (Heimdall: sem botão de link, mas com rota — ele é a
-   raiz, o link seria o endereço da stack), `subpathFix` (Seerr: o `location`
+   botão de link), `subpathFix` (Seerr: o `location`
    dele tira o prefixo e reescreve o que volta), `vpnCfg` (gluetun: as
    credenciais da VPN no modal dele),
    `webAuth` + `conf` (qBittorrent: usuário/senha/API key no modal dele e a
@@ -50,9 +49,7 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    `ICONS` + as strings `d.<id>` no `I18N`.
 3. **Constantes de convenção** — `STACK`/`NETWORK` (`starrnet`), `NGINX`
    (reverse proxy fixo, fora do combobox, único que publica portas),
-   `ROOT_SERVICE` (Heimdall, servido em `/`; com `fixed:true`, o
-   `ensureFixed()` o repõe no `added`, e ele fica fora do combobox e sem
-   "Excluir"), `MULTI` (serviços com múltiplas instâncias), e os mapas de
+   `MULTI` (serviços com múltiplas instâncias), e os mapas de
    variáveis de ambiente `INSTANCE_ENV`, `URLBASE_ENV`, `APIKEY_ENV`.
 4. **Estado** — quatro globais mutáveis: `added` (instâncias,
    `{id,title,data,abs,libs,vpn,hw,solver}` — `abs` só quando o caminho da mídia
@@ -184,7 +181,7 @@ handler de `#mSave`.
   O logotipo também segue o nome, não a imagem: o do Byparr é um cookie que aos
   20px da lista vira um ponto laranja, e já foi tentado e revertido.
 - **Logotipo sempre sobre fundo claro**: os SVGs do dashboardicons são
-  desenhados para isso e alguns são pretos (Heimdall, SABnzbd, Bazarr), então
+  desenhados para isso e alguns são pretos (SABnzbd, Bazarr), então
   `--ico-bg` é claro nos dois temas. Não o amarre ao `--panel`. O do nginx é a
   exceção de origem — vem do IconScout (Icon 54) e por isso está creditado na
   seção de licença dos READMEs; ícone de outra fonte entra com o crédito junto.

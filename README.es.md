@@ -27,7 +27,7 @@ sigue en el botón de arriba.
 El combobox lista los servicios disponibles con sus logotipos y puertos por
 defecto:
 
-![El combobox abierto, mostrando los doce servicios disponibles](docs/services.png)
+![El combobox abierto, mostrando los once servicios disponibles](docs/services.png)
 
 Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la página:
 
@@ -66,7 +66,7 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   `devices: /dev/dri:/dev/dri`; NVIDIA, la reserva de GPU en `deploy` y las
   variables `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES`.
 - **Tema de theme.park**: los servicios con imagen de linuxserver — Sonarr,
-  Radarr, Lidarr, Prowlarr, Bazarr, qBittorrent, SABnzbd, Jellyfin y Heimdall —
+  Radarr, Lidarr, Prowlarr, Bazarr, qBittorrent, SABnzbd y Jellyfin —
   salen con `DOCKER_MODS=ghcr.io/themepark-dev/theme.park:<app>`, el mod que
   aplica el tema en su interfaz. En Sonarr y Radarr el modal trae además un
   campo **Variante**, que se vuelve `TP_ADDON`: *Predeterminado* usa el addon
@@ -268,10 +268,10 @@ conflicto posible.
 | ------------ | -------------- | ------------ | -------------- |
 | Sonarr       | `8989`         | Jellyfin     | `8096`         |
 | Radarr       | `7878`         | Seerr        | `5055`         |
-| Lidarr       | `8686`         | Heimdall     | `80`           |
-| Prowlarr     | `9696`         | FlareSolverr | `8191`         |
-| Bazarr       | `6767`         | Gluetun      | `8000`         |
-| qBittorrent  | `8181`         | Nginx        | `80` / `443`   |
+| Lidarr       | `8686`         | FlareSolverr | `8191`         |
+| Prowlarr     | `9696`         | Gluetun      | `8000`         |
+| Bazarr       | `6767`         | Nginx        | `80` / `443`   |
+| qBittorrent  | `8181`         |              |                |
 | SABnzbd      | `8080`         |              |                |
 
 Es ese puerto el que aparece en la lista, junto al subpath, y el que usa el
@@ -284,9 +284,7 @@ publicados en el host salen de su propio modal.
 ## Reverse proxy
 
 nginx es fijo y obligatorio: siempre entra en la stack, no aparece en el
-combobox y no se puede eliminar. Heimdall también entra solo — es el panel de
-accesos que se queda en la raíz —, pero ese sí se puede editar; solo no sale de
-la lista. Es el único contenedor que publica puertos en
+combobox y no se puede eliminar. Es el único contenedor que publica puertos en
 el host — todos los demás se quedan solo en la red `starrnet`, alcanzados por
 nginx en `nombre-del-contenedor:puerto-interno`. Lo que se enruta por la VPN
 responde en `gluetun`, que es quien tiene la red.
@@ -298,10 +296,10 @@ dentro del contenedor nginx sigue escuchando en 80 y 443. Los enlaces copiados
 y la redirección al https ya llevan el puerto elegido.
 
 La pestaña **nginx.conf** genera la configuración correspondiente, enrutando
-por subpath (`/sonarr`, `/radarr`…), un `location` por servicio. Heimdall es la
-excepción: como panel de accesos, se queda en la raíz (`location /`). El
-archivo se monta en `${BASE_CONFIG}/nginx/conf.d` y cada app necesita su *base
-URL* igual a su subpath.
+por subpath (`/sonarr`, `/radarr`…), un `location` por servicio. El archivo se
+monta en `${BASE_CONFIG}/nginx/conf.d` y cada app necesita su *base URL* igual a
+su subpath. Ningún servicio se queda en la raíz: la `/` de la stack no tiene
+`location`, así que se entra por el subpath de cada app.
 
 No todo servicio se vuelve ruta: `gluetun` y FlareSolverr solo hablan con los
 otros contenedores, así que no reciben `location` ni botón de enlace — Prowlarr

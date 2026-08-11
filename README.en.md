@@ -25,7 +25,7 @@ closed, it is still behind the button at the top.
 
 The combobox lists the available services with their logos and default ports:
 
-![The open combobox, showing the twelve available services](docs/services.png)
+![The open combobox, showing the eleven available services](docs/services.png)
 
 And the **Theme** field shows the chosen palette's screenshot without leaving the page:
 
@@ -63,7 +63,7 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   `devices: /dev/dri:/dev/dri`; NVIDIA gets the GPU reservation under `deploy`
   plus the `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES` variables.
 - **theme.park theme**: services on linuxserver images — Sonarr, Radarr,
-  Lidarr, Prowlarr, Bazarr, qBittorrent, SABnzbd, Jellyfin and Heimdall — come
+  Lidarr, Prowlarr, Bazarr, qBittorrent, SABnzbd and Jellyfin — come
   out with `DOCKER_MODS=ghcr.io/themepark-dev/theme.park:<app>`, the mod that
   themes their interface. Sonarr and Radarr also get a **Variant** field in the
   modal, which becomes `TP_ADDON`: *Default* uses the darker addon
@@ -263,10 +263,10 @@ to worry about.
 | ------------ | ------------- | ------------ | ------------- |
 | Sonarr       | `8989`        | Jellyfin     | `8096`        |
 | Radarr       | `7878`        | Seerr        | `5055`        |
-| Lidarr       | `8686`        | Heimdall     | `80`          |
-| Prowlarr     | `9696`        | FlareSolverr | `8191`        |
-| Bazarr       | `6767`        | Gluetun      | `8000`        |
-| qBittorrent  | `8181`        | Nginx        | `80` / `443`  |
+| Lidarr       | `8686`        | FlareSolverr | `8191`        |
+| Prowlarr     | `9696`        | Gluetun      | `8000`        |
+| Bazarr       | `6767`        | Nginx        | `80` / `443`  |
+| qBittorrent  | `8181`        |              |               |
 | SABnzbd      | `8080`        |              |               |
 
 This is the port shown in the list next to the subpath, and the one nginx
@@ -279,9 +279,7 @@ container — the ones published on the host come from its own modal.
 ## Reverse proxy
 
 nginx is fixed and mandatory: it is always in the stack, never shows up in the
-combobox and cannot be removed. Heimdall comes in on its own too — it is the
-dashboard sitting at the root — but that one can be edited; it just cannot be
-removed from the list. It is the only container publishing ports on
+combobox and cannot be removed. It is the only container publishing ports on
 the host — everything else stays on the `starrnet` network, reached by nginx at
 `container-name:internal-port`. Whatever routes through the VPN answers at
 `gluetun`, which owns the network.
@@ -293,10 +291,10 @@ the container nginx keeps listening on 80 and 443. The copied links and the
 redirect to https already carry the chosen port.
 
 The **nginx.conf** tab generates the matching configuration, routing by subpath
-(`/sonarr`, `/radarr`…), one `location` per service. Heimdall is the exception:
-as the dashboard, it sits at the root (`location /`). The file is mounted at
+(`/sonarr`, `/radarr`…), one `location` per service. The file is mounted at
 `${BASE_CONFIG}/nginx/conf.d`, and each app needs its *base URL* to match its
-subpath.
+subpath. No service sits at the root: the stack's `/` has no `location`, so it
+is through each app's subpath that you get in.
 
 Not every service becomes a route: `gluetun` and FlareSolverr only talk to the
 other containers, so they get no `location` and no link button — Prowlarr
