@@ -73,6 +73,16 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
   saem de fábrica com os do TRaSH Guides, variante do Jellyfin com id do TMDb).
    `syncConfig()` o alinha com o `added` a cada abertura do modal.
 
+   O bloco **Media Management (avançado)** — o `MM_ADV`, o que os apps escondem
+   atrás do "Advanced Settings" — vale para as três famílias com os mesmos sete
+   campos, porque os nomes de API deles coincidem no Sonarr, no Radarr e no
+   Lidarr. Ele mora em `mm[família].naming.adv` pela mesma razão do `scope`
+   abaixo: é o `cfg_naming` que guarda JSON livre, e assim não há coluna nem
+   migração — o servidor o tira de dentro do `naming` e o trata como campo do
+   `mediamanagement`. Os dois numéricos (`recycleDays`, `minFree`) são texto na
+   interface e número na API; a conversão é do servidor, e texto que não for
+   número vira erro no log em vez de virar zero calado.
+
    O Media Management é **por família**, com uma exceção: campo do
    `NAMING_FIELDS` marcado com `perInst` vale por instância, e quais delas o
    recebem fica em `mm[família].naming.scope[campo][chave da instância]` — hoje

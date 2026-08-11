@@ -119,7 +119,9 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   (`tv`, `movies`, `music`), todas editables —, además de la
   gestión de descargas completadas en SABnzbd, y las opciones de
   *Media Management* — hardlink, renombrar, permisos, carpetas
-  vacías y la nomenclatura completa de cada app (*Episode Naming*,
+  vacías, el bloque **avanzado** (volver a examinar la carpeta, papelera y su
+  limpieza, importar archivos extra, comprobación de espacio libre) y la
+  nomenclatura completa de cada app (*Episode Naming*,
   *Nomenclatura de película*, *Nomenclatura de pista*: caracteres ilegales, dos
   puntos, varios episodios y todos los formatos de archivo y de carpeta) —,
   separadas por familia: Sonarr, Radarr y Lidarr. Los formatos de episodio y de

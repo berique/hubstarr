@@ -582,7 +582,18 @@ const MEDIA_MANAGEMENT: &[(&str, &str)] = &[
     ("chmod", "chmodFolder"),
     ("chown", "chownGroup"),
     ("empty", "deleteEmptyFolders"),
+    // o bloco avançado da Configuração: mesmos nomes nas três famílias
+    ("rescan", "rescanAfterRefresh"),
+    ("recycleBin", "recycleBin"),
+    ("recycleDays", "recycleBinCleanupDays"),
+    ("extraFiles", "importExtraFiles"),
+    ("extraExts", "extraFileExtensions"),
+    ("skipFree", "skipFreeSpaceCheckWhenImporting"),
+    ("minFree", "minimumFreeSpaceWhenImporting"),
 ];
+
+/// Campos que a interface digita como texto e a API quer como número.
+const NUMERICOS: &[&str] = &["recycleBinCleanupDays", "minimumFreeSpaceWhenImporting"];
 
 /* Os dois campos de lista da nomenclatura viajam pelo nome e chegam à API
    como número: a ordem aqui é a do enum do *arr, e é a mesma do `COLON` e do
@@ -593,6 +604,21 @@ const COLON: &[&str] = &["delete", "dash", "spaceDash", "spaceDashSpace", "smart
 const MULTI_EP: &[&str] = &["extend", "duplicate", "repeat", "scene", "range", "prefixedRange"];
 
 fn enum_value(campo: &str, v: &Value) -> Result<Value, String> {
+    if NUMERICOS.contains(&campo) {
+        // campo de texto na página, número na API: vazio vira 0, e o que não
+        // for número vira erro em vez de virar zero calado
+        let txt = match v {
+            Value::String(t) => t.trim().to_string(),
+            outro => return Ok(outro.clone()),
+        };
+        if txt.is_empty() {
+            return Ok(json!(0));
+        }
+        return txt
+            .parse::<i64>()
+            .map(|n| json!(n))
+            .map_err(|_| format!("{campo}: {txt} não é um número"));
+    }
     let lista = match campo {
         "colonReplacementFormat" => COLON,
         "multiEpisodeStyle" => MULTI_EP,
@@ -630,6 +656,18 @@ async fn media_management(
         return 0;
     };
     let naming = mm.get("naming").and_then(|v| v.as_object()).cloned();
+    /* O bloco avançado viaja dentro do `naming` — é a tabela que guarda JSON
+       livre —, mas é campo do `mediamanagement`: sai de lá e entra aqui. */
+    let mut campos_mm = mm.clone();
+    if let Some(adv) = naming
+        .as_ref()
+        .and_then(|n| n.get("adv"))
+        .and_then(|v| v.as_object())
+    {
+        for (k, v) in adv {
+            campos_mm.insert(k.clone(), v.clone());
+        }
+    }
     // o "renomear" fica no `mm` da página, mas na API ele é campo da
     // nomenclatura: entra junto com ela
     let mut campos_naming = naming.unwrap_or_default();
@@ -650,7 +688,7 @@ async fn media_management(
         ),
         (
             "mediamanagement",
-            mm.clone(),
+            campos_mm,
             MEDIA_MANAGEMENT.to_vec(),
         ),
     ] {
@@ -948,6 +986,36 @@ mod tests {
         assert_eq!(atual["campoQueANaoConheco"], "fica");
         // campo que a página não mandou não é inventado
         assert!(atual.get("animeEpisodeFormat").is_none());
+    }
+
+    #[test]
+    fn o_bloco_avancado_vira_campo_do_mediamanagement() {
+        let mut atual = json!({"id": 1, "recycleBin": "", "autoRenameFolders": true});
+        let de: Map<String, Value> = serde_json::from_str(
+            r#"{"rescan":"never","recycleBin":"/mnt/media/.lixeira","recycleDays":"14",
+                "extraFiles":true,"extraExts":"srt,sub","skipFree":false,"minFree":"250"}"#,
+        )
+        .unwrap();
+        merge(&mut atual, &de, MEDIA_MANAGEMENT).unwrap();
+        assert_eq!(atual["rescanAfterRefresh"], "never");
+        assert_eq!(atual["recycleBin"], "/mnt/media/.lixeira");
+        assert_eq!(atual["importExtraFiles"], true);
+        assert_eq!(atual["extraFileExtensions"], "srt,sub");
+        assert_eq!(atual["skipFreeSpaceCheckWhenImporting"], false);
+        // texto na página, número na API
+        assert_eq!(atual["recycleBinCleanupDays"], 14);
+        assert_eq!(atual["minimumFreeSpaceWhenImporting"], 250);
+        // e o que é do app continua lá
+        assert_eq!(atual["autoRenameFolders"], true);
+    }
+
+    #[test]
+    fn numero_vazio_vira_zero_e_texto_torto_vira_erro() {
+        assert_eq!(enum_value("recycleBinCleanupDays", &json!("")).unwrap(), json!(0));
+        assert_eq!(enum_value("minimumFreeSpaceWhenImporting", &json!(" 100 ")).unwrap(), json!(100));
+        assert!(enum_value("recycleBinCleanupDays", &json!("uma semana")).is_err());
+        // número que já veio número passa direto
+        assert_eq!(enum_value("minimumFreeSpaceWhenImporting", &json!(7)).unwrap(), json!(7));
     }
 
     #[test]

@@ -660,6 +660,26 @@ const I18N = {
   'cfg.q.failed':'Download que falhou sai da fila do cliente e é marcado como falho no *arr, que procura outra versão.',
   'cfg.mm':'Media Manager (avançado)',
   'cfg.mmHint':'Vale para todas as instâncias da mesma família. São as opções de <i>Settings → Media Management</i>.',
+  'cfg.adv.h':'Media Management (avançado)',
+  'cfg.adv.rescan':'Reexaminar a pasta',
+  'cfg.adv.recycleBin':'Lixeira',
+  'cfg.adv.recycleDays':'Limpar a lixeira após (dias)',
+  'cfg.adv.extraFiles':'Importar arquivos extras',
+  'cfg.adv.extraFilesOn':'legendas e afins vêm junto do vídeo',
+  'cfg.adv.extraExts':'Extensões extras',
+  'cfg.adv.skipFree':'Não conferir o espaço livre',
+  'cfg.adv.skipFreeOn':'importa mesmo sem saber quanto sobra no disco',
+  'cfg.adv.minFree':'Espaço livre mínimo (MB)',
+  'cfg.opt.always':'Sempre',
+  'cfg.opt.afterManual':'Só depois de atualização manual',
+  'cfg.opt.never':'Nunca',
+  'cfg.q.adv.rescan':'Quando o app relê a pasta da biblioteca atrás de mudanças feitas por fora. <b>Sempre</b> é o padrão dele; <b>Nunca</b> serve a quem mexe nos arquivos por outro caminho e não quer a varredura.',
+  'cfg.q.adv.recycleBin':'Caminho, dentro do container, para onde vai o arquivo que o app apagaria — o upgrade que substitui um arquivo, por exemplo. Vazio, ele apaga de verdade. Use um caminho na mesma partição da mídia, senão mover vira copiar.',
+  'cfg.q.adv.recycleDays':'Quantos dias o arquivo fica na lixeira antes de o app o apagar de vez. <b>0</b> desliga a limpeza automática.',
+  'cfg.q.adv.extraFiles':'Traz junto do vídeo os arquivos ao lado dele — legendas, principalmente —, renomeando-os igual.',
+  'cfg.q.adv.extraExts':'Quais extensões contam como arquivo extra, separadas por vírgula. Só vale com a opção acima ligada.',
+  'cfg.q.adv.skipFree':'Importa sem conferir se há espaço no disco de destino. Útil quando o app não enxerga o espaço direito — em alguns sistemas de arquivos de rede —, e arriscado no resto do tempo.',
+  'cfg.q.adv.minFree':'Quanto precisa sobrar no disco, em MB, para o app aceitar importar. Ignorado quando a opção acima está ligada.',
   'cfg.mm.hardlink':'Hardlink em vez de copiar',
   'cfg.mm.rename':'Renomear ao importar',
   'cfg.mm.perms':'Definir permissões (chmod/chown)',
@@ -988,6 +1008,26 @@ const I18N = {
   'cfg.q.failed':'A failed download leaves the client queue and is marked as failed in the *arr, which then looks for another release.',
   'cfg.mm':'Media Manager (advanced)',
   'cfg.mmHint':'Applies to every instance of the same family. These are the <i>Settings → Media Management</i> options.',
+  'cfg.adv.h':'Media Management (advanced)',
+  'cfg.adv.rescan':'Rescan folder',
+  'cfg.adv.recycleBin':'Recycling bin',
+  'cfg.adv.recycleDays':'Clean the bin after (days)',
+  'cfg.adv.extraFiles':'Import extra files',
+  'cfg.adv.extraExts':'Extra extensions',
+  'cfg.adv.extraFilesOn':'subtitles and the like come along with the video',
+  'cfg.adv.skipFree':'Skip the free space check',
+  'cfg.adv.skipFreeOn':'imports without knowing how much is left on disk',
+  'cfg.adv.minFree':'Minimum free space (MB)',
+  'cfg.opt.always':'Always',
+  'cfg.opt.afterManual':'After manual refresh only',
+  'cfg.opt.never':'Never',
+  'cfg.q.adv.rescan':'When the app re-reads the library folder looking for changes made outside it. <b>Always</b> is its own default; <b>Never</b> suits whoever moves files through another path and does not want the scan.',
+  'cfg.q.adv.recycleBin':'Path, inside the container, where files the app would delete end up — the upgrade replacing a file, say. Empty, it deletes for real. Use a path on the same partition as the media, or moving turns into copying.',
+  'cfg.q.adv.recycleDays':'How many days a file stays in the bin before the app deletes it for good. <b>0</b> turns the automatic cleanup off.',
+  'cfg.q.adv.extraFiles':'Brings along the files sitting next to the video — subtitles, mostly —, renaming them to match.',
+  'cfg.q.adv.extraExts':'Which extensions count as extra files, comma separated. Only matters with the option above on.',
+  'cfg.q.adv.skipFree':'Imports without checking for room on the target disk. Handy when the app cannot read the free space properly — on some network filesystems —, and risky the rest of the time.',
+  'cfg.q.adv.minFree':'How much has to be left on disk, in MB, for the app to accept an import. Ignored while the option above is on.',
   'cfg.mm.hardlink':'Hardlink instead of copy',
   'cfg.mm.rename':'Rename on import',
   'cfg.mm.perms':'Set permissions (chmod/chown)',
@@ -1314,6 +1354,26 @@ const I18N = {
   'cfg.q.failed':'Una descarga fallida sale de la cola del cliente y queda marcada como fallida en el *arr, que busca otra versión.',
   'cfg.mm':'Media Manager (avanzado)',
   'cfg.mmHint':'Vale para todas las instancias de la misma familia. Son las opciones de <i>Settings → Media Management</i>.',
+  'cfg.adv.h':'Media Management (avanzado)',
+  'cfg.adv.rescan':'Volver a examinar la carpeta',
+  'cfg.adv.recycleBin':'Papelera',
+  'cfg.adv.recycleDays':'Limpiar la papelera tras (días)',
+  'cfg.adv.extraFiles':'Importar archivos extra',
+  'cfg.adv.extraFilesOn':'los subtítulos y demás vienen junto con el vídeo',
+  'cfg.adv.extraExts':'Extensiones extra',
+  'cfg.adv.skipFree':'No comprobar el espacio libre',
+  'cfg.adv.skipFreeOn':'importa sin saber cuánto queda en el disco',
+  'cfg.adv.minFree':'Espacio libre mínimo (MB)',
+  'cfg.opt.always':'Siempre',
+  'cfg.opt.afterManual':'Solo tras una actualización manual',
+  'cfg.opt.never':'Nunca',
+  'cfg.q.adv.rescan':'Cuándo el app vuelve a leer la carpeta de la biblioteca buscando cambios hechos por fuera. <b>Siempre</b> es su propio valor por defecto; <b>Nunca</b> le sirve a quien mueve los archivos por otro camino y no quiere el escaneo.',
+  'cfg.q.adv.recycleBin':'Ruta, dentro del contenedor, adonde va el archivo que el app borraría — la mejora que sustituye a un archivo, por ejemplo. Vacío, borra de verdad. Usa una ruta en la misma partición que los medios, o mover se vuelve copiar.',
+  'cfg.q.adv.recycleDays':'Cuántos días se queda el archivo en la papelera antes de que el app lo borre del todo. <b>0</b> apaga la limpieza automática.',
+  'cfg.q.adv.extraFiles':'Trae junto al vídeo los archivos que están a su lado — subtítulos, sobre todo —, renombrándolos igual.',
+  'cfg.q.adv.extraExts':'Qué extensiones cuentan como archivo extra, separadas por comas. Solo vale con la opción de arriba encendida.',
+  'cfg.q.adv.skipFree':'Importa sin comprobar si hay sitio en el disco de destino. Útil cuando el app no ve bien el espacio — en algunos sistemas de archivos de red — y arriesgado el resto del tiempo.',
+  'cfg.q.adv.minFree':'Cuánto tiene que quedar en el disco, en MB, para que el app acepte importar. Se ignora mientras la opción de arriba esté encendida.',
   'cfg.mm.hardlink':'Hardlink en vez de copiar',
   'cfg.mm.rename':'Renombrar al importar',
   'cfg.mm.perms':'Definir permisos (chmod/chown)',
@@ -2542,10 +2602,33 @@ function syncConfig(){
         insts.forEach(key=>sc[k][key] = true);
     });
     Object.keys(sc).forEach(k=>{ if(!perInstFields(id).includes(k)) delete sc[k]; });
+    // campo novo no MM_ADV entra com o padrão dele, sem apagar o que já foi escolhido
+    const adv = advOf(id);
+    MM_ADV.forEach(f=>{ if(!(f.k in adv)) adv[f.k] = f.def; });
+    Object.keys(adv).forEach(k=>{ if(!MM_ADV.some(f=>f.k===k)) delete adv[k]; });
   });
 }
 
 const MM_OPTS = ['hardlink','rename','perms','empty'];
+
+/* Media Management (avançado): o que os apps só mostram com "Advanced Settings"
+   ligado. Os nomes de API destes sete são os mesmos no Sonarr, no Radarr e no
+   Lidarr, então a lista serve às três famílias — quem traduz cada um para a
+   chave da API é o servidor.
+
+   Mora em `mm[família].naming.adv` pelo mesmo motivo do `scope`: é o
+   `cfg_naming` que guarda JSON livre, e assim não há coluna nem migração. */
+const MM_ADV = [
+  {k:'rescan',     type:'select', opts:['always','afterManual','never'], def:'always'},
+  {k:'recycleBin', type:'text',   def:'',        ph:'/mnt/media/.lixeira'},
+  {k:'recycleDays',type:'num',    def:'7'},
+  {k:'extraFiles', type:'check',  def:false},
+  {k:'extraExts',  type:'text',   def:'srt,sub', ph:'srt,sub'},
+  {k:'skipFree',   type:'check',  def:false},
+  {k:'minFree',    type:'num',    def:'100'},
+];
+const advDefault = () => Object.fromEntries(MM_ADV.map(f=>[f.k, f.def]));
+const advOf = id => (CONFIG.mm[id].naming.adv = CONFIG.mm[id].naming.adv || advDefault());
 
 function renderConfig(){
   syncConfig();
@@ -2633,6 +2716,7 @@ function renderConfig(){
         H.push(pf('chmod', '755'));
         H.push(pf('chown', t('cfg.mm.chownPh')));
       }
+      H.push(advBlock(id));
       H.push(namingBlock(id));
       H.push(`</div>`);
     });
@@ -2641,6 +2725,31 @@ function renderConfig(){
   H.push(`<p class="hint" data-i18n-html="cfg.hint">${t('cfg.hint')}</p>`);
   box.innerHTML = H.join('');
   buildHelp(box);
+}
+
+/* Media Management (avançado), por família: o que os apps escondem atrás do
+   "Advanced Settings". Cada campo vira uma linha, com o "?" explicando o que
+   ele faz — os nomes de API são iguais nas três, então o bloco é o mesmo. */
+function advBlock(id){
+  const adv = advOf(id);
+  const at = k => `data-kind="adv" data-key="${id}" data-opt="${k}"`;
+  const rows = MM_ADV.map(f=>{
+    const lbl = t('cfg.adv.'+f.k), help = ` data-help="cfg.q.adv.${f.k}"`;
+    if(f.type === 'check')
+      return `<div class="row"${help}><label>${lbl}</label>
+        <label class="check"><input type="checkbox" ${adv[f.k]?'checked':''} ${at(f.k)}>
+          <span class="hint">${t('cfg.adv.'+f.k+'On')}</span></label></div>`;
+    if(f.type === 'select')
+      return `<div class="row"${help}><label for="adv-${id}-${f.k}">${lbl}</label>
+        <select id="adv-${id}-${f.k}" ${at(f.k)}>${f.opts.map(o=>
+          `<option value="${o}"${adv[f.k]===o?' selected':''}>${t('cfg.opt.'+o)}</option>`
+        ).join('')}</select></div>`;
+    return `<div class="row"${help}><label for="adv-${id}-${f.k}">${lbl}</label>
+      <input type="text" class="fmt" id="adv-${id}-${f.k}" ${at(f.k)}
+             placeholder="${f.ph || ''}"
+             value="${String(adv[f.k] ?? '').replace(/"/g,'&quot;')}"></div>`;
+  }).join('');
+  return `<div class="naming"><div class="nm">${t('cfg.adv.h')}</div>${rows}</div>`;
 }
 
 /* Exemplo de cada família, com uma entrada para cada variável listada no "?"
@@ -2847,6 +2956,7 @@ $('#cfgBody').onchange = e=>{
     warnCfg('');
   }
   else if(d.kind === 'mmText') CONFIG.mm[d.key][d.opt] = el.value;
+  else if(d.kind === 'adv')    advOf(d.key)[d.opt] = el.checked;
 };
 // selects e campos de texto: nomenclatura, permissões e categorias
 $('#cfgBody').oninput = e=>{
@@ -2859,6 +2969,7 @@ $('#cfgBody').oninput = e=>{
     if(pv && f) pv.innerHTML = prevText(d.key, f, el.value);
   }
   else if(d.kind === 'mmText') CONFIG.mm[d.key][d.opt] = el.value;
+  else if(d.kind === 'adv' && el.type !== 'checkbox') advOf(d.key)[d.opt] = el.value;
   else if(d.kind === 'cat')    CONFIG.clients[d.key].cats[d.arr] = el.value;
 };
 
