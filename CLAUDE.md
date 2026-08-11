@@ -36,8 +36,9 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    downloads inteira), `dlClient`, `vpn`, `hw` (Jellyfin), `library` (Jellyfin:
    monta a base e mais as pastas que ficaram fora dela), `solver` (Prowlarr;
    ver abaixo), `internal` (gluetun e FlareSolverr: sem rota no nginx e sem
-   botão de link), `subpathFix` (Seerr: o `location`
-   dele tira o prefixo e reescreve o que volta), `vpnCfg` (gluetun: as
+   botão de link), `publish` (Seerr: fora do nginx, publica a porta dele no
+   host; a porta escolhida fica na instância, em `hostPort`, e o campo dela é
+   do modal do serviço), `vpnCfg` (gluetun: as
    credenciais da VPN no modal dele),
    `webAuth` + `conf` (qBittorrent: usuário/senha/API key no modal dele e a
    `qBittorrent.conf` gerada e montada), `cdh` (SABnzbd: gerenciamento de
@@ -48,7 +49,7 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    Adicionar um serviço normalmente é acrescentar uma linha aqui + o ícone em
    `ICONS` + as strings `d.<id>` no `I18N`.
 3. **Constantes de convenção** — `STACK`/`NETWORK` (`starrnet`), `NGINX`
-   (reverse proxy fixo, fora do combobox, único que publica portas),
+   (reverse proxy fixo, fora do combobox),
    `MULTI` (serviços com múltiplas instâncias), e os mapas de
    variáveis de ambiente `INSTANCE_ENV`, `URLBASE_ENV`, `APIKEY_ENV`.
 4. **Estado** — quatro globais mutáveis: `added` (instâncias,
@@ -157,19 +158,23 @@ handler de `#mSave`.
 - **Zero dependências externas em runtime**: os logotipos são data URI, o ZIP é
   feito à mão, a lista de fusos vem do `Intl` do navegador. Não introduza CDN,
   npm nem `fetch` — aberta do disco, a página tem de funcionar inteira.
-- **Nenhum serviço publica porta no host**, exceto o nginx. Ele ouve em 80/443
-  dentro do container e publica no host as portas do modal próprio dele — o
-  "Editar" da linha fixa (`DEFAULTS.http`/`https` → `HTTP_PORT`/`HTTPS_PORT` no
-  `.env`). Todos os outros só existem na rede `starrnet` e são alcançados por
-  `container:porta-interna`. Quem roteia pela VPN usa
+- **Publicar porta no host é exceção, e vem com a flag `publish`.** O nginx
+  ouve em 80/443 dentro do container e publica no host as portas do modal
+  próprio dele — o "Editar" da linha fixa (`DEFAULTS.http`/`https` →
+  `HTTP_PORT`/`HTTPS_PORT` no `.env`). O Seerr é o outro caso: em vez de rota,
+  ganha `ports` no compose e a variável `<CNAME>_PORT` no `.env`, e o link dele
+  aponta para a porta do host — em `http://`, porque o TLS mora no nginx e ele
+  não passa por lá. Todo o resto só existe na rede `starrnet` e é alcançado por
+  `container:porta-interna`; quem publica sai da contagem de rotas e do
+  `buildNginx()` pelo `publishes()`. Quem roteia pela VPN usa
   `network_mode: service:gluetun` e responde no endereço do gluetun.
 - **Volumes em sintaxe longa**, com `type: bind` e `bind.propagation: rslave`.
 - **Cada subpath do nginx casa com a base URL do app**: nos *arr é a variável
   `<APP>__SERVER__URLBASE`; no Jellyfin é o `BaseUrl` do `network.xml`, que por
-  isso é gerado; no Seerr, que não tem base URL, é a flag `subpathFix` — o
-  `location` tira o prefixo e reescreve redirects e HTML no caminho de volta.
-  Serviço em subpath sem esse ajuste monta os links na raiz e quebra atrás do
-  proxy.
+  isso é gerado. Serviço em subpath sem esse ajuste monta os links na raiz e
+  quebra atrás do proxy — app sem base URL configurável não tem lugar num
+  subpath, e é essa a razão de o Seerr publicar porta em vez de virar rota
+  (houve um `subpathFix` reescrevendo redirects e HTML dele; foi removido).
 - **Serviço `internal` não vira rota**: gluetun e FlareSolverr existem para os
   outros containers, então ficam sem `location`, sem link e fora da contagem de
   rotas — mas continuam no compose. Ao acrescentar um serviço assim, use a

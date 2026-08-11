@@ -284,8 +284,8 @@ publicados en el host salen de su propio modal.
 ## Reverse proxy
 
 nginx es fijo y obligatorio: siempre entra en la stack, no aparece en el
-combobox y no se puede eliminar. Es el único contenedor que publica puertos en
-el host — todos los demás se quedan solo en la red `starrnet`, alcanzados por
+combobox y no se puede eliminar. Aparte de él, solo **Seerr** publica un puerto
+en el host; todos los demás se quedan solo en la red `starrnet`, alcanzados por
 nginx en `nombre-del-contenedor:puerto-interno`. Lo que se enruta por la VPN
 responde en `gluetun`, que es quien tiene la red.
 
@@ -305,9 +305,12 @@ No todo servicio se vuelve ruta: `gluetun` y FlareSolverr solo hablan con los
 otros contenedores, así que no reciben `location` ni botón de enlace — Prowlarr
 llega a FlareSolverr directo por la red de la stack.
 
-Seerr es lo contrario: no tiene base URL, así que su `location` quita el
-prefijo a la entrada y reescribe lo que vuelve — las cabeceras de redirect y
-las rutas que escribe en el HTML, con `sub_filter`.
+Seerr se queda fuera del proxy por otro motivo: no tiene base URL, y una app
+sin ella no vive en un subpath. En vez de ruta, **publica su puerto en el
+host** — 5055 por defecto, editable en su propio modal, que sale en el compose
+como `ports` y en el `.env` como `SEERR_PORT`. Su enlace apunta a ese puerto,
+por `http://`: sin el proxy delante, el TLS de la stack no lo cubre, y el
+puerto tiene que estar libre en la máquina.
 
 En el Entorno se puede activar el **TLS**: el `nginx.conf` pasa a tener un
 `server` en el 443 con `ssl_certificate`, TLSv1.2/1.3 y un bloque en el 80 que

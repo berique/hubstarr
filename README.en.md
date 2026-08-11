@@ -279,9 +279,9 @@ container — the ones published on the host come from its own modal.
 ## Reverse proxy
 
 nginx is fixed and mandatory: it is always in the stack, never shows up in the
-combobox and cannot be removed. It is the only container publishing ports on
-the host — everything else stays on the `starrnet` network, reached by nginx at
-`container-name:internal-port`. Whatever routes through the VPN answers at
+combobox and cannot be removed. Apart from it, only **Seerr** publishes a port
+on the host; everything else stays on the `starrnet` network, reached by nginx
+at `container-name:internal-port`. Whatever routes through the VPN answers at
 `gluetun`, which owns the network.
 
 Both host ports live behind **Edit** on the nginx row: 80 and 443 by default,
@@ -300,9 +300,12 @@ Not every service becomes a route: `gluetun` and FlareSolverr only talk to the
 other containers, so they get no `location` and no link button — Prowlarr
 reaches FlareSolverr straight over the stack network.
 
-Seerr is the opposite: it has no base URL at all, so its `location` strips the
-prefix on the way in and rewrites what comes back — the redirect headers and
-the paths it writes into the HTML, through `sub_filter`.
+Seerr stays out of the proxy for a different reason: it has no base URL at all,
+and an app without one cannot live in a subpath. Instead of a route it
+**publishes its port on the host** — 5055 by default, editable in its own
+modal, landing in the compose file as `ports` and in `.env` as `SEERR_PORT`.
+Its link points at that port, over `http://`: with no proxy in front, the
+stack's TLS does not cover it, and the port has to be free on the machine.
 
 The Environment can turn **TLS** on: `nginx.conf` then gets a `server` on 443
 with `ssl_certificate`, TLSv1.2/1.3, and a block on 80 that only redirects to
