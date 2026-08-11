@@ -222,14 +222,32 @@ async fn apply_config(State(ctx): State<Ctx>, Json(req): Json<apply::Req>) -> Re
 }
 
 async fn health(State(ctx): State<Ctx>) -> Json<Value> {
+    let (puid, pgid) = usuario_do_servidor();
     Json(json!({
         "ok": true,
         "version": env!("CARGO_PKG_VERSION"),
         "dir": ctx.base.display().to_string(),
         "db": ctx.db_path.display().to_string(),
         "docker": deploy::docker_ok(&ctx.docker).await,
+        // o dono das pastas que ele cria: é o PUID/PGID que os apps precisam ter
+        "puid": puid,
+        "pgid": pgid,
     }))
 }
+
+/// O usuário e o grupo com que o servidor roda — o `id -u` e o `id -g` dele.
+///
+/// Sai do dono de `/proc/self`, que é o processo em si: evita a dependência de
+/// uma crate só para chamar `getuid()`. Onde esse caminho não existir, a
+/// resposta é `None` e a página fica com o padrão dela.
+fn usuario_do_servidor() -> (Option<u32>, Option<u32>) {
+    use std::os::unix::fs::MetadataExt;
+    match std::fs::metadata("/proc/self") {
+        Ok(m) => (Some(m.uid()), Some(m.gid())),
+        Err(_) => (None, None),
+    }
+}
+
 
 /* ---------- a stack ---------- */
 

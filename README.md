@@ -135,7 +135,9 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   tem, em vez de perdê-lo. Por
   enquanto, das três partes, só os clientes de download chegam aos apps, pelo
   **Aplicar na stack**.
-- **Ambiente global** (botão no topo): bases de caminho, PUID/PGID, time zone,
+- **Ambiente global** (botão no topo): bases de caminho, PUID/PGID — que, com
+  servidor, já vêm com o usuário e o grupo em que ele roda, o mesmo que cria as
+  pastas da stack —, time zone,
   restart policy, API key e TLS. A
   lista de fusos é a IANA inteira, vinda do próprio navegador, e o valor
   inicial é o fuso da máquina.

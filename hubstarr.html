@@ -3915,6 +3915,12 @@ async function detectServer(){
     if(!r.ok) return;
     SERVER = await r.json();
   }catch(e){ return; }
+  /* O PUID/PGID de fábrica passam a ser os do usuário que roda o servidor — é
+     ele quem cria as pastas da stack, e o app tem de ser o mesmo dono para
+     escrever nelas. Vem antes do `openStack()` de propósito: o que estiver
+     guardado no banco manda, este é só o ponto de partida. */
+  if(SERVER.puid != null) DEFAULTS.puid = String(SERVER.puid);
+  if(SERVER.pgid != null) DEFAULTS.pgid = String(SERVER.pgid);
   document.body.classList.add('srvOn');   // é o que revela os pontos de status
   $('#srv').hidden = false;
   $('#srv').title  = t('srv.at', SERVER.dir);

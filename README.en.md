@@ -136,7 +136,9 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   keeps the format it already has instead of losing it. For now
   the choices
   all three parts reach the apps, through **Apply to the stack**.
-- **Global environment** (button at the top): base paths, PUID/PGID, time zone,
+- **Global environment** (button at the top): base paths, PUID/PGID — which,
+  with a server, already come from the user and group it runs as, the same one
+  that creates the stack folders —, time zone,
   restart policy, API key and TLS. The
   time zone list is the whole IANA database, straight from the browser, and it
   starts on the machine's own zone.

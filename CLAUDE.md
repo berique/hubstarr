@@ -375,6 +375,12 @@ pelo `svc(id)`: sem isso, a página morre no primeiro render, procurando a cor d
 um serviço que não existe, e a lista some inteira. A linha sai da interface e,
 no primeiro `saveSettings()`, sai do banco junto.
 
+O `api/health` também devolve o `puid`/`pgid` do processo — lidos do dono de
+`/proc/self`, sem crate a mais. São eles o padrão de fábrica do PUID/PGID do
+Ambiente quando há servidor: é ele quem cria as pastas da stack, e o app precisa
+ser o mesmo dono para escrever nelas. O `detectServer()` os aplica **antes** do
+`openStack()`, então o que estiver guardado no banco continua mandando.
+
 `load()` remonta `{added, defaults, config}` na forma exata que a página espera,
 e devolve `None` quando o banco ainda não tem nada guardado — assim a página
 fica com os próprios padrões em vez de recebê-los em branco de volta. Esse ida e

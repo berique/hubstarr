@@ -140,7 +140,9 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   porque el campo es obligatorio en el app; la que quede fuera conserva el
   formato que ya tiene, en vez de perderlo. Por ahora las
   opciones, las tres partes llegan a las apps por el **Aplicar en la stack**.
-- **Entorno global** (botón arriba): rutas base, PUID/PGID, zona horaria,
+- **Entorno global** (botón arriba): rutas base, PUID/PGID — que, con servidor,
+  ya vienen con el usuario y el grupo con que se ejecuta, el mismo que crea las
+  carpetas de la stack —, zona horaria,
   restart policy, API key y TLS. La lista de husos es la IANA entera, que viene
   del propio navegador, y arranca en el huso de la máquina.
 - **Descargar** `docker-compose.yml`, `.env` y `nginx.conf`
