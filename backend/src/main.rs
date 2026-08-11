@@ -332,10 +332,7 @@ async fn start_deploy(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Respons
             /* Só depois de a stack subir: a configuração que vamos mexer é a
                que o próprio app cria, e antes do primeiro `up` ela não existe. */
             let cfg = config_base(&ctx)?;
-            for p in &p.patches {
-                patch::apply(&ctx.docker, &ctx.base, cfg.as_deref(), p, &log).await?;
-            }
-            Ok(())
+            patch::apply_all(&ctx.docker, &ctx.base, cfg.as_deref(), &p.patches, &log).await
         }
     });
     Json(json!({"ok": true, "job": job})).into_response()

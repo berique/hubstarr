@@ -110,6 +110,8 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   con las categorías que la **Configuración** dio a cada *arr, ya creadas
   cuando arranca. Cada una recibe su subcarpeta dentro de la ruta de descarga
   — misma partición, así que el *arr sigue haciendo hardlink en vez de copiar.
+  Como la conf, no se monta: el **Levantar** suma esas categorías a las que el
+  app ya tiene, sin borrar las que creaste en su propia interfaz.
 - **HTTPS opcional**, con el certificado y la clave provenientes del host.
 - **Configuración** (botón arriba): elegir qué instancias configurará Prowlarr,
   con qué categoría usa cada *arr cada cliente de descarga — `tv-sonarr`,

@@ -40,8 +40,9 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    host; a porta escolhida fica na instância, em `hostPort`, e o campo dela é
    do modal do serviço), `vpnCfg` (gluetun: as
    credenciais da VPN no modal dele),
-   `webAuth` + `conf` (qBittorrent: usuário/senha/API key no modal dele e a
-   `qBittorrent.conf` gerada e montada), `cdh` (SABnzbd: gerenciamento de
+   `webAuth` + `conf` (qBittorrent: usuário/senha/API key no modal dele e os
+   dois arquivos dele — nenhum dos dois é montado, o servidor os escreve depois
+   de subir; ver `patch` abaixo), `cdh` (SABnzbd: gerenciamento de
    downloads concluídos na Configuração), `noVol`, `derived` (Bazarr herda as
    subpastas das instâncias de Radarr/Sonarr presentes), `site` (endereço do
    projeto, que é o que põe o serviço na grade dos Créditos) e `credit` (nome
@@ -95,12 +96,21 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
 7. **Geradores** — `build()` (compose), `buildEnv()`, `buildNginx()`,
    `buildQbit()`, `buildQbitCats()` (o `categories.json`, único que sai em JSON:
    sem comentário e sem variável, com as chaves ordenadas para o arquivo não
-   mudar de ordem a cada render) e `buildJellyfin()`. Os dois últimos saem só quando o serviço
+   mudar de ordem a cada render). Os dois do qBittorrent têm a forma de dados ao
+   lado da de painel — `qbitPairs()` e `qbitCats()` —, e é dela que sai tanto a
+   aba quanto o que o servidor grava: um lugar só, para os dois nunca
+   discordarem e `buildJellyfin()`. Os dois últimos saem só quando o serviço
    está na stack, e a aba aparece e some com ele. Serviço com arquivo próprio
-   traz `conf:[{host, target, pane, tab}, …]` no catálogo — é **lista**, porque o
-   qBittorrent gera dois (a conf e o `categories.json`), e o `confsOf()` é quem
-   a percorre no bind do compose, no `outFiles()` e nas abas. `host` é o caminho
-   dentro da pasta de config dele, o mesmo no `.zip` e no bind do compose. Eles
+   traz `conf:[{host, target, pane, tab, patch}, …]` no catálogo — é **lista**,
+   porque o qBittorrent gera dois (a conf e o `categories.json`), e o
+   `confsOf()` é quem a percorre no bind do compose, no `outFiles()` e nas abas.
+   `host` é o caminho dentro da pasta de config dele, e vale para quem é
+   montado. **`patch`** muda o destino da entrada: em vez de bind, ela vira
+   chaves que o servidor escreve na configuração que o próprio app criou, depois
+   do `up` — o valor da flag é a chave do `PATCH_DATA`, que diz o formato
+   (`ini` ou `json`) e quem monta os dados. O `outPatches()` é o que a página
+   manda junto do `up`, e no `.zip` a entrada sai no caminho em que o app lê o
+   arquivo, não no `host`. Eles
    emitem **HTML com spans de realce** (`<span class="k">`/`v`/`c`); o texto
    puro para copiar/baixar vem de `textContent` dos panes (`plain()`,
    `plainEnv()`, `plainNginx()`). Ao editar um gerador, mantenha a marcação e

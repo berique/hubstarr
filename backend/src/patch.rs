@@ -22,7 +22,8 @@
 use std::path::{Component, Path, PathBuf};
 use std::time::Duration;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 
 use crate::jobs::Log;
 
@@ -32,8 +33,38 @@ pub struct Patch {
     pub service: String,
     /// caminho relativo ao `BASE_CONFIG`, como a página o montou
     pub path: String,
-    /// `[Seção]` → lista de `chave=valor`, na ordem em que a página as quer
+    /// `ini` (o padrão) ou `json`
+    #[serde(default)]
+    pub format: Option<String>,
+    /// INI: `[Seção]` → lista de `chave=valor`, na ordem em que a página as quer
+    #[serde(default)]
     pub sections: Vec<(String, Vec<(String, String)>)>,
+    /// JSON: as chaves de primeiro nível a pôr por cima das que já estão lá
+    #[serde(default)]
+    pub json: Option<Value>,
+}
+
+impl Patch {
+    /// O conteúdo novo do arquivo, a partir do que já estava nele.
+    fn merge(&self, atual: &str) -> Result<String, String> {
+        match self.format.as_deref() {
+            Some("json") => merge_json(atual, self.json.as_ref().unwrap_or(&Value::Null)),
+            _ => Ok(merge_ini(atual, &self.sections)),
+        }
+    }
+
+    /// Quantas chaves este arquivo recebe — é o que vai para o log.
+    fn chaves(&self) -> usize {
+        match self.format.as_deref() {
+            Some("json") => self
+                .json
+                .as_ref()
+                .and_then(|v| v.as_object())
+                .map(|m| m.len())
+                .unwrap_or(0),
+            _ => self.sections.iter().map(|(_, v)| v.len()).sum(),
+        }
+    }
 }
 
 /// Mesma regra do `files::safe_join`: o caminho vem do navegador, então nada de
@@ -113,6 +144,34 @@ pub fn merge_ini(atual: &str, sections: &[(String, Vec<(String, String)>)]) -> S
     out
 }
 
+/// Põe as nossas chaves de primeiro nível por cima das que já estão no
+/// arquivo, deixando as outras onde estavam — no `categories.json`, é o que
+/// preserva a categoria que alguém criou na interface do app.
+///
+/// Arquivo ilegível não é motivo para parar: o app o reescreve inteiro na
+/// próxima vez, e o que interessa é o nosso chegar lá.
+pub fn merge_json(atual: &str, nosso: &Value) -> Result<String, String> {
+    let mut obj: Map<String, Value> = serde_json::from_str(atual).unwrap_or_default();
+    let nosso = nosso
+        .as_object()
+        .ok_or_else(|| "o patch em JSON não veio como objeto".to_string())?;
+    for (k, v) in nosso {
+        obj.insert(k.clone(), v.clone());
+    }
+    /* Quatro espaços, que é como o qBittorrent escreve este arquivo e como a
+       aba da página o mostra: seguir o estilo dele evita um diff do arquivo
+       inteiro toda vez que um dos dois grava. */
+    let mut buf = Vec::new();
+    let recuo = serde_json::ser::PrettyFormatter::with_indent(b"    ");
+    let mut ser = serde_json::Serializer::with_formatter(&mut buf, recuo);
+    Value::Object(obj)
+        .serialize(&mut ser)
+        .map_err(|e| e.to_string())?;
+    let mut txt = String::from_utf8(buf).map_err(|e| e.to_string())?;
+    txt.push('\n');
+    Ok(txt)
+}
+
 /// A chave de uma linha `chave=valor`, ignorando comentário e linha em branco.
 fn chave_de(linha: &str) -> Option<String> {
     let l = linha.trim();
@@ -140,44 +199,68 @@ async fn esperar(path: &Path, log: &Log) {
     log.line("o app não criou a configuração a tempo; ela nasce com estas chaves");
 }
 
-/// Para o container, escreve as chaves e sobe de novo.
-pub async fn apply(
+/// Escreve o que a página mandou, um serviço por vez: o container para uma
+/// vez só, todos os arquivos dele são mesclados, e ele sobe de novo. Parar por
+/// arquivo daria dois ciclos no qBittorrent, que tem dois.
+pub async fn apply_all(
     docker: &str,
     dir: &Path,
     cfg: Option<&Path>,
-    p: &Patch,
+    patches: &[Patch],
     log: &Log,
 ) -> Result<(), String> {
+    if patches.is_empty() {
+        return Ok(());
+    }
     let raiz = cfg.ok_or_else(|| {
         "sem o BASE_CONFIG do Ambiente não dá para achar a configuração do app".to_string()
     })?;
-    let path = safe_join(raiz, &p.path)?;
 
-    // esperar primeiro, parar depois, ler por último: o app despeja a
-    // configuração em memória no disco justamente ao sair, então o arquivo
-    // mais novo é o de depois do `stop` — ler antes descartaria isso
-    esperar(&path, log).await;
-    crate::deploy::compose(docker, &["stop", &p.service], dir, log).await?;
-    let atual = tokio::fs::read_to_string(&path).await.unwrap_or_default();
-    let novo = merge_ini(&atual, &p.sections);
-    if let Some(parent) = path.parent() {
-        tokio::fs::create_dir_all(parent)
-            .await
-            .map_err(|e| format!("{}: {e}", parent.display()))?;
+    // na ordem em que a página os mandou, agrupados por serviço
+    let mut servicos: Vec<&str> = Vec::new();
+    for p in patches {
+        if !servicos.contains(&p.service.as_str()) {
+            servicos.push(&p.service);
+        }
     }
-    tokio::fs::write(&path, &novo).await.map_err(|e| {
-        // o arquivo é do container: se ele o criou com outro dono, o servidor
-        // não o reescreve — é o PUID/PGID do Ambiente que faz os dois baterem
-        let dica = if e.kind() == std::io::ErrorKind::PermissionDenied {
-            " — confira o PUID/PGID do Ambiente: o arquivo é de outro dono"
-        } else {
-            ""
-        };
-        format!("{}: {e}{dica}", path.display())
-    })?;
-    log.line(format!("{}: {} chaves escritas", path.display(),
-                     p.sections.iter().map(|(_, v)| v.len()).sum::<usize>()));
-    crate::deploy::compose(docker, &["start", &p.service], dir, log).await
+
+    for servico in servicos {
+        let meus: Vec<&Patch> = patches.iter().filter(|p| p.service == servico).collect();
+        let caminhos: Vec<PathBuf> = meus
+            .iter()
+            .map(|p| safe_join(raiz, &p.path))
+            .collect::<Result<_, _>>()?;
+
+        /* Esperar uma vez por serviço, pelo primeiro arquivo: é o sinal de que
+           o app subiu e criou a pasta de config dele. O segundo arquivo pode
+           legitimamente não existir — o qBittorrent só escreve o
+           `categories.json` quando tem categoria. */
+        esperar(&caminhos[0], log).await;
+        crate::deploy::compose(docker, &["stop", servico], dir, log).await?;
+        for (p, path) in meus.iter().zip(&caminhos) {
+            let atual = tokio::fs::read_to_string(path).await.unwrap_or_default();
+            let novo = p.merge(&atual)?;
+            if let Some(parent) = path.parent() {
+                tokio::fs::create_dir_all(parent)
+                    .await
+                    .map_err(|e| format!("{}: {e}", parent.display()))?;
+            }
+            tokio::fs::write(path, &novo).await.map_err(|e| {
+                // o arquivo é do container: se ele o criou com outro dono, o
+                // servidor não o reescreve — é o PUID/PGID do Ambiente que faz
+                // os dois baterem
+                let dica = if e.kind() == std::io::ErrorKind::PermissionDenied {
+                    " — confira o PUID/PGID do Ambiente: o arquivo é de outro dono"
+                } else {
+                    ""
+                };
+                format!("{}: {e}{dica}", path.display())
+            })?;
+            log.line(format!("{}: {} chaves escritas", path.display(), p.chaves()));
+        }
+        crate::deploy::compose(docker, &["start", servico], dir, log).await?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -244,6 +327,42 @@ mod tests {
         let atual = "# escrito pelo app\n[Preferences]\nWebUI\\Username=velho\n";
         let novo = merge_ini(atual, &secoes());
         assert!(novo.starts_with("# escrito pelo app\n"));
+    }
+
+    #[test]
+    fn o_json_poe_as_nossas_categorias_e_deixa_as_de_fora() {
+        let atual = r#"{"minha":{"save_path":"/downloads/minha"},"tv-sonarr":{"save_path":"/velho"}}"#;
+        let nosso = serde_json::json!({"tv-sonarr": {"save_path": "/downloads/torrents/tv-sonarr"}});
+        let novo: Value = serde_json::from_str(&merge_json(atual, &nosso).unwrap()).unwrap();
+        // a categoria criada na interface do app fica
+        assert_eq!(novo["minha"]["save_path"], "/downloads/minha");
+        // a nossa manda na que tem o mesmo nome
+        assert_eq!(novo["tv-sonarr"]["save_path"], "/downloads/torrents/tv-sonarr");
+        // e o recuo é o do app, não o do serde
+        assert!(merge_json(atual, &nosso).unwrap().contains("\n    \"minha\""));
+    }
+
+    #[test]
+    fn json_ilegivel_ou_vazio_nao_derruba_a_gravacao() {
+        let nosso = serde_json::json!({"tv": {"save_path": "/downloads/tv"}});
+        for atual in ["", "nem json é", "[]"] {
+            let novo: Value = serde_json::from_str(&merge_json(atual, &nosso).unwrap()).unwrap();
+            assert_eq!(novo["tv"]["save_path"], "/downloads/tv", "veio de {atual:?}");
+        }
+    }
+
+    #[test]
+    fn o_formato_escolhe_o_merge_e_o_ini_e_o_padrao() {
+        let ini = Patch { service: "qbittorrent".into(), path: "x".into(), format: None,
+                          sections: secoes(), json: None };
+        assert!(ini.merge("").unwrap().contains("[Preferences]"));
+        assert_eq!(ini.chaves(), 2);
+
+        let js = Patch { service: "qbittorrent".into(), path: "x".into(),
+                         format: Some("json".into()), sections: vec![],
+                         json: Some(serde_json::json!({"tv": {"save_path": "/d"}})) };
+        assert!(js.merge("{}").unwrap().contains("\"tv\""));
+        assert_eq!(js.chaves(), 1);
     }
 
     #[test]

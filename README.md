@@ -104,7 +104,9 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
 - **categories.json do qBittorrent**: junto da conf sai um segundo arquivo com
   as categorias que a **Configuração** deu a cada *arr, já criadas quando ele
   sobe. Cada uma ganha a subpasta dela dentro do caminho de download — mesma
-  partição, então o *arr continua fazendo hardlink em vez de copiar.
+  partição, então o *arr continua fazendo hardlink em vez de copiar. Como a
+  conf, ele não é montado: o **Subir** põe essas categorias nas que o app já
+  tem, sem apagar as que você criou na interface dele.
 - **HTTPS opcional**, com o certificado e a chave vindos do host.
 - **Configuração** (botão no topo): escolher quais instâncias o Prowlarr vai
   configurar, com que categoria cada *arr usa cada cliente de download —

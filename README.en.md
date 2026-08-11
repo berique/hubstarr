@@ -106,7 +106,9 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
 - **qBittorrent's categories.json**: next to the conf comes a second file with
   the categories **Configuration** gave each *arr, already created when it
   starts. Each one gets its own subfolder inside the download path — same
-  partition, so the *arr keeps hardlinking instead of copying.
+  partition, so the *arr keeps hardlinking instead of copying. Like the conf, it
+  is not mounted: **Bring up** adds those categories to the ones the app already
+  has, without dropping the ones you created in its own UI.
 - **Optional HTTPS**, with the certificate and key coming from the host.
 - **Configuration** (button at the top): pick which instances Prowlarr will
   configure, and the category each *arr uses in each download client —

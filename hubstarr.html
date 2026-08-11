@@ -1632,7 +1632,7 @@ const SERVICES = [
   {id:'prowlarr', name:'Prowlarr',  port:9696, img:'lscr.io/linuxserver/prowlarr:latest', color:'#e5534b', solver:true, tp:true, site:'https://prowlarr.com'},
   {id:'bazarr',   name:'Bazarr',    port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr'], tp:true, site:'https://www.bazarr.media'},
   {id:'qbittorrent',name:'qBittorrent',port:8181, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true, webAuth:true, tp:true, conf:[{host:'qBittorrent.conf', target:'/config/qBittorrent/qBittorrent.conf', pane:'#outQbt', tab:'qbt', patch:'qbit'},
-          {host:'categories.json', target:'/config/qBittorrent/categories.json', pane:'#outQbtCat', tab:'qbtcat'}], site:'https://www.qbittorrent.org'},
+          {host:'categories.json', target:'/config/qBittorrent/categories.json', pane:'#outQbtCat', tab:'qbtcat', patch:'qbitCats'}], site:'https://www.qbittorrent.org'},
   {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true, cdh:true, dlKey:true, tp:true, site:'https://sabnzbd.org'},
   {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true, tp:true,
    conf:[{host:'config/config/network.xml', target:'/config/config/network.xml', pane:'#outJf', tab:'jf'}], site:'https://jellyfin.org'},
@@ -3214,8 +3214,8 @@ function dupPaths(){
 /* qBittorrent.conf pronta: interface atrás do nginx, pastas iguais às do
    compose e a senha já com hash. */
 /* Os arquivos próprios de um serviço. É lista porque o qBittorrent gera dois
-   — a conf e as categorias —, e cada um vira um bind no compose, uma aba e um
-   arquivo no .zip. */
+   — a conf e as categorias —, e cada um vira uma aba e um arquivo: montado no
+   compose, ou escrito pelo servidor depois de subir, quando tem `patch`. */
 const confsOf = s => s.conf || [];
 
 /* Onde o arquivo mora de verdade: dentro da pasta de config do container, que
@@ -3287,22 +3287,32 @@ function buildQbit(list){
 
    É JSON de verdade, lido pelo app: sem comentário, sem variável do .env, e as
    chaves saem ordenadas para o arquivo não mudar de ordem a cada render. */
-function buildQbitCats(list){
-  const a = list.find(x=>x.id === 'qbittorrent');
-  if(!a) return '';
+/* As categorias, como dados — fonte única do painel e do que o servidor
+   escreve. Chaves ordenadas para o arquivo não mudar de ordem a cada render. */
+function qbitCats(a){
   const dl = '/downloads' + (a.data ? '/'+a.data : '');
   const st = CONFIG.clients[cname(a)];
   const cats = [...new Set(arrList()
     .map(x=>String((st && st.cats && st.cats[cname(x)]) || catDefault(x, a)).trim())
     .filter(Boolean))].sort();
-  if(!cats.length) return '';
+  const out = {};
+  cats.forEach(cat=> out[cat] = {save_path: dl + '/' + cat});
+  return out;
+}
+
+function buildQbitCats(list){
+  const a = list.find(x=>x.id === 'qbittorrent');
+  if(!a) return '';
+  const cats = qbitCats(a);
+  const nomes = Object.keys(cats);
+  if(!nomes.length) return '';
   // JSON primeiro (aspas e barras), HTML depois: o pane guarda marcação
   const esc = x => escHtml(String(x).replace(/\\/g,'\\\\').replace(/"/g,'\\"'));
   const k = txt => `<span class="k">${txt}</span>`;
   const v = txt => `<span class="v">${txt}</span>`;
-  const body = cats.map(cat=>
+  const body = nomes.map(cat=>
     `    ${k(`"${esc(cat)}"`)}: {\n` +
-    `        ${k('"save_path"')}: ${v(`"${esc(dl + '/' + cat)}"`)}\n` +
+    `        ${k('"save_path"')}: ${v(`"${esc(cats[cat].save_path)}"`)}\n` +
     `    }`).join(',\n');
   return `{\n${body}\n}`;
 }
@@ -3524,14 +3534,21 @@ function outFiles(){
    governa, na conf que o próprio app criou. Quem monta a lista continua sendo
    a página — o servidor só grava chave por chave, preservando o resto do
    arquivo. */
-const PATCH_PAIRS = {qbit: qbitPairs};
+const PATCH_DATA = {
+  // INI: seções com pares na ordem em que a página as quer
+  qbit:     a => ({format:'ini',  sections: qbitPairs(a)}),
+  // JSON: um objeto por categoria, que o servidor sobrepõe ao que já existe
+  qbitCats: a => ({format:'json', json: qbitCats(a)}),
+};
 function outPatches(){
   const out = [];
   effective().forEach(x=> confsOf(svc(x.id)).forEach(cf=>{
     if(!cf.patch) return;
-    out.push({service: cname(x), base:'config',
-              path: `${cname(x)}${cf.target.replace(/^\/config/, '')}`,
-              sections: PATCH_PAIRS[cf.patch](x)});
+    const dados = PATCH_DATA[cf.patch](x);
+    // nada a escrever — categoria nenhuma, por exemplo — não vira trabalho
+    if(dados.json && !Object.keys(dados.json).length) return;
+    out.push(Object.assign({service: cname(x), base:'config',
+              path: `${cname(x)}${cf.target.replace(/^\/config/, '')}`}, dados));
   }));
   return out;
 }
