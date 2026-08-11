@@ -108,8 +108,10 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   modal mostra a que vale, e o **Gerar** cria outra pelo mesmo método (16 bytes
   em hexadecimal), que então vai para o `.env` —, e as pastas de **download em
   progresso** e **download completo** viram o `download_dir` e o `complete_dir`.
-  As três chaves são escritas no `sabnzbd.ini` que o próprio app criou, depois de
-  a stack subir, como no qBittorrent.
+  Vai junto o `url_base` com o subpath em que o nginx o serve — sem ele o
+  SABnzbd monta os links na raiz e quebra atrás do proxy. As quatro chaves são
+  escritas no `sabnzbd.ini` que o próprio app criou, depois de a stack subir,
+  como no qBittorrent.
 - **categories.json do qBittorrent**: junto da conf sai um segundo arquivo com
   as categorias que a **Configuração** deu a cada *arr, já criadas quando ele
   sobe. Cada uma ganha a subpasta dela dentro do caminho de download — mesma

@@ -3771,6 +3771,8 @@ function buildQbit(list){
 function sabPairs(a){
   return [['misc', [
     ['api_key',      sabKey(a)],
+    // o subpath em que o nginx o serve: sem isto ele monta os links na raiz
+    ['url_base',     route(a)],
     ['download_dir', inContainer(dlIn(a),   'incomplete')],
     ['complete_dir', inContainer(dlDone(a), 'complete')],
   ]]];

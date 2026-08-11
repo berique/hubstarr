@@ -110,8 +110,10 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   the modal shows the one in force, and **Generate** makes another by the same
   method (16 random bytes in hex), which then goes to `.env` —, and the
   **downloading** and **completed download** folders become `download_dir` and
-  `complete_dir`. The three keys are written into the `sabnzbd.ini` the app
-  itself created, once the stack is up, just like qBittorrent's.
+  `complete_dir`. Along with them goes `url_base`, the subpath nginx serves it
+  on — without it SABnzbd builds its links at the root and breaks behind the
+  proxy. The four keys are written into the `sabnzbd.ini` the app itself
+  created, once the stack is up, just like qBittorrent's.
 - **qBittorrent's categories.json**: next to the conf comes a second file with
   the categories **Configuration** gave each *arr, already created when it
   starts. Each one gets its own subfolder inside the download path — same

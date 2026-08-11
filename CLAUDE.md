@@ -240,7 +240,8 @@ handler de `#mSave`.
   página de boas-vindas do nginx.
 - **Cada subpath do nginx casa com a base URL do app**: nos *arr é a variável
   `<APP>__SERVER__URLBASE`; no Jellyfin é o `BaseUrl` do `network.xml`, que por
-  isso é gerado. Serviço em subpath sem esse ajuste monta os links na raiz e
+  isso é gerado; no SABnzbd é o `url_base` do `sabnzbd.ini`, que o servidor
+  escreve depois de subir. Serviço em subpath sem esse ajuste monta os links na raiz e
   quebra atrás do proxy — app sem base URL configurável não tem lugar num
   subpath, e é essa a razão de o **Seerr e o qBittorrent** publicarem porta em
   vez de virar rota — o qBittorrent respondia `500 Unacceptable file type` ao
