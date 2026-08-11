@@ -396,6 +396,7 @@ sudo sh get-docker.sh</pre>
     <h3 data-i18n="cfg.h">⇄ Configuração</h3>
     <div class="body" id="cfgBody"></div>
     <div class="bar">
+      <span id="cfgWarn"></span>
       <span class="sp"></span>
       <button id="cfgApply" hidden data-i18n="btn.apply">Aplicar na stack</button>
       <button id="cfgCancel" data-i18n="btn.cancel">Cancelar</button>
@@ -666,6 +667,7 @@ const I18N = {
   'cfg.mm.chmod':'chmod da pasta',
   'cfg.mm.chown':'chown do grupo',
   'cfg.mm.chownPh':'em branco, mantém o grupo atual',
+  'cfg.n.instances':'Instâncias',
   'cfg.n.useExisting':'Nome existente',
   'cfg.n.useExistingOn':'o Lidarr usará o nome de arquivo existente se a renomeação estiver desabilitada',
   'cfg.naming.sonarr':'Episode Naming',
@@ -716,6 +718,8 @@ const I18N = {
   'cfg.q.specialsFolder':'Nome da pasta dos especiais — a temporada 0 da série.',
   'cfg.q.standardMovie':()=>'Nome do arquivo do filme depois de importado. O padrão já segue o TRaSH Guides, na variante do Jellyfin com o id do TMDb.<br>'+t('cfg.vars.radarr'),
   'cfg.q.movieFolder':'Nome da pasta de cada filme dentro da biblioteca. Só valem os tokens do filme — nada de qualidade ou MediaInfo, que são do arquivo.<br><b>{Movie Title}</b> — título do filme<br><b>{Release Year}</b> — ano de lançamento<br><b>{ImdbId}</b>, <b>{TmdbId}</b> — identificadores; escritos como <b>{imdb-{ImdbId}}</b> somem quando o filme não tem o id, e ajudam o Jellyfin a casar o filme.',
+  'cfg.warnScope':'Cada formato precisa de pelo menos uma instância',
+  'cfg.q.perInst':'Quais instâncias desta família recebem este formato. O que ficar desmarcado não é apagado lá: aquela instância simplesmente mantém o formato que já tem, porque o campo é obrigatório no app. Por isso também não dá para desmarcar todas.',
   'cfg.q.useExisting':'Marcado, os formatos de faixa e a pasta do álbum ficam disponíveis aqui — é o que o Lidarr faz: sem renomear, ele importa cada arquivo com o nome que já tinha e cuida só das pastas.',
   'cfg.q.standardTrack':()=>'Nome das faixas de álbuns de disco único; a extensão o Lidarr põe sozinho. A barra no meio do formato é que cria a pasta do álbum dentro da do artista: <i>{Album Title}/{track:00} - {Track Title}</i> → <i>Blood on the Tracks/01 - Tangled Up in Blue.flac</i>.<br>'+t('cfg.vars.lidarr'),
   'cfg.q.multiDiscTrack':()=>'Nome das faixas quando o lançamento tem mais de um disco — é o número do disco que separa faixas de mesma numeração: <i>{Album Title}/{medium:00}-{track:00} - {Track Title}</i>.<br>'+t('cfg.vars.lidarr'),
@@ -991,6 +995,7 @@ const I18N = {
   'cfg.mm.chmod':'Folder chmod',
   'cfg.mm.chown':'chown group',
   'cfg.mm.chownPh':'empty keeps the current group',
+  'cfg.n.instances':'Instances',
   'cfg.n.useExisting':'Existing name',
   'cfg.n.useExistingOn':'Lidarr will use the existing file name if renaming is disabled',
   'cfg.naming.sonarr':'Episode Naming',
@@ -1041,6 +1046,8 @@ const I18N = {
   'cfg.q.specialsFolder':'Name of the specials folder — season 0 of the series.',
   'cfg.q.standardMovie':()=>'Name of the movie file once imported. The default already follows the TRaSH Guides, in the Jellyfin variant with the TMDb id.<br>'+t('cfg.vars.radarr'),
   'cfg.q.movieFolder':'Name of each movie folder inside the library. Only movie tokens work here — no quality or MediaInfo, those belong to the file.<br><b>{Movie Title}</b> — movie title<br><b>{Release Year}</b> — release year<br><b>{ImdbId}</b>, <b>{TmdbId}</b> — identifiers; written as <b>{imdb-{ImdbId}}</b> they vanish when the movie has no id, and they help Jellyfin match the movie.',
+  'cfg.warnScope':'Each format needs at least one instance',
+  'cfg.q.perInst':'Which instances of this family get this format. What you leave unticked is not cleared over there: that instance simply keeps the format it already has, because the field is mandatory in the app. That is also why you cannot untick them all.',
   'cfg.q.useExisting':'Ticked, the track formats and the album folder become available here — which is what Lidarr does: without renaming it imports each file under the name it already had and only manages the folders.',
   'cfg.q.standardTrack':()=>'Name for tracks of single-disc albums; Lidarr appends the extension itself. The slash inside the format is what creates the album folder within the artist one: <i>{Album Title}/{track:00} - {Track Title}</i> → <i>Blood on the Tracks/01 - Tangled Up in Blue.flac</i>.<br>'+t('cfg.vars.lidarr'),
   'cfg.q.multiDiscTrack':()=>'Name for tracks when the release spans more than one disc — the disc number is what tells apart tracks sharing a number: <i>{Album Title}/{medium:00}-{track:00} - {Track Title}</i>.<br>'+t('cfg.vars.lidarr'),
@@ -1314,6 +1321,7 @@ const I18N = {
   'cfg.mm.chmod':'chmod de la carpeta',
   'cfg.mm.chown':'chown del grupo',
   'cfg.mm.chownPh':'en blanco, mantiene el grupo actual',
+  'cfg.n.instances':'Instancias',
   'cfg.n.useExisting':'Nombre existente',
   'cfg.n.useExistingOn':'Lidarr usará el nombre de archivo existente si el renombrado está deshabilitado',
   'cfg.naming.sonarr':'Episode Naming',
@@ -1364,6 +1372,8 @@ const I18N = {
   'cfg.q.specialsFolder':'Nombre de la carpeta de especiales — la temporada 0 de la serie.',
   'cfg.q.standardMovie':()=>'Nombre del archivo de la película una vez importada. El valor predeterminado ya sigue las TRaSH Guides, en la variante de Jellyfin con el id de TMDb.<br>'+t('cfg.vars.radarr'),
   'cfg.q.movieFolder':'Nombre de la carpeta de cada película dentro de la biblioteca. Solo sirven los tokens de la película — nada de calidad ni MediaInfo, que son del archivo.<br><b>{Movie Title}</b> — título de la película<br><b>{Release Year}</b> — año de estreno<br><b>{ImdbId}</b>, <b>{TmdbId}</b> — identificadores; escritos como <b>{imdb-{ImdbId}}</b> desaparecen cuando la película no tiene el id, y ayudan a que Jellyfin la reconozca.',
+  'cfg.warnScope':'Cada formato necesita al menos una instancia',
+  'cfg.q.perInst':'Qué instancias de esta familia reciben este formato. Lo que quede sin marcar no se borra allá: esa instancia simplemente conserva el formato que ya tiene, porque el campo es obligatorio en el app. Por eso tampoco se pueden desmarcar todas.',
   'cfg.q.useExisting':'Marcado, los formatos de pista y la carpeta del álbum quedan disponibles aquí — es lo que hace Lidarr: sin renombrar, importa cada archivo con el nombre que ya tenía y solo se ocupa de las carpetas.',
   'cfg.q.standardTrack':()=>'Nombre de las pistas de álbumes de un solo disco; la extensión la pone Lidarr. La barra dentro del formato es la que crea la carpeta del álbum dentro de la del artista: <i>{Album Title}/{track:00} - {Track Title}</i> → <i>Blood on the Tracks/01 - Tangled Up in Blue.flac</i>.<br>'+t('cfg.vars.lidarr'),
   'cfg.q.multiDiscTrack':()=>'Nombre de las pistas cuando el lanzamiento tiene más de un disco — el número del disco es lo que distingue pistas con la misma numeración: <i>{Album Title}/{medium:00}-{track:00} - {Track Title}</i>.<br>'+t('cfg.vars.lidarr'),
@@ -2447,11 +2457,11 @@ const NAMING_FIELDS = {
     {k:'colon',          type:'select', opts:COLON,   def:'smart'},
     {k:'multiEp',        type:'select', opts:MULTIEP, def:'extend', file:true},
     // formatos do TRaSH Guides, na variante do Jellyfin com id do TMDb
-    {k:'standardEp',     type:'fmt', file:true,
+    {k:'standardEp',     type:'fmt', file:true, perInst:true,
      def:'{Series CleanTitleWithoutYear} {(Series Year)} - S{season:00}E{episode:00} - {Episode CleanTitle:90} {[Custom Formats]}{[Quality Full]}{[Mediainfo AudioCodec}{ Mediainfo AudioChannels]}{[MediaInfo VideoDynamicRangeType]}{[Mediainfo VideoCodec]}{-Release Group}'},
-    {k:'dailyEp',        type:'fmt', file:true,
+    {k:'dailyEp',        type:'fmt', file:true, perInst:true,
      def:'{Series CleanTitleWithoutYear} {(Series Year)} - {Air-Date} - {Episode CleanTitle:90} {[Custom Formats]}{[Quality Full]}{[Mediainfo AudioCodec}{ Mediainfo AudioChannels]}{[MediaInfo VideoDynamicRangeType]}{[Mediainfo VideoCodec]}{-Release Group}'},
-    {k:'animeEp',        type:'fmt', file:true,
+    {k:'animeEp',        type:'fmt', file:true, perInst:true,
      def:'{Series CleanTitleWithoutYear} {(Series Year)} - S{season:00}E{episode:00} - {absolute:000} - {Episode CleanTitle:90} {[Custom Formats]}{[Quality Full]}{[Mediainfo AudioCodec}{ Mediainfo AudioChannels]}{MediaInfo AudioLanguages}{[MediaInfo VideoDynamicRangeType]}[{Mediainfo VideoCodec }{MediaInfo VideoBitDepth}bit]{-Release Group}'},
     {k:'seriesFolder',   type:'fmt', def:'{Series CleanTitleWithoutYear} {(Series Year)} [tmdbid-{TmdbId}]'},
     {k:'seasonFolder',   type:'fmt', def:'Season {season:00}'},
@@ -2479,6 +2489,12 @@ const NAMING_FIELDS = {
 };
 const namingDefault = id =>
   Object.fromEntries((NAMING_FIELDS[id]||[]).map(f=>[f.k, f.def]));
+/* Campos que valem por instância, e não pela família toda: no Sonarr, cada
+   formato de episódio pode ir só para as instâncias escolhidas. O escopo mora
+   dentro do `naming` de propósito — é o que o banco já guarda inteiro, sem
+   coluna nova. */
+const perInstFields = id => (NAMING_FIELDS[id]||[]).filter(f=>f.perInst).map(f=>f.k);
+const scopeOf = id => (CONFIG.mm[id].naming.scope = CONFIG.mm[id].naming.scope || {});
 const mmDefault = id => ({hardlink:true, rename:true, perms:false, empty:false,
                           chmod:'755', chown:'', naming:namingDefault(id)});
 const CONFIG = {apps:{}, clients:{}, mm:{}};
@@ -2508,6 +2524,19 @@ function syncConfig(){
   const fams = [...new Set(arrList().map(a=>a.id))];
   fams.forEach(id=>{ if(!CONFIG.mm[id]) CONFIG.mm[id] = mmDefault(id); });
   Object.keys(CONFIG.mm).forEach(id=>{ if(!fams.includes(id)) delete CONFIG.mm[id]; });
+  // instância nova entra marcada em todos os formatos; a que saiu some deles
+  fams.forEach(id=>{
+    const insts = added.filter(a=>a.id === id).map(cname);
+    const sc = scopeOf(id);
+    perInstFields(id).forEach(k=>{
+      if(!sc[k]) sc[k] = {};
+      insts.forEach(key=>{ if(!(key in sc[k])) sc[k][key] = true; });
+      Object.keys(sc[k]).forEach(key=>{ if(!insts.includes(key)) delete sc[k][key]; });
+      // é obrigatório: sem nenhuma marcada, o formato não iria a lugar nenhum
+      if(insts.length && !insts.some(key=>sc[k][key])) insts.forEach(key=>sc[k][key] = true);
+    });
+    Object.keys(sc).forEach(k=>{ if(!perInstFields(id).includes(k)) delete sc[k]; });
+  });
 }
 
 const MM_OPTS = ['hardlink','rename','perms','empty'];
@@ -2756,8 +2785,23 @@ function namingBlock(id){
     return `<div class="row"${help}><label for="n-${id}-${f.k}">${lbl}</label>
       <input type="text" class="fmt" id="n-${id}-${f.k}" ${at}${off}
              value="${String(cfg[f.k]??'').replace(/"/g,'&quot;')}"></div>
-      <p class="hint prevTxt" id="pv-${id}-${f.k}">${prevText(id, f, cfg[f.k])}</p>`;
+      <p class="hint prevTxt" id="pv-${id}-${f.k}">${prevText(id, f, cfg[f.k])}</p>
+      ${instRow(id, f, off)}`;
   };
+  /* Formato com escopo: quais instâncias da família o recebem. Com uma só na
+     stack não há o que escolher, e a linha não aparece. */
+  function instRow(id, f, off){
+    if(!f.perInst) return '';
+    const insts = added.filter(a=>a.id === id);
+    if(insts.length < 2) return '';
+    const sc = scopeOf(id)[f.k] || {};
+    return `<div class="row" data-help="cfg.q.perInst"><label>${t('cfg.n.instances')}</label>
+      <div class="cfgList">` + insts.map(a=>
+        `<label class="check"><input type="checkbox" ${sc[cname(a)]?'checked':''}${off}
+           data-kind="scope" data-key="${id}" data-opt="${f.k}" data-inst="${cname(a)}">
+         ${a.title || svc(a.id).name}</label>`).join('') + `</div></div>`;
+  }
+
   // o "?" do cabeçalho abre a lista inteira de variáveis que o app aceita
   return `<div class="naming"><div class="nm">${t('cfg.naming.'+id)}
       <button type="button" class="help" data-help="cfg.vars.${id}">?</button></div>
@@ -2766,6 +2810,9 @@ function namingBlock(id){
 
 // endereço em que o *arr alcança o cliente: quem roteia pela VPN atende no gluetun
 const dlHost = c => c.vpn ? 'gluetun' : cname(c);
+
+// aviso do rodapé da Configuração, para o que a interface recusa fazer
+const warnCfg = msg => $('#cfgWarn').innerHTML = msg ? `<span class="warn">${msg}</span>` : '';
 
 $('#cfgBody').onchange = e=>{
   const el = e.target; if(el.type !== 'checkbox') return;
@@ -2780,6 +2827,17 @@ $('#cfgBody').onchange = e=>{
   else if(d.kind === 'naming'){
     CONFIG.mm[d.key].naming[d.opt] = el.checked;
     if(d.opt === 'useExisting') renderConfig();   // esconde ou traz os formatos
+  }
+  else if(d.kind === 'scope'){
+    const sc = scopeOf(d.key)[d.opt];
+    // é obrigatório: o formato tem de ir para alguma instância, então a última
+    // marcada não desmarca
+    if(!el.checked && !Object.keys(sc).some(k=>k !== d.inst && sc[k])){
+      el.checked = true;
+      return warnCfg(t('cfg.warnScope'));
+    }
+    sc[d.inst] = el.checked;
+    warnCfg('');
   }
   else if(d.kind === 'mmText') CONFIG.mm[d.key][d.opt] = el.value;
 };
@@ -2800,6 +2858,7 @@ $('#cfgBody').oninput = e=>{
 let cfgBackup = null;   // estado de antes de abrir, para o Cancelar desfazer
 function openCfg(){
   renderConfig();
+  warnCfg('');
   cfgBackup = JSON.parse(JSON.stringify(CONFIG));
   // aplicar é coisa de quem tem servidor e stack no ar; sem isso a
   // Configuração continua sendo o protótipo de sempre
@@ -3746,6 +3805,12 @@ const ARR_API = {sonarr:'v3', radarr:'v3', lidarr:'v1'};
    os *arr, sem passar pelo nginx. A base URL entra junto porque o app responde
    no subpath dela — sem isso a API dele fica na raiz e não existe. */
 const internalUrl = a => `http://${cname(a)}:${inner(a.id)}${route(a)}`;
+/* Os formatos com escopo que esta instância não recebe — ela fica de fora e o
+   servidor não manda a chave, então o app mantém o que já tinha. */
+function skipNaming(a){
+  const sc = (CONFIG.mm[a.id] && CONFIG.mm[a.id].naming.scope) || {};
+  return perInstFields(a.id).filter(k=> sc[k] && sc[k][cname(a)] === false);
+}
 const CAT_FIELD = {sonarr:'tvCategory', radarr:'movieCategory', lidarr:'musicCategory'};
 function applyPayload(){
   const nameOf = a => a.title || svc(a.id).name;
@@ -3759,7 +3824,10 @@ function applyPayload(){
     arrs: arrList().map(a=>({key:cname(a), name:nameOf(a), route:route(a),
                              api:ARR_API[a.id], catField:CAT_FIELD[a.id],
                              family:a.id, internalUrl:internalUrl(a),
-                             sync: CONFIG.apps[cname(a)] !== false})),
+                             sync: CONFIG.apps[cname(a)] !== false,
+                             // formato que esta instância não recebe fica como
+                             // está no app: o campo é obrigatório lá
+                             skipNaming: skipNaming(a)})),
     // o Media Management vai como está: é por família, e quem traduz cada
     // opção para o nome que a API usa é o servidor
     mm: CONFIG.mm,

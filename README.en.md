@@ -122,7 +122,12 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   episode and movie formats ship with the [TRaSH
   Guides](https://trash-guides.info) ones, in the Jellyfin variant with the TMDb
   id. Permissions reveal the `chmod` and `chown` fields, and in Lidarr the existing
-  name box is what brings up the track formats and the album folder. For now
+  name box is what brings up the track formats and the album folder. With more
+  than one Sonarr in the stack, each episode format — **standard**, **daily**
+  and **anime** — carries the list of instances that get it: you can send the
+  anime format to *Sonarr [Anime]* only, say. At least one instance is
+  mandatory, because the field is mandatory in the app; whichever is left out
+  keeps the format it already has instead of losing it. For now
   the choices
   all three parts reach the apps, through **Apply to the stack**.
 - **Global environment** (button at the top): base paths, PUID/PGID, time zone,

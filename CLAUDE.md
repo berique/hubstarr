@@ -71,8 +71,18 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    `movies` e `music`) e `mm[família]` (Media Management mais a nomenclatura,
    cujos campos estão em `NAMING_FIELDS` — os formatos de episódio e de filme
   saem de fábrica com os do TRaSH Guides, variante do Jellyfin com id do TMDb).
-   `syncConfig()` o alinha com o `added` a cada abertura do modal, e ele não
-   entra nos arquivos gerados — é protótipo de interface.
+   `syncConfig()` o alinha com o `added` a cada abertura do modal.
+
+   O Media Management é **por família**, com uma exceção: campo do
+   `NAMING_FIELDS` marcado com `perInst` vale por instância, e quais delas o
+   recebem fica em `mm[família].naming.scope[campo][chave da instância]` — hoje
+   são os três formatos de episódio do Sonarr. O escopo mora *dentro* do
+   `naming` de propósito: é o que o `cfg_naming` já guarda inteiro, em JSON, sem
+   coluna nem migração. **Pelo menos uma instância marcada é obrigatório** — o
+   campo é obrigatório no app —, então a interface recusa desmarcar a última, e
+   quem fica de fora simplesmente não recebe aquela chave: o `merge` do servidor
+   só troca o que chega, e o app mantém o formato que já tinha. A lista só
+   aparece com duas instâncias ou mais da família.
 5. **Derivações** — `slug()` → `cname()` (container_name = chave do serviço =
    pasta de config), `route()`, `url()`, `cfgPath`/`dataPath` (com variáveis
    `${...}` do `.env`) e `cfgReal`/`dataReal` (caminhos resolvidos, para o hint

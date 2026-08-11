@@ -75,6 +75,10 @@ struct Arr {
     /// o Prowlarr deve sincronizar com ele? é a caixa da Configuração
     #[serde(default)]
     sync: bool,
+    /// campos da nomenclatura que esta instância não recebe: a página os deixou
+    /// de fora, e não mandar a chave é o que faz o app manter a dele
+    #[serde(default)]
+    skip_naming: Vec<String>,
 }
 
 #[derive(Deserialize)]
@@ -135,6 +139,7 @@ fn alvo_prowlarr(p: &Prowlarr) -> Arr {
         family: "prowlarr".into(),
         internal_url: String::new(),
         sync: false,
+        skip_naming: Vec::new(),
     }
 }
 
@@ -150,6 +155,7 @@ impl Arr {
             family: self.family.clone(),
             internal_url: String::new(),
             sync: false,
+            skip_naming: self.skip_naming.clone(),
         }
     }
 }
@@ -630,6 +636,10 @@ async fn media_management(
     if let Some(r) = mm.get("rename") {
         campos_naming.insert("rename".into(), r.clone());
     }
+    // o que a Configuração tirou desta instância não vai como chave nenhuma
+    for k in &arr.skip_naming {
+        campos_naming.remove(k);
+    }
 
     let mut falhas = 0;
     for (recurso, campos, mapa) in [
@@ -810,6 +820,7 @@ mod tests {
             family: key.split('-').next().unwrap().into(),
             internal_url: format!("http://{key}:8989/{key}"),
             sync: true,
+            skip_naming: Vec::new(),
         }
     }
 
@@ -951,6 +962,25 @@ mod tests {
             enum_value("standardEpisodeFormat", &json!("{Series Title}")).unwrap(),
             json!("{Series Title}")
         );
+    }
+
+    #[test]
+    fn a_instancia_de_fora_do_formato_nao_recebe_aquela_chave() {
+        // o merge só troca o que vem; sem a chave, o app mantém o formato dele,
+        // que é o que o campo obrigatório do Sonarr exige
+        let mut atual = json!({"id": 1, "animeEpisodeFormat": "o do app",
+                               "standardEpisodeFormat": "velho"});
+        let mut de: Map<String, Value> = serde_json::from_str(
+            r#"{"standardEp": "novo", "animeEp": "nosso"}"#,
+        )
+        .unwrap();
+        let a = Arr { skip_naming: vec!["animeEp".into()], ..arr("sonarr", "tvCategory") };
+        for k in &a.skip_naming {
+            de.remove(k);
+        }
+        merge(&mut atual, &de, naming_map("sonarr")).unwrap();
+        assert_eq!(atual["standardEpisodeFormat"], "novo");
+        assert_eq!(atual["animeEpisodeFormat"], "o do app");
     }
 
     #[test]
