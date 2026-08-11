@@ -203,6 +203,10 @@
     line-height:normal;border-radius:7px;border:1px solid var(--line);
     background:var(--panel-2);color:var(--txt);text-decoration:none}
   a.btn:hover{border-color:var(--accent)}
+  /* sem o container no ar não há o que abrir: a âncora perde o href e se veste
+     de botão desabilitado */
+  a.btn.off{opacity:.45;cursor:not-allowed}
+  a.btn.off:hover{border-color:var(--line)}
   button.danger:hover{border-color:var(--danger);color:var(--danger)}
   .bar{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line);
        background:var(--panel-2);align-items:center}
@@ -735,6 +739,7 @@ const I18N = {
   'btn.del':'Excluir',
   'btn.link':'Link',
   'btn.linkTitle':url=>`Abrir ${url} numa aba nova`,
+  'btn.linkOff':'O container não está no ar: suba a stack para abrir o link',
   'items.empty':'Nenhum serviço adicionado.<br>Escolha um no combobox acima e clique em <b>Adicionar</b>.',
   'items.fixed':'fixo',
   'items.viaVpn':'via VPN',
@@ -1051,6 +1056,7 @@ const I18N = {
   'btn.del':'Remove',
   'btn.link':'Link',
   'btn.linkTitle':url=>`Open ${url} in a new tab`,
+  'btn.linkOff':'The container is not up: bring the stack up to open the link',
   'items.empty':'No services added.<br>Pick one in the combobox above and click <b>Add</b>.',
   'items.fixed':'fixed',
   'items.viaVpn':'via VPN',
@@ -1367,6 +1373,7 @@ const I18N = {
   'btn.del':'Eliminar',
   'btn.link':'Link',
   'btn.linkTitle':url=>`Abrir ${url} en una pestaña nueva`,
+  'btn.linkOff':'El contenedor no está en marcha: levanta la stack para abrir el link',
   'items.empty':'Ningún servicio añadido.<br>Elige uno en el combobox de arriba y pulsa <b>Añadir</b>.',
   'items.fixed':'fijo',
   'items.viaVpn':'por VPN',
@@ -1981,6 +1988,21 @@ const dotHtml = key =>{
   return `<span class="stDot" data-st="${d.st}" data-dot="${attr(key)}" title="${attr(d.tip)}"></span>`;
 };
 
+/* O "Link" só abre alguma coisa com o container no ar, e quem sabe disso é o
+   servidor: sem ele o mapa fica vazio e a âncora segue habilitada como sempre,
+   que é o caso da página aberta do disco. */
+const linkOn = key => !SERVER || dotOf(key).st === 'running';
+
+/* Âncora sem `href` não é clicável nem focável — é assim que o "Link" desliga,
+   já que `disabled` é coisa de <button>. */
+function paintLink(el){
+  const on = linkOn(el.dataset.link), u = el.dataset.url;
+  el.classList.toggle('off', !on);
+  if(on){ el.href = u; el.removeAttribute('aria-disabled'); el.title = t('btn.linkTitle', u); }
+  else  { el.removeAttribute('href'); el.setAttribute('aria-disabled','true');
+          el.title = t('btn.linkOff'); }
+}
+
 /* Repinta sem remontar a lista: o `renderItems()` refaz o HTML inteiro, e a
    cada 5 s isso apagaria foco e seleção de quem estivesse mexendo nela. */
 function paintStatus(){
@@ -1989,6 +2011,7 @@ function paintStatus(){
     el.dataset.st = d.st;
     el.title = d.tip;
   });
+  document.querySelectorAll('a.btn[data-link]').forEach(paintLink);
 }
 
 function renderItems(){
@@ -2021,9 +2044,12 @@ function renderItems(){
         <div class="ds">${cname(a)}${(a.title && a.title!==s.name)?' ('+s.name+')':''}${s.noVol?' · '+sdesc(s.id):' · '+cfgReal(a)}${s.media&&!s.noVol?' · '+dataReal(a):''}</div>
       </div>
       <div class="acts">
-        ${(s.internal || s.noLink) ? '' : `<a class="btn" href="${attr(url(a))}"
+        ${(s.internal || s.noLink) ? '' : `<a class="btn${linkOn(cname(a))?'':' off'}"
+          ${linkOn(cname(a))?`href="${attr(url(a))}"`:'aria-disabled="true"'}
+          data-link="${attr(cname(a))}" data-url="${attr(url(a))}"
           target="_blank" rel="noopener noreferrer"
-          title="${attr(t('btn.linkTitle', url(a)))}">${t('btn.link')}</a>`}
+          title="${attr(linkOn(cname(a)) ? t('btn.linkTitle', url(a)) : t('btn.linkOff'))}"
+          >${t('btn.link')}</a>`}
         <button class="sm" data-act="edit">${t('btn.edit')}</button>
         ${s.fixed ? `<span class="hint">${t('items.fixed')}</span>`
                   : `<button class="sm danger" data-act="del">${t('btn.del')}</button>`}
