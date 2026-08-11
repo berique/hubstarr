@@ -662,6 +662,7 @@ const I18N = {
   'cfg.mmHint':'Vale para todas as instâncias da mesma família. São as opções de <i>Settings → Media Management</i>.',
   'cfg.adv.h':'Media Management (avançado)',
   'cfg.adv.rescan':'Reexaminar a pasta',
+  'cfg.adv.fileDate':'Data do arquivo',
   'cfg.adv.recycleBin':'Lixeira',
   'cfg.adv.recycleDays':'Limpar a lixeira após (dias)',
   'cfg.adv.extraFiles':'Importar arquivos extras',
@@ -670,10 +671,17 @@ const I18N = {
   'cfg.adv.skipFree':'Não conferir o espaço livre',
   'cfg.adv.skipFreeOn':'importa mesmo sem saber quanto sobra no disco',
   'cfg.adv.minFree':'Espaço livre mínimo (MB)',
+  'cfg.opt.none':'Não mexer',
+  'cfg.opt.localAirDate':'Data de exibição (local)',
+  'cfg.opt.utcAirDate':'Data de exibição (UTC)',
+  'cfg.opt.cinemas':'Estreia no cinema',
+  'cfg.opt.release':'Lançamento físico',
+  'cfg.opt.albumReleaseDate':'Lançamento do álbum',
   'cfg.opt.always':'Sempre',
   'cfg.opt.afterManual':'Só depois de atualização manual',
   'cfg.opt.never':'Nunca',
   'cfg.q.adv.rescan':'Quando o app relê a pasta da biblioteca atrás de mudanças feitas por fora. <b>Sempre</b> é o padrão dele; <b>Nunca</b> serve a quem mexe nos arquivos por outro caminho e não quer a varredura.',
+  'cfg.q.adv.fileDate':'Que data o app grava no arquivo importado, no lugar da data em que ele chegou. Cada família oferece as datas que conhece: o Sonarr, a de exibição do episódio; o Radarr, a estreia no cinema ou o lançamento físico; o Lidarr, o lançamento do álbum. <b>Não mexer</b> deixa a data como veio.',
   'cfg.q.adv.recycleBin':'Caminho, dentro do container, para onde vai o arquivo que o app apagaria — o upgrade que substitui um arquivo, por exemplo. Vazio, ele apaga de verdade. Use um caminho na mesma partição da mídia, senão mover vira copiar.',
   'cfg.q.adv.recycleDays':'Quantos dias o arquivo fica na lixeira antes de o app o apagar de vez. <b>0</b> desliga a limpeza automática.',
   'cfg.q.adv.extraFiles':'Traz junto do vídeo os arquivos ao lado dele — legendas, principalmente —, renomeando-os igual.',
@@ -1010,6 +1018,7 @@ const I18N = {
   'cfg.mmHint':'Applies to every instance of the same family. These are the <i>Settings → Media Management</i> options.',
   'cfg.adv.h':'Media Management (advanced)',
   'cfg.adv.rescan':'Rescan folder',
+  'cfg.adv.fileDate':'File date',
   'cfg.adv.recycleBin':'Recycling bin',
   'cfg.adv.recycleDays':'Clean the bin after (days)',
   'cfg.adv.extraFiles':'Import extra files',
@@ -1018,10 +1027,17 @@ const I18N = {
   'cfg.adv.skipFree':'Skip the free space check',
   'cfg.adv.skipFreeOn':'imports without knowing how much is left on disk',
   'cfg.adv.minFree':'Minimum free space (MB)',
+  'cfg.opt.none':'Leave alone',
+  'cfg.opt.localAirDate':'Air date (local)',
+  'cfg.opt.utcAirDate':'Air date (UTC)',
+  'cfg.opt.cinemas':'In cinemas date',
+  'cfg.opt.release':'Physical release',
+  'cfg.opt.albumReleaseDate':'Album release',
   'cfg.opt.always':'Always',
   'cfg.opt.afterManual':'After manual refresh only',
   'cfg.opt.never':'Never',
   'cfg.q.adv.rescan':'When the app re-reads the library folder looking for changes made outside it. <b>Always</b> is its own default; <b>Never</b> suits whoever moves files through another path and does not want the scan.',
+  'cfg.q.adv.fileDate':'Which date the app stamps on the imported file, instead of the date it arrived. Each family offers the dates it knows: Sonarr, the episode air date; Radarr, the cinema premiere or the physical release; Lidarr, the album release. <b>Leave alone</b> keeps the date as it came.',
   'cfg.q.adv.recycleBin':'Path, inside the container, where files the app would delete end up — the upgrade replacing a file, say. Empty, it deletes for real. Use a path on the same partition as the media, or moving turns into copying.',
   'cfg.q.adv.recycleDays':'How many days a file stays in the bin before the app deletes it for good. <b>0</b> turns the automatic cleanup off.',
   'cfg.q.adv.extraFiles':'Brings along the files sitting next to the video — subtitles, mostly —, renaming them to match.',
@@ -1356,6 +1372,7 @@ const I18N = {
   'cfg.mmHint':'Vale para todas las instancias de la misma familia. Son las opciones de <i>Settings → Media Management</i>.',
   'cfg.adv.h':'Media Management (avanzado)',
   'cfg.adv.rescan':'Volver a examinar la carpeta',
+  'cfg.adv.fileDate':'Fecha del archivo',
   'cfg.adv.recycleBin':'Papelera',
   'cfg.adv.recycleDays':'Limpiar la papelera tras (días)',
   'cfg.adv.extraFiles':'Importar archivos extra',
@@ -1364,10 +1381,17 @@ const I18N = {
   'cfg.adv.skipFree':'No comprobar el espacio libre',
   'cfg.adv.skipFreeOn':'importa sin saber cuánto queda en el disco',
   'cfg.adv.minFree':'Espacio libre mínimo (MB)',
+  'cfg.opt.none':'No tocar',
+  'cfg.opt.localAirDate':'Fecha de emisión (local)',
+  'cfg.opt.utcAirDate':'Fecha de emisión (UTC)',
+  'cfg.opt.cinemas':'Estreno en cines',
+  'cfg.opt.release':'Lanzamiento físico',
+  'cfg.opt.albumReleaseDate':'Lanzamiento del álbum',
   'cfg.opt.always':'Siempre',
   'cfg.opt.afterManual':'Solo tras una actualización manual',
   'cfg.opt.never':'Nunca',
   'cfg.q.adv.rescan':'Cuándo el app vuelve a leer la carpeta de la biblioteca buscando cambios hechos por fuera. <b>Siempre</b> es su propio valor por defecto; <b>Nunca</b> le sirve a quien mueve los archivos por otro camino y no quiere el escaneo.',
+  'cfg.q.adv.fileDate':'Qué fecha graba el app en el archivo importado, en vez de la fecha en que llegó. Cada familia ofrece las fechas que conoce: Sonarr, la de emisión del episodio; Radarr, el estreno en cines o el lanzamiento físico; Lidarr, el lanzamiento del álbum. <b>No tocar</b> deja la fecha como vino.',
   'cfg.q.adv.recycleBin':'Ruta, dentro del contenedor, adonde va el archivo que el app borraría — la mejora que sustituye a un archivo, por ejemplo. Vacío, borra de verdad. Usa una ruta en la misma partición que los medios, o mover se vuelve copiar.',
   'cfg.q.adv.recycleDays':'Cuántos días se queda el archivo en la papelera antes de que el app lo borre del todo. <b>0</b> apaga la limpieza automática.',
   'cfg.q.adv.extraFiles':'Trae junto al vídeo los archivos que están a su lado — subtítulos, sobre todo —, renombrándolos igual.',
@@ -2620,6 +2644,12 @@ const MM_OPTS = ['hardlink','rename','perms','empty'];
    `cfg_naming` que guarda JSON livre, e assim não há coluna nem migração. */
 const MM_ADV = [
   {k:'rescan',     type:'select', opts:['always','afterManual','never'], def:'always'},
+  /* Único do bloco cujas opções mudam de família para família: o que cada app
+     tem para pôr na data do arquivo é o que ele conhece de datas. */
+  {k:'fileDate',   type:'select', def:'none', optsBy:{
+     sonarr:['none','localAirDate','utcAirDate'],
+     radarr:['none','cinemas','release'],
+     lidarr:['none','albumReleaseDate']}},
   {k:'recycleBin', type:'text',   def:'',        ph:'/mnt/media/.lixeira'},
   {k:'recycleDays',type:'num',    def:'7'},
   {k:'extraFiles', type:'check',  def:false},
@@ -2741,7 +2771,7 @@ function advBlock(id){
           <span class="hint">${t('cfg.adv.'+f.k+'On')}</span></label></div>`;
     if(f.type === 'select')
       return `<div class="row"${help}><label for="adv-${id}-${f.k}">${lbl}</label>
-        <select id="adv-${id}-${f.k}" ${at(f.k)}>${f.opts.map(o=>
+        <select id="adv-${id}-${f.k}" ${at(f.k)}>${(f.optsBy ? f.optsBy[id] : f.opts).map(o=>
           `<option value="${o}"${adv[f.k]===o?' selected':''}>${t('cfg.opt.'+o)}</option>`
         ).join('')}</select></div>`;
     return `<div class="row"${help}><label for="adv-${id}-${f.k}">${lbl}</label>

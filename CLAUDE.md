@@ -74,9 +74,11 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    `syncConfig()` o alinha com o `added` a cada abertura do modal.
 
    O bloco **Media Management (avançado)** — o `MM_ADV`, o que os apps escondem
-   atrás do "Advanced Settings" — vale para as três famílias com os mesmos sete
+   atrás do "Advanced Settings" — vale para as três famílias com os mesmos oito
    campos, porque os nomes de API deles coincidem no Sonarr, no Radarr e no
-   Lidarr. Ele mora em `mm[família].naming.adv` pela mesma razão do `scope`
+   Lidarr. O que muda de família para família é só o *valor* do `fileDate`, e
+   por isso ele traz `optsBy` no lugar de `opts`: cada app oferece as datas que
+   conhece. Ele mora em `mm[família].naming.adv` pela mesma razão do `scope`
    abaixo: é o `cfg_naming` que guarda JSON livre, e assim não há coluna nem
    migração — o servidor o tira de dentro do `naming` e o trata como campo do
    `mediamanagement`. Os dois numéricos (`recycleDays`, `minFree`) são texto na

@@ -116,8 +116,8 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   categories (`tv`, `movies`, `music`), all editable —,
   plus completed download handling on SABnzbd, and the *Media Management*
   options — hardlinks, renaming, permissions, empty
-  folders, the **advanced** block (rescan folder, recycling bin and its cleanup,
-  import extra files, free space check) and each app's full naming section
+  folders, the **advanced** block (rescan folder, file date, recycling bin and
+  its cleanup, import extra files, free space check) and each app's full naming section
   (*Episode*, *Movie*, *Track
   Naming*: illegal characters, colon replacement, multi-episode style and every
   file and folder format) — split per family: Sonarr, Radarr and Lidarr. The

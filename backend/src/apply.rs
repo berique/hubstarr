@@ -584,6 +584,8 @@ const MEDIA_MANAGEMENT: &[(&str, &str)] = &[
     ("empty", "deleteEmptyFolders"),
     // o bloco avançado da Configuração: mesmos nomes nas três famílias
     ("rescan", "rescanAfterRefresh"),
+    // o valor deste muda por família — quem escolhe as opções é a página
+    ("fileDate", "fileDate"),
     ("recycleBin", "recycleBin"),
     ("recycleDays", "recycleBinCleanupDays"),
     ("extraFiles", "importExtraFiles"),
@@ -992,12 +994,14 @@ mod tests {
     fn o_bloco_avancado_vira_campo_do_mediamanagement() {
         let mut atual = json!({"id": 1, "recycleBin": "", "autoRenameFolders": true});
         let de: Map<String, Value> = serde_json::from_str(
-            r#"{"rescan":"never","recycleBin":"/mnt/media/.lixeira","recycleDays":"14",
+            r#"{"rescan":"never","fileDate":"localAirDate",
+                "recycleBin":"/mnt/media/.lixeira","recycleDays":"14",
                 "extraFiles":true,"extraExts":"srt,sub","skipFree":false,"minFree":"250"}"#,
         )
         .unwrap();
         merge(&mut atual, &de, MEDIA_MANAGEMENT).unwrap();
         assert_eq!(atual["rescanAfterRefresh"], "never");
+        assert_eq!(atual["fileDate"], "localAirDate");
         assert_eq!(atual["recycleBin"], "/mnt/media/.lixeira");
         assert_eq!(atual["importExtraFiles"], true);
         assert_eq!(atual["extraFileExtensions"], "srt,sub");
