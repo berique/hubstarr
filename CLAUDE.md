@@ -249,15 +249,20 @@ recusando o que escapa da pasta), `deploy.rs` (`docker compose up -d`/`down` na
 pasta da stack, mais o `docker_ok()` que o `api/health` devolve — ele pergunta
 por `docker compose version`, não só pelo docker, porque o plugin é pacote à
 parte e é ele que sobe a stack; sem ele a página abre o bloco "Precisa instalar
-o Docker?" e mostra o aviso `#noDocker`), `apply.rs` (v0.3: registra os clientes de
-download na API de cada *arr e cada *arr na do Prowlarr — alcançados pelo
-nginx, porque o servidor roda no host e a rede `starrnet` não existe para ele;
-aplicar de novo procura pelo nome e atualiza no lugar, e um app fora do ar vira
-uma linha no log em vez de derrubar a volta inteira. Cuidado com dois
-endereços diferentes: o servidor fala com os apps pelo nginx, mas o que vai
-*dentro* da aplicação do Prowlarr é o endereço interno, de container para
-container, e com a base URL junto — sem ela a API do *arr fica na raiz, onde
-não existe), `jobs.rs` (trabalhos numerados com log incremental, em memória
+o Docker?" e mostra o aviso `#noDocker`), `apply.rs` (v0.3: a Configuração inteira
+aplicada pela API — clientes de download em cada *arr, cada *arr no Prowlarr, e
+o Media Management mais a nomenclatura de cada família. Os apps são alcançados
+pelo nginx, porque o servidor roda no host e a rede `starrnet` não existe para
+ele; aplicar de novo procura pelo nome e atualiza no lugar, e um app fora do ar
+vira uma linha no log em vez de derrubar a volta inteira. Três coisas para não
+reaprender: o que vai *dentro* da aplicação do Prowlarr é o endereço interno, de
+container para container, e com a base URL junto — sem ela a API do *arr fica na
+raiz, onde não existe; `naming` e `mediamanagement` são recursos únicos e cheios
+de campo que a página não mostra, então são lidos, mexidos nas chaves do
+`naming_map()`/`MEDIA_MANAGEMENT` e devolvidos inteiros, nunca montados do zero;
+e as opções de lista viajam pelo nome e chegam como número, pela ordem do
+`COLON`/`MULTI_EP`, que é a mesma da página — nome fora da lista é erro, não
+zero), `jobs.rs` (trabalhos numerados com log incremental, em memória
 — subir a stack baixa imagem e não cabe numa resposta HTTP), `shots.rs` (cache
 em disco das capturas de paleta do theme.park, ao lado do banco, servido em
 `api/shot/:app/:theme` — o `ok_seg()` recusa segmento que escaparia da pasta ou
@@ -350,17 +355,20 @@ Duas armadilhas do `added` injetado, as duas já custaram uma rodada:
 
 O roadmap fica nos três READMEs, numa tabela por marco de versão; o texto
 autoritativo é o do `README.md`, e mexer nele é mexer nos três. Hoje o
-repositório é o **v0.2** — a página, mais o servidor de `backend/`.
+repositório é o **v0.3** — a página, o servidor de `backend/` e a Configuração
+aplicada nos apps.
 
 - ~~**v0.2**~~ — feito: o backend liga o `hubstarr.html` ao Docker e guarda a
   stack. Uma primeira versão dele existiu e foi removida no `ba54e1a`; a de
   agora é normalizada.
-- **v0.3** — aplicar a **Configuração** pela API de cada app. **Em andamento**:
-  os clientes de download e o Prowlarr já vão (`apply.rs` + o botão "Aplicar na
-  stack" do modal da Configuração); falta o Media Management (`CONFIG.mm`), que
-  entra pelo mesmo caminho. As categorias que o Prowlarr sincroniza por família
-  saem explícitas do `sync_categories()`, e não em branco: campo vazio ali é um
-  Prowlarr que não sincroniza indexer nenhum, sem dizer nada. A chave da API do SABnzbd é o
+- ~~**v0.3**~~ — feito: a **Configuração** é aplicada pela API de cada app, no
+  `apply.rs`, pelo botão "Aplicar na stack" do modal dela — as três partes
+  (`CONFIG.clients`, `CONFIG.apps` e `CONFIG.mm`) numa passada só. Duas escolhas
+  que não são óbvias: as categorias que o Prowlarr sincroniza por família saem
+  explícitas do `sync_categories()`, porque campo vazio ali é um Prowlarr que
+  não sincroniza indexer nenhum sem dizer nada; e o `useExisting` do Lidarr não
+  vira campo de API — ele mostra e esconde os formatos na interface, e o que
+  descreve é o `renameTracks` desligado, que já vem do `rename`. A chave da API do SABnzbd é o
   próprio app que a gera na primeira subida, então ela é um campo do modal dele
   (flag `dlKey`) e mora na instância, não no Ambiente — não vai para arquivo
   nenhum, serve só para o Aplicar.

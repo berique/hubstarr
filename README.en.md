@@ -117,8 +117,7 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   id. Permissions reveal the `chmod` and `chown` fields, and in Lidarr the existing
   name box is what brings up the track formats and the album folder. For now
   the choices
-  of the three parts the download clients and Prowlarr reach the apps, through
-  **Apply to the stack** — only Media Management stays in the interface.
+  all three parts reach the apps, through **Apply to the stack**.
 - **Global environment** (button at the top): base paths, PUID/PGID, time zone,
   restart policy, API key and TLS. The
   time zone list is the whole IANA database, straight from the browser, and it
@@ -207,9 +206,9 @@ hand breaks nothing: it costs one extra fetch. Opened from disk, with no
 server, the page still fetches every screenshot straight from their docs.
 
 With the stack up, the **Configuration** gains an **Apply to the stack**
-button: the server registers every download client in every *arr, and every
-*arr ticked in Prowlarr, through their APIs, reporting what went through as it
-goes. The apps are reached through
+button: the server registers every download client in every *arr, every *arr
+ticked in Prowlarr, and each family's *Media Management* and naming, through
+their APIs, reporting what went through as it goes. The apps are reached through
 nginx, on the port it publishes on the host. Applying again does not duplicate
 — the client is looked up by name and updated in place — and an app that is not
 up yet becomes one line in the log instead of stopping the rest. SABnzbd needs
@@ -339,23 +338,24 @@ copying one of the blocks and translating the values.
 
 What is not there yet, in the order it would make sense to happen. The
 milestones are versions, not dates: each one only starts after the previous, because
-it depends on it. The repository is at **v0.2** today — the page, plus the
-optional server that keeps the stacks and brings them up in Docker.
+it depends on it. The repository is at **v0.3** today — the page, the optional
+server that keeps the stacks and brings them up in Docker, and the Configuration
+applied to the apps.
 
 | Milestone | Delivers                                          | Done when                                                                          |
 | --------- | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | ~~**v0.2**~~ | ~~A backend wiring `hubstarr.html` to Docker~~ | ✅ the page writes the files and brings the stack up without going through the `.zip` |
-| **v0.3**  | Automatic stack configuration from the backend    | 🚧 download clients and Prowlarr already land through **Apply to the stack**; Media Management is still to come |
+| ~~**v0.3**~~ | ~~Automatic stack configuration from the backend~~ | ✅ Prowlarr, download clients and Media Management leave the interface and become API calls |
 | **v0.4**  | Custom formats and profiles per stack             | the 4K instance, the anime one and the rest are born with their own quality profile |
 | **v0.5**  | Compatibility with the TRaSH Guides               | quality definitions, custom format scores and the rest of the guide's recommendations come ready |
 | **v0.6**  | Localized media search                            | the search language can be picked and the *arr apps find the right release          |
 
 ## Status
 
-The page is an interface prototype: the **Configuration** choices are kept — in
-the page, and in the database when a server is there — and, of its three parts,
-the **download clients** and **Prowlarr** turn into API calls so far; only Media
-Management still stops at the interface. That is v0.3, under way. The generated files were always the real thing —
+The page is an interface prototype, but the **Configuration** is no longer just
+interface: the choices are kept — in the page, and in the database when a server
+is there — and, with a server and the stack up, all three of its parts turn into
+API calls through **Apply to the stack**. The generated files were always the real thing —
 download the `.zip` and run `docker compose up -d` in the folder you unpacked it
 into, or let the server do both.
 

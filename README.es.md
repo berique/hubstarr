@@ -120,9 +120,7 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   variante de Jellyfin con el id de TMDb. Los permisos abren los campos
   de `chmod` y `chown`, y en Lidarr la casilla de nombre existente es la que
   trae los formatos de pista y la carpeta del álbum. Por ahora las
-  opciones, de las tres partes los clientes de descarga y Prowlarr llegan a las
-  apps, por el **Aplicar en la stack** — solo Media Management se queda en la
-  interfaz.
+  opciones, las tres partes llegan a las apps por el **Aplicar en la stack**.
 - **Entorno global** (botón arriba): rutas base, PUID/PGID, zona horaria,
   restart policy, API key y TLS. La lista de husos es la IANA entera, que viene
   del propio navegador, y arranca en el huso de la máquina.
@@ -213,8 +211,9 @@ el disco, sin servidor, la página sigue buscando cada captura directamente en
 su documentación.
 
 Con la stack en marcha, la **Configuración** gana el botón **Aplicar en la
-stack**: el servidor registra cada cliente de descarga en cada *arr, y cada
-*arr marcado en Prowlarr, por su API, y va mostrando lo que pasó. Los apps se alcanzan por el nginx, en el puerto que
+stack**: el servidor registra cada cliente de descarga en cada *arr, cada *arr
+marcado en Prowlarr y el *Media Management* con la nomenclatura de cada familia,
+por su API, y va mostrando lo que pasó. Los apps se alcanzan por el nginx, en el puerto que
 publica en el host. Aplicar de nuevo no duplica — el cliente se busca por el
 nombre y se actualiza en su sitio — y un app que todavía no arrancó es una línea
 del log en vez de interrumpir el resto. SABnzbd necesita su clave de API, la que
@@ -345,24 +344,24 @@ bloques y traducir los valores.
 
 Lo que todavía no existe, en el orden en que tendría sentido que ocurra. Los
 hitos son versiones, no fechas: cada uno solo empieza después del anterior, porque
-depende de él. Hoy el repositorio está en **v0.2** — la página, más el servidor
-opcional que guarda las stacks y las levanta en Docker.
+depende de él. Hoy el repositorio está en **v0.3** — la página, el servidor
+opcional que guarda las stacks y las levanta en Docker, y la Configuración
+aplicada en las apps.
 
 | Hito     | Entrega                                              | Se cierra cuando                                                                        |
 | -------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | ~~**v0.2**~~ | ~~Un backend que conecte `hubstarr.html` con Docker~~ | ✅ la página graba los archivos y levanta la stack sin pasar por el `.zip`              |
-| **v0.3** | Configuración automática de las stacks desde el backend | 🚧 los clientes de descarga y Prowlarr ya entran por **Aplicar en la stack**; falta el Media Management |
+| ~~**v0.3**~~ | ~~Configuración automática de las stacks desde el backend~~ | ✅ Prowlarr, clientes de descarga y Media Management salen de la interfaz y son llamadas de API |
 | **v0.4** | Custom formats y profiles propios de cada stack       | la instancia de 4K, la de anime y las demás nacen con su perfil de calidad                 |
 | **v0.5** | Compatibilidad con TRaSH Guides                       | quality definitions, scores de custom format y el resto de las recomendaciones de la guía ya listas |
 | **v0.6** | Búsqueda localizada de medios                         | se puede elegir el idioma de la búsqueda y los *arr encuentran el lanzamiento correcto     |
 
 ## Estado
 
-La página es un prototipo de interfaz: las opciones de **Configuración** se
-guardan — en ella, y en la base cuando hay servidor — y, de sus tres partes,
-los **clientes de descarga** y **Prowlarr** se vuelven llamadas de API por
-ahora; solo Media Management sigue parando en la interfaz. Eso es el v0.3, en
-marcha. Los archivos generados siempre
+La página es un prototipo de interfaz, pero la **Configuración** ya no es solo
+interfaz: las opciones se guardan — en ella, y en la base cuando hay servidor —
+y, con servidor y la stack en marcha, sus tres partes se vuelven llamadas de API
+por el **Aplicar en la stack**. Los archivos generados siempre
 fueron de verdad — basta con descargar el `.zip` y ejecutar
 `docker compose up -d` en la carpeta donde se descomprimió, o dejar que el
 servidor haga las dos cosas.

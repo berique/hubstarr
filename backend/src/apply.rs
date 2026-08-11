@@ -37,6 +37,10 @@ pub struct Req {
     /// o Prowlarr da stack, quando ele está nela
     #[serde(default)]
     prowlarr: Option<Prowlarr>,
+    /// Media Management e nomenclatura, por família — como na página, é por
+    /// app e não por instância
+    #[serde(default)]
+    mm: Map<String, Value>,
 }
 
 #[derive(Deserialize)]
@@ -164,8 +168,8 @@ pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
     if req.arrs.is_empty() {
         return Err("nenhum *arr na stack para configurar".into());
     }
-    if req.clients.is_empty() && req.prowlarr.is_none() {
-        return Err("nada para aplicar: nem cliente de download, nem Prowlarr".into());
+    if req.clients.is_empty() && req.prowlarr.is_none() && req.mm.is_empty() {
+        return Err("nada para aplicar nesta stack".into());
     }
     let http = reqwest::Client::builder()
         .timeout(Duration::from_secs(20))
@@ -221,6 +225,9 @@ pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
     }
     if let Some(p) = &req.prowlarr {
         falhas += applications(&http, &base, &req, p, &log).await;
+    }
+    for arr in &req.arrs {
+        falhas += media_management(&http, &base, &req, arr, &log).await;
     }
     if falhas > 0 {
         return Err(format!("{falhas} ligação(ões) não passaram"));
@@ -324,6 +331,173 @@ async fn applications(
         }
     }
     falhas
+}
+
+/* ---------- Media Management ---------- */
+
+/* As opções da página, com o nome que cada uma tem na API. `naming` e
+   `mediamanagement` são recursos únicos e cheios de campo que a página não
+   mostra, então nada é montado do zero aqui: o recurso é lido, só estas
+   chaves são trocadas, e o resto volta como estava.
+
+   O que a página chama de `rename` é o "renomear ao importar" de cada família;
+   o `useExisting` do Lidarr não entra, é a caixa que mostra ou esconde os
+   formatos na interface, e o que ela descreve — importar com o nome que o
+   arquivo já tinha — é o próprio `renameTracks` desligado. */
+fn naming_map(family: &str) -> &'static [(&'static str, &'static str)] {
+    match family {
+        "sonarr" => &[
+            ("rename", "renameEpisodes"),
+            ("illegal", "replaceIllegalCharacters"),
+            ("colon", "colonReplacementFormat"),
+            ("multiEp", "multiEpisodeStyle"),
+            ("standardEp", "standardEpisodeFormat"),
+            ("dailyEp", "dailyEpisodeFormat"),
+            ("animeEp", "animeEpisodeFormat"),
+            ("seriesFolder", "seriesFolderFormat"),
+            ("seasonFolder", "seasonFolderFormat"),
+            ("specialsFolder", "specialsFolderFormat"),
+        ],
+        "radarr" => &[
+            ("rename", "renameMovies"),
+            ("illegal", "replaceIllegalCharacters"),
+            ("colon", "colonReplacementFormat"),
+            ("standardMovie", "standardMovieFormat"),
+            ("movieFolder", "movieFolderFormat"),
+        ],
+        "lidarr" => &[
+            ("rename", "renameTracks"),
+            ("illegal", "replaceIllegalCharacters"),
+            ("standardTrack", "standardTrackFormat"),
+            ("multiDiscTrack", "multiDiscTrackFormat"),
+            ("artistFolder", "artistFolderFormat"),
+            ("albumFolder", "albumFolderFormat"),
+        ],
+        _ => &[],
+    }
+}
+
+const MEDIA_MANAGEMENT: &[(&str, &str)] = &[
+    ("hardlink", "copyUsingHardlinks"),
+    ("perms", "setPermissionsLinux"),
+    ("chmod", "chmodFolder"),
+    ("chown", "chownGroup"),
+    ("empty", "deleteEmptyFolders"),
+];
+
+/* Os dois campos de lista da nomenclatura viajam pelo nome e chegam à API
+   como número: a ordem aqui é a do enum do *arr, e é a mesma do `COLON` e do
+   `MULTIEP` da página. Nome que não estiver na lista vira erro, não zero —
+   se as duas pontas saírem de sincronia, é melhor uma linha no log do que o
+   app configurado com a primeira opção sem ninguém perceber. */
+const COLON: &[&str] = &["delete", "dash", "spaceDash", "spaceDashSpace", "smart"];
+const MULTI_EP: &[&str] = &["extend", "duplicate", "repeat", "scene", "range", "prefixedRange"];
+
+fn enum_value(campo: &str, v: &Value) -> Result<Value, String> {
+    let lista = match campo {
+        "colonReplacementFormat" => COLON,
+        "multiEpisodeStyle" => MULTI_EP,
+        _ => return Ok(v.clone()),
+    };
+    let nome = v.as_str().unwrap_or("");
+    lista
+        .iter()
+        .position(|x| *x == nome)
+        .map(|i| json!(i))
+        .ok_or_else(|| format!("{campo}: opção desconhecida ({nome})"))
+}
+
+/// Troca no recurso lido só o que a página governa, deixando o resto intacto.
+fn merge(atual: &mut Value, de: &Map<String, Value>, mapa: &[(&str, &str)]) -> Result<(), String> {
+    for (pagina, api) in mapa {
+        if let Some(v) = de.get(*pagina) {
+            atual[*api] = enum_value(api, v)?;
+        }
+    }
+    Ok(())
+}
+
+/// O Media Management e a nomenclatura de uma instância. São dois recursos
+/// únicos (sem id na rota, mas com id no corpo), então cada um é lido, mexido
+/// e devolvido inteiro.
+async fn media_management(
+    http: &reqwest::Client,
+    base: &str,
+    req: &Req,
+    arr: &Arr,
+    log: &Log,
+) -> usize {
+    let Some(mm) = req.mm.get(&arr.family).and_then(|v| v.as_object()) else {
+        return 0;
+    };
+    let naming = mm.get("naming").and_then(|v| v.as_object()).cloned();
+    // o "renomear" fica no `mm` da página, mas na API ele é campo da
+    // nomenclatura: entra junto com ela
+    let mut campos_naming = naming.unwrap_or_default();
+    if let Some(r) = mm.get("rename") {
+        campos_naming.insert("rename".into(), r.clone());
+    }
+
+    let mut falhas = 0;
+    for (recurso, campos, mapa) in [
+        (
+            "naming",
+            campos_naming,
+            naming_map(&arr.family).to_vec(),
+        ),
+        (
+            "mediamanagement",
+            mm.clone(),
+            MEDIA_MANAGEMENT.to_vec(),
+        ),
+    ] {
+        let url = format!("{base}{}/api/{}/config/{recurso}", arr.route, arr.api);
+        match put_config(http, &url, &req.api_key, &campos, &mapa).await {
+            Ok(()) => log.line(format!("{} → {recurso}: aplicado", arr.name)),
+            Err(e) => {
+                log.line(format!("{} → {recurso}: {e}", arr.name));
+                falhas += 1;
+            }
+        }
+    }
+    falhas
+}
+
+async fn put_config(
+    http: &reqwest::Client,
+    url: &str,
+    key: &str,
+    campos: &Map<String, Value>,
+    mapa: &[(&str, &str)],
+) -> Result<(), String> {
+    let r = http
+        .get(url)
+        .header("X-Api-Key", key)
+        .send()
+        .await
+        .map_err(|e| format!("não respondeu ({e})"))?;
+    let st = r.status();
+    let txt = r.text().await.unwrap_or_default();
+    if !st.is_success() {
+        return Err(erro(st, &txt));
+    }
+    let mut atual: Value =
+        serde_json::from_str(&txt).map_err(|_| "resposta não foi a configuração".to_string())?;
+    merge(&mut atual, campos, mapa)?;
+
+    let r = http
+        .put(url)
+        .header("X-Api-Key", key)
+        .header("Content-Type", "application/json")
+        .body(atual.to_string())
+        .send()
+        .await
+        .map_err(|e| format!("não respondeu ({e})"))?;
+    let st = r.status();
+    if st.is_success() {
+        return Ok(());
+    }
+    Err(erro(st, &r.text().await.unwrap_or_default()))
 }
 
 /// Os clientes que o *arr já tem, para saber o que é registro novo e o que é
@@ -523,6 +697,56 @@ mod tests {
         assert!(sync_categories("radarr").iter().all(|c| (2000..3000).contains(c)));
         assert!(sync_categories("lidarr").iter().all(|c| (3000..4000).contains(c)));
         assert!(sync_categories("bazarr").is_empty());
+    }
+
+    #[test]
+    fn o_merge_troca_so_o_que_a_pagina_governa() {
+        let mut atual = json!({"id": 1, "renameEpisodes": false,
+                               "standardEpisodeFormat": "velho",
+                               "campoQueANaoConheco": "fica"});
+        let de: Map<String, Value> = serde_json::from_str(
+            r#"{"rename": true, "standardEp": "novo", "colon": "smart"}"#,
+        )
+        .unwrap();
+        merge(&mut atual, &de, naming_map("sonarr")).unwrap();
+        assert_eq!(atual["renameEpisodes"], true);
+        assert_eq!(atual["standardEpisodeFormat"], "novo");
+        // dois-pontos vai como número, na ordem do enum do app
+        assert_eq!(atual["colonReplacementFormat"], 4);
+        // o id e o que a página não mostra voltam como estavam
+        assert_eq!(atual["id"], 1);
+        assert_eq!(atual["campoQueANaoConheco"], "fica");
+        // campo que a página não mandou não é inventado
+        assert!(atual.get("animeEpisodeFormat").is_none());
+    }
+
+    #[test]
+    fn opcao_de_lista_fora_do_enum_falha_em_vez_de_virar_a_primeira() {
+        assert_eq!(
+            enum_value("multiEpisodeStyle", &json!("prefixedRange")).unwrap(),
+            json!(5)
+        );
+        assert!(enum_value("colonReplacementFormat", &json!("outra")).is_err());
+        // campo que não é de lista passa como veio
+        assert_eq!(
+            enum_value("standardEpisodeFormat", &json!("{Series Title}")).unwrap(),
+            json!("{Series Title}")
+        );
+    }
+
+    #[test]
+    fn cada_familia_renomeia_com_o_nome_que_a_api_dela_usa() {
+        let rename = |f| {
+            naming_map(f)
+                .iter()
+                .find(|(p, _)| *p == "rename")
+                .map(|(_, a)| *a)
+        };
+        assert_eq!(rename("sonarr"), Some("renameEpisodes"));
+        assert_eq!(rename("radarr"), Some("renameMovies"));
+        assert_eq!(rename("lidarr"), Some("renameTracks"));
+        // o Lidarr não tem dois-pontos, e a página também não o oferece lá
+        assert!(naming_map("lidarr").iter().all(|(p, _)| *p != "colon"));
     }
 
     #[test]
