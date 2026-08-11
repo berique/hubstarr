@@ -94,6 +94,10 @@ struct Client {
     /// a chave da API do SABnzbd; o qBittorrent não a usa aqui
     #[serde(default)]
     api_key: String,
+    /// subpath em que o nginx serve o cliente — é por onde o servidor fala com
+    /// ele para criar as categorias
+    #[serde(default)]
+    route: String,
     /// categoria por instância de *arr, pela chave dela
     #[serde(default)]
     cats: Map<String, Value>,
@@ -119,6 +123,21 @@ impl Req {
     }
 }
 
+/// O Prowlarr como alvo: mesma API dos *arr, versão v1, e o campo de categoria
+/// dele não é por família — é um `category` só.
+fn alvo_prowlarr(p: &Prowlarr) -> Arr {
+    Arr {
+        key: "prowlarr".into(),
+        name: "Prowlarr".into(),
+        route: p.route.clone(),
+        api: "v1".into(),
+        cat_field: "category".into(),
+        family: "prowlarr".into(),
+        internal_url: String::new(),
+        sync: false,
+    }
+}
+
 impl Arr {
     /// Cópia para a volta dos clientes de download, que não usa o resto.
     fn clone_alvo(&self) -> Arr {
@@ -140,23 +159,45 @@ fn field(name: &str, value: Value) -> Value {
 }
 
 impl Client {
-    /// O recurso `downloadclient` como o *arr o espera. O que muda de um
-    /// cliente para o outro é a implementação, o protocolo e os campos de
-    /// credencial; o resto é igual nas três famílias.
-    fn body(&self, arr: &Arr) -> Result<Value, String> {
-        let cat = self
-            .cats
-            .get(&arr.key)
+    /// A categoria com que uma instância de *arr usa este cliente.
+    fn cat(&self, key: &str) -> String {
+        self.cats
+            .get(key)
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .trim()
-            .to_string();
+            .to_string()
+    }
+
+    /// Todas as categorias que este cliente recebe, sem repetir — é o que
+    /// precisa existir dentro dele.
+    fn categorias(&self) -> Vec<String> {
+        let mut out: Vec<String> = Vec::new();
+        for v in self.cats.values() {
+            let c = v.as_str().unwrap_or("").trim().to_string();
+            if !c.is_empty() && !out.contains(&c) {
+                out.push(c);
+            }
+        }
+        out.sort();
+        out
+    }
+
+    /// O recurso `downloadclient` como o app o espera. O que muda de um
+    /// cliente para o outro é a implementação, o protocolo e os campos de
+    /// credencial; o resto é igual em todos.
+    ///
+    /// `nome`, `cat_field` e `cat` entram de fora porque o mesmo cliente é
+    /// registrado de duas maneiras: uma vez em cada *arr, com a categoria dele,
+    /// e uma vez por instância no Prowlarr, onde o campo se chama `category` e
+    /// o nome precisa distinguir os registros.
+    fn body_como(&self, nome: &str, cat_field: &str, cat: &str) -> Result<Value, String> {
         let mut fields = vec![
             field("host", json!(self.host)),
             field("port", json!(self.port)),
             field("useSsl", json!(false)),
             field("urlBase", json!("")),
-            field(&arr.cat_field, json!(cat)),
+            field(cat_field, json!(cat)),
         ];
         let (implementation, contract, protocol) = match self.kind.as_str() {
             "qbittorrent" => {
@@ -171,7 +212,7 @@ impl Client {
             other => return Err(format!("cliente de download desconhecido: {other}")),
         };
         Ok(json!({
-            "name": self.name,
+            "name": nome,
             "enable": true,
             "protocol": protocol,
             "priority": 1,
@@ -182,6 +223,12 @@ impl Client {
             "configContract": contract,
             "fields": fields,
         }))
+    }
+
+    /// O registro deste cliente num *arr: o nome é o do cliente, e a categoria
+    /// é a que a Configuração deu àquela instância.
+    fn body(&self, arr: &Arr) -> Result<Value, String> {
+        self.body_como(&self.name, &arr.cat_field, &self.cat(&arr.key))
     }
 }
 
@@ -205,27 +252,13 @@ pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
     let base = req.base.trim_end_matches('/').to_string();
     let mut falhas = 0;
 
-    /* O Prowlarr recebe os mesmos clientes que os *arr — é por eles que sai o
-       download da busca manual feita nele. O recurso é o mesmo
-       `downloadclient`, então ele entra na volta como mais um alvo; o que muda
-       é o nome do campo de categoria, que ali não é por família. */
-    let alvos: Vec<Arr> = req
-        .arrs
-        .iter()
-        .map(Arr::clone_alvo)
-        .chain(req.prowlarr.iter().map(|p| Arr {
-            key: "prowlarr".into(),
-            name: "Prowlarr".into(),
-            route: p.route.clone(),
-            api: "v1".into(),
-            cat_field: "category".into(),
-            family: "prowlarr".into(),
-            internal_url: String::new(),
-            sync: false,
-        }))
-        .collect();
+    let alvos: Vec<Arr> = req.arrs.iter().map(Arr::clone_alvo).collect();
 
-    esperar_apps(&http, &base, &alvos, &log).await;
+    let mut esperar_por: Vec<Arr> = alvos.iter().map(Arr::clone_alvo).collect();
+    if let Some(p) = &req.prowlarr {
+        esperar_por.push(alvo_prowlarr(p));
+    }
+    esperar_apps(&http, &base, &esperar_por, &log).await;
 
     for arr in &alvos {
         let url = format!("{base}{}/api/{}/downloadclient", arr.route, arr.api);
@@ -269,7 +302,12 @@ pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
         }
     }
     if let Some(p) = &req.prowlarr {
+        falhas += clientes_do_prowlarr(&http, &base, &req, p, &log).await;
         falhas += applications(&http, &base, &req, p, &log).await;
+    }
+    // as categorias que os *arr vão pedir precisam existir dentro do cliente
+    for client in &req.clients {
+        falhas += categorias_do_cliente(&http, &base, &req, client, &log).await;
     }
     for arr in &req.arrs {
         falhas += media_management(&http, &base, &req, arr, &log).await;
@@ -325,6 +363,116 @@ fn app_body(arr: &Arr, prowlarr_url: &str, api_key: &str) -> Result<Value, Strin
         ],
         "tags": [],
     }))
+}
+
+/* O Prowlarr também tem Settings → Download Clients, e é por eles que sai o
+   download da busca feita nele. Ele entra com **um registro por instância de
+   *arr**, cada um com a categoria daquela instância: assim o que o Prowlarr
+   pega para o Sonarr cai na categoria do Sonarr, e não numa pasta comum.
+
+   O nome distingue os registros — é ele, e não o id, que faz o reaplicar
+   encontrar o que já está lá. */
+async fn clientes_do_prowlarr(
+    http: &reqwest::Client,
+    base: &str,
+    req: &Req,
+    prowlarr: &Prowlarr,
+    log: &Log,
+) -> usize {
+    let alvo = alvo_prowlarr(prowlarr);
+    let url = format!("{base}{}/api/v1/downloadclient", prowlarr.route);
+    let atuais = match list(http, &url, &req.api_key).await {
+        Ok(v) => v,
+        Err(e) => {
+            log.line(format!("Prowlarr: {e}"));
+            return req.clients.len() * req.arrs.len();
+        }
+    };
+    let mut falhas = 0;
+    for client in &req.clients {
+        for arr in &req.arrs {
+            let cat = client.cat(&arr.key);
+            // instância sem categoria naquele cliente não vira registro: seria
+            // um cliente sem destino, e o Prowlarr já tem os outros
+            if cat.is_empty() {
+                continue;
+            }
+            let nome = format!("{} ({})", client.name, arr.name);
+            let body = match client.body_como(&nome, &alvo.cat_field, &cat) {
+                Ok(b) => b,
+                Err(e) => {
+                    log.line(format!("Prowlarr → {nome}: {e}"));
+                    falhas += 1;
+                    continue;
+                }
+            };
+            let existente = atuais
+                .iter()
+                .find(|c| c.get("name").and_then(|n| n.as_str()) == Some(nome.as_str()))
+                .and_then(|c| c.get("id").and_then(|i| i.as_i64()));
+            match send(http, &url, &req.api_key, existente, body).await {
+                Ok(()) => log.line(format!(
+                    "Prowlarr → {nome} [{cat}]: {}",
+                    if existente.is_some() { "atualizado" } else { "registrado" }
+                )),
+                Err(e) => {
+                    log.line(format!("Prowlarr → {nome}: {e}"));
+                    falhas += 1;
+                }
+            }
+        }
+    }
+    falhas
+}
+
+/* As categorias dentro do próprio cliente de download.
+
+   No qBittorrent elas já vão no `categories.json`, que o servidor escreve na
+   pasta dele — nada a fazer aqui. No SABnzbd não existe arquivo equivalente
+   que dê para mexer com ele no ar: as categorias moram no `sabnzbd.ini`, que
+   ele reescreve, e a maneira sancionada de mexer é a API dele.
+
+   Cada categoria ganha uma pasta com o nome dela dentro do diretório de
+   downloads concluídos — mesma partição do que os *arr enxergam, que é o que
+   preserva o hardlink na importação. */
+async fn categorias_do_cliente(
+    http: &reqwest::Client,
+    base: &str,
+    req: &Req,
+    client: &Client,
+    log: &Log,
+) -> usize {
+    if client.kind != "sabnzbd" {
+        return 0;
+    }
+    if client.route.is_empty() || client.api_key.is_empty() {
+        log.line(format!(
+            "{}: sem a API key dele não dá para criar as categorias — cole a chave no modal do serviço",
+            client.name
+        ));
+        return 1;
+    }
+    let mut falhas = 0;
+    for cat in client.categorias() {
+        let url = format!(
+            "{base}{}/api?mode=set_config&section=categories&keyword={cat}&dir={cat}&output=json&apikey={}",
+            client.route, client.api_key
+        );
+        match http.get(&url).send().await {
+            Ok(r) if r.status().is_success() => {
+                log.line(format!("{} → categoria {cat}: pronta", client.name))
+            }
+            Ok(r) => {
+                log.line(format!("{} → categoria {cat}: HTTP {}", client.name, r.status().as_u16()));
+                falhas += 1;
+            }
+            Err(e) => {
+                log.line(format!("{} → categoria {cat}: não respondeu ({e})", client.name));
+                falhas += 1;
+            }
+        }
+    }
+    falhas
 }
 
 /// O Prowlarr sincronizando cada *arr marcado na Configuração. Vale a mesma
@@ -674,6 +822,7 @@ mod tests {
             user: "admin".into(),
             pass: "senha".into(),
             api_key: String::new(),
+            route: "/qbittorrent".into(),
             cats: serde_json::from_str(r#"{"sonarr":"tv-sonarr"}"#).unwrap(),
             cdh: Some(Cdh {
                 completed: true,
@@ -820,25 +969,29 @@ mod tests {
     }
 
     #[test]
-    fn no_prowlarr_o_cliente_entra_sem_categoria_de_familia() {
-        // o alvo do Prowlarr tem o campo `category`, e o `cats` da página é por
-        // instância de *arr: nenhuma delas casa, então ele entra sem categoria
-        let prow = Arr {
-            key: "prowlarr".into(),
-            name: "Prowlarr".into(),
-            route: "/prowlarr".into(),
-            api: "v1".into(),
-            cat_field: "category".into(),
-            family: "prowlarr".into(),
-            internal_url: String::new(),
-            sync: false,
-        };
-        let b = qbit().body(&prow).unwrap();
-        assert_eq!(val(&b, "category"), "");
+    fn no_prowlarr_o_cliente_entra_com_a_categoria_da_instancia() {
+        let c = qbit();
+        let sonarr = arr("sonarr", "tvCategory");
+        // no Prowlarr o campo é `category`, e o nome distingue um registro por
+        // instância — é por ele que o reaplicar acha o que já está lá
+        let nome = format!("{} ({})", c.name, sonarr.name);
+        let b = c.body_como(&nome, "category", &c.cat(&sonarr.key)).unwrap();
+        assert_eq!(b["name"], "qBittorrent (sonarr)");
+        assert_eq!(val(&b, "category"), "tv-sonarr");
         // e o resto do cliente é o mesmo que vai para os *arr
         assert_eq!(b["implementation"], "QBittorrent");
         assert_eq!(val(&b, "host"), "gluetun");
         assert_eq!(val(&b, "username"), "admin");
+    }
+
+    #[test]
+    fn as_categorias_do_cliente_saem_sem_repetir_e_sem_vazio() {
+        let mut c = qbit();
+        c.cats = serde_json::from_str(
+            r#"{"sonarr":"tv-sonarr","sonarr-anime":"tv-sonarr","radarr":"radarr","lidarr":"  "}"#,
+        )
+        .unwrap();
+        assert_eq!(c.categorias(), vec!["radarr", "tv-sonarr"]);
     }
 
     #[test]

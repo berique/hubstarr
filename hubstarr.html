@@ -3771,7 +3771,9 @@ function applyPayload(){
         const v = (st.cats && st.cats[cname(a)]) || catDefault(a, c);
         if(String(v).trim()) cats[cname(a)] = String(v).trim();
       });
-      return {name:nameOf(c), kind:c.id, host:dlHost(c), port:inner(c.id),
+      // a rota é por onde o servidor fala com o cliente — o SABnzbd cria as
+      // categorias dele pela própria API
+      return {name:nameOf(c), kind:c.id, host:dlHost(c), port:inner(c.id), route:route(c),
               user: c.id==='qbittorrent' ? DEFAULTS.qbitUser : '',
               pass: c.id==='qbittorrent' ? DEFAULTS.qbitPass : '',
               apiKey: c.dlKey || '', cats, cdh: st.cdh || null};

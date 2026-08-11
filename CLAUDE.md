@@ -266,9 +266,16 @@ por `docker compose version`, não só pelo docker, porque o plugin é pacote à
 parte e é ele que sobe a stack; sem ele a página abre o bloco "Precisa instalar
 o Docker?" e mostra o aviso `#noDocker`), `apply.rs` (v0.3: a Configuração inteira
 aplicada pela API — clientes de download em cada *arr **e no próprio Prowlarr**,
-que também tem Settings → Download Clients (mesmo recurso, com `category` no
-lugar do campo por família), cada *arr no Prowlarr, e o Media Management mais a
-nomenclatura de cada família. Quem chama é o **Subir**, sozinho, depois de
+cada *arr no Prowlarr, e o Media Management mais a nomenclatura de cada família.
+
+No Prowlarr, o Settings → Download Clients recebe **um registro por instância de
+*arr** — `qBittorrent (Sonarr)`, `qBittorrent (Radarr)`… —, cada um com a
+categoria daquela instância, para o que ele pega cair na categoria certa; o
+campo ali é `category`, e instância sem categoria naquele cliente não vira
+registro. E a categoria precisa existir *dentro* do cliente: no qBittorrent isso
+vem do `categories.json` que o `patch.rs` escreve, e no SABnzbd ela é criada
+pela API dele (`mode=set_config&section=categories`), que é a maneira sancionada
+— o `sabnzbd.ini` é reescrito por ele, como a conf do qBittorrent. Quem chama é o **Subir**, sozinho, depois de
 gravar as chaves dos `patch` — e antes de qualquer chamada ele espera cada app
 responder no `/ping`, porque recém-subido nenhum responde e a volta inteira
 falharia por timeout. Os apps são alcançados

@@ -221,7 +221,14 @@ under Prowlarr's Settings → Apps, and each family's *Media Management* and
 naming, all through their APIs, reporting what went through as it goes. The
 **Apply to the stack** button, in the Configuration modal, does the same
 without bringing anything up — it is the way to reapply after changing the
-choices. The apps are reached through
+choices.
+
+In Prowlarr, Settings → Download Clients gets **one entry per instance** —
+*qBittorrent (Sonarr)*, *qBittorrent (Radarr)*… —, each with that instance's
+category, so what Prowlarr grabs lands in the right one. And the categories come
+to exist inside the client itself: through `categories.json` in qBittorrent, and
+created through its own API in SABnzbd, each with a folder of the same name
+inside the completed-downloads directory. The apps are reached through
 nginx, on the port it publishes on the host. Applying again does not duplicate
 — the client is looked up by name and updated in place — and an app that is not
 up yet becomes one line in the log instead of stopping the rest. SABnzbd needs

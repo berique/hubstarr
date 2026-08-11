@@ -225,7 +225,14 @@ Prowlarr** — que tiene su Settings → Download Clients —, cada *arr marcado
 Settings → Apps de Prowlarr, y el *Media Management* con la nomenclatura de cada
 familia, todo por su API, mostrando lo que pasó. El botón **Aplicar en la
 stack**, en el modal de la Configuración, hace lo mismo sin levantar nada — es
-el camino para volver a aplicar tras cambiar las opciones. Los apps se alcanzan por el nginx, en el puerto que
+el camino para volver a aplicar tras cambiar las opciones.
+
+En Prowlarr, el Settings → Download Clients recibe **un registro por
+instancia** — *qBittorrent (Sonarr)*, *qBittorrent (Radarr)*… —, cada uno con la
+categoría de esa instancia, para que lo que él captura caiga en la correcta. Y
+las categorías pasan a existir dentro del cliente: por el `categories.json` en
+qBittorrent, y creadas por su propia API en SABnzbd, cada una con la carpeta del
+mismo nombre dentro del directorio de descargas completadas. Los apps se alcanzan por el nginx, en el puerto que
 publica en el host. Aplicar de nuevo no duplica — el cliente se busca por el
 nombre y se actualiza en su sitio — y un app que todavía no arrancó es una línea
 del log en vez de interrumpir el resto. SABnzbd necesita su clave de API, la que
