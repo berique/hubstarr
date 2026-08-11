@@ -201,6 +201,11 @@ handler de `#mSave`.
   `buildNginx()` pelo `publishes()`. Quem roteia pela VPN usa
   `network_mode: service:gluetun` e responde no endereço do gluetun.
 - **Volumes em sintaxe longa**, com `type: bind` e `bind.propagation: rslave`.
+- **O bloco do nginx é `default_server`**: a conf é montada como um arquivo
+  dentro do `conf.d`, ao lado do `default.conf` que vem na imagem — antes a
+  pasta inteira era montada e ele sumia. Sem `default_server`, é o dele que
+  atende quem chega sem casar com o `server_name`, e a stack toda responde a
+  página de boas-vindas do nginx.
 - **Cada subpath do nginx casa com a base URL do app**: nos *arr é a variável
   `<APP>__SERVER__URLBASE`; no Jellyfin é o `BaseUrl` do `network.xml`, que por
   isso é gerado. Serviço em subpath sem esse ajuste monta os links na raiz e
@@ -314,7 +319,18 @@ SABnzbd elas são criadas pela API dele
 `sabnzbd.ini` é reescrito por ele, como a conf do qBittorrent. Quem chama é o **Subir**, sozinho, depois de
 gravar as chaves dos `patch` — e antes de qualquer chamada ele espera cada app
 responder no `/ping`, porque recém-subido nenhum responde e a volta inteira
-falharia por timeout. Os apps são alcançados
+falharia por timeout. Os clientes de download também são esperados, e por um
+motivo próprio: escrever a conf do qBittorrent **reinicia** o container dele,
+logo antes de os *arr o testarem. Em ambos os casos, 5xx conta como "ainda
+não" — é o nginx dizendo que o de trás não subiu, e tomar isso por pronto é o
+mesmo que não esperar.
+
+O corpo de cada `downloadclient` nasce do **schema que o app publica**
+(`/downloadclient/schema`), com os nossos valores por cima: mandar só os nossos
+deixa o resto nulo, e o app estoura ao testar a conexão. O do Prowlarr leva
+ainda um `categories: []` — é uma propriedade que os *arr não têm, e ausente ela
+vira nula dentro do `ValidateCategories` dele, com um
+`NullReferenceException` que não diz nada sobre a causa. Os apps são alcançados
 pelo nginx, porque o servidor roda no host e a rede `starrnet` não existe para
 ele; aplicar de novo procura pelo nome e atualiza no lugar, e um app fora do ar
 vira uma linha no log em vez de derrubar a volta inteira. Três coisas para não

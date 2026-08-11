@@ -217,26 +217,59 @@ impl Client {
     /// registrado de duas maneiras: uma vez em cada *arr, com a categoria dele,
     /// e uma vez por instância no Prowlarr, onde o campo se chama `category` e
     /// o nome precisa distinguir os registros.
-    fn body_como(&self, nome: &str, cat_field: &str, cat: &str) -> Result<Value, String> {
-        let mut fields = vec![
-            field("host", json!(self.host)),
-            field("port", json!(self.port)),
-            field("useSsl", json!(false)),
-            field("urlBase", json!("")),
-            field(cat_field, json!(cat)),
+    fn body_como(
+        &self,
+        nome: &str,
+        cat_field: &str,
+        cat: &str,
+        schema: Option<&Vec<Value>>,
+    ) -> Result<Value, String> {
+        let mut nossos: Vec<(String, Value)> = vec![
+            ("host".into(), json!(self.host)),
+            ("port".into(), json!(self.port)),
+            ("useSsl".into(), json!(false)),
+            ("urlBase".into(), json!("")),
+            (cat_field.into(), json!(cat)),
         ];
         let (implementation, contract, protocol) = match self.kind.as_str() {
             "qbittorrent" => {
-                fields.push(field("username", json!(self.user)));
-                fields.push(field("password", json!(self.pass)));
+                nossos.push(("username".into(), json!(self.user)));
+                nossos.push(("password".into(), json!(self.pass)));
                 ("QBittorrent", "QBittorrentSettings", "torrent")
             }
             "sabnzbd" => {
-                fields.push(field("apiKey", json!(self.api_key)));
+                nossos.push(("apiKey".into(), json!(self.api_key)));
                 ("Sabnzbd", "SabnzbdSettings", "usenet")
             }
             other => return Err(format!("cliente de download desconhecido: {other}")),
         };
+
+        /* Os campos saem do schema que o app publica, com os nossos por cima.
+           Mandar só os nossos deixa o resto nulo, e o app estoura ao testar a
+           conexão — o Prowlarr responde um "Object reference not set" que não
+           diz nada. Sem schema (app que não o serve), vão só os nossos. */
+        let mut fields: Vec<Value> = match schema {
+            Some(base) => base
+                .iter()
+                .map(|f| {
+                    let nome = f.get("name").and_then(|n| n.as_str()).unwrap_or("");
+                    let valor = nossos
+                        .iter()
+                        .find(|(k, _)| k == nome)
+                        .map(|(_, v)| v.clone())
+                        .or_else(|| f.get("value").cloned())
+                        .unwrap_or(Value::Null);
+                    field(nome, valor)
+                })
+                .collect(),
+            None => Vec::new(),
+        };
+        // o que é nosso e o schema não tinha entra no fim
+        for (k, v) in &nossos {
+            if !fields.iter().any(|f| f["name"] == k.as_str()) {
+                fields.push(field(k, v.clone()));
+            }
+        }
         Ok(json!({
             "name": nome,
             "enable": true,
@@ -253,8 +286,8 @@ impl Client {
 
     /// O registro deste cliente num *arr: o nome é o do cliente, e a categoria
     /// é a que a Configuração deu àquela instância.
-    fn body(&self, arr: &Arr) -> Result<Value, String> {
-        self.body_como(&self.name, &arr.cat_field, &self.cat(&arr.key))
+    fn body(&self, arr: &Arr, schema: Option<&Vec<Value>>) -> Result<Value, String> {
+        self.body_como(&self.name, &arr.cat_field, &self.cat(&arr.key), schema)
     }
 }
 
@@ -285,6 +318,7 @@ pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
         esperar_por.push(alvo_prowlarr(p));
     }
     esperar_apps(&http, &base, &esperar_por, &log).await;
+    esperar_clientes(&http, &base, &req.clients, &log).await;
 
     for arr in &alvos {
         let url = format!("{base}{}/api/{}/downloadclient", arr.route, arr.api);
@@ -297,7 +331,8 @@ pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
             }
         };
         for client in &req.clients {
-            let body = match client.body(arr) {
+            let esquema = schema_de(&http, &url, &req.api_key, implementacao(&client.kind)).await;
+            let body = match client.body(arr, esquema.as_ref()) {
                 Ok(b) => b,
                 Err(e) => {
                     log.line(format!("{} → {}: {e}", arr.name, client.name));
@@ -422,8 +457,18 @@ async fn clientes_do_prowlarr(
     };
     let mut falhas = 0;
     for client in &req.clients {
-        let body = match client.body_como(&client.name, &alvo.cat_field, CAT_PROWLARR) {
-            Ok(b) => b,
+        let esquema = schema_de(http, &url, &req.api_key, implementacao(&client.kind)).await;
+        let body = match client.body_como(&client.name, &alvo.cat_field, CAT_PROWLARR, esquema.as_ref()) {
+            /* O cliente do Prowlarr tem uma propriedade que os *arr não têm: o
+               `categories`, que mapeia categoria do newznab para categoria do
+               cliente. Vazia significa "vale para tudo" — mas **ausente** vira
+               nula, e o teste de conexão dele estoura num
+               `NullReferenceException` dentro do `ValidateCategories`, que não
+               diz nada sobre a causa. */
+            Ok(mut b) => {
+                b["categories"] = json!([]);
+                b
+            }
             Err(e) => {
                 log.line(format!("Prowlarr → {}: {e}", client.name));
                 falhas += 1;
@@ -882,20 +927,67 @@ async fn put_config(
    dele aparece linha a linha no registro de cada ligação. */
 async fn esperar_apps(http: &reqwest::Client, base: &str, alvos: &[Arr], log: &Log) {
     for alvo in alvos {
-        let url = format!("{base}{}/ping", alvo.route);
-        let mut avisou = false;
-        for _ in 0..45 {
-            match http.get(&url).send().await {
-                Ok(r) if r.status().is_success() => break,
-                _ => {
-                    if !avisou {
-                        log.line(format!("esperando o {} responder…", alvo.name));
-                        avisou = true;
-                    }
-                    tokio::time::sleep(Duration::from_secs(2)).await;
+        esperar_url(http, &format!("{base}{}/ping", alvo.route), &alvo.name, log).await;
+    }
+}
+
+/* O mesmo para os clientes de download. Vale menos pelo primeiro `up` e mais
+   pelo que vem antes desta volta: escrever a conf do qBittorrent **reinicia**
+   o container dele, então quando os *arr forem registrá-lo ele está subindo há
+   segundos — e o teste de conexão que eles fazem ao salvar falha.
+
+   Qualquer resposta serve, inclusive 401 e 403: o que se quer saber é se há
+   alguém escutando, não se a credencial está certa. As do próprio nginx é que
+   não servem — ele responde 502 enquanto o container atrás dele não subiu, e
+   tomar isso por "pronto" é o mesmo que não esperar. */
+async fn esperar_clientes(http: &reqwest::Client, base: &str, clients: &[Client], log: &Log) {
+    for c in clients {
+        if c.route.is_empty() {
+            continue;
+        }
+        esperar_url(http, &format!("{base}{}/", c.route), &c.name, log).await;
+    }
+}
+
+async fn esperar_url(http: &reqwest::Client, url: &str, nome: &str, log: &Log) {
+    let mut avisou = false;
+    for _ in 0..45 {
+        match http.get(url).send().await {
+            // 5xx aqui é o nginx dizendo que o de trás ainda não subiu
+            Ok(r) if !r.status().is_server_error() => break,
+            _ => {
+                if !avisou {
+                    log.line(format!("esperando o {nome} responder…"));
+                    avisou = true;
                 }
+                tokio::time::sleep(Duration::from_secs(2)).await;
             }
         }
+    }
+}
+
+/// Os campos que o app diz que um recurso tem, com os valores de fábrica dele.
+/// Falha aqui não é erro: quem não serve o schema recebe só os nossos campos.
+async fn schema_de(
+    http: &reqwest::Client,
+    url: &str,
+    key: &str,
+    implementation: &str,
+) -> Option<Vec<Value>> {
+    let itens = list(http, &format!("{url}/schema"), key).await.ok()?;
+    itens
+        .iter()
+        .find(|i| i.get("implementation").and_then(|v| v.as_str()) == Some(implementation))
+        .and_then(|i| i.get("fields"))
+        .and_then(|f| f.as_array())
+        .cloned()
+}
+
+/// A implementação de cada cliente, que é como o schema o identifica.
+fn implementacao(kind: &str) -> &'static str {
+    match kind {
+        "sabnzbd" => "Sabnzbd",
+        _ => "QBittorrent",
     }
 }
 
@@ -1025,7 +1117,7 @@ mod tests {
 
     #[test]
     fn o_qbittorrent_sai_com_o_contrato_e_as_credenciais_dele() {
-        let b = qbit().body(&arr("sonarr", "tvCategory")).unwrap();
+        let b = qbit().body(&arr("sonarr", "tvCategory"), None).unwrap();
         assert_eq!(b["implementation"], "QBittorrent");
         assert_eq!(b["configContract"], "QBittorrentSettings");
         assert_eq!(b["protocol"], "torrent");
@@ -1043,7 +1135,7 @@ mod tests {
         c.kind = "sabnzbd".into();
         c.name = "SABnzbd".into();
         c.api_key = "chave".into();
-        let b = c.body(&arr("radarr", "movieCategory")).unwrap();
+        let b = c.body(&arr("radarr", "movieCategory"), None).unwrap();
         assert_eq!(b["implementation"], "Sabnzbd");
         assert_eq!(b["protocol"], "usenet");
         assert_eq!(val(&b, "apiKey"), "chave");
@@ -1059,14 +1151,14 @@ mod tests {
         let c = qbit();
         // o `cats` só traz o sonarr: o radarr entra sem categoria, que é o
         // que o *arr entende como "a raiz do cliente"
-        assert_eq!(val(&c.body(&arr("radarr", "movieCategory")).unwrap(), "movieCategory"), "");
+        assert_eq!(val(&c.body(&arr("radarr", "movieCategory"), None).unwrap(), "movieCategory"), "");
     }
 
     #[test]
     fn cliente_de_tipo_desconhecido_para_naquele_par_e_nao_no_meio_do_corpo() {
         let mut c = qbit();
         c.kind = "transmission".into();
-        assert!(c.body(&arr("sonarr", "tvCategory")).is_err());
+        assert!(c.body(&arr("sonarr", "tvCategory"), None).is_err());
     }
 
     #[test]
@@ -1206,7 +1298,7 @@ mod tests {
         let c = qbit();
         // um registro por cliente, com o nome dele e a categoria do Prowlarr —
         // o que ele pega é avulso, não é de instância nenhuma
-        let b = c.body_como(&c.name, "category", CAT_PROWLARR).unwrap();
+        let b = c.body_como(&c.name, "category", CAT_PROWLARR, None).unwrap();
         assert_eq!(b["name"], "qBittorrent");
         assert_eq!(val(&b, "category"), "prowlarr");
         // e o resto do cliente é o mesmo que vai para os *arr
