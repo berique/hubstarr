@@ -131,11 +131,19 @@ struct Cdh {
 }
 
 impl Req {
-    /// Há *arr e algo para ligar a eles? O Subir pergunta antes de chamar: numa
-    /// stack sem *arr, não aplicar não é erro nenhum.
+    /// Há alguma ligação para fazer? O Subir pergunta antes de chamar: numa
+    /// stack sem nada a ligar, não aplicar não é erro nenhum.
+    ///
+    /// São duas metades independentes. Os *arr precisam de algo para receber —
+    /// cliente, Media Management ou o registro no Prowlarr. E o Prowlarr tem
+    /// trabalho próprio: os clientes dele e o resolvedor de desafios, que valem
+    /// mesmo numa stack onde ainda não há *arr nenhum.
     pub fn tem_o_que_fazer(&self) -> bool {
-        !self.arrs.is_empty()
-            && (!self.clients.is_empty() || self.prowlarr.is_some() || !self.mm.is_empty())
+        let pelos_arrs = !self.arrs.is_empty()
+            && (!self.clients.is_empty() || self.prowlarr.is_some() || !self.mm.is_empty());
+        let pelo_prowlarr = self.prowlarr.is_some()
+            && (!self.clients.is_empty() || self.solver.is_some() || !self.arrs.is_empty());
+        pelos_arrs || pelo_prowlarr
     }
 }
 
@@ -1215,6 +1223,25 @@ mod tests {
         )
         .unwrap();
         assert_eq!(c.categorias(), vec!["radarr", "tv-sonarr"]);
+    }
+
+    #[test]
+    fn o_prowlarr_sozinho_com_o_resolvedor_ja_e_trabalho() {
+        // stack de Prowlarr + FlareSolverr, sem *arr nenhum: há o que aplicar,
+        // porque o proxy de indexador é do Prowlarr, não dos *arr
+        let mut req = Req {
+            base: "http://127.0.0.1".into(),
+            api_key: "k".into(),
+            arrs: vec![],
+            clients: vec![],
+            prowlarr: Some(Prowlarr { route: "/prowlarr".into(), url: "http://p:9696".into() }),
+            solver: Some(Solver { name: "FlareSolverr".into(), url: "http://f:8191".into() }),
+            mm: Map::new(),
+        };
+        assert!(req.tem_o_que_fazer());
+        // sem o resolvedor e sem cliente, o Prowlarr sozinho não tem o que fazer
+        req.solver = None;
+        assert!(!req.tem_o_que_fazer());
     }
 
     #[test]

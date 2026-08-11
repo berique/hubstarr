@@ -2,14 +2,15 @@
 
    O conteúdo vem pronto — este módulo não gera nada, só decide onde cada um
    cai. Os nomes vêm do mesmo lugar que alimenta o .zip (`docker-compose.yml`,
-   `.env`, `nginx/conf.d/<stack>.conf`, `<container>/<conf do serviço>`), então
-   trazem subpasta e precisam ser conferidos antes de virar caminho.
+   `.env`, `nginx.conf`, `<container>/<conf do serviço>`), então trazem subpasta
+   e precisam ser conferidos antes de virar caminho.
 
-   Duas raízes, porque a árvore gerada tem duas metades. O `docker-compose.yml`
-   e o `.env` ficam na pasta da stack, que é de onde o compose é rodado. As
-   configurações — a do nginx e as de serviço — vão para o `BASE_CONFIG` do
-   Ambiente, porque é de lá que o próprio compose as monta nos containers:
-   gravá-las na pasta da stack faz o container subir sem configuração nenhuma.
+   Duas raízes, porque a árvore gerada tem duas metades. O `docker-compose.yml`,
+   o `.env` e o `nginx.conf` ficam na pasta da stack, que é de onde o compose é
+   rodado — e o bind do nginx é relativo a ela. As configurações de serviço vão
+   para o `BASE_CONFIG` do Ambiente, porque é de lá que o próprio compose as
+   monta nos containers: gravá-las na pasta da stack faz o container subir sem
+   configuração nenhuma.
 
    Quem diz qual é qual é a página, no campo `base` de cada arquivo — ela é que
    conhece o layout. O servidor só resolve o `BASE_CONFIG`, que ele lê do banco

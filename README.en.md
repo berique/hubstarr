@@ -140,7 +140,7 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   restart policy, API key and TLS. The
   time zone list is the whole IANA database, straight from the browser, and it
   starts on the machine's own zone.
-- **Download** `docker-compose.yml`, `.env` and `nginx/conf.d/starrnet.conf`
+- **Download** `docker-compose.yml`, `.env` and `nginx.conf`
   together in a `.zip` — the button stays in the bar while there is no server;
   with one, **Bring up** is what writes the files.
 - **Switch languages** in the selector at the top: Portuguese (Brazil), English
@@ -329,7 +329,9 @@ redirect to https already carry the chosen port.
 
 The **nginx.conf** tab generates the matching configuration, routing by subpath
 (`/sonarr`, `/radarr`…), one `location` per service. The file is mounted at
-`${BASE_CONFIG}/nginx/conf.d`, and each app needs its *base URL* to match its
+`./nginx.conf`, over the container's `/etc/nginx/conf.d/nginx.conf` — the conf
+is generated along with the compose file, so it lives in the stack folder next
+to it, not in `BASE_CONFIG` —, and each app needs its *base URL* to match its
 subpath. No service sits at the root: the stack's `/` has no `location`, so it
 is through each app's subpath that you get in.
 

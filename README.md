@@ -139,7 +139,7 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   restart policy, API key e TLS. A
   lista de fusos é a IANA inteira, vinda do próprio navegador, e o valor
   inicial é o fuso da máquina.
-- **Baixar** `docker-compose.yml`, `.env` e `nginx/conf.d/starrnet.conf` juntos
+- **Baixar** `docker-compose.yml`, `.env` e `nginx.conf` juntos
   num `.zip` — o botão fica na barra enquanto não há servidor; com ele, quem
   grava os arquivos é o **Subir**.
 - **Trocar o idioma** no seletor do topo: português (Brasil), inglês e
@@ -326,7 +326,9 @@ redirecionamento para o https já levam a porta escolhida.
 
 A aba **nginx.conf** gera a configuração correspondente, roteando por subpath
 (`/sonarr`, `/radarr`…), um `location` por serviço. O arquivo é montado em
-`${BASE_CONFIG}/nginx/conf.d` e cada app precisa da sua *base URL* igual ao
+`./nginx.conf`, sobre o `/etc/nginx/conf.d/nginx.conf` do container — a conf é
+gerada junto com o compose, então mora na pasta da stack, ao lado dele, e não no
+`BASE_CONFIG` —, e cada app precisa da sua *base URL* igual ao
 subpath. Nenhum serviço fica na raiz: a `/` da stack não tem `location`, então
 é pelo subpath de cada app que se entra.
 
