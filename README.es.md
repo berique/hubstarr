@@ -120,7 +120,9 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   variante de Jellyfin con el id de TMDb. Los permisos abren los campos
   de `chmod` y `chown`, y en Lidarr la casilla de nombre existente es la que
   trae los formatos de pista y la carpeta del álbum. Por ahora las
-  opciones se guardan en la interfaz; no se aplica nada en las apps.
+  opciones, de las tres partes solo los clientes de descarga llegan a las apps,
+  por el **Aplicar en la stack** — Prowlarr y Media Management se quedan en la
+  interfaz.
 - **Entorno global** (botón arriba): rutas base, PUID/PGID, zona horaria,
   restart policy, API key y TLS. La lista de husos es la IANA entera, que viene
   del propio navegador, y arranca en el huso de la máquina.
@@ -209,6 +211,15 @@ tú, y se poda sola al pasar de 64 MB, de las más antiguas a las más nuevas.
 Borrar la carpeta a mano no rompe nada: cuesta una búsqueda más. Abierta desde
 el disco, sin servidor, la página sigue buscando cada captura directamente en
 su documentación.
+
+Con la stack en marcha, la **Configuración** gana el botón **Aplicar en la
+stack**: el servidor registra cada cliente de descarga en cada *arr, por su API,
+y va mostrando lo que pasó. Los apps se alcanzan por el nginx, en el puerto que
+publica en el host. Aplicar de nuevo no duplica — el cliente se busca por el
+nombre y se actualiza en su sitio — y un app que todavía no arrancó es una línea
+del log en vez de interrumpir el resto. SABnzbd necesita su clave de API, la que
+genera el propio app en el primer arranque: cópiala de *Config → General* y
+pégala en el campo **API key** de su modal.
 
 > [!WARNING]
 > El servidor ejecuta `docker compose` y escribe en disco: no lo expongas a una
@@ -340,7 +351,7 @@ opcional que guarda las stacks y las levanta en Docker.
 | Hito     | Entrega                                              | Se cierra cuando                                                                        |
 | -------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | ~~**v0.2**~~ | ~~Un backend que conecte `hubstarr.html` con Docker~~ | ✅ la página graba los archivos y levanta la stack sin pasar por el `.zip`              |
-| **v0.3** | Configuración automática de las stacks desde el backend | Prowlarr, clientes de descarga y Media Management salen de la interfaz y son llamadas de API |
+| **v0.3** | Configuración automática de las stacks desde el backend | 🚧 los clientes de descarga ya entran en los *arr por **Aplicar en la stack**; faltan Prowlarr y Media Management |
 | **v0.4** | Custom formats y profiles propios de cada stack       | la instancia de 4K, la de anime y las demás nacen con su perfil de calidad                 |
 | **v0.5** | Compatibilidad con TRaSH Guides                       | quality definitions, scores de custom format y el resto de las recomendaciones de la guía ya listas |
 | **v0.6** | Búsqueda localizada de medios                         | se puede elegir el idioma de la búsqueda y los *arr encuentran el lanzamiento correcto     |
@@ -348,8 +359,9 @@ opcional que guarda las stacks y las levanta en Docker.
 ## Estado
 
 La página es un prototipo de interfaz: las opciones de **Configuración** se
-guardan — en ella, y en la base cuando hay servidor — pero todavía no se
-vuelven ninguna llamada de API; eso es el v0.3. Los archivos generados siempre
+guardan — en ella, y en la base cuando hay servidor — y, de sus tres partes,
+solo los **clientes de descarga** se vuelven llamadas de API por ahora; Prowlarr
+y Media Management siguen parando en la interfaz. Eso es el v0.3, en marcha. Los archivos generados siempre
 fueron de verdad — basta con descargar el `.zip` y ejecutar
 `docker compose up -d` en la carpeta donde se descomprimió, o dejar que el
 servidor haga las dos cosas.

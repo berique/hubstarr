@@ -229,17 +229,31 @@ outras tabelas, e o `foreign_keys` tem de ser desligado *depois* do
 `schema.sql`, que o religa — senão nem o `SELECT` das `old_*` nem o `DROP`
 delas passam.
 
-**O contrato, que é o que não pode mudar: o servidor nunca gera conteúdo.** Ele
-recebe pronto o que os geradores do `<script>` montaram (`outFiles()`), grava e
-roda o `docker compose`. Os geradores existem num lugar só — se você for tentado
-a montar YAML no Rust, é sinal de que a mudança pertence à página.
+**O contrato, que é o que quase não muda: nenhum arquivo da stack nasce no
+servidor.** Ele recebe pronto o que os geradores do `<script>` montaram
+(`outFiles()`), grava e roda o `docker compose`. Os geradores existem num lugar
+só — se você for tentado a montar YAML no Rust, é sinal de que a mudança
+pertence à página.
+
+A **única** exceção é o `apply.rs` do v0.3, e ela tem limite claro: um cliente
+de download não é arquivo — o *arr guarda isso no banco dele e só aceita pela
+API —, então ali o servidor monta o corpo JSON do `downloadclient`. O que ele
+monta é só o **formato da API do app** (implementação, contrato, a lista de
+`fields`). Decisão nenhuma é dele: endereço, porta, categoria, quem recebe o
+quê e o nome do campo de categoria de cada família chegam prontos no corpo do
+`POST`, do `applyPayload()` da página, que é onde o `SERVICES` e o `CONFIG`
+vivem. Ao acrescentar o Prowlarr ou o Media Management, siga essa divisão.
 
 Módulos: `store/` (o modelo, com `migrate.rs` à parte), `files.rs` (grava o que veio, com `safe_join()`
 recusando o que escapa da pasta), `deploy.rs` (`docker compose up -d`/`down` na
 pasta da stack, mais o `docker_ok()` que o `api/health` devolve — ele pergunta
 por `docker compose version`, não só pelo docker, porque o plugin é pacote à
 parte e é ele que sobe a stack; sem ele a página abre o bloco "Precisa instalar
-o Docker?" e mostra o aviso `#noDocker`), `jobs.rs` (trabalhos numerados com log incremental, em memória
+o Docker?" e mostra o aviso `#noDocker`), `apply.rs` (v0.3: registra os clientes de
+download na API de cada *arr — alcançados pelo nginx, porque o servidor roda no
+host e a rede `starrnet` não existe para ele; aplicar de novo procura o cliente
+pelo nome e atualiza no lugar, e um app fora do ar vira uma linha no log em vez
+de derrubar a volta inteira), `jobs.rs` (trabalhos numerados com log incremental, em memória
 — subir a stack baixa imagem e não cabe numa resposta HTTP), `shots.rs` (cache
 em disco das capturas de paleta do theme.park, ao lado do banco, servido em
 `api/shot/:app/:theme` — o `ok_seg()` recusa segmento que escaparia da pasta ou
@@ -337,8 +351,13 @@ repositório é o **v0.2** — a página, mais o servidor de `backend/`.
 - ~~**v0.2**~~ — feito: o backend liga o `hubstarr.html` ao Docker e guarda a
   stack. Uma primeira versão dele existiu e foi removida no `ba54e1a`; a de
   agora é normalizada.
-- **v0.3** — aplicar a **Configuração** pela API de cada app. Hoje o `CONFIG` é
-  protótipo de interface e não chega a arquivo nenhum; é ele que vira chamada.
+- **v0.3** — aplicar a **Configuração** pela API de cada app. **Em andamento**:
+  os clientes de download já vão (`apply.rs` + o botão "Aplicar na stack" do
+  modal da Configuração); faltam o Prowlarr (`CONFIG.apps`) e o Media Management
+  (`CONFIG.mm`), que entram pelo mesmo caminho. A chave da API do SABnzbd é o
+  próprio app que a gera na primeira subida, então ela é um campo do modal dele
+  (flag `dlKey`) e mora na instância, não no Ambiente — não vai para arquivo
+  nenhum, serve só para o Aplicar.
 - **v0.4** — custom formats e profiles por instância (4K, anime, …), ao lado do
   `NAMING_FIELDS` que já guarda a nomenclatura.
 - **v0.5** — compatibilidade com o TRaSH Guides além da nomenclatura, que já

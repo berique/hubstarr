@@ -397,6 +397,7 @@ sudo sh get-docker.sh</pre>
     <div class="body" id="cfgBody"></div>
     <div class="bar">
       <span class="sp"></span>
+      <button id="cfgApply" hidden data-i18n="btn.apply">Aplicar na stack</button>
       <button id="cfgCancel" data-i18n="btn.cancel">Cancelar</button>
       <button class="primary" id="cfgSave" data-i18n="btn.save">Salvar</button>
     </div>
@@ -537,6 +538,8 @@ sudo sh get-docker.sh</pre>
           </div>
         </div>
       </div>
+      <div class="row" id="mDlKeyRow" data-help="m.dlKeyWhy"><label for="mDlKey" data-i18n="m.dlKey">API key</label>
+        <input type="text" id="mDlKey" class="fmt"></div>
       <div class="row" id="mSolverRow" data-help="m.solverWhy"><label data-i18n="m.indexers">Indexadores</label>
         <label class="check"><input type="checkbox" id="mSolver"> <span data-i18n="m.solver"></span></label>
       </div>
@@ -636,7 +639,7 @@ const I18N = {
   'wish.h':'Wishlist',
   'wish.body':'<p>O que ainda não existe, na ordem em que faria sentido acontecer. Os marcos são versões, não datas: cada um só começa depois do anterior, porque depende dele. Hoje o repositório está no <b>v0.2</b> — a página, mais o servidor opcional que guarda a stack e a sobe no Docker.</p>'+
     '<p><s><b>v0.2</b> · Backend ligando o Hubstarr ao Docker</s> — feito: a página grava os arquivos e sobe a stack sem passar pelo <code>.zip</code>.</p>'+
-    '<p><b>v0.3</b> · Configuração automática da stack pelo backend — Prowlarr, clientes de download e Media Management saem daqui e viram chamada de API.</p>'+
+    '<p><b>v0.3</b> · Configuração automática da stack pelo backend — em andamento: os <b>clientes de download</b> já entram nos *arr pelo <b>Aplicar na stack</b> da Configuração; faltam o Prowlarr e o Media Management.</p>'+
     '<p><b>v0.4</b> · Custom formats e profiles por instância — a de 4K, a de anime e as demais nascem com o perfil de qualidade delas.</p>'+
     '<p><b>v0.5</b> · Compatibilidade com o TRaSH Guides — quality definitions, scores de custom format e as demais recomendações do guia saem prontas.</p>'+
     '<p><b>v0.6</b> · Busca localizada de mídia — dá para escolher o idioma da busca e os *arr acham o lançamento certo.</p>',
@@ -766,6 +769,7 @@ const I18N = {
   'docker.missing':'<b>Sem o Docker Compose neste servidor.</b> O Hubstarr continua gerando os arquivos e guardando a stack, mas <b>Subir</b> e <b>Derrubar</b> vão falhar até o plugin Compose estar instalado — veja abaixo como instalá-lo.',
   'log.up':'Subindo a stack',
   'log.down':'Derrubando a stack',
+  'log.apply':'Aplicando a Configuração',
   'log.running':'rodando…',
   'log.done':'pronto ✓',
   'log.fail':'falhou ✗',
@@ -815,6 +819,7 @@ const I18N = {
   'env.warnIds':'PUID/PGID devem ser numéricos',
   'btn.cancel':'Cancelar',
   'btn.save':'Salvar',
+  'btn.apply':'Aplicar na stack',
   'btn.done':'Concluir',
 
   'm.title':name=>`Configuração — ${name}`,
@@ -831,6 +836,8 @@ const I18N = {
   'm.network':'Rede',
   'm.indexers':'Indexadores',
   'm.solver':'Incluir o FlareSolverr na stack',
+  'm.dlKey':'API key',
+  'm.dlKeyWhy':'A chave da API deste cliente, que os *arr usam para falar com ele. Diferente da senha da interface, ela é o próprio app que gera na primeira subida — copie de <i>Config → General</i> e cole aqui. Ela não vai para arquivo nenhum: serve só para o <b>Aplicar na stack</b> da Configuração registrar o cliente nos *arr.',
   'm.solverWhy':'Vários indexadores ficam atrás do desafio anti-bot da Cloudflare, e o Prowlarr sozinho esbarra nele: a busca volta vazia ou com erro. O <b>FlareSolverr</b> resolve o desafio num navegador headless e devolve a página ao Prowlarr. Marcando aqui, ele entra na stack junto; depois é só apontar o Prowlarr para ele em <i>Settings → Indexers → FlareSolverr</i>, com a URL <b>http://flaresolverr:8191</b>. A imagem usada é a do <b>Byparr</b>, um substituto direto e mais atual, com a mesma API e a mesma porta. Sem indexador protegido pela Cloudflare, dá para deixar desmarcado.',
   'm.libs':'Outras pastas',
   'm.libAdd':'+ pasta',
@@ -956,7 +963,7 @@ const I18N = {
   'wish.h':'Wishlist',
   'wish.body':'<p>What is not there yet, in the order it would make sense to happen. The milestones are versions, not dates: each one only starts after the previous, because it depends on it. The repository is at <b>v0.2</b> today — the page, plus the optional server that keeps the stack and brings it up on Docker.</p>'+
     '<p><s><b>v0.2</b> · A backend wiring Hubstarr to Docker</s> — done: the page writes the files and brings the stack up without going through the <code>.zip</code>.</p>'+
-    '<p><b>v0.3</b> · Automatic stack configuration from the backend — Prowlarr, download clients and Media Management leave this screen and become API calls.</p>'+
+    '<p><b>v0.3</b> · Automatic stack configuration from the backend — under way: <b>download clients</b> already land in the *arr apps through the Configuration\'s <b>Apply to the stack</b>; Prowlarr and Media Management are still to come.</p>'+
     '<p><b>v0.4</b> · Custom formats and profiles per instance — the 4K one, the anime one and the rest are born with their own quality profile.</p>'+
     '<p><b>v0.5</b> · Compatibility with the TRaSH Guides — quality definitions, custom format scores and the rest of the guide\'s recommendations come ready.</p>'+
     '<p><b>v0.6</b> · Localized media search — the search language can be picked and the *arr apps find the right release.</p>',
@@ -1084,6 +1091,7 @@ const I18N = {
   'docker.missing':'<b>No Docker Compose on this server.</b> Hubstarr still generates the files and keeps the stack, but <b>Bring up</b> and <b>Tear down</b> will fail until the Compose plugin is installed — see below how to install it.',
   'log.up':'Bringing the stack up',
   'log.down':'Tearing the stack down',
+  'log.apply':'Applying the Configuration',
   'log.running':'running…',
   'log.done':'done ✓',
   'log.fail':'failed ✗',
@@ -1133,6 +1141,7 @@ const I18N = {
   'env.warnIds':'PUID/PGID must be numeric',
   'btn.cancel':'Cancel',
   'btn.save':'Save',
+  'btn.apply':'Apply to the stack',
   'btn.done':'Done',
 
   'm.title':name=>`Settings — ${name}`,
@@ -1149,6 +1158,8 @@ const I18N = {
   'm.network':'Network',
   'm.indexers':'Indexers',
   'm.solver':'Add FlareSolverr to the stack',
+  'm.dlKey':'API key',
+  'm.dlKeyWhy':'This client\'s API key, the one the *arr apps use to talk to it. Unlike the web UI password, the app itself generates it on first boot — copy it from <i>Config → General</i> and paste it here. It goes into no file: it only serves the Configuration\'s <b>Apply to the stack</b>, which registers the client in every *arr.',
   'm.solverWhy':'Plenty of indexers sit behind Cloudflare\'s anti-bot challenge, and Prowlarr alone runs straight into it: searches come back empty or failing. <b>FlareSolverr</b> solves the challenge in a headless browser and hands the page back to Prowlarr. Tick this and it joins the stack; then point Prowlarr at it under <i>Settings → Indexers → FlareSolverr</i>, with the URL <b>http://flaresolverr:8191</b>. The image behind it is <b>Byparr</b>, a drop-in, better-maintained replacement with the same API and the same port. With no Cloudflare-protected indexer, you can leave it off.',
   'm.libs':'Other folders',
   'm.libAdd':'+ folder',
@@ -1274,7 +1285,7 @@ const I18N = {
   'wish.h':'Wishlist',
   'wish.body':'<p>Lo que todavía no existe, en el orden en que tendría sentido que ocurra. Los hitos son versiones, no fechas: cada uno solo empieza después del anterior, porque depende de él. Hoy el repositorio está en <b>v0.2</b> — la página, más el servidor opcional que guarda la stack y la levanta en Docker.</p>'+
     '<p><s><b>v0.2</b> · Un backend que conecte Hubstarr con Docker</s> — hecho: la página graba los archivos y levanta la stack sin pasar por el <code>.zip</code>.</p>'+
-    '<p><b>v0.3</b> · Configuración automática de la stack desde el backend — Prowlarr, clientes de descarga y Media Management salen de aquí y son llamadas de API.</p>'+
+    '<p><b>v0.3</b> · Configuración automática de la stack desde el backend — en marcha: los <b>clientes de descarga</b> ya entran en los *arr por el <b>Aplicar en la stack</b> de la Configuración; faltan Prowlarr y Media Management.</p>'+
     '<p><b>v0.4</b> · Custom formats y profiles por instancia — la de 4K, la de anime y las demás nacen con su perfil de calidad.</p>'+
     '<p><b>v0.5</b> · Compatibilidad con TRaSH Guides — quality definitions, scores de custom format y el resto de las recomendaciones de la guía ya listas.</p>'+
     '<p><b>v0.6</b> · Búsqueda localizada de medios — se puede elegir el idioma de la búsqueda y los *arr encuentran el lanzamiento correcto.</p>',
@@ -1402,6 +1413,7 @@ const I18N = {
   'docker.missing':'<b>Sin Docker Compose en este servidor.</b> Hubstarr sigue generando los archivos y guardando la stack, pero <b>Levantar</b> y <b>Derribar</b> fallarán hasta que el plugin Compose esté instalado — mira abajo cómo instalarlo.',
   'log.up':'Levantando la stack',
   'log.down':'Derribando la stack',
+  'log.apply':'Aplicando la Configuración',
   'log.running':'ejecutando…',
   'log.done':'listo ✓',
   'log.fail':'falló ✗',
@@ -1451,6 +1463,7 @@ const I18N = {
   'env.warnIds':'PUID/PGID deben ser numéricos',
   'btn.cancel':'Cancelar',
   'btn.save':'Guardar',
+  'btn.apply':'Aplicar en la stack',
   'btn.done':'Listo',
 
   'm.title':name=>`Configuración — ${name}`,
@@ -1467,6 +1480,8 @@ const I18N = {
   'm.network':'Red',
   'm.indexers':'Indexadores',
   'm.solver':'Incluir FlareSolverr en la stack',
+  'm.dlKey':'API key',
+  'm.dlKeyWhy':'La clave de API de este cliente, la que los *arr usan para hablar con él. A diferencia de la contraseña de la interfaz, la genera el propio app en el primer arranque — cópiala de <i>Config → General</i> y pégala aquí. No va a ningún archivo: sirve solo para el <b>Aplicar en la stack</b> de la Configuración, que registra el cliente en cada *arr.',
   'm.solverWhy':'Varios indexadores están detrás del desafío anti-bot de Cloudflare, y Prowlarr solo choca con él: la búsqueda vuelve vacía o con error. <b>FlareSolverr</b> resuelve el desafío en un navegador headless y le devuelve la página a Prowlarr. Al marcarlo, entra en la stack junto; luego basta apuntar Prowlarr hacia él en <i>Settings → Indexers → FlareSolverr</i>, con la URL <b>http://flaresolverr:8191</b>. La imagen que usa es la de <b>Byparr</b>, un reemplazo directo y más actual, con la misma API y el mismo puerto. Sin ningún indexador protegido por Cloudflare, se puede dejar sin marcar.',
   'm.libs':'Otras carpetas',
   'm.libAdd':'+ carpeta',
@@ -1613,7 +1628,7 @@ const SERVICES = [
   {id:'bazarr',   name:'Bazarr',    port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr'], tp:true, site:'https://www.bazarr.media'},
   {id:'qbittorrent',name:'qBittorrent',port:8181, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true, webAuth:true, tp:true, conf:[{host:'qBittorrent.conf', target:'/config/qBittorrent/qBittorrent.conf', pane:'#outQbt', tab:'qbt'},
           {host:'categories.json', target:'/config/qBittorrent/categories.json', pane:'#outQbtCat', tab:'qbtcat'}], site:'https://www.qbittorrent.org'},
-  {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true, cdh:true, tp:true, site:'https://sabnzbd.org'},
+  {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true, cdh:true, dlKey:true, tp:true, site:'https://sabnzbd.org'},
   {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true, tp:true,
    conf:[{host:'config/config/network.xml', target:'/config/config/network.xml', pane:'#outJf', tab:'jf'}], site:'https://jellyfin.org'},
   {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5', subpathFix:true, site:'https://github.com/seerr-team/seerr'},
@@ -1927,7 +1942,7 @@ const locked = id => !isMulti(id) && has(id);
 const defCfg = id => ({id, title:svc(id).name, hw:'cpu', tpv:'std', tpt:TP_THEME_DEF,
                        data:svc(id).mdir||'', abs:'', libs:[], vpn:false,
                        // quem aceita o resolvedor de desafios já nasce com ele marcado
-                       solver:!!svc(id).solver});
+                       solver:!!svc(id).solver, dlKey:''});
 
 /* ---------- combobox ---------- */
 function renderCombo(){
@@ -2146,6 +2161,9 @@ function openModal(id, key){
   $('#mWebAuth').style.display = s.webAuth ? 'block' : 'none';
   if(s.webAuth){ $('#mUser').value = DEFAULTS.qbitUser; $('#mPass').value = DEFAULTS.qbitPass;
                  $('#mApiKey').value = qbitKey(); }
+  // a chave da API do cliente de download é dele, então mora no modal dele
+  $('#mDlKeyRow').style.display = s.dlKey ? 'grid' : 'none';
+  if(s.dlKey) $('#mDlKey').value = cur.dlKey || '';
   $('#mVpnCfg').style.display = s.vpnCfg ? 'block' : 'none';
   if(s.vpnCfg){
     $('#gProv').value=DEFAULTS.vpnProv; $('#gType').value=DEFAULTS.vpnType;
@@ -2276,7 +2294,8 @@ $('#mSave').onclick = ()=>{
                ...dataOf(s),
                libs: s.library ? libsOf() : [],
                vpn: s.vpn && $('#mVpn').checked,
-               solver: !!s.solver && $('#mSolver').checked};
+               solver: !!s.solver && $('#mSolver').checked,
+               dlKey: s.dlKey ? $('#mDlKey').value.trim() : ''};
 
   const key = cname(cfg);
   if(!key) return warn(t('m.warnName'));
@@ -2762,6 +2781,9 @@ let cfgBackup = null;   // estado de antes de abrir, para o Cancelar desfazer
 function openCfg(){
   renderConfig();
   cfgBackup = JSON.parse(JSON.stringify(CONFIG));
+  // aplicar é coisa de quem tem servidor e stack no ar; sem isso a
+  // Configuração continua sendo o protótipo de sempre
+  $('#cfgApply').hidden = !SERVER || !arrList().length || !clientList().length;
   $('#cfgBack').classList.add('open');
 }
 const closeCfg = ()=> $('#cfgBack').classList.remove('open');
@@ -3639,6 +3661,44 @@ $('#up').onclick = async ()=>{
   await runJob(()=> api('deploy',
     {method:'POST', body:JSON.stringify({files:outFiles()})}), t('log.up'));
   pollStatus();
+};
+
+/* v0.3: a Configuração deixa de ser só protótipo de interface e vira chamada
+   de API. O servidor é quem fala com cada app — ele monta o corpo que o *arr
+   espera —, mas quem decide continua aqui: endereço, porta, categoria e o
+   campo de categoria de cada família saem do `SERVICES` e do `CONFIG`.
+
+   Os apps são alcançados pelo nginx, na porta que ele publica no host: o
+   servidor está no host, e a rede da stack não existe para ele. */
+const ARR_API = {sonarr:'v3', radarr:'v3', lidarr:'v1'};
+const CAT_FIELD = {sonarr:'tvCategory', radarr:'movieCategory', lidarr:'musicCategory'};
+function applyPayload(){
+  const nameOf = a => a.title || svc(a.id).name;
+  return {
+    base: (DEFAULTS.tls ? 'https://127.0.0.1:' + DEFAULTS.https
+                        : 'http://127.0.0.1:' + DEFAULTS.http),
+    apiKey: DEFAULTS.apiKey,
+    arrs: arrList().map(a=>({key:cname(a), name:nameOf(a), route:route(a),
+                             api:ARR_API[a.id], catField:CAT_FIELD[a.id]})),
+    clients: clientList().map(c=>{
+      const st = CONFIG.clients[cname(c)] || {};
+      const cats = {};
+      arrList().forEach(a=>{
+        const v = (st.cats && st.cats[cname(a)]) || catDefault(a, c);
+        if(String(v).trim()) cats[cname(a)] = String(v).trim();
+      });
+      return {name:nameOf(c), kind:c.id, host:dlHost(c), port:inner(c.id),
+              user: c.id==='qbittorrent' ? DEFAULTS.qbitUser : '',
+              pass: c.id==='qbittorrent' ? DEFAULTS.qbitPass : '',
+              apiKey: c.dlKey || '', cats, cdh: st.cdh || null};
+    })
+  };
+}
+
+$('#cfgApply').onclick = async ()=>{
+  closeCfg();
+  await runJob(()=> api('config/apply',
+    {method:'POST', body:JSON.stringify(applyPayload())}), t('log.apply'));
 };
 
 $('#down').onclick = async ()=>{

@@ -14,6 +14,7 @@
    Por isso ele nunca gera conteúdo: recebe pronto o que a página montou. Assim
    os geradores continuam existindo num lugar só. */
 
+mod apply;
 mod deploy;
 mod files;
 mod jobs;
@@ -157,6 +158,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/files", post(write_files))
         .route("/api/deploy", post(start_deploy))
         .route("/api/down", post(start_down))
+        .route("/api/config/apply", post(apply_config))
         .route("/api/shot/:app/:theme", get(shot))
         .route("/api/status", get(stack_status))
         .route("/api/job/:id", get(job_status))
@@ -206,6 +208,16 @@ async fn shot(State(ctx): State<Ctx>, Path((app, theme)): Path<(String, String)>
             .into_response(),
         Err(e) => (StatusCode::BAD_GATEWAY, e).into_response(),
     }
+}
+
+/// Aplica a Configuração nos apps que já estão no ar. Como subir a stack, é
+/// trabalho numerado: são várias chamadas de API, e cada app que responde vira
+/// uma linha do log.
+async fn apply_config(State(ctx): State<Ctx>, Json(req): Json<apply::Req>) -> Response {
+    let job = ctx
+        .jobs
+        .spawn(move |log| async move { apply::download_clients(req, log).await });
+    Json(json!({"ok": true, "job": job})).into_response()
 }
 
 async fn health(State(ctx): State<Ctx>) -> Json<Value> {
