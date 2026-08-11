@@ -197,6 +197,14 @@ A database from an earlier version, which held several stacks, is converted on
 first open; the oldest stack is the one that stays, and the server prints the
 folder each of the others wrote to, so you do not lose track of their files.
 
+With a server, the screenshots behind the **Theme** field go through it too:
+the first visit to each one reaches out to the theme.park docs and the ones
+after it come off the disk, from a `shots/` folder next to the database. The
+repository redistributes nobody's screenshots — the cache holds what you opened
+yourself, and trims itself past 64 MB, oldest first. Deleting the folder by
+hand breaks nothing: it costs one extra fetch. Opened from disk, with no
+server, the page still fetches every screenshot straight from their docs.
+
 > [!WARNING]
 > The server runs `docker compose` and writes to disk: do not expose it to a
 > network you do not trust. It listens on `127.0.0.1` only by default.

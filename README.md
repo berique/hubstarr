@@ -196,6 +196,15 @@ primeira abertura; a stack mais antiga é a que fica, e o servidor diz na saída
 em que pasta cada uma das outras gravava, para você não perder os arquivos
 delas de vista.
 
+Com servidor, as capturas das paletas do campo **Tema** também passam por ele:
+a primeira visita a cada uma sai para a documentação do theme.park e as
+seguintes saem do disco, de uma pasta `shots/` ao lado do banco. O repositório
+não redistribui captura de ninguém — o cache guarda o que você mesmo abriu, e
+se apaga sozinho quando passa de 64 MB, das mais antigas para as mais novas.
+Apagar a pasta na mão não quebra nada: custa uma busca a mais. Aberta do disco,
+sem servidor, a página continua buscando cada captura direto na documentação
+deles.
+
 > [!WARNING]
 > O servidor roda `docker compose` e escreve em disco: não o exponha a uma
 > rede em que você não confie. O padrão é atender só em `127.0.0.1`.

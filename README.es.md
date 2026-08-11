@@ -201,6 +201,15 @@ la primera apertura; la stack más antigua es la que se queda, y el servidor
 indica en la salida en qué carpeta escribía cada una de las otras, para que no
 pierdas de vista sus archivos.
 
+Con servidor, las capturas de las paletas del campo **Tema** también pasan por
+él: la primera visita a cada una sale a la documentación de theme.park y las
+siguientes salen del disco, de una carpeta `shots/` junto a la base. El
+repositorio no redistribuye capturas de nadie — la caché guarda lo que abriste
+tú, y se poda sola al pasar de 64 MB, de las más antiguas a las más nuevas.
+Borrar la carpeta a mano no rompe nada: cuesta una búsqueda más. Abierta desde
+el disco, sin servidor, la página sigue buscando cada captura directamente en
+su documentación.
+
 > [!WARNING]
 > El servidor ejecuta `docker compose` y escribe en disco: no lo expongas a una
 > red en la que no confíes. De forma predeterminada solo atiende en `127.0.0.1`.
