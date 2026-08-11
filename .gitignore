@@ -4,6 +4,9 @@
 # build do servidor
 backend/target/
 
+# saída do servidor quando ele roda em segundo plano
+backend/*.log
+
 # arquivos que o servidor grava (--dir)
 backend/stack/
 backend/stacks/
