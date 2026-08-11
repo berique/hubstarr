@@ -1728,7 +1728,7 @@ const SERVICES = [
   {id:'lidarr',   name:'Lidarr',    port:8686, img:'lscr.io/linuxserver/lidarr:latest',    color:'#1db954', media:true, mdir:'music', needsDl:true, tp:true, site:'https://lidarr.audio'},
   {id:'prowlarr', name:'Prowlarr',  port:9696, img:'lscr.io/linuxserver/prowlarr:latest', color:'#e5534b', solver:true, tp:true, site:'https://prowlarr.com'},
   {id:'bazarr',   name:'Bazarr',    port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr'], tp:true, site:'https://www.bazarr.media'},
-  {id:'qbittorrent',name:'qBittorrent',port:8181, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true, webAuth:true, tp:true, conf:[{host:'qBittorrent.conf', target:'/config/qBittorrent/qBittorrent.conf', pane:'#outQbt', tab:'qbt', patch:'qbit'},
+  {id:'qbittorrent',name:'qBittorrent',port:8181, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true, webAuth:true, publish:true, tp:true, conf:[{host:'qBittorrent.conf', target:'/config/qBittorrent/qBittorrent.conf', pane:'#outQbt', tab:'qbt', patch:'qbit'},
           {host:'categories.json', target:'/config/qBittorrent/categories.json', pane:'#outQbtCat', tab:'qbtcat', patch:'qbitCats'}], site:'https://www.qbittorrent.org'},
   {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true, cdh:true, dlKey:true, tp:true, site:'https://sabnzbd.org'},
   {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true, tp:true,
@@ -3201,13 +3201,24 @@ function build(){
     L.push(`  <span class="k">${cname(a)}</span>:`);
     L.push(`    <span class="k">image</span>: <span class="v">${s.img}</span>`);
     L.push(`    <span class="k">container_name</span>: <span class="v">${cname(a)}</span>`);
-    // quem não passa pelo nginx precisa da porta publicada no host
-    if(publishes(a)){
+    /* Quem não passa pelo nginx precisa da porta publicada no host — menos
+       quem roteia pela VPN: nesse caso a rede é a do gluetun, e é ele quem
+       publica (o compose recusa `ports` junto de `network_mode: service:`). */
+    if(publishes(a) && !a.vpn){
       L.push(`    <span class="k">ports</span>:`);
       L.push(`      - <span class="v">"\${${portVar(a)}}:${s.port}"</span>`);
     }
     if(s.id==='gluetun'){
       L.push(`    <span class="k">cap_add</span>: [<span class="v">NET_ADMIN</span>]`);
+      /* As portas de quem roteia por ele: a rede é dele, então é aqui que elas
+         aparecem. Sem isso, o serviço publicaria em si mesmo e o compose
+         recusaria — `ports` não convive com `network_mode: service:`. */
+      const pelaVpn = list.filter(x=>x.vpn && publishes(x));
+      if(pelaVpn.length){
+        L.push(`    <span class="k">ports</span>:`);
+        pelaVpn.forEach(x=> L.push(
+          `      - <span class="v">"\${${portVar(x)}}:${inner(x.id)}"</span>`));
+      }
       L.push(`    <span class="k">environment</span>:`);
       L.push(`      - <span class="v">VPN_SERVICE_PROVIDER=\${VPN_SERVICE_PROVIDER}</span>`);
       L.push(`      - <span class="v">VPN_TYPE=\${VPN_TYPE}</span>`);
@@ -4031,9 +4042,10 @@ function skipNaming(a){
 const CAT_FIELD = {sonarr:'tvCategory', radarr:'movieCategory', lidarr:'musicCategory'};
 function applyPayload(){
   const nameOf = a => a.title || svc(a.id).name;
+  const base = DEFAULTS.tls ? 'https://127.0.0.1:' + DEFAULTS.https
+                            : 'http://127.0.0.1:' + DEFAULTS.http;
   return {
-    base: (DEFAULTS.tls ? 'https://127.0.0.1:' + DEFAULTS.https
-                        : 'http://127.0.0.1:' + DEFAULTS.http),
+    base,
     apiKey: DEFAULTS.apiKey,
     // o endereço interno é o que o Prowlarr vai chamar: container, porta e a
     // base URL do app — a mesma que o nginx serve, e que o compose já põe na
@@ -4067,7 +4079,11 @@ function applyPayload(){
       });
       // a rota é por onde o servidor fala com o cliente — o SABnzbd cria as
       // categorias dele pela própria API
-      return {name:nameOf(c), kind:c.id, host:dlHost(c), port:inner(c.id), route:route(c),
+      /* Como o servidor alcança a interface do cliente: pelo nginx quando ele
+         tem rota, ou direto na porta publicada quando não tem. */
+      const web = publishes(c) ? `http://127.0.0.1:${hostPortOf(c)}/`
+                               : `${base}${route(c)}/`;
+      return {name:nameOf(c), kind:c.id, host:dlHost(c), port:inner(c.id), webUrl:web,
               /* O qBittorrent entra pela API key, que é a mesma que a conf
                  dele recebe — usuário e senha vão junto só para o app que não
                  conhece o campo, e é o servidor quem decide pelo schema. */

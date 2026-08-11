@@ -36,9 +36,9 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    downloads inteira), `dlClient`, `vpn`, `hw` (Jellyfin), `library` (Jellyfin:
    monta a base e mais as pastas que ficaram fora dela), `solver` (Prowlarr;
    ver abaixo), `internal` (gluetun e FlareSolverr: sem rota no nginx e sem
-   botão de link), `publish` (Seerr: fora do nginx, publica a porta dele no
-   host; a porta escolhida fica na instância, em `hostPort`, e o campo dela é
-   do modal do serviço), `vpnCfg` (gluetun: as
+   botão de link), `publish` (Seerr e qBittorrent: fora do nginx, publicam a
+   porta deles no host; a porta escolhida fica na instância, em `hostPort`, e o
+   campo dela é do modal do serviço), `vpnCfg` (gluetun: as
    credenciais da VPN no modal dele),
    `webAuth` + `conf` (qBittorrent: usuário/senha/API key no modal dele e os
    dois arquivos dele — nenhum dos dois é montado, o servidor os escreve depois
@@ -195,10 +195,13 @@ handler de `#mSave`.
 - **Publicar porta no host é exceção, e vem com a flag `publish`.** O nginx
   ouve em 80/443 dentro do container e publica no host as portas do modal
   próprio dele — o "Editar" da linha fixa (`DEFAULTS.http`/`https` →
-  `HTTP_PORT`/`HTTPS_PORT` no `.env`). O Seerr é o outro caso: em vez de rota,
-  ganha `ports` no compose e a variável `<CNAME>_PORT` no `.env`, e o link dele
-  aponta para a porta do host — em `http://`, porque o TLS mora no nginx e ele
-  não passa por lá. Todo o resto só existe na rede `starrnet` e é alcançado por
+  `HTTP_PORT`/`HTTPS_PORT` no `.env`). O Seerr e o qBittorrent são os outros
+  casos — nenhum dos dois tem base URL configurável: em vez de rota,
+  ganham `ports` no compose e a variável `<CNAME>_PORT` no `.env`, e o link deles
+  aponta para a porta do host — em `http://`, porque o TLS mora no nginx e eles
+  não passam por lá. Quem roteia pela VPN publica **no gluetun**, não em si
+  mesmo: a rede é dele, e o compose recusa `ports` junto de
+  `network_mode: service:`. Todo o resto só existe na rede `starrnet` e é alcançado por
   `container:porta-interna`; quem publica sai da contagem de rotas e do
   `buildNginx()` pelo `publishes()`. Quem roteia pela VPN usa
   `network_mode: service:gluetun` e responde no endereço do gluetun.
@@ -212,7 +215,9 @@ handler de `#mSave`.
   `<APP>__SERVER__URLBASE`; no Jellyfin é o `BaseUrl` do `network.xml`, que por
   isso é gerado. Serviço em subpath sem esse ajuste monta os links na raiz e
   quebra atrás do proxy — app sem base URL configurável não tem lugar num
-  subpath, e é essa a razão de o Seerr publicar porta em vez de virar rota
+  subpath, e é essa a razão de o **Seerr e o qBittorrent** publicarem porta em
+  vez de virar rota — o qBittorrent respondia `500 Unacceptable file type` ao
+  receber o prefixo, porque tenta servir o caminho como arquivo
   (houve um `subpathFix` reescrevendo redirects e HTML dele; foi removido).
 - **Serviço `internal` não vira rota**: gluetun e FlareSolverr existem para os
   outros containers, então ficam sem `location`, sem link e fora da contagem de

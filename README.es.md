@@ -359,12 +359,16 @@ No todo servicio se vuelve ruta: `gluetun` y FlareSolverr solo hablan con los
 otros contenedores, así que no reciben `location` ni botón de enlace — Prowlarr
 llega a FlareSolverr directo por la red de la stack.
 
-Seerr se queda fuera del proxy por otro motivo: no tiene base URL, y una app
-sin ella no vive en un subpath. En vez de ruta, **publica su puerto en el
-host** — 5055 por defecto, editable en su propio modal, que sale en el compose
-como `ports` y en el `.env` como `SEERR_PORT`. Su enlace apunta a ese puerto,
-por `http://`: sin el proxy delante, el TLS de la stack no lo cubre, y el
-puerto tiene que estar libre en la máquina.
+**Seerr** y **qBittorrent** se quedan fuera del proxy por el mismo motivo:
+ninguno tiene base URL configurable, y una app sin ella no vive en un subpath —
+qBittorrent responde `500 Unacceptable file type` cuando recibe el prefijo,
+porque intenta servir la ruta como archivo. En vez de ruta, cada uno **publica
+su puerto en el host** — 5055 y 8181 por defecto, editables en su propio modal,
+que salen en el compose como `ports` y en el `.env` como `SEERR_PORT` y
+`QBITTORRENT_PORT`. Sus enlaces apuntan a esos puertos, por `http://`: sin el
+proxy delante, el TLS de la stack no los cubre, y el puerto tiene que estar
+libre en la máquina. Lo que se enruta por la VPN publica en `gluetun`, que es
+quien tiene la red.
 
 En el Entorno se puede activar el **TLS**: el `nginx.conf` pasa a tener un
 `server` en el 443 con `ssl_certificate`, TLSv1.2/1.3 y un bloque en el 80 que

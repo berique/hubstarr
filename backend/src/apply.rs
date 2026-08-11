@@ -110,10 +110,11 @@ struct Client {
     /// a chave da API do SABnzbd; o qBittorrent não a usa aqui
     #[serde(default)]
     api_key: String,
-    /// subpath em que o nginx serve o cliente — é por onde o servidor fala com
-    /// ele para criar as categorias
+    /// como o servidor alcança a interface dele: pelo nginx, ou direto na porta
+    /// publicada quando ele não tem rota. É por aqui que as categorias do
+    /// SABnzbd são criadas, e é o que a espera consulta
     #[serde(default)]
-    route: String,
+    web_url: String,
     /// categoria por instância de *arr, pela chave dela
     #[serde(default)]
     cats: Map<String, Value>,
@@ -633,7 +634,7 @@ async fn categorias_do_cliente(
     if client.kind != "sabnzbd" {
         return 0;
     }
-    if client.route.is_empty() || client.api_key.is_empty() {
+    if client.web_url.is_empty() || client.api_key.is_empty() {
         log.line(format!(
             "{}: sem a API key dele não dá para criar as categorias — cole a chave no modal do serviço",
             client.name
@@ -648,8 +649,8 @@ async fn categorias_do_cliente(
     }
     for cat in todas {
         let url = format!(
-            "{base}{}/api?mode=set_config&section=categories&keyword={cat}&dir={cat}&output=json&apikey={}",
-            client.route, client.api_key
+            "{}api?mode=set_config&section=categories&keyword={cat}&dir={cat}&output=json&apikey={}",
+            client.web_url, client.api_key
         );
         match http.get(&url).send().await {
             Ok(r) if r.status().is_success() => {
@@ -953,10 +954,10 @@ async fn esperar_apps(http: &reqwest::Client, base: &str, alvos: &[Arr], log: &L
    tomar isso por "pronto" é o mesmo que não esperar. */
 async fn esperar_clientes(http: &reqwest::Client, base: &str, clients: &[Client], log: &Log) {
     for c in clients {
-        if c.route.is_empty() {
+        if c.web_url.is_empty() {
             continue;
         }
-        esperar_url(http, &format!("{base}{}/", c.route), &c.name, log).await;
+        esperar_url(http, &c.web_url, &c.name, log).await;
     }
 }
 
@@ -1107,7 +1108,7 @@ mod tests {
             user: "admin".into(),
             pass: "senha".into(),
             api_key: "qbt_chave".into(),
-            route: "/qbittorrent".into(),
+            web_url: "http://127.0.0.1/qbittorrent/".into(),
             cats: serde_json::from_str(r#"{"sonarr":"tv-sonarr"}"#).unwrap(),
             cdh: Some(Cdh {
                 completed: true,
