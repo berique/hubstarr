@@ -81,12 +81,58 @@ pub async fn write_all(
     Ok(done)
 }
 
+/// Cria as pastas que a página listou, quando faltam. Caminho relativo é
+/// recusado: estes vêm dos `source` do compose, que são do host e absolutos —
+/// um relativo aqui seria erro de quem chamou, e sairia em algum lugar
+/// imprevisível a partir do diretório do servidor.
+pub async fn ensure_dirs(dirs: &[String], log: &crate::jobs::Log) -> Result<(), String> {
+    for d in dirs {
+        let p = Path::new(d);
+        if !p.is_absolute() {
+            return Err(format!("caminho relativo não vira pasta: {d}"));
+        }
+        if p.is_dir() {
+            continue;
+        }
+        if p.exists() {
+            // já existe e não é pasta: o bind vai falhar, e dizer isso agora é
+            // melhor do que o erro do docker três passos adiante
+            return Err(format!("{d} existe e não é uma pasta"));
+        }
+        tokio::fs::create_dir_all(p)
+            .await
+            .map_err(|e| format!("{d}: {e}"))?;
+        log.line(format!("pasta criada: {d}"));
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     fn f(name: &str, base: Option<&str>) -> OutFile {
         OutFile { name: name.into(), text: "x\n".into(), base: base.map(String::from) }
+    }
+
+    #[tokio::test]
+    async fn cria_o_que_falta_e_recusa_o_que_nao_e_pasta() {
+        let tmp = std::env::temp_dir().join(format!("hubdirs-{}", std::process::id()));
+        let _ = tokio::fs::remove_dir_all(&tmp).await;
+        let log = crate::jobs::Jobs::new().log_de_teste();
+        let a = tmp.join("media/tv");
+        ensure_dirs(&[a.display().to_string()], &log).await.unwrap();
+        assert!(a.is_dir());
+        // de novo não é erro: o que já existe fica como está
+        ensure_dirs(&[a.display().to_string()], &log).await.unwrap();
+
+        // caminho ocupado por um arquivo é recusado antes de o docker tentar
+        let f = tmp.join("um-arquivo");
+        tokio::fs::write(&f, b"x").await.unwrap();
+        assert!(ensure_dirs(&[f.display().to_string()], &log).await.is_err());
+        // e caminho relativo também
+        assert!(ensure_dirs(&["media/tv".into()], &log).await.is_err());
+        tokio::fs::remove_dir_all(&tmp).await.unwrap();
     }
 
     #[tokio::test]

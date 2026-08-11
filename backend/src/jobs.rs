@@ -70,6 +70,12 @@ impl Jobs {
         id
     }
 
+    /// Uma ponta de log solta, para teste: ninguém lê o que ela escreve.
+    #[cfg(test)]
+    pub fn log_de_teste(&self) -> Log {
+        Log(Arc::new(Mutex::new(JobState::default())))
+    }
+
     pub fn get(&self, id: u64) -> Option<JobState> {
         let m = self.map.lock().ok()?;
         let slot = m.get(&id)?;

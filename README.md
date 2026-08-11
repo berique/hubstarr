@@ -227,6 +227,11 @@ Apagar a pasta na mão não quebra nada: custa uma busca a mais. Aberta do disco
 sem servidor, a página continua buscando cada captura direto na documentação
 deles.
 
+Antes de subir, o servidor **cria as pastas** que os volumes do compose
+esperam — as de configuração, as de mídia e as de download. Sem isso quem as
+cria é o Docker, como `root`, e o app não consegue escrever nelas. Caminho que
+já existe e não é pasta faz o Subir parar ali, com o nome dele no log.
+
 O **Subir** já deixa a stack configurada: assim que os apps respondem, o
 servidor registra cada cliente de download em cada *arr **e no próprio
 Prowlarr** — que tem o Settings → Download Clients dele —, cada *arr marcado em

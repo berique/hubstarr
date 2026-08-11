@@ -227,6 +227,12 @@ yourself, and trims itself past 64 MB, oldest first. Deleting the folder by
 hand breaks nothing: it costs one extra fetch. Opened from disk, with no
 server, the page still fetches every screenshot straight from their docs.
 
+Before bringing anything up, the server **creates the folders** the compose
+volumes expect — configuration, media and downloads. Without that it is Docker
+that creates them, as `root`, and the app cannot write in them. A path that
+already exists and is not a folder stops Bring up right there, naming it in the
+log.
+
 **Bring up** leaves the stack configured: as soon as the apps answer, the
 server registers every download client in every *arr **and in Prowlarr
 itself** — which has its own Settings → Download Clients —, every *arr ticked

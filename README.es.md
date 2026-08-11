@@ -233,6 +233,12 @@ Borrar la carpeta a mano no rompe nada: cuesta una búsqueda más. Abierta desde
 el disco, sin servidor, la página sigue buscando cada captura directamente en
 su documentación.
 
+Antes de levantar nada, el servidor **crea las carpetas** que esperan los
+volúmenes del compose — las de configuración, las de medios y las de descargas.
+Sin eso las crea Docker, como `root`, y el app no consigue escribir en ellas. Una
+ruta que ya existe y no es carpeta detiene el Levantar ahí mismo, con su nombre
+en el log.
+
 El **Levantar** ya deja la stack configurada: en cuanto los apps responden, el
 servidor registra cada cliente de descarga en cada *arr **y en el propio
 Prowlarr** — que tiene su Settings → Download Clients —, cada *arr marcado en

@@ -296,6 +296,9 @@ async fn del_instance(State(ctx): State<Ctx>, Path(key): Path<String>) -> Respon
 pub struct Payload {
     #[serde(default)]
     pub files: Vec<files::OutFile>,
+    /// pastas dos `source` do compose, a criar antes de subir
+    #[serde(default)]
+    pub dirs: Vec<String>,
     /// chaves a escrever na configuração que o próprio app cria, depois de subir
     #[serde(default)]
     pub patches: Vec<patch::Patch>,
@@ -331,6 +334,11 @@ async fn start_deploy(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Respons
     let job = ctx.jobs.spawn({
         let ctx = ctx.clone();
         move |log| async move {
+            /* Antes de subir: as pastas que os binds do compose esperam. Quem
+               as lista é a página, que é quem monta os caminhos; o Docker
+               criaria as que faltam, mas como root — e aí o app, rodando com o
+               PUID/PGID do Ambiente, não escreveria na própria configuração. */
+            files::ensure_dirs(&p.dirs, &log).await?;
             deploy::up(&ctx.docker, &ctx.base, log.clone()).await?;
             /* Só depois de a stack subir: a configuração que vamos mexer é a
                que o próprio app cria, e antes do primeiro `up` ela não existe. */

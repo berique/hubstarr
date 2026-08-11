@@ -3137,9 +3137,17 @@ function effective(){
   return list;
 }
 
+/* Todo `source` que o compose montou na última geração, para o servidor poder
+   criar as pastas antes de subir. Sem elas o Docker cria o que falta como
+   **root**, e aí o app não escreve na própria configuração. Arquivo montado
+   sobre arquivo entra como o diretório que o contém. */
+let lastBinds = [];
+const noteBind = (source, ehArquivo=false) => lastBinds.push({source, ehArquivo});
+
 function build(){
   const restart = '${RESTART}';
   const list = effective();
+  lastBinds = [];
 
   const L=[];
   L.push(`<span class="c"># ${STACK} — ${t('yml.head')}</span>`);
@@ -3162,12 +3170,14 @@ function build(){
      compose, e montá-la assim deixa o resto do `conf.d` da imagem no lugar.
      Com servidor, o caminho sai por extenso — é ele quem sabe onde a stack
      mora; sem servidor, fica relativo à pasta de onde o compose for rodado. */
+  noteBind(`${stackDir()}/nginx.conf`, true);
   L.push(`        <span class="k">source</span>: <span class="v">${stackDir()}/nginx.conf</span>`);
   L.push(`        <span class="k">target</span>: <span class="v">/etc/nginx/conf.d/nginx.conf</span>`);
   L.push(`        <span class="k">read_only</span>: <span class="v">true</span>`);
   if(DEFAULTS.tls){
     // certificado e chave chegam do host, cada um no seu caminho fixo
     [['TLS_CERT', TLS_CERT], ['TLS_KEY', TLS_KEY]].forEach(([v, target])=>{
+      noteBind('${'+v+'}', true);
       L.push(`      - <span class="k">type</span>: <span class="v">bind</span>`);
       L.push(`        <span class="k">source</span>: <span class="v">\${${v}}</span>`);
       L.push(`        <span class="k">target</span>: <span class="v">${target}</span>`);
@@ -3230,7 +3240,8 @@ function build(){
     }
     if(!s.noVol){
       // sintaxe longa: bind mount com propagação rslave
-      const bind = (source, target)=>{
+      const bind = (source, target, ehArquivo=false)=>{
+        noteBind(source, ehArquivo);
         L.push(`      - <span class="k">type</span>: <span class="v">bind</span>`);
         L.push(`        <span class="k">source</span>: <span class="v">${source}</span>`);
         L.push(`        <span class="k">target</span>: <span class="v">${target}</span>`);
@@ -3243,7 +3254,7 @@ function build(){
       // o que o servidor escreve depois de subir não é montado: o arquivo é
       // do próprio app, e a montagem congelaria o que ele guarda ali
       confsOf(s).filter(cf=>!cf.patch)
-                .forEach(cf=> bind(`${cfgPath(a)}/${cf.host}`, cf.target));
+                .forEach(cf=> bind(`${cfgPath(a)}/${cf.host}`, cf.target, true));
       if(s.derived){
         // acompanha as pastas das instâncias de radarr/sonarr já adicionadas
         derivedMounts(s).forEach(m=>bind(m.source, '/data/'+m.name));
@@ -3751,6 +3762,24 @@ function outFiles(){
   return files;
 }
 
+/* As pastas de que a stack precisa, já com as variáveis resolvidas: uma por
+   `source` do compose, e a pasta que contém o arquivo quando o `source` é um.
+   O Docker criaria as que faltam, mas como **root** — e aí o app, que roda com
+   o PUID/PGID do Ambiente, não escreve na própria configuração. */
+function outDirs(){
+  const vars = Object.assign({}, VARS(), {TLS_CERT: DEFAULTS.cert, TLS_KEY: DEFAULTS.tlsKey});
+  const resolve = p => String(p).replace(/\$\{([A-Z_]+)\}/g, (m, k) => k in vars ? vars[k] : m);
+  const out = [];
+  lastBinds.forEach(({source, ehArquivo})=>{
+    let p = resolve(source);
+    if(ehArquivo) p = p.replace(/\/[^/]*$/, '');
+    p = p.replace(/\/+$/, '');
+    // caminho que ainda tem variável não resolvida não vira pasta nenhuma
+    if(p && !p.includes('${') && !out.includes(p)) out.push(p);
+  });
+  return out;
+}
+
 /* O que o servidor escreve depois que a stack sobe: as chaves que o Hubstarr
    governa, na conf que o próprio app criou. Quem monta a lista continua sendo
    a página — o servidor só grava chave por chave, preservando o resto do
@@ -3957,6 +3986,7 @@ $('#up').onclick = async ()=>{
      para reaplicar sem subir nada. */
   await runJob(()=> api('deploy',
     {method:'POST', body:JSON.stringify({files:outFiles().filter(f=>!f.patch),
+                                         dirs:outDirs(),
                                          patches:outPatches(),
                                          config:applyPayload()})}), t('log.up'));
   pollStatus();
