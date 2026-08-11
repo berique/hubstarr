@@ -8,7 +8,7 @@ Single-page prototype that builds the `docker-compose.yml`, the `.env` and the
 `nginx.conf` for a media stack (*arr apps + download clients + media server),
 with no external dependencies. The page works on its own, opened from disk; an
 [optional server](#optional-server) keeps the stacks in SQLite and brings the
-stack up in Docker without going through the `.zip`.
+stack up in Docker.
 
 > [!WARNING]
 > **Prototype.** Hubstarr was not designed for production use: the files it
@@ -122,8 +122,9 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   restart policy, API key and TLS. The
   time zone list is the whole IANA database, straight from the browser, and it
   starts on the machine's own zone.
-- **Download** `docker-compose.yml`, `.env` and `nginx/conf.d/starrnet.conf`
-  together in a `.zip`.
+- **Copy** the `docker-compose.yml`, the `.env`, the
+  `nginx/conf.d/starrnet.conf` and each service's own configuration, one per
+  tab. With a server, it is the one writing them to disk.
 - **Switch languages** in the selector at the top: Portuguese (Brazil), English
   and Spanish.
 
@@ -152,8 +153,8 @@ sudo usermod -aG docker $USER
 
 [dd]: https://docs.docker.com/desktop/
 
-With Docker in place, unzip the `.zip` and bring the stack up from the folder
-holding the files:
+With Docker in place, copy the generated files into a folder and bring the
+stack up from inside it:
 
 ```sh
 docker compose up -d
@@ -162,7 +163,8 @@ docker compose up -d
 ## Optional server
 
 The page is still the product: it is the one generating the files, and opened
-from disk it works in full, with the `.zip` and nothing else. The server in
+from disk it works in full — it shows every one of them and lets you copy
+them, and nothing else. The server in
 `backend/` adds what the browser cannot reach on its own — **keeping the stacks
 between sessions**, writing the files to disk and bringing the stack up in
 Docker. It never generates content: it receives ready-made whatever the page's
@@ -344,7 +346,7 @@ applied to the apps.
 
 | Milestone | Delivers                                          | Done when                                                                          |
 | --------- | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| ~~**v0.2**~~ | ~~A backend wiring `hubstarr.html` to Docker~~ | ✅ the page writes the files and brings the stack up without going through the `.zip` |
+| ~~**v0.2**~~ | ~~A backend wiring `hubstarr.html` to Docker~~ | ✅ the page writes the files and brings the stack up on its own                       |
 | ~~**v0.3**~~ | ~~Automatic stack configuration from the backend~~ | ✅ Prowlarr, download clients and Media Management leave the interface and become API calls |
 | **v0.4**  | Custom formats and profiles per stack             | the 4K instance, the anime one and the rest are born with their own quality profile |
 | **v0.5**  | Compatibility with the TRaSH Guides               | quality definitions, custom format scores and the rest of the guide's recommendations come ready |
@@ -355,9 +357,9 @@ applied to the apps.
 The page is an interface prototype, but the **Configuration** is no longer just
 interface: the choices are kept — in the page, and in the database when a server
 is there — and, with a server and the stack up, all three of its parts turn into
-API calls through **Apply to the stack**. The generated files were always the real thing —
-download the `.zip` and run `docker compose up -d` in the folder you unpacked it
-into, or let the server do both.
+API calls through **Apply to the stack**. The generated files were always the
+real thing — copy each one into a folder and run `docker compose up -d` inside
+it, or let the server do both.
 
 ## License
 

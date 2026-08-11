@@ -310,7 +310,7 @@ sudo sh get-docker.sh</pre>
       <p>Saia e entre de novo na sessão para o grupo valer.</p>
       <p><b>Windows e macOS</b> — ou Linux, se preferir uma instalação gerenciada com interface gráfica — instale o
       <a href="https://docs.docker.com/desktop/" target="_blank" rel="noopener">Docker Desktop</a>, que já vem com o Compose.</p>
-      <p>Com o Docker no lugar, descompacte o <code>.zip</code> e suba a stack de dentro da pasta dos arquivos:</p>
+      <p>Com o Docker no lugar, copie os arquivos gerados para uma pasta e suba a stack de dentro dela:</p>
       <pre>docker compose up -d</pre>
     </div>
   </details>
@@ -370,7 +370,6 @@ sudo sh get-docker.sh</pre>
       <span class="hint" id="summary"></span>
       <span class="sp"></span>
       <button id="copy" data-i18n="btn.copy">Copiar</button>
-      <button id="dl" data-i18n="btn.zip" data-i18n-title="btn.zipHint">Baixar .zip</button>
       <button class="primary" id="up" hidden data-i18n="btn.up" data-i18n-title="btn.upHint">Subir</button>
       <button id="down" hidden data-i18n="btn.down" data-i18n-title="btn.downHint">Derrubar</button>
     </div>
@@ -634,11 +633,11 @@ const I18N = {
     '<p>Saia e entre de novo na sessão para o grupo valer.</p>'+
     '<p><b>Windows e macOS</b> — ou Linux, se preferir uma instalação gerenciada com interface gráfica — instale o '+
     '<a href="https://docs.docker.com/desktop/" target="_blank" rel="noopener">Docker Desktop</a>, que já vem com o Compose.</p>'+
-    '<p>Com o Docker no lugar, descompacte o <code>.zip</code> e suba a stack de dentro da pasta dos arquivos:</p>'+
+    '<p>Com o Docker no lugar, copie os arquivos gerados para uma pasta e suba a stack de dentro dela:</p>'+
     '<pre>docker compose up -d</pre>',
   'wish.h':'Wishlist',
   'wish.body':'<p>O que ainda não existe, na ordem em que faria sentido acontecer. Os marcos são versões, não datas: cada um só começa depois do anterior, porque depende dele. Hoje o repositório está no <b>v0.3</b> — a página, o servidor opcional que guarda a stack e a sobe no Docker, e a Configuração aplicada nos apps.</p>'+
-    '<p><s><b>v0.2</b> · Backend ligando o Hubstarr ao Docker</s> — feito: a página grava os arquivos e sobe a stack sem passar pelo <code>.zip</code>.</p>'+
+    '<p><s><b>v0.2</b> · Backend ligando o Hubstarr ao Docker</s> — feito: a página grava os arquivos e sobe a stack sozinha.</p>'+
     '<p><s><b>v0.3</b> · Configuração automática da stack pelo backend</s> — feito: as três partes da Configuração viram chamada de API pelo <b>Aplicar na stack</b>.</p>'+
     '<p><b>v0.4</b> · Custom formats e profiles por instância — a de 4K, a de anime e as demais nascem com o perfil de qualidade delas.</p>'+
     '<p><b>v0.5</b> · Compatibilidade com o TRaSH Guides — quality definitions, scores de custom format e as demais recomendações do guia saem prontas.</p>'+
@@ -755,8 +754,6 @@ const I18N = {
   'btn.copy':'Copiar',
   'btn.copied':'Copiado ✓',
   'btn.copyFail':'não deu para copiar',
-  'btn.zip':'Baixar .zip',
-  'btn.zipHint':'Descompacte e suba com "docker compose up -d". Sem Docker: curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh — no macOS/Windows, instale o Docker Desktop.',
   'btn.up':'Subir',
   'btn.upHint':'Grava os arquivos na pasta da stack e roda um docker compose up -d',
   'btn.down':'Derrubar',
@@ -958,11 +955,11 @@ const I18N = {
     '<p>Log out and back in for the group to take effect.</p>'+
     '<p><b>Windows and macOS</b> — or Linux, if you prefer a managed install with a GUI — get '+
     '<a href="https://docs.docker.com/desktop/" target="_blank" rel="noopener">Docker Desktop</a>, which ships with Compose.</p>'+
-    '<p>With Docker in place, unzip the <code>.zip</code> and bring the stack up from inside the files folder:</p>'+
+    '<p>With Docker in place, copy the generated files into a folder and bring the stack up from inside it:</p>'+
     '<pre>docker compose up -d</pre>',
   'wish.h':'Wishlist',
   'wish.body':'<p>What is not there yet, in the order it would make sense to happen. The milestones are versions, not dates: each one only starts after the previous, because it depends on it. The repository is at <b>v0.3</b> today — the page, the optional server that keeps the stack and brings it up on Docker, and the Configuration applied to the apps.</p>'+
-    '<p><s><b>v0.2</b> · A backend wiring Hubstarr to Docker</s> — done: the page writes the files and brings the stack up without going through the <code>.zip</code>.</p>'+
+    '<p><s><b>v0.2</b> · A backend wiring Hubstarr to Docker</s> — done: the page writes the files and brings the stack up on its own.</p>'+
     '<p><s><b>v0.3</b> · Automatic stack configuration from the backend</s> — done: all three parts of the Configuration become API calls through <b>Apply to the stack</b>.</p>'+
     '<p><b>v0.4</b> · Custom formats and profiles per instance — the 4K one, the anime one and the rest are born with their own quality profile.</p>'+
     '<p><b>v0.5</b> · Compatibility with the TRaSH Guides — quality definitions, custom format scores and the rest of the guide\'s recommendations come ready.</p>'+
@@ -1077,8 +1074,6 @@ const I18N = {
   'btn.copy':'Copy',
   'btn.copied':'Copied ✓',
   'btn.copyFail':'could not copy',
-  'btn.zip':'Download .zip',
-  'btn.zipHint':'Unzip it and bring the stack up with "docker compose up -d". No Docker yet: curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh — on macOS/Windows, install Docker Desktop.',
   'btn.up':'Bring up',
   'btn.upHint':'Writes the files to the stack folder and runs docker compose up -d',
   'btn.down':'Tear down',
@@ -1280,11 +1275,11 @@ const I18N = {
     '<p>Cierra la sesión y vuelve a entrar para que el grupo tenga efecto.</p>'+
     '<p><b>Windows y macOS</b> — o Linux, si prefieres una instalación gestionada con interfaz gráfica — instala '+
     '<a href="https://docs.docker.com/desktop/" target="_blank" rel="noopener">Docker Desktop</a>, que ya trae Compose.</p>'+
-    '<p>Con Docker en su sitio, descomprime el <code>.zip</code> y levanta la stack desde dentro de la carpeta de los archivos:</p>'+
+    '<p>Con Docker en su sitio, copia los archivos generados a una carpeta y levanta la stack desde dentro de ella:</p>'+
     '<pre>docker compose up -d</pre>',
   'wish.h':'Wishlist',
   'wish.body':'<p>Lo que todavía no existe, en el orden en que tendría sentido que ocurra. Los hitos son versiones, no fechas: cada uno solo empieza después del anterior, porque depende de él. Hoy el repositorio está en <b>v0.3</b> — la página, el servidor opcional que guarda la stack y la levanta en Docker, y la Configuración aplicada en las apps.</p>'+
-    '<p><s><b>v0.2</b> · Un backend que conecte Hubstarr con Docker</s> — hecho: la página graba los archivos y levanta la stack sin pasar por el <code>.zip</code>.</p>'+
+    '<p><s><b>v0.2</b> · Un backend que conecte Hubstarr con Docker</s> — hecho: la página graba los archivos y levanta la stack sola.</p>'+
     '<p><s><b>v0.3</b> · Configuración automática de la stack desde el backend</s> — hecho: las tres partes de la Configuración son llamadas de API por el <b>Aplicar en la stack</b>.</p>'+
     '<p><b>v0.4</b> · Custom formats y profiles por instancia — la de 4K, la de anime y las demás nacen con su perfil de calidad.</p>'+
     '<p><b>v0.5</b> · Compatibilidad con TRaSH Guides — quality definitions, scores de custom format y el resto de las recomendaciones de la guía ya listas.</p>'+
@@ -1399,8 +1394,6 @@ const I18N = {
   'btn.copy':'Copiar',
   'btn.copied':'Copiado ✓',
   'btn.copyFail':'no se pudo copiar',
-  'btn.zip':'Descargar .zip',
-  'btn.zipHint':'Descomprímelo y levanta la stack con "docker compose up -d". Sin Docker: curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh — en macOS/Windows, instala Docker Desktop.',
   'btn.up':'Levantar',
   'btn.upHint':'Escribe los archivos en la carpeta de la stack y ejecuta docker compose up -d',
   'btn.down':'Derribar',
@@ -3219,7 +3212,7 @@ function dupPaths(){
    compose e a senha já com hash. */
 /* Os arquivos próprios de um serviço. É lista porque o qBittorrent gera dois
    — a conf e as categorias —, e cada um vira um bind no compose, uma aba e um
-   arquivo no .zip. */
+   arquivo gravado pelo servidor. */
 const confsOf = s => s.conf || [];
 
 function buildQbit(list){
@@ -3413,72 +3406,12 @@ $('#copy').onclick = async e=>{
   e.target.textContent = t(ok ? 'btn.copied' : 'btn.copyFail');
   setTimeout(()=>e.target.textContent=t('btn.copy'), 1500);
 };
-/* ZIP mínimo (método "store", sem compressão) — evita dependências externas */
-const CRC_TABLE = (()=>{
-  const t=new Uint32Array(256);
-  for(let i=0;i<256;i++){ let c=i;
-    for(let k=0;k<8;k++) c = c&1 ? 0xEDB88320 ^ (c>>>1) : c>>>1;
-    t[i]=c>>>0; }
-  return t;
-})();
-const crc32 = bytes =>{
-  let c = 0xFFFFFFFF;
-  for(const b of bytes) c = CRC_TABLE[(c ^ b) & 0xFF] ^ (c>>>8);
-  return (c ^ 0xFFFFFFFF)>>>0;
-};
+/* Os arquivos da stack, na forma em que saem daqui — é o que o servidor grava.
 
-function makeZip(files){                       // files: [{name, text}]
-  const enc = new TextEncoder(), parts = [], central = [];
-  let offset = 0;
-
-  // data/hora MS-DOS
-  const d = new Date();
-  const time = (d.getHours()<<11) | (d.getMinutes()<<5) | (d.getSeconds()>>1);
-  const date = ((d.getFullYear()-1980)<<9) | ((d.getMonth()+1)<<5) | d.getDate();
-
-  files.forEach(f=>{
-    const name = enc.encode(f.name), data = enc.encode(f.text), crc = crc32(data);
-
-    const local = new DataView(new ArrayBuffer(30));
-    local.setUint32(0, 0x04034b50, true); local.setUint16(4, 20, true);
-    local.setUint16(6, 0, true);          local.setUint16(8, 0, true);   // store
-    local.setUint16(10, time, true);      local.setUint16(12, date, true);
-    local.setUint32(14, crc, true);
-    local.setUint32(18, data.length, true); local.setUint32(22, data.length, true);
-    local.setUint16(26, name.length, true); local.setUint16(28, 0, true);
-    parts.push(new Uint8Array(local.buffer), name, data);
-
-    const cen = new DataView(new ArrayBuffer(46));
-    cen.setUint32(0, 0x02014b50, true); cen.setUint16(4, 20, true);
-    cen.setUint16(6, 20, true);         cen.setUint16(8, 0, true);
-    cen.setUint16(10, 0, true);
-    cen.setUint16(12, time, true);      cen.setUint16(14, date, true);
-    cen.setUint32(16, crc, true);
-    cen.setUint32(20, data.length, true); cen.setUint32(24, data.length, true);
-    cen.setUint16(28, name.length, true);
-    cen.setUint32(42, offset, true);
-    central.push(new Uint8Array(cen.buffer), name);
-
-    offset += 30 + name.length + data.length;
-  });
-
-  const cenSize = central.reduce((n,p)=>n+p.length, 0);
-  const end = new DataView(new ArrayBuffer(22));
-  end.setUint32(0, 0x06054b50, true);
-  end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
-  end.setUint32(12, cenSize, true);     end.setUint32(16, offset, true);
-
-  return new Blob([...parts, ...central, new Uint8Array(end.buffer)],
-                  {type:'application/zip'});
-}
-
-/* Os arquivos da stack, na forma em que saem daqui: o .zip empacota, o
-   servidor grava. Um lugar só, para os dois nunca discordarem. */
-/* O `base` diz de qual raiz o caminho pende, e é o que o servidor obedece ao
+   O `base` diz de qual raiz o caminho pende, e é o que o servidor obedece ao
    gravar: `stack` é a pasta de onde o compose é rodado, `config` é o
    `BASE_CONFIG` do Ambiente — de onde o próprio compose monta as configurações
-   nos containers. O .zip ignora o campo e empacota a árvore inteira, que é como
-   ela sempre saiu daqui. */
+   nos containers. */
 function outFiles(){
   const files = [
     {name:'docker-compose.yml', text:plain()+'\n',     base:'stack'},
@@ -3493,17 +3426,6 @@ function outFiles(){
   return files;
 }
 
-$('#dl').onclick = async ()=>{
-  const stack = STACK;
-  // o hash da senha do qBittorrent é assíncrono: sem esperar por ele, o .zip
-  // pode sair com o "calculando…" no lugar da linha da senha
-  await refreshQbitHash();
-  const blob = makeZip(outFiles());
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download=`${stack}.zip`; a.click();
-  URL.revokeObjectURL(a.href);
-};
-
 $('#eTz').innerHTML = TIMEZONES.map(z=>`<option>${z}</option>`).join('');
 $('#mTp').innerHTML = TP_THEMES.map(v=>`<option>${v}</option>`).join('');
 
@@ -3515,7 +3437,8 @@ $('#langSel').onchange = e => setLang(e.target.value);
 /* ---------- servidor (opcional) ---------- */
 
 /* A página é a mesma com ou sem servidor: aberta do disco ela continua sendo o
-   protótipo de sempre, com o .zip e mais nada. `SERVER` só fica preenchido
+   protótipo de sempre: mostra os arquivos e deixa copiá-los, e nada mais.
+   `SERVER` só fica preenchido
    quando alguém responde em `api/health`, e cada caminho novo tem o antigo
    atrás dele. O servidor não gera nada — recebe pronto o que os geradores
    daqui montaram.
