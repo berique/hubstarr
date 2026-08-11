@@ -71,8 +71,10 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    `movies` e `music`) e `mm[família]` (Media Management mais a nomenclatura,
    cujos campos estão em `NAMING_FIELDS` — os formatos de episódio e de filme
   saem de fábrica com os do TRaSH Guides, variante do Jellyfin com id do TMDb).
-   `syncConfig()` o alinha com o `added` — e é chamado no `render()`, não só ao
-   abrir o modal: quem nunca abriu a Configuração tinha o `CONFIG` vazio, e o
+   `syncConfig()` o alinha com o `added` — e completa o que falta: chave nova do
+   `NAMING_FIELDS` ou do `mmDefault()` entra num `mm` já guardado, senão o banco
+   ficaria para sempre com a forma de uma versão anterior da página. Ele é
+   chamado no `render()`, não só ao abrir o modal: quem nunca abriu a Configuração tinha o `CONFIG` vazio, e o
    Subir não aplicava nomenclatura nem Media Management nenhum, porque não havia
    o que mandar.
 

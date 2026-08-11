@@ -2625,7 +2625,21 @@ function syncConfig(){
     if(svc(c.id).cdh && !st.cdh) st.cdh = {completed:true, failed:true};
   });
   const fams = [...new Set(arrList().map(a=>a.id))];
-  fams.forEach(id=>{ if(!CONFIG.mm[id]) CONFIG.mm[id] = mmDefault(id); });
+  fams.forEach(id=>{
+    if(!CONFIG.mm[id]) CONFIG.mm[id] = mmDefault(id);
+    /* Campo novo num `mm` já guardado: o banco pode ter a forma de uma versão
+       anterior da página, e sem isso ele nunca ganharia as chaves que faltam —
+       ficaria para sempre sem o formato de episódio diário, por exemplo. */
+    const padrao = mmDefault(id);
+    Object.keys(padrao).forEach(k=>{
+      if(k === 'naming'){
+        CONFIG.mm[id].naming = CONFIG.mm[id].naming || {};
+        Object.entries(padrao.naming).forEach(([nk, nv])=>{
+          if(!(nk in CONFIG.mm[id].naming)) CONFIG.mm[id].naming[nk] = nv;
+        });
+      } else if(!(k in CONFIG.mm[id])) CONFIG.mm[id][k] = padrao[k];
+    });
+  });
   Object.keys(CONFIG.mm).forEach(id=>{ if(!fams.includes(id)) delete CONFIG.mm[id]; });
   /* Instância nova entra em todos os formatos da família — o Episode Naming
      inteiro vale para ela até que alguém desmarque —, e a que saiu some deles.
