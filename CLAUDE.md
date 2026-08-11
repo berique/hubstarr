@@ -43,7 +43,13 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    `webAuth` + `conf` (qBittorrent: usuário/senha/API key no modal dele e os
    dois arquivos dele — nenhum dos dois é montado, o servidor os escreve depois
    de subir; ver `patch` abaixo), `cdh` (SABnzbd: gerenciamento de
-   downloads concluídos na Configuração), `noVol`, `derived` (Bazarr herda as
+   downloads concluídos na Configuração), `dlKey` (SABnzbd: a API key no modal
+   dele — vazia significa "acompanhe a `${STARR_APIKEY}`", e o botão Gerar cria
+   outra pelo mesmo método, 16 bytes em hexadecimal; com uma própria, ela vai ao
+   `.env` como `<CNAME>_API_KEY` em vez de virar texto solto no compose),
+   `dlDirs` (SABnzbd: as duas pastas dele — o que está baixando e o que
+   terminou — em vez da subpasta única; as duas são montadas e viram o
+   `download_dir` e o `complete_dir` do `sabnzbd.ini`), `noVol`, `derived` (Bazarr herda as
    subpastas das instâncias de Radarr/Sonarr presentes), `site` (endereço do
    projeto, que é o que põe o serviço na grade dos Créditos) e `credit` (nome
    a creditar quando ele difere do `name` — o FlareSolverr roda o Byparr).

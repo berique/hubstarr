@@ -110,6 +110,12 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   contenedor, haciendo el cambio y volviéndolo a subir, porque él reescribe el
   archivo entero al salir. Sin servidor, copia el contenido de la pestaña a la
   ruta indicada arriba en ella.
+- **sabnzbd.ini de SABnzbd**: su **API key** es la misma de la stack — el campo
+  del modal muestra la que vale, y el **Generar** crea otra por el mismo método
+  (16 bytes en hexadecimal), que entonces va al `.env` —, y las carpetas de
+  **descarga en progreso** y **descarga completa** se vuelven el `download_dir` y
+  el `complete_dir`. Las tres claves se escriben en el `sabnzbd.ini` que creó el
+  propio app, después de levantar la stack, como en qBittorrent.
 - **categories.json de qBittorrent**: junto a la conf sale un segundo archivo
   con las categorías que la **Configuración** dio a cada *arr, ya creadas
   cuando arranca. Cada una recibe su subcarpeta dentro de la ruta de descarga

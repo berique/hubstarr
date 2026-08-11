@@ -104,6 +104,12 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   escreve essas chaves na conf que o app criou — parando o container, fazendo a
   troca e subindo de novo, porque ele reescreve o arquivo inteiro ao sair. Sem
   servidor, é copiar o conteúdo da aba para o caminho indicado no topo dela.
+- **sabnzbd.ini do SABnzbd**: a **API key** dele é a mesma da stack — o campo no
+  modal mostra a que vale, e o **Gerar** cria outra pelo mesmo método (16 bytes
+  em hexadecimal), que então vai para o `.env` —, e as pastas de **download em
+  progresso** e **download completo** viram o `download_dir` e o `complete_dir`.
+  As três chaves são escritas no `sabnzbd.ini` que o próprio app criou, depois de
+  a stack subir, como no qBittorrent.
 - **categories.json do qBittorrent**: junto da conf sai um segundo arquivo com
   as categorias que a **Configuração** deu a cada *arr, já criadas quando ele
   sobe. Cada uma ganha a subpasta dela dentro do caminho de download — mesma

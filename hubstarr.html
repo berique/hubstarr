@@ -368,6 +368,7 @@ sudo sh get-docker.sh</pre>
         <button class="tab" data-tab="nginx">nginx.conf</button>
         <button class="tab" data-tab="qbt" style="display:none">qBittorrent.conf</button>
         <button class="tab" data-tab="qbtcat" style="display:none">categories.json</button>
+        <button class="tab" data-tab="sab" style="display:none">sabnzbd.ini</button>
         <button class="tab" data-tab="jf" style="display:none">network.xml</button>
       </span>
       <span id="stat"></span>
@@ -377,6 +378,7 @@ sudo sh get-docker.sh</pre>
     <pre id="outNginx" style="display:none"></pre>
     <pre id="outQbt" style="display:none"></pre>
     <pre id="outQbtCat" style="display:none"></pre>
+    <pre id="outSab" style="display:none"></pre>
     <pre id="outJf" style="display:none"></pre>
     <div class="bar">
       <span class="hint" id="summary"></span>
@@ -569,8 +571,15 @@ sudo sh get-docker.sh</pre>
       </div>
       <div class="row" id="mPortRow" data-help="m.hostPortWhy"><label for="mPort" data-i18n="m.hostPort">Porta no host</label>
         <input type="text" id="mPort" placeholder="5055"></div>
+      <div class="row" id="mDlInRow" data-help="m.dlInWhy"><label for="mDlIn" data-i18n="m.dlIn">Download em progresso</label>
+        <input type="text" id="mDlIn"></div>
+      <div class="row" id="mDlDoneRow" data-help="m.dlDoneWhy"><label for="mDlDone" data-i18n="m.dlDone">Download completo</label>
+        <input type="text" id="mDlDone"></div>
       <div class="row" id="mDlKeyRow" data-help="m.dlKeyWhy"><label for="mDlKey" data-i18n="m.dlKey">API key</label>
-        <input type="text" id="mDlKey" class="fmt"></div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="mDlKey" class="fmt">
+          <button type="button" id="mDlKeyGen" data-i18n="btn.gen">Gerar</button>
+        </div></div>
       <div class="row" id="mSolverRow" data-help="m.solverWhy"><label data-i18n="m.indexers">Indexadores</label>
         <label class="check"><input type="checkbox" id="mSolver"> <span data-i18n="m.solver"></span></label>
       </div>
@@ -935,6 +944,10 @@ const I18N = {
   'm.network':'Rede',
   'm.indexers':'Indexadores',
   'm.solver':'Incluir o FlareSolverr na stack',
+  'm.dlIn':'Download em progresso',
+  'm.dlInWhy':'Pasta em que o SABnzbd guarda o que ainda está baixando. Ela é montada no container e vai para o <code>download_dir</code> do <b>sabnzbd.ini</b>. Deixe-a na mesma partição da pasta de completos, senão mover ao terminar vira copiar.',
+  'm.dlDone':'Download completo',
+  'm.dlDoneWhy':'Pasta em que o download termina, e de onde os *arr importam. Vai para o <code>complete_dir</code> do <b>sabnzbd.ini</b>. Ela fica dentro da árvore de downloads que os *arr também enxergam — é o que permite o hardlink na importação.',
   'm.dlKey':'API key',
   'm.dlKeyWhy':'A chave da API deste cliente, que os *arr usam para falar com ele. Diferente da senha da interface, ela é o próprio app que gera na primeira subida — copie de <i>Config → General</i> e cole aqui. Ela não vai para arquivo nenhum: serve só para o <b>Aplicar na stack</b> da Configuração registrar o cliente nos *arr.',
   'm.solverWhy':'Vários indexadores ficam atrás do desafio anti-bot da Cloudflare, e o Prowlarr sozinho esbarra nele: a busca volta vazia ou com erro. O <b>FlareSolverr</b> resolve o desafio num navegador headless e devolve a página ao Prowlarr. Marcando aqui, ele entra na stack junto — e o <b>Subir</b> já o registra no Prowlarr, em <i>Settings → Indexers → Indexer Proxies</i>, com a etiqueta <b>flaresolverr</b>. O que sobra é marcar essa etiqueta nos indexadores que precisam dele: é o Prowlarr que casa proxy e indexador por etiqueta, e quais precisam só você sabe. A imagem usada é a do <b>Byparr</b>, um substituto direto e mais atual, com a mesma API e a mesma porta. Sem indexador protegido pela Cloudflare, dá para deixar desmarcado.',
@@ -1003,6 +1016,8 @@ const I18N = {
   'env.phUser':'usuario',
   'env.phPass':'senha',
   'env.phCountry':'Brazil',
+  'sab.head':'chaves do SABnzbd que o Hubstarr governa',
+  'sab.key':'a API key é a mesma da stack, a menos que você gere outra no modal dele — é por ela que os *arr falam com o SABnzbd',
   'qbt.head':'configuração inicial do qBittorrent, gerada pelo Hubstarr',
   'qbt.patch':p=>`o servidor escreve estas chaves em ${p} depois de subir a stack; sem servidor, copie o arquivo para lá`,
   'qbt.hashing':'calculando o hash da senha…',
@@ -1325,6 +1340,10 @@ const I18N = {
   'm.network':'Network',
   'm.indexers':'Indexers',
   'm.solver':'Add FlareSolverr to the stack',
+  'm.dlIn':'Downloading',
+  'm.dlInWhy':'Folder where SABnzbd keeps what is still downloading. It is mounted in the container and lands in <code>download_dir</code> in <b>sabnzbd.ini</b>. Keep it on the same partition as the completed folder, or moving on finish turns into copying.',
+  'm.dlDone':'Completed download',
+  'm.dlDoneWhy':'Folder where the download ends up, and where the *arr apps import from. It lands in <code>complete_dir</code> in <b>sabnzbd.ini</b>. It sits inside the downloads tree the *arr apps also see — that is what allows hardlinking on import.',
   'm.dlKey':'API key',
   'm.dlKeyWhy':'This client\'s API key, the one the *arr apps use to talk to it. Unlike the web UI password, the app itself generates it on first boot — copy it from <i>Config → General</i> and paste it here. It goes into no file: it only serves the Configuration\'s <b>Apply to the stack</b>, which registers the client in every *arr.',
   'm.solverWhy':'Plenty of indexers sit behind Cloudflare\'s anti-bot challenge, and Prowlarr alone runs straight into it: searches come back empty or failing. <b>FlareSolverr</b> solves the challenge in a headless browser and hands the page back to Prowlarr. Tick this and it joins the stack — and <b>Bring up</b> already registers it in Prowlarr, under <i>Settings → Indexers → Indexer Proxies</i>, with the <b>flaresolverr</b> tag. What is left is putting that tag on the indexers that need it: Prowlarr matches proxy to indexer by tag, and which ones need it only you know. The image behind it is <b>Byparr</b>, a drop-in, better-maintained replacement with the same API and the same port. With no Cloudflare-protected indexer, you can leave it off.',
@@ -1393,6 +1412,8 @@ const I18N = {
   'env.phUser':'username',
   'env.phPass':'password',
   'env.phCountry':'Brazil',
+  'sab.head':'SABnzbd keys Hubstarr governs',
+  'sab.key':'the API key is the stack\'s, unless you generate another one in its modal — it is how the *arr apps talk to SABnzbd',
   'qbt.head':'qBittorrent initial configuration, generated by Hubstarr',
   'qbt.patch':p=>`the server writes these keys into ${p} once the stack is up; with no server, copy the file there yourself`,
   'qbt.hashing':'hashing the password…',
@@ -1715,6 +1736,10 @@ const I18N = {
   'm.network':'Red',
   'm.indexers':'Indexadores',
   'm.solver':'Incluir FlareSolverr en la stack',
+  'm.dlIn':'Descarga en progreso',
+  'm.dlInWhy':'Carpeta en la que SABnzbd guarda lo que todavía está descargando. Se monta en el contenedor y va al <code>download_dir</code> del <b>sabnzbd.ini</b>. Déjala en la misma partición que la de completados, o mover al terminar se vuelve copiar.',
+  'm.dlDone':'Descarga completa',
+  'm.dlDoneWhy':'Carpeta en la que termina la descarga, y desde donde importan los *arr. Va al <code>complete_dir</code> del <b>sabnzbd.ini</b>. Queda dentro del árbol de descargas que los *arr también ven — es lo que permite el hardlink al importar.',
   'm.dlKey':'API key',
   'm.dlKeyWhy':'La clave de API de este cliente, la que los *arr usan para hablar con él. A diferencia de la contraseña de la interfaz, la genera el propio app en el primer arranque — cópiala de <i>Config → General</i> y pégala aquí. No va a ningún archivo: sirve solo para el <b>Aplicar en la stack</b> de la Configuración, que registra el cliente en cada *arr.',
   'm.solverWhy':'Varios indexadores están detrás del desafío anti-bot de Cloudflare, y Prowlarr solo choca con él: la búsqueda vuelve vacía o con error. <b>FlareSolverr</b> resuelve el desafío en un navegador headless y le devuelve la página a Prowlarr. Al marcarlo, entra en la stack junto — y el <b>Levantar</b> ya lo registra en Prowlarr, en <i>Settings → Indexers → Indexer Proxies</i>, con la etiqueta <b>flaresolverr</b>. Lo que queda es poner esa etiqueta en los indexadores que lo necesitan: Prowlarr casa proxy e indexador por etiqueta, y cuáles lo necesitan solo lo sabes tú. La imagen que usa es la de <b>Byparr</b>, un reemplazo directo y más actual, con la misma API y el mismo puerto. Sin ningún indexador protegido por Cloudflare, se puede dejar sin marcar.',
@@ -1783,6 +1808,8 @@ const I18N = {
   'env.phUser':'usuario',
   'env.phPass':'contraseña',
   'env.phCountry':'Brazil',
+  'sab.head':'claves de SABnzbd que Hubstarr gobierna',
+  'sab.key':'la API key es la de la stack, salvo que generes otra en su modal — es por ella que los *arr hablan con SABnzbd',
   'qbt.head':'configuración inicial de qBittorrent, generada por Hubstarr',
   'qbt.patch':p=>`el servidor escribe estas claves en ${p} después de levantar la stack; sin servidor, copia el archivo ahí`,
   'qbt.hashing':'calculando el hash de la contraseña…',
@@ -1865,7 +1892,9 @@ const SERVICES = [
   {id:'bazarr',   name:'Bazarr',    port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr'], tp:true, site:'https://www.bazarr.media'},
   {id:'qbittorrent',name:'qBittorrent',port:8181, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true, webAuth:true, publish:true, tp:true, conf:[{host:'qBittorrent.conf', target:'/config/qBittorrent/qBittorrent.conf', pane:'#outQbt', tab:'qbt', patch:'qbit'},
           {host:'categories.json', target:'/config/qBittorrent/categories.json', pane:'#outQbtCat', tab:'qbtcat', patch:'qbitCats'}], site:'https://www.qbittorrent.org'},
-  {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true, cdh:true, dlKey:true, tp:true, site:'https://sabnzbd.org'},
+  {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true, cdh:true, dlKey:true, dlDirs:true, tp:true,
+   conf:[{host:'sabnzbd.ini', target:'/config/sabnzbd.ini', pane:'#outSab', tab:'sab', patch:'sab'}],
+   site:'https://sabnzbd.org'},
   {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true, tp:true,
    conf:[{host:'config/config/network.xml', target:'/config/config/network.xml', pane:'#outJf', tab:'jf'}], site:'https://jellyfin.org'},
   {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5', publish:true, site:'https://github.com/seerr-team/seerr'},
@@ -1922,6 +1951,23 @@ const qbitKeyFrom = k => 'qbt_' + Array.from(String(k).slice(0, 28).padEnd(28, '
   ch => QBIT_ALPHA[parseInt(ch, 36) % QBIT_ALPHA.length]).join('');
 // vazio no DEFAULTS = "acompanhe a chave da stack"
 const qbitKey = ()=> DEFAULTS.qbitKey || qbitKeyFrom(DEFAULTS.apiKey);
+/* A chave do SABnzbd é a da stack, e o campo do modal só a substitui quando
+   alguém gera outra ali — vazio significa "acompanhe a ${STARR_APIKEY}". O
+   formato é o mesmo dela: 16 bytes em hexadecimal. */
+const sabKey = a => (a && a.dlKey) || DEFAULTS.apiKey;
+const sabKeyVar = a => a && a.dlKey ? `\${${envBase(a)}_API_KEY}` : '${STARR_APIKEY}';
+
+/* As duas pastas do SABnzbd, como caminho do host: a de download em progresso
+   e a do que já terminou. Guardadas com a variável na frente quando saem da
+   base, para o `.env` continuar mandando nelas. */
+const DL_IN_DEF   = '${DOWNLOAD_BASE}/usenet/incomplete';
+const DL_DONE_DEF = '${DOWNLOAD_BASE}/usenet/complete';
+const dlIn   = a => a.dlIn   || DL_IN_DEF;
+const dlDone = a => a.dlDone || DL_DONE_DEF;
+// o mesmo caminho visto de dentro do container, onde `${DOWNLOAD_BASE}` é /downloads
+const inContainer = (p, queda) => p.startsWith('${DOWNLOAD_BASE}')
+  ? '/downloads' + p.slice('${DOWNLOAD_BASE}'.length)
+  : '/downloads/' + queda;
 let qbitHash = {pass:null, value:''};
 const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
 
@@ -2085,7 +2131,8 @@ const stackDir = () => (SERVER && SERVER.dir) ? SERVER.dir.replace(/\/+$/, '') :
 
 const publishes = a => !!svc(a.id).publish;
 // a porta publicada vira variável do .env, como as do nginx
-const portVar = a => cname(a).toUpperCase().replace(/[^A-Z0-9]/g, '_') + '_PORT';
+const envBase = a => cname(a).toUpperCase().replace(/[^A-Z0-9]/g, '_');
+const portVar = a => envBase(a) + '_PORT';
 const hostPortOf = a => String(a.hostPort || svc(a.id).port);
 const route = a => '/'+cname(a);
 // endereço pelo qual o serviço vai ser acessado, passando pelo proxy;
@@ -2115,6 +2162,20 @@ const VARS = () => ({BASE_MEDIA:DEFAULTS.data, DOWNLOAD_BASE:DEFAULTS.dl,
 // troca ${BASE_MEDIA} pelo caminho de verdade — quem digita a variável vê o
 // valor dela na hora, e o compose continua saindo com a variável
 const expandVars = v => v.replace(/\$\{([A-Z_]+)\}/g, (m, name) => VARS()[name] ?? m);
+/* Caminho guardado ↔ caminho mostrado: o campo mostra o valor real das bases, e
+   o que fica guardado traz a variável de volta na frente — é ela que o `.env`
+   manda, e trocar a base do Ambiente move a pasta junto. */
+const varsToReal = expandVars;
+function realToVars(v){
+  const p = String(v).trim().replace(/\/+$/, '');
+  const vars = VARS();
+  for(const nome of ['DOWNLOAD_BASE', 'BASE_MEDIA', 'BASE_CONFIG']){
+    const base = vars[nome];
+    if(base && (p === base || p.startsWith(base + '/')))
+      return '${' + nome + '}' + p.slice(base.length);
+  }
+  return p;
+}
 // a base de dados do serviço, já resolvida
 const baseOf = s => s.dlClient ? DEFAULTS.dl : DEFAULTS.data;
 // a mesma base como variável do .env, que é o que o campo mostra
@@ -2190,7 +2251,7 @@ const locked = id => !isMulti(id) && has(id);
 const defCfg = id => ({id, title:svc(id).name, hw:'cpu', tpv:'std', tpt:TP_THEME_DEF,
                        data:svc(id).mdir||'', abs:'', libs:[], vpn:false,
                        // quem aceita o resolvedor de desafios já nasce com ele marcado
-                       solver:!!svc(id).solver, dlKey:'',
+                       solver:!!svc(id).solver, dlKey:'', dlIn:'', dlDone:'',
                        hostPort: svc(id).publish ? String(svc(id).port) : ''});
 
 /* ---------- combobox ---------- */
@@ -2417,7 +2478,15 @@ function openModal(id, key){
   $('#mPortRow').style.display = s.publish ? 'grid' : 'none';
   if(s.publish){ $('#mPort').value = cur.hostPort || s.port; $('#mPort').placeholder = s.port; }
   $('#mDlKeyRow').style.display = s.dlKey ? 'grid' : 'none';
-  if(s.dlKey) $('#mDlKey').value = cur.dlKey || '';
+  // vazio no `dlKey` significa "a chave da stack": o campo mostra a que vale
+  if(s.dlKey) $('#mDlKey').value = sabKey(cur);
+  $('#mDlInRow').style.display = $('#mDlDoneRow').style.display = s.dlDirs ? 'grid' : 'none';
+  if(s.dlDirs){
+    $('#mDlIn').value   = varsToReal(dlIn(cur));
+    $('#mDlDone').value = varsToReal(dlDone(cur));
+  }
+  // com as duas pastas próprias, a subpasta genérica de downloads não se aplica
+  if(s.dlDirs) $('#mDataRow').style.display = 'none';
   $('#mVpnCfg').style.display = s.vpnCfg ? 'block' : 'none';
   if(s.vpnCfg){
     $('#gProv').value=DEFAULTS.vpnProv; $('#gType').value=DEFAULTS.vpnType;
@@ -2508,6 +2577,8 @@ function tpvIco(s){
   $('#mTpvIco').innerHTML = icoHtml(s, '', icoKey(s.id, v));
   $('#mTpvIco').title = t('m.tpv') + ': ' + t('m.tpv' + tpvKey(v));
 }
+// mesma receita da chave da stack: 16 bytes em hexadecimal
+$('#mDlKeyGen').onclick = ()=> $('#mDlKey').value = randKey();
 $('#mTpv').addEventListener('change', ()=>{
   const id = editing ? byKey(editing).id : picked;
   if(id && svc(id).tpAddon) tpvIco(svc(id));
@@ -2549,7 +2620,11 @@ $('#mSave').onclick = ()=>{
                libs: s.library ? libsOf() : [],
                vpn: s.vpn && $('#mVpn').checked,
                solver: !!s.solver && $('#mSolver').checked,
-               dlKey: s.dlKey ? $('#mDlKey').value.trim() : '',
+               // igual à chave da stack = "acompanhe a stack", e não uma cópia
+               dlKey: s.dlKey && $('#mDlKey').value.trim() !== DEFAULTS.apiKey
+                        ? $('#mDlKey').value.trim() : '',
+               dlIn:   s.dlDirs ? realToVars($('#mDlIn').value.trim())   : '',
+               dlDone: s.dlDirs ? realToVars($('#mDlDone').value.trim()) : '',
                hostPort: s.publish ? ($('#mPort').value.trim() || String(s.port)) : ''};
 
   if(s.publish){
@@ -3405,7 +3480,8 @@ function build(){
       if(s.id==='qbittorrent')
         L.push(`      - <span class="v">WEBUI_PORT=${s.port}</span>`);
       if(APIKEY_ENV[s.id])
-        L.push(`      - <span class="v">${APIKEY_ENV[s.id]}=\${${APIKEY_VAR}}</span>`);
+        L.push(`      - <span class="v">${APIKEY_ENV[s.id]}=${
+          s.dlKey ? sabKeyVar(a) : '${'+APIKEY_VAR+'}'}</span>`);
     }
     if(!s.noVol){
       // sintaxe longa: bind mount com propagação rslave
@@ -3427,6 +3503,10 @@ function build(){
       if(s.derived){
         // acompanha as pastas das instâncias de radarr/sonarr já adicionadas
         derivedMounts(s).forEach(m=>bind(m.source, '/data/'+m.name));
+      } else if(s.dlDirs){
+        // duas pastas próprias: o que está baixando e o que já terminou
+        bind(dlIn(a),   inContainer(dlIn(a),   'incomplete'));
+        bind(dlDone(a), inContainer(dlDone(a), 'complete'));
       } else if(s.media){
         bind(dataPath(a),
           (s.dlClient ? '/downloads' : '/data') + (a.data?'/'+a.data:''));
@@ -3570,6 +3650,9 @@ function buildEnv(list){
     E.push(``);
     E.push(`<span class="c"># ${t('env.secApi')}</span>`);
     E.push(`<span class="k">${APIKEY_VAR}</span>=<span class="v">${DEFAULTS.apiKey}</span>`);
+    // quem gerou uma chave própria no modal dele ganha a variável dele
+    list.filter(a=>svc(a.id).dlKey && a.dlKey).forEach(a=>
+      E.push(`<span class="k">${envBase(a)}_API_KEY</span>=<span class="v">${a.dlKey}</span>`));
   }
   if(DEFAULTS.tls){
     E.push(``);
@@ -3682,6 +3765,35 @@ function buildQbit(list){
   return Q.join('\n');
 }
 
+/* As chaves que o Hubstarr põe no `sabnzbd.ini` — a chave da API e as duas
+   pastas, no caminho em que o container as enxerga. Fonte única do painel e do
+   que o servidor grava, como no qBittorrent. */
+function sabPairs(a){
+  return [['misc', [
+    ['api_key',      sabKey(a)],
+    ['download_dir', inContainer(dlIn(a),   'incomplete')],
+    ['complete_dir', inContainer(dlDone(a), 'complete')],
+  ]]];
+}
+
+function buildSab(list){
+  const a = list.find(x=>x.id === 'sabnzbd');
+  if(!a) return '';
+  const S = [];
+  const c = txt => `<span class="c"># ${txt}</span>`;
+  S.push(c(`${STACK} — ${t('sab.head')}`));
+  S.push(c(t('qbt.patch', `${cfgReal(a)}/sabnzbd.ini`)));
+  sabPairs(a).forEach(([sec, pares])=>{
+    S.push(``);
+    S.push(`<span class="k">[${sec}]</span>`);
+    pares.forEach(([k, v])=>
+      S.push(`<span class="k">${k}</span> = <span class="v">${v}</span>`));
+  });
+  S.push(``);
+  S.push(c(t('sab.key')));
+  return S.join('\n');
+}
+
 /* categories.json do qBittorrent: as categorias que a Configuração deu a cada
    *arr, já criadas quando ele sobe. Cada uma ganha a subpasta dela dentro do
    caminho de download — mesma partição, então o *arr continua conseguindo
@@ -3782,7 +3894,8 @@ function render(){
   $('#outEnv').innerHTML = buildEnv(list);
   $('#outNginx').innerHTML = buildNginx(list);
   // abas de config: uma por serviço que gera arquivo próprio
-  const confs = {qbt:buildQbit(list), qbtcat:buildQbitCats(list), jf:buildJellyfin(list)};
+  const confs = {qbt:buildQbit(list), qbtcat:buildQbitCats(list), sab:buildSab(list),
+                 jf:buildJellyfin(list)};
   Object.entries(confs).forEach(([k, txt])=>{
     $(PANES[k]).innerHTML = txt;
     $(`.tab[data-tab="${k}"]`).style.display = txt ? '' : 'none';
@@ -3801,7 +3914,7 @@ function render(){
 
 let tab = 'yml';
 const PANES = {yml:'#out', env:'#outEnv', nginx:'#outNginx', qbt:'#outQbt',
-               qbtcat:'#outQbtCat', jf:'#outJf'};
+               qbtcat:'#outQbtCat', sab:'#outSab', jf:'#outJf'};
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   tab = t.dataset.tab;
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on', x===t));
@@ -3962,6 +4075,7 @@ function outDirs(){
    a página — o servidor só grava chave por chave, preservando o resto do
    arquivo. */
 const PATCH_DATA = {
+  sab:      a => ({format:'ini',  sections: sabPairs(a)}),
   // INI: seções com pares na ordem em que a página as quer
   qbit:     a => ({format:'ini',  sections: qbitPairs(a)}),
   // JSON: um objeto por categoria, que o servidor sobrepõe ao que já existe
@@ -4341,7 +4455,9 @@ function applyPayload(){
                  conhece o campo, e é o servidor quem decide pelo schema. */
               user: c.id==='qbittorrent' ? DEFAULTS.qbitUser : '',
               pass: c.id==='qbittorrent' ? DEFAULTS.qbitPass : '',
-              apiKey: c.id==='qbittorrent' ? qbitKey() : (c.dlKey || ''),
+              // a do SABnzbd acompanha a stack quando o modal não gerou outra
+              apiKey: c.id==='qbittorrent' ? qbitKey()
+                    : c.id==='sabnzbd'     ? sabKey(c) : (c.dlKey || ''),
               cats, cdh: st.cdh || null};
     })
   };
