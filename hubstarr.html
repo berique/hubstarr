@@ -718,8 +718,8 @@ const I18N = {
   'cfg.q.specialsFolder':'Nome da pasta dos especiais — a temporada 0 da série.',
   'cfg.q.standardMovie':()=>'Nome do arquivo do filme depois de importado. O padrão já segue o TRaSH Guides, na variante do Jellyfin com o id do TMDb.<br>'+t('cfg.vars.radarr'),
   'cfg.q.movieFolder':'Nome da pasta de cada filme dentro da biblioteca. Só valem os tokens do filme — nada de qualidade ou MediaInfo, que são do arquivo.<br><b>{Movie Title}</b> — título do filme<br><b>{Release Year}</b> — ano de lançamento<br><b>{ImdbId}</b>, <b>{TmdbId}</b> — identificadores; escritos como <b>{imdb-{ImdbId}}</b> somem quando o filme não tem o id, e ajudam o Jellyfin a casar o filme.',
-  'cfg.warnScope':'Cada formato precisa de pelo menos uma instância',
-  'cfg.q.perInst':'Quais instâncias desta família recebem este formato. O que ficar desmarcado não é apagado lá: aquela instância simplesmente mantém o formato que já tem, porque o campo é obrigatório no app. Por isso também não dá para desmarcar todas.',
+  'cfg.warnScope':'O formato padrão precisa de pelo menos uma instância',
+  'cfg.q.perInst':'Quais instâncias desta família recebem este formato. De fábrica todas ficam no <b>Episódio padrão</b>, e os outros formatos saem vazios — a instância que ficar de fora simplesmente mantém o formato que já tem no app, em vez de perdê-lo. Só o formato padrão exige pelo menos uma instância, porque ele é obrigatório lá.',
   'cfg.q.useExisting':'Marcado, os formatos de faixa e a pasta do álbum ficam disponíveis aqui — é o que o Lidarr faz: sem renomear, ele importa cada arquivo com o nome que já tinha e cuida só das pastas.',
   'cfg.q.standardTrack':()=>'Nome das faixas de álbuns de disco único; a extensão o Lidarr põe sozinho. A barra no meio do formato é que cria a pasta do álbum dentro da do artista: <i>{Album Title}/{track:00} - {Track Title}</i> → <i>Blood on the Tracks/01 - Tangled Up in Blue.flac</i>.<br>'+t('cfg.vars.lidarr'),
   'cfg.q.multiDiscTrack':()=>'Nome das faixas quando o lançamento tem mais de um disco — é o número do disco que separa faixas de mesma numeração: <i>{Album Title}/{medium:00}-{track:00} - {Track Title}</i>.<br>'+t('cfg.vars.lidarr'),
@@ -1046,8 +1046,8 @@ const I18N = {
   'cfg.q.specialsFolder':'Name of the specials folder — season 0 of the series.',
   'cfg.q.standardMovie':()=>'Name of the movie file once imported. The default already follows the TRaSH Guides, in the Jellyfin variant with the TMDb id.<br>'+t('cfg.vars.radarr'),
   'cfg.q.movieFolder':'Name of each movie folder inside the library. Only movie tokens work here — no quality or MediaInfo, those belong to the file.<br><b>{Movie Title}</b> — movie title<br><b>{Release Year}</b> — release year<br><b>{ImdbId}</b>, <b>{TmdbId}</b> — identifiers; written as <b>{imdb-{ImdbId}}</b> they vanish when the movie has no id, and they help Jellyfin match the movie.',
-  'cfg.warnScope':'Each format needs at least one instance',
-  'cfg.q.perInst':'Which instances of this family get this format. What you leave unticked is not cleared over there: that instance simply keeps the format it already has, because the field is mandatory in the app. That is also why you cannot untick them all.',
+  'cfg.warnScope':'The default format needs at least one instance',
+  'cfg.q.perInst':'Which instances of this family get this format. Out of the box they all sit on <b>Standard episode</b> and the other formats come empty — an instance left out simply keeps the format it already has in the app instead of losing it. Only the default format demands at least one instance, because it is mandatory over there.',
   'cfg.q.useExisting':'Ticked, the track formats and the album folder become available here — which is what Lidarr does: without renaming it imports each file under the name it already had and only manages the folders.',
   'cfg.q.standardTrack':()=>'Name for tracks of single-disc albums; Lidarr appends the extension itself. The slash inside the format is what creates the album folder within the artist one: <i>{Album Title}/{track:00} - {Track Title}</i> → <i>Blood on the Tracks/01 - Tangled Up in Blue.flac</i>.<br>'+t('cfg.vars.lidarr'),
   'cfg.q.multiDiscTrack':()=>'Name for tracks when the release spans more than one disc — the disc number is what tells apart tracks sharing a number: <i>{Album Title}/{medium:00}-{track:00} - {Track Title}</i>.<br>'+t('cfg.vars.lidarr'),
@@ -1372,8 +1372,8 @@ const I18N = {
   'cfg.q.specialsFolder':'Nombre de la carpeta de especiales — la temporada 0 de la serie.',
   'cfg.q.standardMovie':()=>'Nombre del archivo de la película una vez importada. El valor predeterminado ya sigue las TRaSH Guides, en la variante de Jellyfin con el id de TMDb.<br>'+t('cfg.vars.radarr'),
   'cfg.q.movieFolder':'Nombre de la carpeta de cada película dentro de la biblioteca. Solo sirven los tokens de la película — nada de calidad ni MediaInfo, que son del archivo.<br><b>{Movie Title}</b> — título de la película<br><b>{Release Year}</b> — año de estreno<br><b>{ImdbId}</b>, <b>{TmdbId}</b> — identificadores; escritos como <b>{imdb-{ImdbId}}</b> desaparecen cuando la película no tiene el id, y ayudan a que Jellyfin la reconozca.',
-  'cfg.warnScope':'Cada formato necesita al menos una instancia',
-  'cfg.q.perInst':'Qué instancias de esta familia reciben este formato. Lo que quede sin marcar no se borra allá: esa instancia simplemente conserva el formato que ya tiene, porque el campo es obligatorio en el app. Por eso tampoco se pueden desmarcar todas.',
+  'cfg.warnScope':'El formato predeterminado necesita al menos una instancia',
+  'cfg.q.perInst':'Qué instancias de esta familia reciben este formato. De fábrica todas quedan en <b>Episodio estándar</b> y los demás formatos salen vacíos — la instancia que quede fuera simplemente conserva el formato que ya tiene en el app, en vez de perderlo. Solo el formato predeterminado exige al menos una instancia, porque allá es obligatorio.',
   'cfg.q.useExisting':'Marcado, los formatos de pista y la carpeta del álbum quedan disponibles aquí — es lo que hace Lidarr: sin renombrar, importa cada archivo con el nombre que ya tenía y solo se ocupa de las carpetas.',
   'cfg.q.standardTrack':()=>'Nombre de las pistas de álbumes de un solo disco; la extensión la pone Lidarr. La barra dentro del formato es la que crea la carpeta del álbum dentro de la del artista: <i>{Album Title}/{track:00} - {Track Title}</i> → <i>Blood on the Tracks/01 - Tangled Up in Blue.flac</i>.<br>'+t('cfg.vars.lidarr'),
   'cfg.q.multiDiscTrack':()=>'Nombre de las pistas cuando el lanzamiento tiene más de un disco — el número del disco es lo que distingue pistas con la misma numeración: <i>{Album Title}/{medium:00}-{track:00} - {Track Title}</i>.<br>'+t('cfg.vars.lidarr'),
@@ -2457,7 +2457,7 @@ const NAMING_FIELDS = {
     {k:'colon',          type:'select', opts:COLON,   def:'smart'},
     {k:'multiEp',        type:'select', opts:MULTIEP, def:'extend', file:true},
     // formatos do TRaSH Guides, na variante do Jellyfin com id do TMDb
-    {k:'standardEp',     type:'fmt', file:true, perInst:true,
+    {k:'standardEp',     type:'fmt', file:true, perInst:true, perInstDef:true,
      def:'{Series CleanTitleWithoutYear} {(Series Year)} - S{season:00}E{episode:00} - {Episode CleanTitle:90} {[Custom Formats]}{[Quality Full]}{[Mediainfo AudioCodec}{ Mediainfo AudioChannels]}{[MediaInfo VideoDynamicRangeType]}{[Mediainfo VideoCodec]}{-Release Group}'},
     {k:'dailyEp',        type:'fmt', file:true, perInst:true,
      def:'{Series CleanTitleWithoutYear} {(Series Year)} - {Air-Date} - {Episode CleanTitle:90} {[Custom Formats]}{[Quality Full]}{[Mediainfo AudioCodec}{ Mediainfo AudioChannels]}{[MediaInfo VideoDynamicRangeType]}{[Mediainfo VideoCodec]}{-Release Group}'},
@@ -2494,6 +2494,10 @@ const namingDefault = id =>
    dentro do `naming` de propósito — é o que o banco já guarda inteiro, sem
    coluna nova. */
 const perInstFields = id => (NAMING_FIELDS[id]||[]).filter(f=>f.perInst).map(f=>f.k);
+/* O formato que a instância usa quando ninguém escolheu nada — no Sonarr, o
+   episódio padrão. É o único que exige pelo menos uma instância: os outros
+   podem ficar sem nenhuma, e aí o app mantém o que já tem neles. */
+const perInstDef = id => ((NAMING_FIELDS[id]||[]).find(f=>f.perInstDef)||{}).k;
 const scopeOf = id => (CONFIG.mm[id].naming.scope = CONFIG.mm[id].naming.scope || {});
 const mmDefault = id => ({hardlink:true, rename:true, perms:false, empty:false,
                           chmod:'755', chown:'', naming:namingDefault(id)});
@@ -2524,16 +2528,18 @@ function syncConfig(){
   const fams = [...new Set(arrList().map(a=>a.id))];
   fams.forEach(id=>{ if(!CONFIG.mm[id]) CONFIG.mm[id] = mmDefault(id); });
   Object.keys(CONFIG.mm).forEach(id=>{ if(!fams.includes(id)) delete CONFIG.mm[id]; });
-  // instância nova entra marcada em todos os formatos; a que saiu some deles
+  /* Instância nova entra no formato padrão da família e fora dos outros; a que
+     saiu some de todos. O formato padrão é obrigatório: se ficar sem nenhuma,
+     todas voltam para ele. */
   fams.forEach(id=>{
     const insts = added.filter(a=>a.id === id).map(cname);
-    const sc = scopeOf(id);
+    const sc = scopeOf(id), def = perInstDef(id);
     perInstFields(id).forEach(k=>{
       if(!sc[k]) sc[k] = {};
-      insts.forEach(key=>{ if(!(key in sc[k])) sc[k][key] = true; });
+      insts.forEach(key=>{ if(!(key in sc[k])) sc[k][key] = (k === def); });
       Object.keys(sc[k]).forEach(key=>{ if(!insts.includes(key)) delete sc[k][key]; });
-      // é obrigatório: sem nenhuma marcada, o formato não iria a lugar nenhum
-      if(insts.length && !insts.some(key=>sc[k][key])) insts.forEach(key=>sc[k][key] = true);
+      if(k === def && insts.length && !insts.some(key=>sc[k][key]))
+        insts.forEach(key=>sc[k][key] = true);
     });
     Object.keys(sc).forEach(k=>{ if(!perInstFields(id).includes(k)) delete sc[k]; });
   });
@@ -2830,9 +2836,10 @@ $('#cfgBody').onchange = e=>{
   }
   else if(d.kind === 'scope'){
     const sc = scopeOf(d.key)[d.opt];
-    // é obrigatório: o formato tem de ir para alguma instância, então a última
-    // marcada não desmarca
-    if(!el.checked && !Object.keys(sc).some(k=>k !== d.inst && sc[k])){
+    // o formato padrão da família é obrigatório: a última marcada nele não
+    // desmarca. Os outros podem ficar sem nenhuma — o app mantém os dele.
+    if(d.opt === perInstDef(d.key) && !el.checked &&
+       !Object.keys(sc).some(k=>k !== d.inst && sc[k])){
       el.checked = true;
       return warnCfg(t('cfg.warnScope'));
     }
