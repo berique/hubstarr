@@ -341,6 +341,12 @@ linha só — o `CHECK (id = 1)` é o que a mantém única), `instance` +
   objeto. Uma flag nova no `SERVICES` não exige migração — só acrescente à
   `COLUMNS` o que precisar de coluna de verdade.
 
+Tirar um serviço do catálogo não tira a instância dele do banco de quem já a
+tinha — o Heimdall foi um caso. Por isso o `applyState()` filtra o que voltou
+pelo `svc(id)`: sem isso, a página morre no primeiro render, procurando a cor de
+um serviço que não existe, e a lista some inteira. A linha sai da interface e,
+no primeiro `saveSettings()`, sai do banco junto.
+
 `load()` remonta `{added, defaults, config}` na forma exata que a página espera,
 e devolve `None` quando o banco ainda não tem nada guardado — assim a página
 fica com os próprios padrões em vez de recebê-los em branco de volta. Esse ida e
