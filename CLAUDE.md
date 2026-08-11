@@ -342,7 +342,7 @@ linha só — o `CHECK (id = 1)` é o que a mantém única), `instance` +
   `COLUMNS` o que precisar de coluna de verdade.
 
 Tirar um serviço do catálogo não tira a instância dele do banco de quem já a
-tinha — o Heimdall foi um caso. Por isso o `applyState()` filtra o que voltou
+tinha. Por isso o `applyState()` filtra o que voltou
 pelo `svc(id)`: sem isso, a página morre no primeiro render, procurando a cor de
 um serviço que não existe, e a lista some inteira. A linha sai da interface e,
 no primeiro `saveSettings()`, sai do banco junto.

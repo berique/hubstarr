@@ -3832,11 +3832,11 @@ function saveSettings(){
 
 function applyState(s){
   if(!s || !Array.isArray(s.added)) return false;
-  /* Serviço que saiu do catálogo continua no banco de quem já tinha a stack —
-     o Heimdall foi um. Sem este filtro, a primeira coisa que a página faz com
-     ele é procurar a cor de um serviço que não existe, e a lista inteira morre
-     no meio do render. A linha some da interface e, no primeiro `saveSettings`,
-     sai do banco junto com o resto. */
+  /* Serviço que saiu do catálogo continua no banco de quem já tinha a stack.
+     Sem este filtro, a primeira coisa que a página faz com ele é procurar a cor
+     de um serviço que não existe, e a lista inteira morre no meio do render. A
+     linha some da interface e, no primeiro `saveSettings`, sai do banco junto
+     com o resto. */
   added = s.added.filter(a=>{
     if(svc(a.id)) return true;
     console.warn(`Hubstarr: o serviço "${a.id}" não existe mais no catálogo; a ` +
