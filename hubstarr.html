@@ -3993,13 +3993,19 @@ const logLine = s =>{
   o.textContent += s + '\n';
   o.scrollTop = o.scrollHeight;
 };
+/* O Fechar fica desabilitado enquanto o trabalho corre: fechar o modal não
+   cancelaria nada — o servidor segue com o `docker compose` e com as chamadas
+   de API —, e some com o único lugar em que dá para acompanhar o que ele está
+   fazendo. Volta a valer quando o trabalho termina, dando certo ou não. */
 function openLog(title){
   $('#logTitle').textContent = title;
   $('#logOut').textContent = '';
   $('#logState').textContent = t('log.running');
+  $('#logClose').disabled = true;
   $('#logBack').classList.add('open');
 }
-$('#logClose').onclick = ()=> $('#logBack').classList.remove('open');
+const endLog = ()=> $('#logClose').disabled = false;
+$('#logClose').onclick = ()=>{ if(!$('#logClose').disabled) $('#logBack').classList.remove('open'); };
 
 /* Subir a stack baixa imagem: o servidor devolve o número do trabalho e a
    página vai buscando o que ele já escreveu. */
@@ -4011,6 +4017,7 @@ async function runJob(start, title){
   if(!head || !head.ok){
     logLine((head && head.error) || t('log.noServer'));
     $('#logState').textContent = t('log.fail');
+    endLog();
     return false;
   }
   let seen = 0;
@@ -4021,6 +4028,7 @@ async function runJob(start, title){
     j.log.slice(seen).forEach(logLine); seen = j.log.length;
     if(j.done){
       $('#logState').textContent = t(j.ok ? 'log.done' : 'log.fail');
+      endLog();
       return j.ok;
     }
   }

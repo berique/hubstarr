@@ -415,6 +415,13 @@ e devolve `None` quando o banco ainda não tem nada guardado — assim a página
 fica com os próprios padrões em vez de recebê-los em branco de volta. Esse ida e
 volta sem perda é o critério do modelo; ao mexer nele, é o que os testes cobrem.
 
+O modal do log — o **Subindo a stack**, o **Derrubando a stack** e o **Aplicando
+a Configuração** — trava o Fechar enquanto o trabalho corre: fechá-lo não
+cancelaria nada, porque quem roda o `docker compose` e as chamadas de API é o
+servidor, e sumiria com o único lugar em que dá para acompanhar. O `runJob()` o
+libera quando o trabalho termina, tendo dado certo ou não — inclusive quando ele
+nem começa, que é o caso do servidor fora do ar.
+
 Do lado da página, a seção `/* ---------- servidor (opcional) ---------- */`:
 `detectServer()` só faz algo em `http(s)://` e chama `openStack()`, que carrega
 o estado guardado — sem id nenhum, porque a stack é a do servidor.
