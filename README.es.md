@@ -334,9 +334,11 @@ y la redirección al https ya llevan el puerto elegido.
 
 La pestaña **nginx.conf** genera la configuración correspondiente, enrutando
 por subpath (`/sonarr`, `/radarr`…), un `location` por servicio. El archivo se
-monta en `./nginx.conf`, sobre el `/etc/nginx/conf.d/nginx.conf` del contenedor
-— la conf se genera con el compose, así que vive en la carpeta de la stack,
-junto a él, y no en el `BASE_CONFIG` — y cada app necesita su *base URL* igual
+monta en el `/etc/nginx/conf.d/nginx.conf` del contenedor, desde el `nginx.conf`
+de la carpeta de la stack — la conf se genera con el compose y vive junto a él,
+no en el `BASE_CONFIG`. Con servidor la ruta sale completa, porque es él quien
+sabe dónde vive la stack; sin servidor sale como `./nginx.conf`, relativa a la
+carpeta desde donde se ejecute el compose. Cada app necesita su *base URL* igual
 a
 su subpath. Ningún servicio se queda en la raíz: la `/` de la stack no tiene
 `location`, así que se entra por el subpath de cada app.

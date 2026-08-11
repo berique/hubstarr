@@ -329,9 +329,12 @@ redirect to https already carry the chosen port.
 
 The **nginx.conf** tab generates the matching configuration, routing by subpath
 (`/sonarr`, `/radarr`…), one `location` per service. The file is mounted at
-`./nginx.conf`, over the container's `/etc/nginx/conf.d/nginx.conf` — the conf
-is generated along with the compose file, so it lives in the stack folder next
-to it, not in `BASE_CONFIG` —, and each app needs its *base URL* to match its
+the container's `/etc/nginx/conf.d/nginx.conf`, from the `nginx.conf` in the
+stack folder — the conf is generated along with the compose file and lives next
+to it, not in `BASE_CONFIG`. With a server the path is spelled out, since it is
+the one that knows where the stack lives; with no server it comes out as
+`./nginx.conf`, relative to wherever the compose file is run from. Each app
+needs its *base URL* to match its
 subpath. No service sits at the root: the stack's `/` has no `location`, so it
 is through each app's subpath that you get in.
 

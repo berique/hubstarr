@@ -1944,6 +1944,10 @@ const cname = a => slug(a.title) || a.id;   // container_name / service key / pa
 // caminho no nginx: subpath próprio, ou a raiz para o painel de atalhos
 /* Quem publica porta no host não tem rota no nginx: o subpath dele não existe,
    e o link é o endereço da máquina na porta escolhida. */
+/* A pasta em que a stack é gravada: o servidor a anuncia no `api/health`, e sem
+   ele o compose é rodado de onde quer que os arquivos tenham sido postos. */
+const stackDir = () => (SERVER && SERVER.dir) ? SERVER.dir.replace(/\/+$/, '') : '.';
+
 const publishes = a => !!svc(a.id).publish;
 // a porta publicada vira variável do .env, como as do nginx
 const portVar = a => cname(a).toUpperCase().replace(/[^A-Z0-9]/g, '_') + '_PORT';
@@ -3155,8 +3159,10 @@ function build(){
   L.push(`    <span class="k">volumes</span>:`);
   L.push(`      - <span class="k">type</span>: <span class="v">bind</span>`);
   /* Arquivo sobre arquivo, e não a pasta inteira: a conf é gerada ao lado do
-     compose, e montá-la assim deixa o resto do `conf.d` da imagem no lugar. */
-  L.push(`        <span class="k">source</span>: <span class="v">./nginx.conf</span>`);
+     compose, e montá-la assim deixa o resto do `conf.d` da imagem no lugar.
+     Com servidor, o caminho sai por extenso — é ele quem sabe onde a stack
+     mora; sem servidor, fica relativo à pasta de onde o compose for rodado. */
+  L.push(`        <span class="k">source</span>: <span class="v">${stackDir()}/nginx.conf</span>`);
   L.push(`        <span class="k">target</span>: <span class="v">/etc/nginx/conf.d/nginx.conf</span>`);
   L.push(`        <span class="k">read_only</span>: <span class="v">true</span>`);
   if(DEFAULTS.tls){
