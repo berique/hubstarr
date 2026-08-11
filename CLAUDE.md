@@ -240,7 +240,12 @@ pasta da stack, mais o `docker_ok()` que o `api/health` devolve — ele pergunta
 por `docker compose version`, não só pelo docker, porque o plugin é pacote à
 parte e é ele que sobe a stack; sem ele a página abre o bloco "Precisa instalar
 o Docker?" e mostra o aviso `#noDocker`), `jobs.rs` (trabalhos numerados com log incremental, em memória
-— subir a stack baixa imagem e não cabe numa resposta HTTP).
+— subir a stack baixa imagem e não cabe numa resposta HTTP), `shots.rs` (cache
+em disco das capturas de paleta do theme.park, ao lado do banco, servido em
+`api/shot/:app/:theme` — o `ok_seg()` recusa segmento que escaparia da pasta ou
+do domínio, e o repositório continua sem redistribuir captura de ninguém: a
+primeira visita sai para a documentação deles. Aberta do disco, a página busca
+lá direto, como sempre).
 
 O modelo é **normalizado**, uma tabela por conceito do estado da página:
 `stack_env` (o `DEFAULTS`, uma coluna por chave, mapeadas em `ENV_COLS`, numa

@@ -2201,10 +2201,17 @@ document.querySelectorAll('#mName,#mData').forEach(el=>el.addEventListener('inpu
 /* A captura de cada paleta fica na documentação do theme.park: o repositório
    não redistribui captura de tela de ninguém, então o endereço é deles. Ela
    só é buscada quando alguém clica em "ver captura", e aparece num modal por
-   cima do do serviço — o href continua ali para quem quiser abrir na mão. */
+   cima do do serviço — o href continua ali para quem quiser abrir na mão.
+
+   Com servidor atrás da página, a imagem do modal vem pelo `api/shot`, que é a
+   mesma captura com cache em disco: a segunda visita à mesma paleta não sai da
+   máquina. O href não muda — quem abrir na mão vai à documentação deles. */
 function tpShot(id){
   $('#mTpShot').href = `${TP_DOCS}/site_assets/${id}/${$('#mTp').value}.png`;
 }
+const shotSrc = (id, theme) => SERVER
+  ? `api/shot/${id}/${theme}`
+  : `${TP_DOCS}/site_assets/${id}/${theme}.png`;
 /* app e tema da captura aberta: o título é montado à mão e precisa acompanhar
    a troca de idioma */
 let shotOf = null;
@@ -2219,7 +2226,7 @@ function openShot(){
   $('#shotErr').hidden = true;
   const img = $('#shotImg');
   img.hidden = false; img.alt = t('shot.h', shotOf.app, theme);
-  img.src = $('#mTpShot').href;
+  img.src = shotSrc(id, theme);
   $('#shotBack').classList.add('open');
 }
 /* O logotipo da variante escolhida, ao lado do seletor. Variante sem arte

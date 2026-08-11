@@ -17,6 +17,7 @@
 mod deploy;
 mod files;
 mod jobs;
+mod shots;
 mod store;
 
 use std::net::SocketAddr;
@@ -156,6 +157,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/files", post(write_files))
         .route("/api/deploy", post(start_deploy))
         .route("/api/down", post(start_down))
+        .route("/api/shot/:app/:theme", get(shot))
         .route("/api/status", get(stack_status))
         .route("/api/job/:id", get(job_status))
         .with_state(ctx.clone());
@@ -187,6 +189,23 @@ async fn page() -> impl IntoResponse {
 
 async fn favicon() -> impl IntoResponse {
     ([(header::CONTENT_TYPE, "image/x-icon")], FAVICON)
+}
+
+/// A captura da paleta, do cache do servidor. A página aberta do disco busca
+/// direto na documentação do theme.park; com servidor, passa por aqui — a
+/// primeira visita sai para a rede e as seguintes saem do disco.
+async fn shot(State(ctx): State<Ctx>, Path((app, theme)): Path<(String, String)>) -> Response {
+    match shots::fetch(&shots::cache_dir(&ctx.db_path), &app, &theme).await {
+        Ok(png) => (
+            [
+                (header::CONTENT_TYPE, "image/png"),
+                (header::CACHE_CONTROL, "max-age=86400"),
+            ],
+            png,
+        )
+            .into_response(),
+        Err(e) => (StatusCode::BAD_GATEWAY, e).into_response(),
+    }
 }
 
 async fn health(State(ctx): State<Ctx>) -> Json<Value> {
