@@ -305,7 +305,8 @@ pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
         falhas += clientes_do_prowlarr(&http, &base, &req, p, &log).await;
         falhas += applications(&http, &base, &req, p, &log).await;
     }
-    // as categorias que os *arr vão pedir precisam existir dentro do cliente
+    // as categorias que os *arr e o Prowlarr vão pedir precisam existir dentro
+    // do cliente
     for client in &req.clients {
         falhas += categorias_do_cliente(&http, &base, &req, client, &log).await;
     }
@@ -366,12 +367,14 @@ fn app_body(arr: &Arr, prowlarr_url: &str, api_key: &str) -> Result<Value, Strin
 }
 
 /* O Prowlarr também tem Settings → Download Clients, e é por eles que sai o
-   download da busca feita nele. Ele entra com **um registro por instância de
-   *arr**, cada um com a categoria daquela instância: assim o que o Prowlarr
-   pega para o Sonarr cai na categoria do Sonarr, e não numa pasta comum.
+   download da busca feita nele. Entra **um registro por cliente**, todos na
+   mesma categoria: o que o Prowlarr pega é avulso — não veio de um *arr —,
+   então fica junto, separado do que cada instância baixa.
 
-   O nome distingue os registros — é ele, e não o id, que faz o reaplicar
-   encontrar o que já está lá. */
+   O nome é o do cliente, e é por ele que o reaplicar encontra o que já está
+   lá. */
+const CAT_PROWLARR: &str = "prowlarr";
+
 async fn clientes_do_prowlarr(
     http: &reqwest::Client,
     base: &str,
@@ -385,40 +388,32 @@ async fn clientes_do_prowlarr(
         Ok(v) => v,
         Err(e) => {
             log.line(format!("Prowlarr: {e}"));
-            return req.clients.len() * req.arrs.len();
+            return req.clients.len();
         }
     };
     let mut falhas = 0;
     for client in &req.clients {
-        for arr in &req.arrs {
-            let cat = client.cat(&arr.key);
-            // instância sem categoria naquele cliente não vira registro: seria
-            // um cliente sem destino, e o Prowlarr já tem os outros
-            if cat.is_empty() {
+        let body = match client.body_como(&client.name, &alvo.cat_field, CAT_PROWLARR) {
+            Ok(b) => b,
+            Err(e) => {
+                log.line(format!("Prowlarr → {}: {e}", client.name));
+                falhas += 1;
                 continue;
             }
-            let nome = format!("{} ({})", client.name, arr.name);
-            let body = match client.body_como(&nome, &alvo.cat_field, &cat) {
-                Ok(b) => b,
-                Err(e) => {
-                    log.line(format!("Prowlarr → {nome}: {e}"));
-                    falhas += 1;
-                    continue;
-                }
-            };
-            let existente = atuais
-                .iter()
-                .find(|c| c.get("name").and_then(|n| n.as_str()) == Some(nome.as_str()))
-                .and_then(|c| c.get("id").and_then(|i| i.as_i64()));
-            match send(http, &url, &req.api_key, existente, body).await {
-                Ok(()) => log.line(format!(
-                    "Prowlarr → {nome} [{cat}]: {}",
-                    if existente.is_some() { "atualizado" } else { "registrado" }
-                )),
-                Err(e) => {
-                    log.line(format!("Prowlarr → {nome}: {e}"));
-                    falhas += 1;
-                }
+        };
+        let existente = atuais
+            .iter()
+            .find(|c| c.get("name").and_then(|n| n.as_str()) == Some(client.name.as_str()))
+            .and_then(|c| c.get("id").and_then(|i| i.as_i64()));
+        match send(http, &url, &req.api_key, existente, body).await {
+            Ok(()) => log.line(format!(
+                "Prowlarr → {} [{CAT_PROWLARR}]: {}",
+                client.name,
+                if existente.is_some() { "atualizado" } else { "registrado" }
+            )),
+            Err(e) => {
+                log.line(format!("Prowlarr → {}: {e}", client.name));
+                falhas += 1;
             }
         }
     }
@@ -453,7 +448,12 @@ async fn categorias_do_cliente(
         return 1;
     }
     let mut falhas = 0;
-    for cat in client.categorias() {
+    let mut todas = client.categorias();
+    // a do Prowlarr não vem do `cats` da página: ela é daqui
+    if req.prowlarr.is_some() && !todas.iter().any(|c| c == CAT_PROWLARR) {
+        todas.push(CAT_PROWLARR.into());
+    }
+    for cat in todas {
         let url = format!(
             "{base}{}/api?mode=set_config&section=categories&keyword={cat}&dir={cat}&output=json&apikey={}",
             client.route, client.api_key
@@ -969,15 +969,13 @@ mod tests {
     }
 
     #[test]
-    fn no_prowlarr_o_cliente_entra_com_a_categoria_da_instancia() {
+    fn no_prowlarr_o_cliente_entra_uma_vez_so_na_categoria_dele() {
         let c = qbit();
-        let sonarr = arr("sonarr", "tvCategory");
-        // no Prowlarr o campo é `category`, e o nome distingue um registro por
-        // instância — é por ele que o reaplicar acha o que já está lá
-        let nome = format!("{} ({})", c.name, sonarr.name);
-        let b = c.body_como(&nome, "category", &c.cat(&sonarr.key)).unwrap();
-        assert_eq!(b["name"], "qBittorrent (sonarr)");
-        assert_eq!(val(&b, "category"), "tv-sonarr");
+        // um registro por cliente, com o nome dele e a categoria do Prowlarr —
+        // o que ele pega é avulso, não é de instância nenhuma
+        let b = c.body_como(&c.name, "category", CAT_PROWLARR).unwrap();
+        assert_eq!(b["name"], "qBittorrent");
+        assert_eq!(val(&b, "category"), "prowlarr");
         // e o resto do cliente é o mesmo que vai para os *arr
         assert_eq!(b["implementation"], "QBittorrent");
         assert_eq!(val(&b, "host"), "gluetun");

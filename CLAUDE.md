@@ -268,14 +268,16 @@ o Docker?" e mostra o aviso `#noDocker`), `apply.rs` (v0.3: a Configuração int
 aplicada pela API — clientes de download em cada *arr **e no próprio Prowlarr**,
 cada *arr no Prowlarr, e o Media Management mais a nomenclatura de cada família.
 
-No Prowlarr, o Settings → Download Clients recebe **um registro por instância de
-*arr** — `qBittorrent (Sonarr)`, `qBittorrent (Radarr)`… —, cada um com a
-categoria daquela instância, para o que ele pega cair na categoria certa; o
-campo ali é `category`, e instância sem categoria naquele cliente não vira
-registro. E a categoria precisa existir *dentro* do cliente: no qBittorrent isso
-vem do `categories.json` que o `patch.rs` escreve, e no SABnzbd ela é criada
-pela API dele (`mode=set_config&section=categories`), que é a maneira sancionada
-— o `sabnzbd.ini` é reescrito por ele, como a conf do qBittorrent. Quem chama é o **Subir**, sozinho, depois de
+No Prowlarr, o Settings → Download Clients recebe **um registro por cliente**,
+todos na categoria `CAT_PROWLARR` (`prowlarr`): o que ele pega é avulso, não veio
+de instância nenhuma, então fica junto e separado do que cada *arr baixa. O campo
+ali é `category`, e o nome do registro é o do cliente — é por ele que o reaplicar
+acha o que já está lá. E toda categoria precisa existir *dentro* do cliente: no
+qBittorrent isso vem do `categories.json` que o `patch.rs` escreve (o
+`qbitCats()` da página inclui a do Prowlarr quando ele está na stack), e no
+SABnzbd elas são criadas pela API dele
+(`mode=set_config&section=categories`), que é a maneira sancionada — o
+`sabnzbd.ini` é reescrito por ele, como a conf do qBittorrent. Quem chama é o **Subir**, sozinho, depois de
 gravar as chaves dos `patch` — e antes de qualquer chamada ele espera cada app
 responder no `/ping`, porque recém-subido nenhum responde e a volta inteira
 falharia por timeout. Os apps são alcançados

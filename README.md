@@ -223,12 +223,12 @@ família, tudo pela API deles, mostrando o que passou. O botão **Aplicar na
 stack**, no modal da Configuração, faz o mesmo sem subir nada — é o caminho
 para reaplicar depois de mexer nas escolhas.
 
-No Prowlarr, o Settings → Download Clients ganha **um registro por instância** —
-*qBittorrent (Sonarr)*, *qBittorrent (Radarr)*… —, cada um com a categoria
-daquela instância, para o que ele pega cair na categoria certa. E as categorias
-passam a existir dentro do cliente: no qBittorrent pelo `categories.json`, e no
-SABnzbd criadas pela API dele, cada uma com a pasta de mesmo nome dentro do
-diretório de downloads concluídos. Os apps são alcançados pelo nginx, na porta que ele
+No Prowlarr, o Settings → Download Clients ganha **um registro por cliente**,
+todos na categoria `prowlarr`: o que ele pega é avulso, não veio de um *arr,
+então fica junto e separado do que cada instância baixa. E as categorias passam
+a existir dentro do cliente — a de cada *arr e a do Prowlarr: no qBittorrent
+pelo `categories.json`, e no SABnzbd criadas pela API dele, cada uma com a pasta
+de mesmo nome dentro do diretório de downloads concluídos. Os apps são alcançados pelo nginx, na porta que ele
 publica no host. Aplicar de novo não duplica — o cliente é procurado pelo nome
 e atualizado no lugar —, e um app que ainda não subiu vira uma linha no log em
 vez de interromper o resto. O SABnzbd precisa da chave de API dele, que é o

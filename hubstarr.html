@@ -3292,8 +3292,11 @@ function buildQbit(list){
 function qbitCats(a){
   const dl = '/downloads' + (a.data ? '/'+a.data : '');
   const st = CONFIG.clients[cname(a)];
+  // a do Prowlarr não é de instância nenhuma: é onde cai o que ele pega avulso
+  const doProwlarr = has('prowlarr') ? ['prowlarr'] : [];
   const cats = [...new Set(arrList()
     .map(x=>String((st && st.cats && st.cats[cname(x)]) || catDefault(x, a)).trim())
+    .concat(doProwlarr)
     .filter(Boolean))].sort();
   const out = {};
   cats.forEach(cat=> out[cat] = {save_path: dl + '/' + cat});
