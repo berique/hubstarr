@@ -336,6 +336,11 @@ logo antes de os *arr o testarem. Em ambos os casos, 5xx conta como "ainda
 não" — é o nginx dizendo que o de trás não subiu, e tomar isso por pronto é o
 mesmo que não esperar.
 
+O qBittorrent é registrado pela **API key**, não pela senha da interface: ela é
+a mesma que a conf dele recebe, não expira quando a senha muda e é o que o campo
+`apiKey` do schema espera. Usuário e senha só vão para o app cujo schema não tem
+esse campo — versão antiga —, e quem decide isso é o próprio schema.
+
 O corpo de cada `downloadclient` nasce do **schema que o app publica**
 (`/downloadclient/schema`), com os nossos valores por cima: mandar só os nossos
 deixa o resto nulo, e o app estoura ao testar a conexão. O do Prowlarr leva

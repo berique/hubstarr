@@ -100,7 +100,8 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   contraseña en PBKDF2-SHA512 y la API key `qbt_` más 28 caracteres, derivada
   de la `${STARR_APIKEY}` de la stack — la conf la lee qBittorrent, no compose,
   así que la variable no se expandiría ahí. Usuario, contraseña y clave se
-  editan en su modal. El archivo **no se monta**: manda en él el propio
+  editan en su modal — y es la **API key** la que usan los *arr para hablar con
+  él, no la contraseña: no caduca cuando cambia la contraseña de la interfaz. El archivo **no se monta**: manda en él el propio
   qBittorrent, y montarlo congelaría todo lo que guarda ahí. Con servidor, el
   **Levantar** escribe esas claves en la conf que creó el app — parando el
   contenedor, haciendo el cambio y volviéndolo a subir, porque él reescribe el

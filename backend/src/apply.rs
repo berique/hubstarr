@@ -233,8 +233,19 @@ impl Client {
         ];
         let (implementation, contract, protocol) = match self.kind.as_str() {
             "qbittorrent" => {
-                nossos.push(("username".into(), json!(self.user)));
-                nossos.push(("password".into(), json!(self.pass)));
+                /* Pela API key, não pela senha: ela não expira com a troca da
+                   senha da interface e é o que a conf do próprio qBittorrent
+                   recebe. Usuário e senha só entram no app que não conhece o
+                   campo — quem diz isso é o schema dele. */
+                let tem_api_key = schema
+                    .map(|f| f.iter().any(|x| x["name"] == "apiKey"))
+                    .unwrap_or(false);
+                if tem_api_key {
+                    nossos.push(("apiKey".into(), json!(self.api_key)));
+                } else {
+                    nossos.push(("username".into(), json!(self.user)));
+                    nossos.push(("password".into(), json!(self.pass)));
+                }
                 ("QBittorrent", "QBittorrentSettings", "torrent")
             }
             "sabnzbd" => {
@@ -1095,7 +1106,7 @@ mod tests {
             port: 8181,
             user: "admin".into(),
             pass: "senha".into(),
-            api_key: String::new(),
+            api_key: "qbt_chave".into(),
             route: "/qbittorrent".into(),
             cats: serde_json::from_str(r#"{"sonarr":"tv-sonarr"}"#).unwrap(),
             cdh: Some(Cdh {
@@ -1127,6 +1138,28 @@ mod tests {
         assert_eq!(val(&b, "tvCategory"), "tv-sonarr");
         assert_eq!(b["removeCompletedDownloads"], true);
         assert_eq!(b["removeFailedDownloads"], false);
+    }
+
+    #[test]
+    fn o_qbittorrent_entra_pela_api_key_quando_o_app_a_conhece() {
+        let c = qbit();
+        let a = arr("sonarr", "tvCategory");
+        // o app que tem o campo recebe a chave, e não a senha
+        let com = vec![json!({"name":"apiKey","value":null}),
+                       json!({"name":"username","value":null}),
+                       json!({"name":"password","value":null}),
+                       json!({"name":"host","value":"localhost"})];
+        let b = c.body(&a, Some(&com)).unwrap();
+        assert_eq!(val(&b, "apiKey"), "qbt_chave");
+        assert_eq!(val(&b, "username"), Value::Null);
+        assert_eq!(val(&b, "password"), Value::Null);
+
+        // o que não conhece o campo continua pelo usuário e senha
+        let sem = vec![json!({"name":"username","value":null}),
+                       json!({"name":"password","value":null})];
+        let b = c.body(&a, Some(&sem)).unwrap();
+        assert_eq!(val(&b, "username"), "admin");
+        assert_eq!(val(&b, "password"), "senha");
     }
 
     #[test]

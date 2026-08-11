@@ -4060,9 +4060,13 @@ function applyPayload(){
       // a rota é por onde o servidor fala com o cliente — o SABnzbd cria as
       // categorias dele pela própria API
       return {name:nameOf(c), kind:c.id, host:dlHost(c), port:inner(c.id), route:route(c),
+              /* O qBittorrent entra pela API key, que é a mesma que a conf
+                 dele recebe — usuário e senha vão junto só para o app que não
+                 conhece o campo, e é o servidor quem decide pelo schema. */
               user: c.id==='qbittorrent' ? DEFAULTS.qbitUser : '',
               pass: c.id==='qbittorrent' ? DEFAULTS.qbitPass : '',
-              apiKey: c.dlKey || '', cats, cdh: st.cdh || null};
+              apiKey: c.id==='qbittorrent' ? qbitKey() : (c.dlKey || ''),
+              cats, cdh: st.cdh || null};
     })
   };
 }

@@ -96,7 +96,8 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   PBKDF2-SHA512 e a API key `qbt_` + 28 caracteres, derivada da
   `${STARR_APIKEY}` da stack — a conf é lida por ele, não pelo compose, então a
   variável não seria expandida ali. Usuário, senha e chave se editam no modal
-  dele. O arquivo **não é montado**: quem manda nele é o próprio qBittorrent, e
+  dele — e é a **API key** que os *arr usam para falar com ele, não a senha:
+  ela não expira quando a senha da interface muda. O arquivo **não é montado**: quem manda nele é o próprio qBittorrent, e
   montá-lo congelaria tudo o que ele guarda ali. Com servidor, o **Subir**
   escreve essas chaves na conf que o app criou — parando o container, fazendo a
   troca e subindo de novo, porque ele reescreve o arquivo inteiro ao sair. Sem

@@ -97,7 +97,8 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   PBKDF2-SHA512 and the API key as `qbt_` plus 28 characters, derived from the
   stack's `${STARR_APIKEY}` — the conf is read by qBittorrent, not by compose,
   so the variable would not be expanded there. Username, password and key are
-  edited in its modal. The file is **not mounted**: qBittorrent owns it, and
+  edited in its modal — and it is the **API key** the *arr apps use to talk to
+  it, not the password: it does not expire when the web UI password changes. The file is **not mounted**: qBittorrent owns it, and
   mounting ours would freeze everything it keeps in there. With a server,
   **Bring up** writes those keys into the conf the app created — stopping the
   container, making the change and starting it again, because it rewrites the
