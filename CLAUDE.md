@@ -250,7 +250,18 @@ handler de `#mSave`.
 ## Servidor (`backend/`)
 
 Crate em Rust (axum + rusqlite `bundled`), com a página embutida por
-`include_str!`. `cargo test` roda os testes do modelo e da gravação de arquivos;
+`include_str!` — o cargo rastreia o `hubstarr.html` (ele está no
+`target/debug/hubstarr.d`), então mexer na página recompila o binário.
+
+**Quem está servindo a página é o binário, não o arquivo.** Um servidor no ar
+entrega a cópia congelada no momento em que foi compilado, e é fácil haver mais
+de um por perto — outro clone do repositório, um binário solto no `$HOME`. Antes
+de concluir que uma mudança "não pegou", descubra qual responde: o `api/health`
+devolve o `dir` e o `db` dele, e um `grep` de alguma marca recente na página
+servida a data. E cuidado com a armadilha da porta: subir um segundo servidor
+no mesmo endereço falha com `AddrInUse` **em segundo plano** — o processo novo
+morre, o velho continua respondendo, e tudo parece só não ter mudado. A saída
+dele diz; é a primeira coisa a olhar. `cargo test` roda os testes do modelo e da gravação de arquivos;
 `cargo run` serve tudo em `127.0.0.1:7878`. Opções: `--addr`, `--dir` (padrão
 `./stack`, a pasta em que os arquivos são gravados), `--db` (padrão
 `~/.hubstarr/hubstarr.db`), `--docker`.
@@ -430,6 +441,12 @@ chromium travar sem escrever nada, passe um `--user-data-dir` próprio.
 
 O favicon não aparece em captura nenhuma: o headless fotografa só o viewport,
 sem a barra de abas.
+
+Injeção que depende de trabalho assíncrono — o hash da senha do qBittorrent, por
+exemplo — não é confiável com `--dump-dom`: o `--virtual-time-budget` pode
+encerrar a página antes de a promessa resolver, e o resultado sai vazio sem erro
+nenhum. Estruture a injeção para não depender dela, ou confira o valor por outro
+caminho.
 
 Ao injetar código, ancore no fim do `<script>` (`detectServer();\n</script>`): a
 linha `applyI18n(); renderCombo(); renderItems(); render();` sozinha também
