@@ -3623,6 +3623,10 @@ function buildJellyfin(list){
 }
 
 function render(){
+  /* A Configuração acompanha a stack aqui, e não só ao abrir o modal dela: sem
+     isso, quem nunca o abriu tem o `CONFIG` vazio — e o Subir não aplica
+     nomenclatura nem Media Management nenhum, porque não há o que mandar. */
+  syncConfig();
   const {html, list} = build();
   $('#out').innerHTML = html;
   $('#outEnv').innerHTML = buildEnv(list);
@@ -4041,6 +4045,7 @@ function skipNaming(a){
 }
 const CAT_FIELD = {sonarr:'tvCategory', radarr:'movieCategory', lidarr:'musicCategory'};
 function applyPayload(){
+  syncConfig();   // idem: o payload sai completo mesmo sem passar pelo modal
   const nameOf = a => a.title || svc(a.id).name;
   const base = DEFAULTS.tls ? 'https://127.0.0.1:' + DEFAULTS.https
                             : 'http://127.0.0.1:' + DEFAULTS.http;

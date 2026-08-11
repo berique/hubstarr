@@ -71,7 +71,10 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    `movies` e `music`) e `mm[família]` (Media Management mais a nomenclatura,
    cujos campos estão em `NAMING_FIELDS` — os formatos de episódio e de filme
   saem de fábrica com os do TRaSH Guides, variante do Jellyfin com id do TMDb).
-   `syncConfig()` o alinha com o `added` a cada abertura do modal.
+   `syncConfig()` o alinha com o `added` — e é chamado no `render()`, não só ao
+   abrir o modal: quem nunca abriu a Configuração tinha o `CONFIG` vazio, e o
+   Subir não aplicava nomenclatura nem Media Management nenhum, porque não havia
+   o que mandar.
 
    O bloco **Media Management (avançado)** — o `MM_ADV`, o que os apps escondem
    atrás do "Advanced Settings" — vale para as três famílias com os mesmos oito
