@@ -314,6 +314,20 @@ aparece dentro do `setLang()`, e substituí-la lá dentro leva a recursão
 infinita. A página abre sem modal nenhum; a captura que precisa de um chama o
 `openEnv()`/`openCfg()` dela na injeção.
 
+Duas armadilhas do `added` injetado, as duas já custaram uma rodada:
+
+- **O nginx não entra nele.** Ele é a linha fixa, montada à parte do catálogo,
+  e não tem entrada no `SERVICES` — um `{id:'nginx'}` no `added` estoura o
+  render em `.color`, e aí a página fica no estado que tinha antes da injeção:
+  só as linhas fixas, que é uma captura plausível o bastante para passar
+  despercebida. Envolva a injeção num `try/catch` que escreva o erro no
+  `document.title` e leia com `--dump-dom` antes de fotografar.
+- **`openShot()` precisa do `picked`.** Ele resolve a instância por
+  `editing ? byKey(editing).id : picked`, então `openModal('sonarr', null)`
+  sozinho não basta: sem `picked` ele volta calado e a captura sai com o modal
+  do serviço, sem o da paleta. A `theme.png` também escolhe a paleta na mão
+  (`$('#mTp').value` + `tpShot(id)`) antes de abrir.
+
 ## Wishlist
 
 O roadmap fica nos três READMEs, numa tabela por marco de versão; o texto
