@@ -198,7 +198,8 @@ Abra `http://127.0.0.1:7878`. A página é a mesma — servida pelo binário, qu
 traz embutida —, com duas coisas a mais: o selo **servidor** no topo e, nos
 arquivos gerados, os botões **Subir** e **Derrubar**. Ao abrir, ela pergunta ao
 servidor se há `docker compose` ali; se não houver, avisa e já abre o bloco
-**Precisa instalar o Docker?**.
+**Precisa instalar o Docker?**. Sem `docker compose` ali, **Subir** e
+**Derrubar** ficam desabilitados, com a explicação na dica dos botões.
 
 | Opção      | Padrão                   | O que é                                        |
 | ---------- | ------------------------ | ---------------------------------------------- |
