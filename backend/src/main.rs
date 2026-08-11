@@ -18,6 +18,7 @@ mod apply;
 mod deploy;
 mod files;
 mod jobs;
+mod patch;
 mod shots;
 mod store;
 
@@ -295,6 +296,9 @@ async fn del_instance(State(ctx): State<Ctx>, Path(key): Path<String>) -> Respon
 pub struct Payload {
     #[serde(default)]
     pub files: Vec<files::OutFile>,
+    /// chaves a escrever na configuração que o próprio app cria, depois de subir
+    #[serde(default)]
+    pub patches: Vec<patch::Patch>,
 }
 
 async fn write_files(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Response {
@@ -323,7 +327,16 @@ async fn start_deploy(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Respons
     }
     let job = ctx.jobs.spawn({
         let ctx = ctx.clone();
-        move |log| async move { deploy::up(&ctx.docker, &ctx.base, log).await }
+        move |log| async move {
+            deploy::up(&ctx.docker, &ctx.base, log.clone()).await?;
+            /* Só depois de a stack subir: a configuração que vamos mexer é a
+               que o próprio app cria, e antes do primeiro `up` ela não existe. */
+            let cfg = config_base(&ctx)?;
+            for p in &p.patches {
+                patch::apply(&ctx.docker, &ctx.base, cfg.as_deref(), p, &log).await?;
+            }
+            Ok(())
+        }
     });
     Json(json!({"ok": true, "job": job})).into_response()
 }

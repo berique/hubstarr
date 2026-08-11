@@ -267,7 +267,12 @@ de campo que a página não mostra, então são lidos, mexidos nas chaves do
 `naming_map()`/`MEDIA_MANAGEMENT` e devolvidos inteiros, nunca montados do zero;
 e as opções de lista viajam pelo nome e chegam como número, pela ordem do
 `COLON`/`MULTI_EP`, que é a mesma da página — nome fora da lista é erro, não
-zero), `jobs.rs` (trabalhos numerados com log incremental, em memória
+zero), `patch.rs` (escreve chaves na configuração que o próprio app cria:
+espera o arquivo aparecer, **para** o container, faz o merge no INI e sobe de
+novo — parar é o que impede o app de sobrescrever o que gravamos, porque ele
+despeja a configuração em memória no disco justamente ao sair, e por isso
+também o arquivo é lido *depois* do stop. O merge só troca as chaves que
+vieram; comentário, ordem e o que o app guardou ficam), `jobs.rs` (trabalhos numerados com log incremental, em memória
 — subir a stack baixa imagem e não cabe numa resposta HTTP), `shots.rs` (cache
 em disco das capturas de paleta do theme.park, ao lado do banco, servido em
 `api/shot/:app/:theme` — o `ok_seg()` recusa segmento que escaparia da pasta ou

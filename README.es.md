@@ -100,7 +100,12 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   contraseña en PBKDF2-SHA512 y la API key `qbt_` más 28 caracteres, derivada
   de la `${STARR_APIKEY}` de la stack — la conf la lee qBittorrent, no compose,
   así que la variable no se expandiría ahí. Usuario, contraseña y clave se
-  editan en su modal, y el archivo se monta sobre `/config`.
+  editan en su modal. El archivo **no se monta**: manda en él el propio
+  qBittorrent, y montarlo congelaría todo lo que guarda ahí. Con servidor, el
+  **Levantar** escribe esas claves en la conf que creó el app — parando el
+  contenedor, haciendo el cambio y volviéndolo a subir, porque él reescribe el
+  archivo entero al salir. Sin servidor, copia el contenido de la pestaña a la
+  ruta indicada arriba en ella.
 - **categories.json de qBittorrent**: junto a la conf sale un segundo archivo
   con las categorías que la **Configuración** dio a cada *arr, ya creadas
   cuando arranca. Cada una recibe su subcarpeta dentro de la ruta de descarga

@@ -91,6 +91,14 @@ pub async fn down(docker: &str, dir: &Path, log: Log) -> Result<(), String> {
     run(docker, &["compose", "down"], dir, &log).await
 }
 
+/// Um `docker compose <args>` qualquer na pasta da stack — é como o `patch.rs`
+/// para e sobe um container só, em volta da edição da configuração dele.
+pub async fn compose(docker: &str, args: &[&str], dir: &Path, log: &Log) -> Result<(), String> {
+    let mut todos = vec!["compose"];
+    todos.extend_from_slice(args);
+    run(docker, &todos, dir, log).await
+}
+
 /// Roda o comando na pasta da stack copiando as duas saídas para o log,
 /// linha a linha — o compose escreve o progresso na stderr.
 async fn run(docker: &str, args: &[&str], dir: &Path, log: &Log) -> Result<(), String> {
