@@ -100,8 +100,8 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   `KnownProxies` — without the first the UI builds its links at the root,
   without the second it logs the proxy's IP instead of the caller's. Mounted at
   `/config/config/network.xml`.
-- **A ready qBittorrent.conf**: when it is in the stack, a fourth tab generates
-  its initial configuration — paths matching the compose file, reverse-proxy
+- **A ready qBittorrent.conf**: when it is in the stack, Hubstarr builds its
+  initial configuration — paths matching the compose file, reverse-proxy
   settings and the credentials in qBittorrent 5.2's own format: the password as
   PBKDF2-SHA512 and the API key as `qbt_` plus 28 characters, derived from the
   stack's `${STARR_APIKEY}` — the conf is read by qBittorrent, not by compose,
@@ -111,8 +111,8 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   mounting ours would freeze everything it keeps in there. With a server,
   **Bring up** writes those keys into the conf the app created — stopping the
   container, making the change and starting it again, because it rewrites the
-  whole file on exit. With no server, copy the tab's contents to the path shown
-  at its top.
+  whole file on exit. With no server, it comes in the `.zip`, at the path the app
+  reads it from, to be copied from there.
 - **SABnzbd's sabnzbd.ini**: its **API key** is the stack's own — the field in
   the modal shows the one in force, and **Generate** makes another by the same
   method (16 random bytes in hex), which then goes to `.env` —, and the

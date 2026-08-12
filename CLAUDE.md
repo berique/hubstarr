@@ -143,17 +143,23 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    à mão com `innerHTML` a cada digitada — quem mexe nos campos chama
    `hintNow()`, e o `applyI18n()` o refaz para acompanhar a troca de idioma.
 7. **Geradores** — `build()` (compose), `buildEnv()`, `buildNginx()`,
-   `buildQbit()`, `buildQbitCats()` (o `categories.json`, único que sai em JSON:
-   sem comentário e sem variável, com as chaves ordenadas para o arquivo não
-   mudar de ordem a cada render), `buildConfigarr()` (o `config.yml` do
-   Configarr; ver "Perfis de qualidade" abaixo). Os dois do qBittorrent têm a forma de dados ao
-   lado da de painel — `qbitPairs()` e `qbitCats()` —, e é dela que sai tanto a
-   aba quanto o que o servidor grava: um lugar só, para os dois nunca
-   discordarem e `buildJellyfin()`. Os dois últimos saem só quando o serviço
-   está na stack, e a aba aparece e some com ele. Serviço com arquivo próprio
+   `buildJellyfin()` e `buildConfigarr()` (o `config.yml` do Configarr; ver
+   "Perfis de qualidade" abaixo). Eles saem só quando o serviço está na stack, e
+   a aba aparece e some com ele.
+
+   **Aba, só quem é montado.** Os arquivos de `patch` — a conf e o
+   `categories.json` do qBittorrent, o `sabnzbd.ini` — não têm painel nem
+   gerador de HTML: existem só na forma de dados (`qbitPairs()`, `qbitCats()`,
+   `sabPairs()`), que é o que o servidor recebe. Mostrá-los numa aba convidava a
+   copiá-los para um lugar que o compose não monta. No `.zip` eles continuam
+   saindo, com o texto montado pelo `patchText()` a partir do mesmo dado — um
+   lugar só, para o pacote e o servidor nunca discordarem.
+
+   Serviço com arquivo próprio
    traz `conf:[{host, target, pane, tab, patch}, …]` no catálogo — é **lista**,
-   porque o qBittorrent gera dois (a conf e o `categories.json`), e o
-   `confsOf()` é quem a percorre no bind do compose, no `outFiles()` e nas abas.
+   porque o qBittorrent gera dois (a conf e o `categories.json`) —, e o
+   `confsOf()` é quem a percorre no bind do compose, no `outFiles()` e nas abas;
+   entrada sem `pane` não vira aba.
    `host` é o caminho dentro da pasta de config dele, e vale para quem é
    montado. **`patch`** muda o destino da entrada: em vez de bind, ela vira
    chaves que o servidor escreve na configuração que o próprio app criou, depois

@@ -99,7 +99,7 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   sem o primeiro a interface monta os links na raiz, sem o segundo ele registra
   o IP do proxy no lugar do IP de quem pediu. Montada em
   `/config/config/network.xml`.
-- **qBittorrent.conf pronta**: quando ele está na stack, uma quarta aba gera a
+- **qBittorrent.conf pronta**: quando ele está na stack, o Hubstarr monta a
   configuração inicial dele — pastas iguais às do compose, ajustes de proxy
   reverso e as credenciais no formato do próprio qBittorrent 5.2: a senha em
   PBKDF2-SHA512 e a API key `qbt_` + 28 caracteres, derivada da
@@ -110,7 +110,7 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   montá-lo congelaria tudo o que ele guarda ali. Com servidor, o **Subir**
   escreve essas chaves na conf que o app criou — parando o container, fazendo a
   troca e subindo de novo, porque ele reescreve o arquivo inteiro ao sair. Sem
-  servidor, é copiar o conteúdo da aba para o caminho indicado no topo dela.
+  servidor, ele sai no `.zip`, no caminho em que o app o lê, para copiar de lá.
 - **sabnzbd.ini do SABnzbd**: a **API key** dele é a mesma da stack — o campo no
   modal mostra a que vale, e o **Gerar** cria outra pelo mesmo método (16 bytes
   em hexadecimal), que então vai para o `.env` —, e as pastas de **download em
