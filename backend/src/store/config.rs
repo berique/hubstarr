@@ -24,10 +24,11 @@ impl Db {
         let apps = obj(c.get("apps"));
         let clients = obj(c.get("clients"));
         let mm = obj(c.get("mm"));
+        let profiles = obj(c.get("profiles"));
 
         let mut conn = self.lock()?;
         let tx = conn.transaction().map_err(|e| e.to_string())?;
-        for table in ["cfg_app", "cfg_client", "cfg_mm"] {
+        for table in ["cfg_app", "cfg_client", "cfg_mm", "cfg_profile"] {
             tx.execute(&format!("DELETE FROM {table}"), [])
             .map_err(|e| e.to_string())?;
         }
@@ -74,6 +75,21 @@ impl Db {
                 )
                 .map_err(|e| e.to_string())?;
             }
+        }
+
+        for (key, val) in &profiles {
+            let p = obj(Some(val));
+            tx.execute(
+                "INSERT INTO cfg_profile (arr_key, enabled, presets, extra)
+                 VALUES (?1,?2,?3,?4)",
+                params![
+                    key,
+                    flag(&p, "on"),
+                    p.get("presets").unwrap_or(&json!([])).to_string(),
+                    text(&p, "extra"),
+                ],
+            )
+            .map_err(|e| e.to_string())?;
         }
 
         for (sid, val) in &mm {
@@ -219,7 +235,36 @@ impl Db {
             mm.insert(sid, fam);
         }
 
-        Ok(json!({"apps": apps, "clients": clients, "mm": mm}))
+        let mut profiles = Map::new();
+        conn.prepare("SELECT arr_key, enabled, presets, extra FROM cfg_profile")
+            .and_then(|mut st| {
+                st.query_map([], |r| {
+                    Ok((
+                        r.get::<_, String>(0)?,
+                        r.get::<_, i64>(1)? != 0,
+                        r.get::<_, String>(2)?,
+                        r.get::<_, String>(3)?,
+                    ))
+                })?
+                .collect::<Result<Vec<_>, _>>()
+            })
+            .map_err(|e| e.to_string())?
+            .into_iter()
+            .for_each(|(key, on, presets, extra)| {
+                profiles.insert(
+                    key,
+                    json!({
+                        "on": on,
+                        // guardado em JSON; texto que não for lista volta vazia,
+                        // que é o mesmo que "nenhum preset escolhido"
+                        "presets": serde_json::from_str::<Value>(&presets)
+                            .unwrap_or_else(|_| json!([])),
+                        "extra": extra,
+                    }),
+                );
+            });
+
+        Ok(json!({"apps": apps, "clients": clients, "mm": mm, "profiles": profiles}))
     }
 }
 
@@ -248,6 +293,11 @@ mod tests {
                     "naming": {"illegal": true, "colon": "smart",
                                "seasonFolder": "Season {season:00}"}
                 }
+            },
+            "profiles": {
+                "sonarr":  {"on": true,  "presets": ["hd"], "extra": ""},
+                "series4k": {"on": false, "presets": ["uhd", "anime"],
+                             "extra": "sonarr-v4-quality-profile-web-1080p-alternative"}
             }
         })
     }

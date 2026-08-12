@@ -216,9 +216,23 @@ async fn shot(State(ctx): State<Ctx>, Path((app, theme)): Path<(String, String)>
 /// trabalho numerado: são várias chamadas de API, e cada app que responde vira
 /// uma linha do log.
 async fn apply_config(State(ctx): State<Ctx>, Json(req): Json<apply::Req>) -> Response {
-    let job = ctx
-        .jobs
-        .spawn(move |log| async move { apply::download_clients(req, log).await });
+    let job = ctx.jobs.spawn({
+        let ctx = ctx.clone();
+        move |log| async move {
+            let quer_configarr = req.quer_configarr();
+            if req.tem_o_que_fazer() {
+                apply::download_clients(req, log.clone()).await?;
+            } else if quer_configarr {
+                apply::esperar(&req, &log).await?;
+            }
+            // e os perfis de qualidade, que são arquivo — o Configarr lê o
+            // `config.yml` que a página gerou e escreve nos apps
+            if quer_configarr {
+                deploy::configarr(&ctx.docker, &ctx.base, &log).await?;
+            }
+            Ok(())
+        }
+    });
     Json(json!({"ok": true, "job": job})).into_response()
 }
 
@@ -368,8 +382,24 @@ async fn start_deploy(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Respons
                credenciais do qBittorrent já foram escritas acima — é o que faz
                o *arr conseguir falar com ele na hora de validar o registro. */
             match p.config {
-                Some(cfg) if cfg.tem_o_que_fazer() => apply::download_clients(cfg, log).await,
-                _ => Ok(()),
+                Some(cfg) => {
+                    let quer_configarr = cfg.quer_configarr();
+                    if cfg.tem_o_que_fazer() {
+                        apply::download_clients(cfg, log.clone()).await?;
+                    } else if quer_configarr {
+                        // nada a configurar pela API, mas os apps ainda
+                        // precisam estar de pé para o Configarr escrever neles
+                        apply::esperar(&cfg, &log).await?;
+                    }
+                    /* E, por último, os perfis de qualidade: o Configarr roda
+                       uma vez e sai, e depende dos apps de pé — é por isso que
+                       ele vem aqui, e não no `up` de cima. */
+                    if quer_configarr {
+                        deploy::configarr(&ctx.docker, &ctx.base, &log).await?;
+                    }
+                    Ok(())
+                }
+                None => Ok(()),
             }
         }
     });

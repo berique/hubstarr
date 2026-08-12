@@ -100,6 +100,18 @@ CREATE TABLE IF NOT EXISTS cfg_mm (
   chown      TEXT NOT NULL DEFAULT ''
 );
 
+-- CONFIG.profiles: os perfis de qualidade, por instância — ao contrário do
+-- Media Management, aqui a chave é o `cname()`: é justamente por instância que
+-- eles diferem (4K numa, anime na outra). Os presets vão em JSON, como o
+-- `cfg_naming` faz com o valor: é uma lista, e uma tabela a mais para guardar
+-- meia dúzia de nomes não pagaria o próprio custo.
+CREATE TABLE IF NOT EXISTS cfg_profile (
+  arr_key TEXT PRIMARY KEY,
+  enabled INTEGER NOT NULL DEFAULT 1,
+  presets TEXT NOT NULL DEFAULT '[]',
+  extra   TEXT NOT NULL DEFAULT ''
+);
+
 -- A nomenclatura, campo a campo. O valor vai em JSON porque o `NAMING_FIELDS`
 -- mistura caixa de seleção com formato de texto.
 CREATE TABLE IF NOT EXISTS cfg_naming (

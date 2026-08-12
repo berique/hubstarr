@@ -118,6 +118,19 @@ pub async fn stop_one(docker: &str, dir: &Path, key: &str, log: Log) -> Result<(
     run(docker, &["compose", "stop", key], dir, &log).await
 }
 
+/// O Configarr, que aplica os perfis de qualidade e os custom formats do TRaSH
+/// Guides no que a página escreveu no `config.yml` dele.
+///
+/// É `run --rm`, não `up`: ele roda uma vez e sai, e por isso a página o deixa
+/// atrás de um profile do compose — no `up -d` ele subiria antes de os apps
+/// responderem. Quem chama espera os apps primeiro, como o resto do `apply`.
+pub async fn configarr(docker: &str, dir: &Path, log: &Log) -> Result<(), String> {
+    log.line("aplicando os perfis do TRaSH Guides (configarr)…");
+    // `-T` porque o servidor não tem terminal: sem ele o `run` tenta alocar um
+    // TTY e morre antes de o Configarr começar
+    compose(docker, &["run", "--rm", "-T", "configarr"], dir, log).await
+}
+
 /// Um `docker compose <args>` qualquer na pasta da stack — é como o `patch.rs`
 /// para e sobe um container só, em volta da edição da configuração dele.
 pub async fn compose(docker: &str, args: &[&str], dir: &Path, log: &Log) -> Result<(), String> {

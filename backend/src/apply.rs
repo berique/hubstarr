@@ -44,6 +44,11 @@ pub struct Req {
     /// app e não por instância
     #[serde(default)]
     mm: Map<String, Value>,
+    /// há um Configarr na stack? Os perfis de qualidade não passam por aqui —
+    /// eles estão no `config.yml` que a página gerou —, mas é este `apply` que
+    /// já esperou os apps responderem, e é depois dele que o Configarr roda.
+    #[serde(default)]
+    configarr: bool,
 }
 
 #[derive(Deserialize)]
@@ -145,6 +150,12 @@ impl Req {
         let pelo_prowlarr = self.prowlarr.is_some()
             && (!self.clients.is_empty() || self.solver.is_some() || !self.arrs.is_empty());
         pelos_arrs || pelo_prowlarr
+    }
+
+    /// Rodar o Configarr depois? Independe do `tem_o_que_fazer()`: uma stack sem
+    /// cliente de download e sem Prowlarr ainda pode querer os perfis.
+    pub fn quer_configarr(&self) -> bool {
+        self.configarr && !self.arrs.is_empty()
     }
 }
 
@@ -307,6 +318,21 @@ impl Client {
 /// outros: o erro dele vira uma linha no log e a volta continua — quem aplica
 /// isso costuma ter acabado de subir a stack, e um app ainda subindo não é
 /// motivo para não configurar o resto.
+/// Só espera os apps responderem, sem aplicar nada. É o caso da stack que tem
+/// Configarr e mais nada para configurar: os perfis precisam de app de pé
+/// tanto quanto os clientes de download, e sem isto ninguém teria esperado.
+pub async fn esperar(req: &Req, log: &Log) -> Result<(), String> {
+    let http = reqwest::Client::builder()
+        .timeout(Duration::from_secs(20))
+        .danger_accept_invalid_certs(true)
+        .build()
+        .map_err(|e| e.to_string())?;
+    let base = req.base.trim_end_matches('/').to_string();
+    let alvos: Vec<Arr> = req.arrs.iter().map(Arr::clone_alvo).collect();
+    esperar_apps(&http, &base, &alvos, log).await;
+    Ok(())
+}
+
 pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
     if !req.tem_o_que_fazer() {
         return Err("nada para aplicar nesta stack".into());
@@ -1363,6 +1389,7 @@ mod tests {
             prowlarr: Some(Prowlarr { route: "/prowlarr".into(), url: "http://p:9696".into() }),
             solver: Some(Solver { name: "FlareSolverr".into(), url: "http://f:8191".into() }),
             mm: Map::new(),
+            configarr: false,
         };
         assert!(req.tem_o_que_fazer());
         // sem o resolvedor e sem cliente, o Prowlarr sozinho não tem o que fazer
@@ -1380,10 +1407,32 @@ mod tests {
             prowlarr: None,
             solver: None,
             mm: Map::new(),
+            configarr: false,
         };
         assert!(!req(vec![], vec![qbit()]).tem_o_que_fazer());
         assert!(!req(vec![arr("sonarr", "tvCategory")], vec![]).tem_o_que_fazer());
         assert!(req(vec![arr("sonarr", "tvCategory")], vec![qbit()]).tem_o_que_fazer());
+    }
+
+    /// Só o Configarr na stack já é motivo para a volta acontecer: os perfis não
+    /// dependem de cliente de download nem de Prowlarr.
+    #[test]
+    fn so_o_configarr_ja_e_motivo_para_rodar() {
+        let mut r = Req {
+            base: "http://127.0.0.1".into(),
+            api_key: "k".into(),
+            arrs: vec![arr("sonarr", "tvCategory")],
+            clients: vec![],
+            prowlarr: None,
+            solver: None,
+            mm: Map::new(),
+            configarr: true,
+        };
+        assert!(!r.tem_o_que_fazer());
+        assert!(r.quer_configarr());
+        // sem *arr não há em que aplicar perfil, mesmo com o Configarr na stack
+        r.arrs = vec![];
+        assert!(!r.quer_configarr());
     }
 
     #[test]

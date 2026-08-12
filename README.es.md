@@ -154,6 +154,20 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   porque el campo es obligatorio en el app, y la que desmarques conserva el
   formato que ya tiene, en vez de perderlo. Las tres partes de la Configuración
   llegan a las apps por el **Levantar** y por el **Aplicar en la stack**.
+- **Perfiles de calidad y custom formats** del [TRaSH Guides](https://trash-guides.info),
+  por instancia: cada Sonarr y cada Radarr de la stack elige los perfiles de la
+  guía que quiere — **HD (1080p)**, **4K (2160p)**, **Remux 4K**, **Anime** —, y
+  así es como la instancia de 4K deja de ser igual a la de 1080p. Cada uno trae
+  el trío que la guía recomienda junto: el perfil, los custom formats que lo
+  puntúan y la definición de tamaño de los archivos. Hay además un campo para
+  escribir otros templates de Recyclarr a mano.
+
+  Quien los aplica es [Configarr](https://configarr.de), que entra en la stack
+  como servicio: la página genera su `config.yml` — en una pestaña, como los
+  demás archivos — y el servidor lo ejecuta después de que las apps responden,
+  en el **Levantar** y en el **Aplicar en la stack**. Corre una vez y sale, así
+  que queda fuera del `up -d`, detrás de un profile del compose. Lidarr queda
+  fuera: no hay template para él.
 - **Entorno global** (botón arriba): rutas base, PUID/PGID — que, con servidor,
   ya vienen con el usuario y el grupo con que se ejecuta, el mismo que crea las
   carpetas de la stack —, zona horaria,
@@ -418,15 +432,15 @@ bloques y traducir los valores.
 
 Lo que todavía no existe, en el orden en que tendría sentido que ocurra. Los
 hitos son versiones, no fechas: cada uno solo empieza después del anterior, porque
-depende de él. Hoy el repositorio está en **v0.3** — la página, el servidor
-opcional que guarda las stacks y las levanta en Docker, y la Configuración
-aplicada en las apps.
+depende de él. Hoy el repositorio está en **v0.4** — la página, el servidor
+opcional que guarda las stacks y las levanta en Docker, la Configuración
+aplicada en las apps y los perfiles del TRaSH Guides por Configarr.
 
 | Hito     | Entrega                                              | Se cierra cuando                                                                        |
 | -------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | ~~**v0.2**~~ | ~~Un backend que conecte `hubstarr.html` con Docker~~ | ✅ la página graba los archivos y levanta la stack sin pasar por el `.zip`              |
 | ~~**v0.3**~~ | ~~Configuración automática de las stacks desde el backend~~ | ✅ Prowlarr, clientes de descarga y Media Management salen de la interfaz y son llamadas de API |
-| **v0.4** | Custom formats y profiles propios de cada stack       | la instancia de 4K, la de anime y las demás nacen con su perfil de calidad                 |
+| ~~**v0.4**~~ | ~~Custom formats y profiles propios de cada stack~~ | ✅ los perfiles del TRaSH Guides, por instancia, aplicados por Configarr |
 | **v0.5** | Compatibilidad con TRaSH Guides                       | quality definitions, scores de custom format y el resto de las recomendaciones de la guía ya listas |
 | **v0.6** | Búsqueda localizada de medios                         | se puede elegir el idioma de la búsqueda y los *arr encuentran el lanzamiento correcto     |
 

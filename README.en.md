@@ -148,6 +148,19 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   field is mandatory in the app, and whichever you untick keeps the format it
   already has instead of losing it. All three parts of the Configuration reach
   the apps, through **Bring up** and **Apply to the stack**.
+- **Quality profiles and custom formats** from the [TRaSH Guides](https://trash-guides.info),
+  per instance: every Sonarr and Radarr in the stack picks the profiles it wants
+  — **HD (1080p)**, **4K (2160p)**, **Remux 4K**, **Anime** — and that is how the
+  4K instance stops being the same as the 1080p one. Each one brings the trio the
+  guide recommends together: the profile, the custom formats that score it and
+  the file size definition. There is also a field for typing other Recyclarr
+  templates by hand.
+
+  The one applying them is [Configarr](https://configarr.de), which joins the
+  stack as a service: the page generates its `config.yml` — in a tab, like the
+  other files — and the server runs it once the apps answer, on **Bring up** and
+  on **Apply to the stack**. It runs once and exits, so it stays out of `up -d`,
+  behind a compose profile. Lidarr is left out: there is no template for it.
 - **Global environment** (button at the top): base paths, PUID/PGID — which,
   with a server, already come from the user and group it runs as, the same one
   that creates the stack folders —, time zone,
@@ -410,15 +423,15 @@ copying one of the blocks and translating the values.
 
 What is not there yet, in the order it would make sense to happen. The
 milestones are versions, not dates: each one only starts after the previous, because
-it depends on it. The repository is at **v0.3** today — the page, the optional
-server that keeps the stacks and brings them up in Docker, and the Configuration
-applied to the apps.
+it depends on it. The repository is at **v0.4** today — the page, the optional
+server that keeps the stacks and brings them up in Docker, the Configuration
+applied to the apps and the TRaSH Guides profiles through Configarr.
 
 | Milestone | Delivers                                          | Done when                                                                          |
 | --------- | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | ~~**v0.2**~~ | ~~A backend wiring `hubstarr.html` to Docker~~ | ✅ the page writes the files and brings the stack up without going through the `.zip` |
 | ~~**v0.3**~~ | ~~Automatic stack configuration from the backend~~ | ✅ Prowlarr, download clients and Media Management leave the interface and become API calls |
-| **v0.4**  | Custom formats and profiles per stack             | the 4K instance, the anime one and the rest are born with their own quality profile |
+| ~~**v0.4**~~ | ~~Custom formats and profiles per stack~~ | ✅ the TRaSH Guides profiles, per instance, applied by Configarr |
 | **v0.5**  | Compatibility with the TRaSH Guides               | quality definitions, custom format scores and the rest of the guide's recommendations come ready |
 | **v0.6**  | Localized media search                            | the search language can be picked and the *arr apps find the right release          |
 

@@ -50,7 +50,10 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    `dlDirs` (SABnzbd: as duas pastas dele — o que está baixando e o que
    terminou — em vez da subpasta única; as duas são montadas e viram o
    `download_dir` e o `complete_dir` do `sabnzbd.ini`), `noVol`, `derived` (Bazarr herda as
-   subpastas das instâncias de Radarr/Sonarr presentes), `site` (endereço do
+   subpastas das instâncias de Radarr/Sonarr presentes), `oneShot` + `profiles`
+   (Configarr: roda uma vez e sai, então fica fora do `up -d` atrás de um
+   `profiles:` do compose, com `restart: "no"`, e ganha a chave da stack no
+   ambiente mais o cache dos repositórios em `/app/repos`), `site` (endereço do
    projeto, que é o que põe o serviço na grade dos Créditos) e `credit` (nome
    a creditar quando ele difere do `name` — o FlareSolverr roda o Byparr).
    Adicionar um serviço normalmente é acrescentar uma linha aqui + o ícone em
@@ -68,7 +71,8 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    que está no `DEFAULTS` se edita no Ambiente: as portas do host saem no modal
    do nginx e as credenciais da VPN no do gluetun (flag `vpnCfg`) — os dois são
    de um serviço só, não da stack. `CONFIG` guarda as ligações entre instâncias:
-   `apps` (o que o Prowlarr configura), `clients[cliente] = {arrs, cats, cdh}`
+   `profiles[chave da instância]` (os perfis de qualidade — ver "Perfis de
+   qualidade" abaixo), `apps` (o que o Prowlarr configura), `clients[cliente] = {arrs, cats, cdh}`
    (com que categoria cada *arr usa o cliente e o gerenciamento de downloads
    concluídos; o `arrs` fica todo `true` — a interface não tem mais caixa de
    quem recebe, porque o cliente entra em todas as instâncias. O padrão da
@@ -132,7 +136,8 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
 7. **Geradores** — `build()` (compose), `buildEnv()`, `buildNginx()`,
    `buildQbit()`, `buildQbitCats()` (o `categories.json`, único que sai em JSON:
    sem comentário e sem variável, com as chaves ordenadas para o arquivo não
-   mudar de ordem a cada render). Os dois do qBittorrent têm a forma de dados ao
+   mudar de ordem a cada render), `buildConfigarr()` (o `config.yml` do
+   Configarr; ver "Perfis de qualidade" abaixo). Os dois do qBittorrent têm a forma de dados ao
    lado da de painel — `qbitPairs()` e `qbitCats()` —, e é dela que sai tanto a
    aba quanto o que o servidor grava: um lugar só, para os dois nunca
    discordarem e `buildJellyfin()`. Os dois últimos saem só quando o serviço
@@ -456,6 +461,43 @@ o estado guardado — sem id nenhum, porque a stack é a do servidor.
 que saiu sem passar pelo modal. A flag `loading` existe para o estado que vem do
 banco não ser gravado de volta enquanto está sendo aplicado.
 
+## Perfis de qualidade (v0.4)
+
+Os perfis e os custom formats **não são montados aqui**: quem os aplica é o
+[Configarr](https://configarr.de), um serviço do catálogo, com os dados do TRaSH
+Guides e os templates do Recyclarr. A página só **escolhe** — e é essa a divisão
+a preservar. Montar perfil no `apply.rs` seria reimplementar o Recyclarr e
+envelhecer junto com o guia.
+
+O que a página tem é o `PROFILE_PRESETS`: por família, um preset é o trio que o
+guia recomenda junto — `p` (o perfil), `cf` (os custom formats que o pontuam) e
+`q` (a definição de tamanho dos arquivos). Os ids são **nomes de arquivo do
+repositório de templates** e por isso não passam pelo `I18N`; traduzido é só o
+rótulo (`cfg.p.<chave>`). A página não confere se o nome existe — sem rede não
+teria como, e fingir que confere seria pior: nome errado vira erro no log do
+Configarr.
+
+O `profTemplates()` monta a lista de uma instância, e a regra que não é óbvia
+mora nele: perfil e custom formats de **todos** os presets marcados entram,
+porque são recursos separados dentro do app e ter dois perfis é o objetivo; a
+**definição de qualidade, não** — ela é única no app, e a de anime não é a de
+série. Vale a do primeiro preset marcado, e as outras saem comentadas no
+arquivo, que é onde alguém percebe. O Lidarr fica fora da seção inteira: o
+Recyclarr não publica template para ele.
+
+O `config.yml` leva `api_key: !env STARR_APIKEY` — a chave chega pelo ambiente
+do container e não vira texto num arquivo — e `base_url` com a **base URL
+junto**, pela mesma razão do registro do Prowlarr: sem ela a API do app fica na
+raiz, onde não existe. Instância desmarcada sai com `enabled: false` em vez de
+sumir do arquivo.
+
+Quem o roda é o servidor, com `docker compose run --rm -T configarr`
+(`deploy::configarr`), **depois** do `esperar_apps()` — no fim do Subir e no
+"Aplicar na stack". O `-T` é porque o servidor não tem terminal. A página não
+manda perfil nenhum no corpo do `apply`: manda só `configarr: true`, que é o
+"há um Configarr nesta stack" — decisão dela, como sempre. No banco, é a tabela
+`cfg_profile`, por `arr_key` (o `cname()`), com os presets em JSON.
+
 ## READMEs
 
 `README.md` (pt-BR) é a fonte; `README.en.md` e `README.es.md` são traduções.
@@ -523,8 +565,8 @@ Duas armadilhas do `added` injetado, as duas já custaram uma rodada:
 
 O roadmap fica nos três READMEs, numa tabela por marco de versão; o texto
 autoritativo é o do `README.md`, e mexer nele é mexer nos três. Hoje o
-repositório é o **v0.3** — a página, o servidor de `backend/` e a Configuração
-aplicada nos apps.
+repositório é o **v0.4** — a página, o servidor de `backend/`, a Configuração
+aplicada nos apps e os perfis do TRaSH Guides pelo Configarr.
 
 - ~~**v0.2**~~ — feito: o backend liga o `hubstarr.html` ao Docker e guarda a
   stack. Uma primeira versão dele existiu e foi removida no `ba54e1a`; a de
@@ -541,8 +583,8 @@ aplicada nos apps.
   próprio app que a gera na primeira subida, então ela é um campo do modal dele
   (flag `dlKey`) e mora na instância, não no Ambiente — não vai para arquivo
   nenhum, serve só para o Aplicar.
-- **v0.4** — custom formats e profiles por instância (4K, anime, …), ao lado do
-  `NAMING_FIELDS` que já guarda a nomenclatura.
+- ~~**v0.4**~~ — feito: perfis de qualidade e custom formats por instância, do
+  TRaSH Guides, aplicados pelo Configarr — ver "Perfis de qualidade" acima.
 - **v0.5** — compatibilidade com o TRaSH Guides além da nomenclatura, que já
   saiu de fábrica: quality definitions, scores de custom format e o resto do
   guia. O JSON de origem dele (`docs/json/...` no repositório TRaSH-Guides) é
