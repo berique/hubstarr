@@ -416,7 +416,6 @@ sudo sh get-docker.sh</pre>
     <pre id="outJf" style="display:none"></pre>
     <pre id="outCfgarr" style="display:none"></pre>
     <div class="bar">
-      <span class="hint" id="summary"></span>
       <span class="sp"></span>
       <button id="copy" data-i18n="btn.copy">Copiar</button>
       <button id="dl" data-i18n="btn.zip" data-i18n-title="btn.zipHint">Baixar .zip</button>
@@ -878,7 +877,6 @@ const I18N = {
   'items.samePath':(n,p)=>`⚠ ${n.join(' e ')} apontam para a mesma pasta (${p})`,
 
   'out.containers':n=>`${n} ${n===1?'container':'containers'}`,
-  'out.empty':'nenhum serviço adicionado',
   'btn.copy':'Copiar',
   'btn.copied':'Copiado ✓',
   'btn.copyFail':'não deu para copiar',
@@ -909,8 +907,6 @@ const I18N = {
   'tour.clear':'Esvazia a lista. Ele pede confirmação: o primeiro clique arma, o segundo apaga.',
   'tour.tabs.h':'Os arquivos gerados',
   'tour.tabs':'Cada aba é um arquivo que sai daqui — <b>docker-compose.yml</b>, <b>.env</b>, <b>nginx.conf</b> e as configurações próprias de quem tem uma. Eles se refazem a cada mudança na lista.',
-  'tour.summary.h':'O resumo da stack',
-  'tour.summary':'Quantos containers, quantas rotas o nginx serve e um aviso em vermelho quando duas instâncias apontam para a mesma pasta — que é o jeito mais fácil de uma importar por cima da outra.',
   'tour.copy.h':'Copiar',
   'tour.copy':'Põe na área de transferência o texto da aba aberta, sem o realce.',
   'tour.dl.h':'Baixar o .zip',
@@ -1290,7 +1286,6 @@ const I18N = {
   'items.samePath':(n,p)=>`⚠ ${n.join(' and ')} point at the same folder (${p})`,
 
   'out.containers':n=>`${n} ${n===1?'container':'containers'}`,
-  'out.empty':'no services added',
   'btn.copy':'Copy',
   'btn.copied':'Copied ✓',
   'btn.copyFail':'could not copy',
@@ -1321,8 +1316,6 @@ const I18N = {
   'tour.clear':'Empties the list. It asks for confirmation: the first click arms it, the second wipes.',
   'tour.tabs.h':'The generated files',
   'tour.tabs':'Each tab is a file that comes out of here — <b>docker-compose.yml</b>, <b>.env</b>, <b>nginx.conf</b> and the own configuration of whoever has one. They are rebuilt on every change to the list.',
-  'tour.summary.h':'The stack summary',
-  'tour.summary':'How many containers, how many routes nginx serves, and a warning in red when two instances point at the same folder — the easiest way for one to import over the other.',
   'tour.copy.h':'Copy',
   'tour.copy':'Puts the open tab\'s text on the clipboard, without the highlighting.',
   'tour.dl.h':'Download the .zip',
@@ -1702,7 +1695,6 @@ const I18N = {
   'items.samePath':(n,p)=>`⚠ ${n.join(' y ')} apuntan a la misma carpeta (${p})`,
 
   'out.containers':n=>`${n} ${n===1?'contenedor':'contenedores'}`,
-  'out.empty':'ningún servicio añadido',
   'btn.copy':'Copiar',
   'btn.copied':'Copiado ✓',
   'btn.copyFail':'no se pudo copiar',
@@ -1733,8 +1725,6 @@ const I18N = {
   'tour.clear':'Vacía la lista. Pide confirmación: el primer clic arma, el segundo borra.',
   'tour.tabs.h':'Los archivos generados',
   'tour.tabs':'Cada pestaña es un archivo que sale de aquí — <b>docker-compose.yml</b>, <b>.env</b>, <b>nginx.conf</b> y la configuración propia de quien tiene una. Se rehacen con cada cambio en la lista.',
-  'tour.summary.h':'El resumen de la stack',
-  'tour.summary':'Cuántos contenedores, cuántas rutas atiende el nginx y un aviso en rojo cuando dos instancias apuntan a la misma carpeta — la manera más fácil de que una importe encima de la otra.',
   'tour.copy.h':'Copiar',
   'tour.copy':'Pone en el portapapeles el texto de la pestaña abierta, sin el resaltado.',
   'tour.dl.h':'Descargar el .zip',
@@ -4259,7 +4249,6 @@ function render(){
     .concat(list.map(a=>({nome:a.title || svc(a.id).name, cor:svc(a.id).color, key:cname(a)})))
     .map(x=>`<span class="tag ctag" title="${attr(x.key)}">` +
             `<i style="--c:${attr(x.cor)}"></i>${escHtml(x.nome)}</span>`).join('');
-  $('#summary').textContent = list.map(a=>a.title||svc(a.id).name).join(' · ') || t('out.empty');
   saveSettings();  // com servidor atrás, a stack sobrevive ao reload; sem ele, não faz nada
 }
 
@@ -4624,7 +4613,6 @@ const TOUR = [
   {sel:'#items',   k:'items'},
   {sel:'#clear',   k:'clear'},
   {sel:'.tabs',    k:'tabs'},
-  {sel:'#summary', k:'summary'},
   {sel:'#copy',    k:'copy'},
   {sel:'#dl',      k:'dl'},
   {sel:'#up',      k:'up'},
