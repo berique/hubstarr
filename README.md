@@ -162,11 +162,15 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   de tamanho dos arquivos. Há ainda um campo para escrever outros templates do
   Recyclarr à mão.
 
-  Quem aplica é o [Configarr](https://configarr.de), que entra na stack como
-  serviço: a página gera o `config.yml` dele — numa aba, como os outros arquivos
-  —, e o servidor o roda depois que os apps respondem, no **Subir** e no
-  **Aplicar na stack**. Ele roda uma vez e sai, então fica fora do `up -d`, atrás
-  de um profile do compose. O Lidarr fica de fora: não há template para ele.
+  Quem aplica é o [Configarr](https://configarr.de), e ele **não é um serviço
+  da stack**: a página gera o `config.yml` e o `secrets.yml` dele, e o servidor
+  o roda com um `docker run --rm` avulso depois que os apps respondem, no
+  **Subir** e no **Aplicar na stack**. Ele roda uma vez e sai — num `up -d`
+  subiria antes de os apps estarem de pé. Entra na rede da stack para alcançar
+  cada *arr pelo nome do container, com o PUID/PGID do Ambiente, e guarda o
+  cache do TRaSH e do Recyclarr em `<config>/configarr/repos`. A seção existe
+  mesmo sem ele em lugar nenhum: o que ela descreve é a stack, não um container.
+  O Lidarr fica de fora: não há template para ele.
 - **Ambiente global** (botão no topo): bases de caminho, PUID/PGID — que, com
   servidor, já vêm com o usuário e o grupo em que ele roda, o mesmo que cria as
   pastas da stack —, time zone,

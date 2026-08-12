@@ -50,10 +50,7 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    `dlDirs` (SABnzbd: as duas pastas dele — o que está baixando e o que
    terminou — em vez da subpasta única; as duas são montadas e viram o
    `download_dir` e o `complete_dir` do `sabnzbd.ini`), `noVol`, `derived` (Bazarr herda as
-   subpastas das instâncias de Radarr/Sonarr presentes), `oneShot` + `profiles`
-   (Configarr: roda uma vez e sai, então fica fora do `up -d` atrás de um
-   `profiles:` do compose, com `restart: "no"`, e ganha a chave da stack no
-   ambiente mais o cache dos repositórios em `/app/repos`), `site` (endereço do
+   subpastas das instâncias de Radarr/Sonarr presentes), `site` (endereço do
    projeto, que é o que põe o serviço na grade dos Créditos) e `credit` (nome
    a creditar quando ele difere do `name` — o FlareSolverr roda o Byparr).
    Adicionar um serviço normalmente é acrescentar uma linha aqui + o ícone em
@@ -500,18 +497,51 @@ série. Vale a do primeiro preset marcado, e as outras saem comentadas no
 arquivo, que é onde alguém percebe. O Lidarr fica fora da seção inteira: o
 Recyclarr não publica template para ele.
 
-O `config.yml` leva `api_key: !env STARR_APIKEY` — a chave chega pelo ambiente
-do container e não vira texto num arquivo — e `base_url` com a **base URL
-junto**, pela mesma razão do registro do Prowlarr: sem ela a API do app fica na
-raiz, onde não existe. Instância desmarcada sai com `enabled: false` em vez de
-sumir do arquivo.
+São **dois** arquivos, os dois em `<config>/configarr/`: o `config.yml` e o
+`secrets.yml`, que é onde a chave dos *arr mora — o `config.yml` a lê com
+`!secret`. O `secrets.yml` não é opcional: o `docker run` o monta, e arquivo que
+não existe o docker cria como **pasta**, e aí o Configarr sobe sem chave nenhuma.
+O `base_url` vai com a **base URL junto**, pela mesma razão do registro do
+Prowlarr: sem ela a API do app fica na raiz, onde não existe. Instância
+desmarcada sai com `enabled: false` em vez de sumir do arquivo.
 
-Quem o roda é o servidor, com `docker compose run --rm -T configarr`
-(`deploy::configarr`), **depois** do `esperar_apps()` — no fim do Subir e no
-"Aplicar na stack". O `-T` é porque o servidor não tem terminal. A página não
-manda perfil nenhum no corpo do `apply`: manda só `configarr: true`, que é o
-"há um Configarr nesta stack" — decisão dela, como sempre. No banco, é a tabela
-`cfg_profile`, por `arr_key` (o `cname()`), com os presets em JSON.
+Os dois arquivos e as três pastas dele (`repos`, `custom_formats` e a própria)
+saem do `outFiles()`/`outDirs()` **à parte**, porque ele não tem entrada no
+catálogo — existem porque há perfil a aplicar, não porque um serviço está na
+stack.
+
+**O Configarr não é serviço da stack.** Ele não está no `SERVICES`, não entra
+no compose e não tem ponto de status: é uma ferramenta que o servidor roda com
+um `docker run --rm` avulso (`deploy::configarr`), **depois** do
+`esperar_apps()` — no fim do Subir e no "Aplicar na stack". Num `up -d` ele
+subiria antes de os apps responderem, e como sai sozinho o ponto dele viveria
+vermelho. Nos Créditos ele aparece pelo `NGINX_CRED`, ao lado do nginx: crédito
+é de quem faz o trabalho, não de quem está no compose.
+
+Três coisas do `docker run` que custaram uma rodada cada:
+
+- **`--network starrnet`** só acha os apps porque o compose fixa o nome da rede
+  com `name:`. Sem isso ele a prefixa com o nome do projeto (a pasta do `--dir`)
+  e ela vira `stack_starrnet` — quem chega de fora do compose não a encontra
+  pelo nome que a página anuncia. Stack que já existia recria os containers na
+  primeira subida depois dessa mudança.
+- **`--user PUID:PGID`** faz o cache dos repositórios ser de quem o Ambiente
+  diz. Cache clonado por outro dono trava o git ("dubious ownership", depois
+  "Permission denied") — o `GIT_CONFIG_*` cobre o primeiro caso, e o segundo
+  vira uma linha no log dizendo para apagar a pasta, que se refaz sozinha.
+- **`--dns`** porque a rede da stack é uma bridge nossa: sem ele o clone do
+  TRaSH e do Recyclarr falha em máquina cujo resolvedor não é alcançável de
+  dentro dela.
+
+A página manda no corpo do `apply` só o que a linha de comando precisa —
+`{dir, network, user, tz}` —, e `null` quando não há perfil nenhum a aplicar.
+Nem os perfis nem a chave passam por ali: eles estão nos dois arquivos. No
+banco, é a tabela `cfg_profile`, por `arr_key` (o `cname()`), com os presets em
+JSON.
+
+Uma ligação que não passou (um app fora do ar) **não cancela os perfis**: são
+coisas independentes, e o erro do `download_clients` volta no fim, depois de o
+Configarr ter rodado.
 
 ## READMEs
 

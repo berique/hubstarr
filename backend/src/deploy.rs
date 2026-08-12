@@ -118,18 +118,105 @@ pub async fn stop_one(docker: &str, dir: &Path, key: &str, log: Log) -> Result<(
     run(docker, &["compose", "stop", key], dir, &log).await
 }
 
-/// O Configarr, que aplica os perfis de qualidade e os custom formats do TRaSH
-/// Guides no que a página escreveu no `config.yml` dele.
-///
-/// É `run --rm`, não `up`: ele roda uma vez e sai, e por isso a página o deixa
-/// atrás de um profile do compose — no `up -d` ele subiria antes de os apps
-/// responderem. Quem chama espera os apps primeiro, como o resto do `apply`.
-pub async fn configarr(docker: &str, dir: &Path, log: &Log) -> Result<(), String> {
-    log.line("aplicando os perfis do TRaSH Guides (configarr)…");
-    // `-T` porque o servidor não tem terminal: sem ele o `run` tenta alocar um
-    // TTY e morre antes de o Configarr começar
-    compose(docker, &["run", "--rm", "-T", "configarr"], dir, log).await
+/// O que a página manda para rodar o Configarr: caminhos, rede e usuário — as
+/// decisões continuam lá, aqui só se monta a linha de comando.
+#[derive(serde::Deserialize, Clone)]
+pub struct Configarr {
+    /// pasta dele no host, com o `config.yml`, o `secrets.yml`, os custom
+    /// formats e o cache dos repositórios
+    pub dir: String,
+    /// a rede da stack, por onde ele alcança os *arr pelo nome do container
+    pub network: String,
+    /// `PUID:PGID` do Ambiente — é quem tem de ser dono do cache
+    pub user: String,
+    #[serde(default)]
+    pub tz: String,
 }
+
+/// O Configarr, que aplica os perfis de qualidade e os custom formats do TRaSH
+/// Guides a partir do `config.yml` que a página escreveu.
+///
+/// É um `docker run --rm` avulso, não um serviço da stack: ele roda uma vez e
+/// sai, e num `up -d` subiria antes de os apps responderem. Entra na rede da
+/// stack para alcançar cada *arr pelo nome do container, com a base URL que o
+/// `config.yml` já traz. Quem chama espera os apps primeiro, como o resto do
+/// `apply`.
+///
+/// O `--dns` é o que faz ele resolver o github de dentro da rede da stack, que
+/// é uma bridge nossa: sem isso o clone do TRaSH e do Recyclarr falha em
+/// máquina cujo resolvedor não é alcançável de lá.
+pub async fn configarr(docker: &str, cfg: &Configarr, log: &Log) -> Result<(), String> {
+    log.line("aplicando os perfis do TRaSH Guides (configarr)…");
+    let dir = cfg.dir.trim_end_matches('/');
+    let tz = if cfg.tz.is_empty() { "Etc/UTC" } else { &cfg.tz };
+    let montar = [
+        format!("{dir}/config.yml:/app/config/config.yml:ro"),
+        format!("{dir}/secrets.yml:/app/config/secrets.yml:ro"),
+        format!("{dir}/custom_formats:/app/cfs:ro"),
+        format!("{dir}/repos:/app/repos"),
+    ];
+    let mut args: Vec<String> = vec![
+        "run".into(), "--rm".into(),
+        "--name".into(), "configarr".into(),
+        "--user".into(), cfg.user.clone(),
+        "--network".into(), cfg.network.clone(),
+        "--dns".into(), "1.1.1.1".into(),
+    ];
+    for m in &montar {
+        args.push("-v".into());
+        args.push(m.clone());
+    }
+    /* O cache pode ter sido clonado por outro dono — pelo root, em quem vem da
+       versão em que o Configarr era serviço do compose e rodava sem `--user`.
+       O git recusa mexer em repositório de outro dono ("dubious ownership") e o
+       Configarr morre antes de ler o `config.yml`; estas três variáveis são a
+       forma sancionada de dizer que ali é de casa, sem precisar de um
+       `git config` dentro do container. */
+    for e in [
+        "LOG_STACKTRACE=true",
+        "LOG_LEVEL=debug",
+        "GIT_CONFIG_COUNT=1",
+        "GIT_CONFIG_KEY_0=safe.directory",
+        "GIT_CONFIG_VALUE_0=*",
+    ] {
+        args.push("-e".into());
+        args.push(e.into());
+    }
+    args.push("-e".into());
+    args.push(format!("TZ={tz}"));
+    args.push(CONFIGARR_IMG.into());
+
+    let refs: Vec<&str> = args.iter().map(String::as_str).collect();
+    run(docker, &refs, Path::new(dir), log).await.map_err(|e| {
+        /* O erro do docker não diz qual é o problema quando ele é de posse: o
+           Configarr morre num "Permission denied" do git, no meio de um rastro
+           de pilha do node. O caso conhecido é o cache clonado por outro dono —
+           quem vem da versão em que ele era serviço do compose, e rodava como
+           root. A saída é apagar o cache: ele se refaz sozinho. */
+        if !escrevivel(&format!("{dir}/repos")) {
+            log.line(format!(
+                "o cache em {dir}/repos é de outro dono e o Configarr roda como {};                  apague a pasta (ela se refaz sozinha) e mande subir de novo",
+                cfg.user
+            ));
+        }
+        e
+    })
+}
+
+/// A pasta existe e aceita escrita de quem roda o servidor? É ele quem cria as
+/// pastas da stack, e o Configarr roda com o mesmo PUID/PGID.
+fn escrevivel(dir: &str) -> bool {
+    let sonda = Path::new(dir).join(".hubstarr-escrita");
+    match std::fs::File::create(&sonda) {
+        Ok(_) => {
+            let _ = std::fs::remove_file(&sonda);
+            true
+        }
+        Err(_) => false,
+    }
+}
+
+pub const CONFIGARR_IMG: &str = "ghcr.io/raydak-labs/configarr:latest";
 
 /// Um `docker compose <args>` qualquer na pasta da stack — é como o `patch.rs`
 /// para e sobe um container só, em volta da edição da configuração dele.

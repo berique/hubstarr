@@ -44,11 +44,12 @@ pub struct Req {
     /// app e não por instância
     #[serde(default)]
     mm: Map<String, Value>,
-    /// há um Configarr na stack? Os perfis de qualidade não passam por aqui —
-    /// eles estão no `config.yml` que a página gerou —, mas é este `apply` que
-    /// já esperou os apps responderem, e é depois dele que o Configarr roda.
+    /// o que rodar o Configarr precisa: caminhos, rede e usuário. Os perfis não
+    /// passam por aqui — eles estão no `config.yml` que a página gerou —, mas é
+    /// este `apply` que já esperou os apps responderem, e é depois dele que ele
+    /// roda. Ausente ou nulo: não há perfil a aplicar.
     #[serde(default)]
-    configarr: bool,
+    configarr: Option<crate::deploy::Configarr>,
 }
 
 #[derive(Deserialize)]
@@ -154,8 +155,11 @@ impl Req {
 
     /// Rodar o Configarr depois? Independe do `tem_o_que_fazer()`: uma stack sem
     /// cliente de download e sem Prowlarr ainda pode querer os perfis.
-    pub fn quer_configarr(&self) -> bool {
-        self.configarr && !self.arrs.is_empty()
+    pub fn configarr(&self) -> Option<crate::deploy::Configarr> {
+        if self.arrs.is_empty() {
+            return None;
+        }
+        self.configarr.clone()
     }
 }
 
@@ -1388,7 +1392,7 @@ mod tests {
             prowlarr: Some(Prowlarr { route: "/prowlarr".into(), url: "http://p:9696".into() }),
             solver: Some(Solver { name: "FlareSolverr".into(), url: "http://f:8191".into() }),
             mm: Map::new(),
-            configarr: false,
+            configarr: None,
         };
         assert!(req.tem_o_que_fazer());
         // sem o resolvedor e sem cliente, o Prowlarr sozinho não tem o que fazer
@@ -1406,7 +1410,7 @@ mod tests {
             prowlarr: None,
             solver: None,
             mm: Map::new(),
-            configarr: false,
+            configarr: None,
         };
         assert!(!req(vec![], vec![qbit()]).tem_o_que_fazer());
         assert!(!req(vec![arr("sonarr", "tvCategory")], vec![]).tem_o_que_fazer());
@@ -1425,13 +1429,18 @@ mod tests {
             prowlarr: None,
             solver: None,
             mm: Map::new(),
-            configarr: true,
+            configarr: Some(crate::deploy::Configarr {
+                dir: "/cfg/configarr".into(),
+                network: "starrnet".into(),
+                user: "1000:1000".into(),
+                tz: "America/Sao_Paulo".into(),
+            }),
         };
         assert!(!r.tem_o_que_fazer());
-        assert!(r.quer_configarr());
-        // sem *arr não há em que aplicar perfil, mesmo com o Configarr na stack
+        assert!(r.configarr().is_some());
+        // sem *arr não há em que aplicar perfil, mesmo com perfis escolhidos
         r.arrs = vec![];
-        assert!(!r.quer_configarr());
+        assert!(r.configarr().is_none());
     }
 
     #[test]

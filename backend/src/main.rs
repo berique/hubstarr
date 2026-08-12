@@ -219,16 +219,16 @@ async fn apply_config(State(ctx): State<Ctx>, Json(req): Json<apply::Req>) -> Re
     let job = ctx.jobs.spawn({
         let ctx = ctx.clone();
         move |log| async move {
-            let quer_configarr = req.quer_configarr();
+            let cfgarr = req.configarr();
             if req.tem_o_que_fazer() {
                 apply::download_clients(req, log.clone()).await?;
-            } else if quer_configarr {
+            } else if cfgarr.is_some() {
                 apply::esperar(&req, &log).await?;
             }
             // e os perfis de qualidade, que são arquivo — o Configarr lê o
             // `config.yml` que a página gerou e escreve nos apps
-            if quer_configarr {
-                deploy::configarr(&ctx.docker, &ctx.base, &log).await?;
+            if let Some(c) = cfgarr {
+                deploy::configarr(&ctx.docker, &c, &log).await?;
             }
             Ok(())
         }
@@ -383,10 +383,10 @@ async fn start_deploy(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Respons
                o *arr conseguir falar com ele na hora de validar o registro. */
             match p.config {
                 Some(cfg) => {
-                    let quer_configarr = cfg.quer_configarr();
+                    let cfgarr = cfg.configarr();
                     if cfg.tem_o_que_fazer() {
                         apply::download_clients(cfg, log.clone()).await?;
-                    } else if quer_configarr {
+                    } else if cfgarr.is_some() {
                         // nada a configurar pela API, mas os apps ainda
                         // precisam estar de pé para o Configarr escrever neles
                         apply::esperar(&cfg, &log).await?;
@@ -394,8 +394,8 @@ async fn start_deploy(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Respons
                     /* E, por último, os perfis de qualidade: o Configarr roda
                        uma vez e sai, e depende dos apps de pé — é por isso que
                        ele vem aqui, e não no `up` de cima. */
-                    if quer_configarr {
-                        deploy::configarr(&ctx.docker, &ctx.base, &log).await?;
+                    if let Some(c) = cfgarr {
+                        deploy::configarr(&ctx.docker, &c, &log).await?;
                     }
                     Ok(())
                 }

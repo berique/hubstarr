@@ -165,11 +165,15 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   the file size definition. There is also a field for typing other Recyclarr
   templates by hand.
 
-  The one applying them is [Configarr](https://configarr.de), which joins the
-  stack as a service: the page generates its `config.yml` — in a tab, like the
-  other files — and the server runs it once the apps answer, on **Bring up** and
-  on **Apply to the stack**. It runs once and exits, so it stays out of `up -d`,
-  behind a compose profile. Lidarr is left out: there is no template for it.
+  The one applying them is [Configarr](https://configarr.de), and it is **not a
+  service of the stack**: the page generates its `config.yml` and `secrets.yml`,
+  and the server runs it as a standalone `docker run --rm` once the apps answer,
+  on **Bring up** and on **Apply to the stack**. It runs once and exits — in an
+  `up -d` it would start before the apps were up. It joins the stack's network to
+  reach each *arr by container name, with the Environment's PUID/PGID, and keeps
+  the TRaSH and Recyclarr cache in `<config>/configarr/repos`. The section is
+  there even with it nowhere in sight: what it describes is the stack, not a
+  container. Lidarr is left out: there is no template for it.
 - **Global environment** (button at the top): base paths, PUID/PGID — which,
   with a server, already come from the user and group it runs as, the same one
   that creates the stack folders —, time zone,
