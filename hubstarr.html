@@ -4055,11 +4055,28 @@ function qbitPairs(a){
 /* As chaves que o Hubstarr põe no `sabnzbd.ini` — a chave da API e as duas
    pastas, no caminho em que o container as enxerga. Fonte única do painel e do
    que o servidor grava, como no qBittorrent. */
+/* Os nomes por que se pode chegar ao SABnzbd. Ele confere o cabeçalho `Host`
+   de cada requisição e responde **403 Forbidden** ao que não estiver nesta
+   lista — de fábrica ela só tem o hostname do container, que é aleatório, e por
+   isso o *arr chamando `http://sabnzbd:8080` levava um "Hostname verification
+   failed" sem dizer que o problema era esse.
+
+   Vão aqui o `container_name` (por onde os *arr e o Prowlarr o alcançam, dentro
+   da rede da stack), o `localhost` e o domínio do Ambiente, quando há um — o
+   nginx repassa o `Host` de quem pediu (`proxy_set_header Host $host`), então é
+   o nome do navegador que chega aqui. Endereço IP não precisa entrar: a
+   verificação dele é só para nome. */
+const sabHosts = a => [cname(a), 'localhost', DEFAULTS.domain]
+  .map(x=>String(x || '').trim()).filter(Boolean)
+  .filter((x,i,l)=>l.indexOf(x) === i).join(',');
+
 function sabPairs(a){
   return [['misc', [
     ['api_key',      sabKey(a)],
     // o subpath em que o nginx o serve: sem isto ele monta os links na raiz
     ['url_base',     route(a)],
+    // sem isto, quem o chama pelo nome do container leva 403
+    ['host_whitelist', sabHosts(a)],
     ['download_dir', inContainer(dlIn(a),   'incomplete')],
     ['complete_dir', inContainer(dlDone(a), 'complete')],
   ]]];
