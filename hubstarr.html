@@ -63,6 +63,13 @@
      letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--line);
      background:var(--panel-2);display:flex;justify-content:space-between;align-items:center}
   .card .body{padding:16px}
+  /* cabeçalho do painel dos arquivos: as abas em cima e a contagem de
+     containers embaixo, separadas por um filete que atravessa o cartão. O
+     `h2` perde o padding próprio para o filete ir de ponta a ponta; quem
+     espaça agora são as duas linhas. */
+  .card h2.files{flex-direction:column;align-items:stretch;padding:0}
+  .card h2.files .tabs{padding:12px 16px}
+  .card h2.files #stat{padding:8px 16px;border-top:1px solid var(--line)}
 
   /* logotipos: SVG do dashboardicons.com, com fallback para a inicial colorida */
   .ico{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;
@@ -378,7 +385,7 @@ sudo sh get-docker.sh</pre>
 
   <!-- coluna direita -->
   <div class="card">
-    <h2>
+    <h2 class="files">
       <span class="tabs">
         <button class="tab on" data-tab="yml">docker-compose.yml</button>
         <button class="tab" data-tab="env">.env</button>
