@@ -99,6 +99,20 @@
   .items{display:flex;flex-direction:column;gap:8px}
   .item{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);
         border-radius:8px;background:var(--panel-2)}
+  /* A linha inteira é que se arrasta — pegar em qualquer lugar dela e mover.
+     Os botões, o link e o ponto de status continuam clicáveis: o `dragstart`
+     desiste quando o gesto começa num deles. A alça é só o sinal de que a
+     linha se move, e é o que o teclado usa; a do nginx fica invisível, mas
+     ocupa o lugar, senão a linha fixa desalinharia das demais. */
+  .item[draggable="true"]{cursor:grab}
+  .item.dragging{opacity:.4;cursor:grabbing}
+  .grip{flex:none;width:14px;color:var(--muted);opacity:.55;
+        font-size:13px;line-height:1;user-select:none;text-align:center}
+  .item:hover .grip{opacity:1}
+  .item.fix .grip{visibility:hidden}
+  /* onde a linha vai cair, desenhado na borda de cima ou de baixo do alvo */
+  .item.over-up{box-shadow:inset 0 3px 0 var(--accent)}
+  .item.over-dn{box-shadow:inset 0 -3px 0 var(--accent)}
   /* ponto de status do container: só aparece com servidor atrás da página,
      porque é ele que sabe o que está no ar. É um <button> porque clicar nele
      sobe ou derruba aquele container — o ponto é o interruptor dele. */
@@ -839,6 +853,7 @@ const I18N = {
   'btn.linkOff':'O container não está no ar: suba a stack para abrir o link',
   'items.empty':'Nenhum serviço adicionado.<br>Escolha um no combobox acima e clique em <b>Adicionar</b>.',
   'items.fixed':'fixo',
+  'items.dragTitle':'Arraste para mudar a ordem (ou use as setas ↑ ↓)',
   'items.viaVpn':'via VPN',
   'items.hostPort':p=>`:${p} no host`,
   'items.ngxDir':n=>`nginx.conf, na pasta da stack`,
@@ -1258,6 +1273,7 @@ const I18N = {
   'btn.linkOff':'The container is not up: bring the stack up to open the link',
   'items.empty':'No services added.<br>Pick one in the combobox above and click <b>Add</b>.',
   'items.fixed':'fixed',
+  'items.dragTitle':'Drag to reorder (or use the ↑ ↓ arrows)',
   'items.viaVpn':'via VPN',
   'items.hostPort':p=>`:${p} on the host`,
   'items.ngxDir':n=>`nginx.conf, in the stack folder`,
@@ -1677,6 +1693,7 @@ const I18N = {
   'btn.linkOff':'El contenedor no está en marcha: levanta la stack para abrir el link',
   'items.empty':'Ningún servicio añadido.<br>Elige uno en el combobox de arriba y pulsa <b>Añadir</b>.',
   'items.fixed':'fijo',
+  'items.dragTitle':'Arrastre para cambiar el orden (o use las flechas ↑ ↓)',
   'items.viaVpn':'por VPN',
   'items.hostPort':p=>`:${p} en el host`,
   'items.ngxDir':n=>`nginx.conf, en la carpeta de la stack`,
@@ -2432,7 +2449,8 @@ function paintStatus(){
 function renderItems(){
   const box = $('#items');
   // o reverse proxy é fixo: aparece sempre, sem editar nem excluir
-  const fixed = `<div class="item">
+  const fixed = `<div class="item fix">
+      <span class="grip" aria-hidden="true">⁙</span>
       ${dotHtml(NGINX.id)}${icoHtml(NGINX)}
       <div class="meta">
         <div class="nm">${NGINX.name}
@@ -2446,7 +2464,10 @@ function renderItems(){
 
   box.innerHTML = fixed + (added.length ? added.map(a=>{
     const s = svc(a.id);
-    return `<div class="item" data-key="${cname(a)}">
+    return `<div class="item" data-key="${cname(a)}" draggable="true">
+      <span class="grip" role="button" tabindex="0"
+            title="${attr(t('items.dragTitle'))}"
+            aria-label="${attr(t('items.dragTitle'))}">⁙</span>
       ${dotHtml(cname(a))}${icoHtml(s, '', icoKey(a.id, a.tpv))}
       <div class="meta">
         <div class="nm">${a.title || s.name}
@@ -2495,6 +2516,98 @@ $('#items').onclick = e=>{
     if(a) openModal(a.id, key);
   }
 };
+
+/* ---------- ordem da lista, arrastando ---------- */
+
+/* A ordem da lista é a ordem em que os serviços saem no compose e no `.env`, e
+   é ela que o `saveSettings()` manda ao servidor — o `reconcile()` de lá grava
+   o `ord` de cada instância pela ordem das chaves. Por isso arrastar não pede
+   botão de salvar: mexeu, o `render()` já grava.
+
+   Uma coisa que a ordem **não** faz é mandar no que sobe primeiro: quem
+   estabelece isso no compose é o `depends_on`, não a posição no arquivo.
+
+   O nginx não entra na dança: é linha fixa, fora do `added`, e fica no topo. */
+let dragKey = null;
+
+// para onde a linha vai: acima ou abaixo do alvo, pela metade em que o ponteiro está
+const dropAfter = (el, y) => y > el.getBoundingClientRect().top + el.offsetHeight / 2;
+
+function clearMarks(){
+  document.querySelectorAll('.item.over-up,.item.over-dn')
+          .forEach(el=>el.classList.remove('over-up','over-dn'));
+}
+
+/* Tira a instância de onde ela está e a põe antes ou depois do alvo. As duas
+   chaves são `cname()`, que é o que a linha carrega no `data-key`. */
+function moveInstance(from, to, after){
+  const i = added.findIndex(a=>cname(a) === from);
+  if(i < 0 || from === to) return false;
+  const [inst] = added.splice(i, 1);
+  const j = added.findIndex(a=>cname(a) === to);
+  if(j < 0){ added.splice(i, 0, inst); return false; }   // alvo sumiu: desfaz
+  added.splice(after ? j + 1 : j, 0, inst);
+  renderItems(); render();     // o render grava a ordem nova
+  return true;
+}
+
+$('#items').addEventListener('dragstart', e=>{
+  const item = e.target.closest('.item[draggable]');
+  /* Pegar em qualquer ponto da linha a arrasta — menos nos controles: começar
+     o gesto no Link, no Editar, no Excluir ou no ponto de status é para clicar
+     neles, não para mover a linha. */
+  if(!item || e.target.closest('button, a, input, select, textarea'))
+    return e.preventDefault();
+  dragKey = item.dataset.key;
+  item.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  // o Firefox só começa a arrastar se houver dado no evento
+  e.dataTransfer.setData('text/plain', dragKey);
+});
+
+$('#items').addEventListener('dragover', e=>{
+  if(dragKey === null) return;
+  const item = e.target.closest('.item');
+  if(!item || !item.dataset.key) return;      // fora da lista, ou a linha fixa
+  e.preventDefault();                          // é o que autoriza o drop
+  e.dataTransfer.dropEffect = 'move';
+  clearMarks();
+  if(item.dataset.key !== dragKey)
+    item.classList.add(dropAfter(item, e.clientY) ? 'over-dn' : 'over-up');
+});
+
+$('#items').addEventListener('drop', e=>{
+  const item = e.target.closest('.item');
+  if(dragKey === null || !item || !item.dataset.key) return;
+  e.preventDefault();
+  const alvo = item.dataset.key, after = dropAfter(item, e.clientY);
+  clearMarks();
+  dragKey = null;
+  moveInstance(e.dataTransfer.getData('text/plain') || alvo, alvo, after);
+});
+
+$('#items').addEventListener('dragend', ()=>{
+  clearMarks();
+  document.querySelectorAll('.item.dragging').forEach(el=>el.classList.remove('dragging'));
+  dragKey = null;
+});
+
+/* A mesma reordenação pelo teclado: a alça é focável, e as setas movem a linha
+   de uma em uma. Arrastar com o mouse é o caminho principal, mas ele não pode
+   ser o único — quem navega por teclado ficaria sem ordenar nada. */
+$('#items').addEventListener('keydown', e=>{
+  const grip = e.target.closest('.grip[role="button"]');
+  if(!grip || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+  const key = grip.closest('.item').dataset.key;
+  const i = added.findIndex(a=>cname(a) === key);
+  const j = e.key === 'ArrowUp' ? i - 1 : i + 1;
+  if(i < 0 || j < 0 || j >= added.length) return;
+  e.preventDefault();
+  moveInstance(key, cname(added[j]), e.key === 'ArrowDown');
+  // a lista foi remontada: o foco volta para a alça da linha que se moveu
+  const nova = document.querySelector(`.item[data-key="${CSS.escape(key)}"] .grip`);
+  if(nova) nova.focus();
+});
 
 // remove tudo, pedindo confirmação no primeiro clique
 let clearArmed = false;

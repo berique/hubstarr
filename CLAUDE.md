@@ -124,7 +124,16 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    `extraLibs()` (Jellyfin, que junta as pastas de fora das outras instâncias
    com as do "+ pasta") — os dois já devolvem o caminho certo de cada instância,
    literal ou com variável; não remonte `${BASE_MEDIA}/…` na mão.
-6. **UI** — `renderCombo()`, `renderItems()`, modal de configuração
+6. **UI** — `renderCombo()`, `renderItems()` (a ordem da lista se muda
+   arrastando a **linha inteira** — o `.item` é que leva o `draggable`, e o
+   `dragstart` desiste quando o gesto começa num `button`, `a` ou campo, senão
+   arrastar comeria o clique no Link e no Editar. `moveInstance()` mexe no
+   `added` e o `render()` grava — a ordem chega ao banco pelo `keys` do
+   `saveSettings()`, e é o `reconcile()` que a escreve no `ord`. A alça `⁙` é o
+   sinal de que a linha se move e o que o teclado usa: as setas ↑ ↓ com ela em
+   foco, porque arrastar não pode ser o único caminho. O nginx é linha fixa,
+   sem `data-key`, e soltar sobre ele não faz nada; a ordem também não manda em
+   quem sobe primeiro — isso é do `depends_on`), modal de configuração
    (`openModal` + o handler de `#mSave`), modal de ambiente (`openEnv`), modal
    do nginx (`openNgx`), modal de configuração (`renderConfig`/`openCfg`, com
    backup para o Cancelar), modal da captura da paleta (`openShot`) e o dos

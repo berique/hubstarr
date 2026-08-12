@@ -45,6 +45,13 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   serve it on. The address is the Environment's domain when there is one; with
   none, it is the same one you opened the page on — reach it by the LAN IP and
   the links come out on that IP, not on `localhost`.
+- **Reorder the list by dragging**: grab a service row anywhere and move it;
+  the order you leave is the order the services come out in
+  `docker-compose.yml` and `.env` — with a server, it is kept. Starting the
+  gesture on Link, Edit, Delete or the status dot still clicks them. The ↑ ↓
+  arrows do the same with the grip (`⁙`) focused, for those not using a mouse.
+  nginx is a fixed row and does not move. Order is not startup order: in
+  compose that is what `depends_on` is for.
 - **Conflict warning**: two instances pointed at the same folder step on each
   other when importing, so the list says so in red, with the names and the
   path. Jellyfin, which mounts the whole library, and Bazarr, which follows the

@@ -45,6 +45,13 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   pelos quais o nginx vai atendê-lo. O endereço é o domínio do Ambiente quando
   há um; sem ele, é o mesmo por onde você abriu a página — quem chega pelo IP da
   LAN recebe os links nesse IP, e não em `localhost`.
+- **Ordenar a lista arrastando**: pegue a linha do serviço em qualquer ponto e
+  mova-a; a ordem que você deixar é a ordem em que os serviços saem no
+  `docker-compose.yml` e no `.env` — com servidor, ela fica guardada. Começar o
+  gesto no Link, no Editar, no Excluir ou no ponto de status continua clicando
+  neles. As setas ↑ ↓ fazem o mesmo com a alça (`⁙`) em foco, para quem não usa
+  o mouse. O nginx é linha fixa e não se move. Ordem não é ordem de subida:
+  quem manda nisso no compose é o `depends_on`.
 - **Aviso de conflito**: duas instâncias apontadas para a mesma pasta se
   atropelam na importação, então a lista avisa em vermelho, com os nomes e o
   caminho. O Jellyfin, que monta a biblioteca inteira, e o Bazarr, que segue as

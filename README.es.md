@@ -48,6 +48,14 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   Entorno cuando lo hay; sin él, es la misma por la que abriste la página —
   quien llega por la IP de la LAN recibe los enlaces en esa IP, no en
   `localhost`.
+- **Ordenar la lista arrastrando**: tome la fila del servicio en cualquier
+  punto y muévala; el orden que usted deje es el orden en que los servicios
+  salen en el `docker-compose.yml` y en el `.env` — con servidor, queda
+  guardado. Empezar el gesto en el Link, el Editar, el Eliminar o el punto de
+  estado sigue haciendo clic en ellos. Las flechas ↑ ↓ hacen lo mismo con el
+  asa (`⁙`) enfocada, para quien no usa el ratón. nginx es fila fija y no se
+  mueve. El orden no es el orden de arranque: de eso se encarga el
+  `depends_on` del compose.
 - **Aviso de conflicto**: dos instancias apuntadas a la misma carpeta se pisan
   al importar, así que la lista lo avisa en rojo, con los nombres y la ruta.
   Jellyfin, que monta la biblioteca entera, y Bazarr, que sigue a las otras,
