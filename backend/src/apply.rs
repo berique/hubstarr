@@ -356,7 +356,7 @@ pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
         esperar_por.push(alvo_prowlarr(p));
     }
     esperar_apps(&http, &base, &esperar_por, &log).await;
-    esperar_clientes(&http, &base, &req.clients, &log).await;
+    esperar_clientes(&http, &req.clients, &log).await;
 
     for arr in &alvos {
         let url = format!("{base}{}/api/{}/downloadclient", arr.route, arr.api);
@@ -410,7 +410,7 @@ pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
     // as categorias que os *arr e o Prowlarr vão pedir precisam existir dentro
     // do cliente
     for client in &req.clients {
-        falhas += categorias_do_cliente(&http, &base, &req, client, &log).await;
+        falhas += categorias_do_cliente(&http, &req, client, &log).await;
     }
     for arr in &req.arrs {
         falhas += media_management(&http, &base, &req, arr, &log).await;
@@ -652,7 +652,6 @@ async fn etiqueta(
    preserva o hardlink na importação. */
 async fn categorias_do_cliente(
     http: &reqwest::Client,
-    base: &str,
     req: &Req,
     client: &Client,
     log: &Log,
@@ -978,7 +977,7 @@ async fn esperar_apps(http: &reqwest::Client, base: &str, alvos: &[Arr], log: &L
    alguém escutando, não se a credencial está certa. As do próprio nginx é que
    não servem — ele responde 502 enquanto o container atrás dele não subiu, e
    tomar isso por "pronto" é o mesmo que não esperar. */
-async fn esperar_clientes(http: &reqwest::Client, base: &str, clients: &[Client], log: &Log) {
+async fn esperar_clientes(http: &reqwest::Client, clients: &[Client], log: &Log) {
     for c in clients {
         if c.web_url.is_empty() {
             continue;
