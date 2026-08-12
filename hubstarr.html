@@ -151,11 +151,37 @@
   .item .acts{display:flex;gap:6px;flex:none}
   .tag{font-size:10px;padding:1px 6px;border-radius:99px;border:1px solid var(--line);
        color:var(--muted);margin-left:6px;vertical-align:1px}
-  /* a variante do tema muda o logotipo do app inteiro: destaca-se das demais
-     etiquetas, que são só informação de rota e de porta */
-  .tag.tpv{color:var(--accent);border-color:var(--accent);font-weight:700;
-    letter-spacing:.04em;text-transform:uppercase;
-    background:color-mix(in srgb, var(--accent) 16%, transparent)}
+  /* Uma cor por tipo de etiqueta. Todas cinza, a rota se confundia com a GPU e
+     o tema com a variante; a cor diz do que se está falando antes de ler. É a
+     mesma cor da bolinha da legenda, ao lado do "Limpar tudo" — sem ela as
+     cores seriam adivinhação. O tom de fundo é um `color-mix` sobre a cor, o
+     que mantém o contraste nos dois temas sem uma paleta por tema. */
+  .tag[data-kind]{color:var(--tc);border-color:color-mix(in srgb, var(--tc) 55%, transparent);
+    background:color-mix(in srgb, var(--tc) 14%, transparent)}
+  .tag[data-kind="tpv"]{--tc:var(--accent);font-weight:700;
+    letter-spacing:.04em;text-transform:uppercase}
+  .tag[data-kind="tp"]{--tc:#b083f0}
+  .tag[data-kind="vpn"]{--tc:var(--accent-2)}
+  .tag[data-kind="hw"]{--tc:var(--c-ph)}
+  .tag[data-kind="route"]{--tc:var(--muted)}
+  .tag[data-kind="cfg"]{--tc:#e06c9f}
+  .tag[data-kind="data"]{--tc:#4fc3d9}
+
+  /* a legenda das etiquetas: a mesma cor de cada tipo, num ponto */
+  .legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;
+    font-size:10px;color:var(--muted)}
+  .legend:empty{display:none}
+  .legItem{display:inline-flex;align-items:center;gap:5px}
+  .legItem i{width:8px;height:8px;border-radius:99px;flex:none;
+    border:1px solid color-mix(in srgb, var(--tc) 55%, transparent);
+    background:color-mix(in srgb, var(--tc) 40%, transparent)}
+  .legItem[data-kind="tpv"]{--tc:var(--accent)}
+  .legItem[data-kind="tp"]{--tc:#b083f0}
+  .legItem[data-kind="vpn"]{--tc:var(--accent-2)}
+  .legItem[data-kind="hw"]{--tc:var(--c-ph)}
+  .legItem[data-kind="route"]{--tc:var(--muted)}
+  .legItem[data-kind="cfg"]{--tc:#e06c9f}
+  .legItem[data-kind="data"]{--tc:#4fc3d9}
   .empty{color:var(--muted);border:1px dashed var(--line);border-radius:8px;
          padding:20px;text-align:center}
 
@@ -391,6 +417,7 @@ sudo sh get-docker.sh</pre>
           <div id="conflicts" style="flex:1"></div>
           <button class="sm danger" id="clear" data-i18n="btn.clear" disabled>Limpar tudo</button>
         </div>
+        <div id="tagLegend" class="legend"></div>
       </div>
     </div>
   </div>
@@ -866,6 +893,14 @@ const I18N = {
   'btn.linkTitle':url=>`Abrir ${url} numa aba nova`,
   'btn.linkOff':'O container não está no ar: suba a stack para abrir o link',
   'items.empty':'Nenhum serviço adicionado.<br>Escolha um no combobox acima e clique em <b>Adicionar</b>.',
+  'tag.tpv':'Variante do logotipo',
+  'tag.tp':'Tema da interface',
+  'tag.vpn':'Sai pela VPN',
+  'tag.hw':'Aceleração por GPU',
+  'tag.route':'Endereço na stack',
+  'tag.cfg':'Pasta de configuração',
+  'tag.data':'Pasta de mídia',
+  'tag.dataDerived':'segue os *arr',
   'items.fixed':'fixo',
   'items.dragTitle':'Arraste para mudar a ordem (ou use as setas ↑ ↓)',
   'items.viaVpn':'via VPN',
@@ -1273,6 +1308,14 @@ const I18N = {
   'btn.linkTitle':url=>`Open ${url} in a new tab`,
   'btn.linkOff':'The container is not up: bring the stack up to open the link',
   'items.empty':'No services added.<br>Pick one in the combobox above and click <b>Add</b>.',
+  'tag.tpv':'Logo variant',
+  'tag.tp':'Interface theme',
+  'tag.vpn':'Goes out through the VPN',
+  'tag.hw':'GPU acceleration',
+  'tag.route':'Address in the stack',
+  'tag.cfg':'Config folder',
+  'tag.data':'Media folder',
+  'tag.dataDerived':'follows the *arr apps',
   'items.fixed':'fixed',
   'items.dragTitle':'Drag to reorder (or use the ↑ ↓ arrows)',
   'items.viaVpn':'via VPN',
@@ -1680,6 +1723,14 @@ const I18N = {
   'btn.linkTitle':url=>`Abrir ${url} en una pestaña nueva`,
   'btn.linkOff':'El contenedor no está en marcha: levanta la stack para abrir el link',
   'items.empty':'Ningún servicio añadido.<br>Elige uno en el combobox de arriba y pulsa <b>Añadir</b>.',
+  'tag.tpv':'Variante del logotipo',
+  'tag.tp':'Tema de la interfaz',
+  'tag.vpn':'Sale por la VPN',
+  'tag.hw':'Aceleración por GPU',
+  'tag.route':'Dirección en la stack',
+  'tag.cfg':'Carpeta de configuración',
+  'tag.data':'Carpeta multimedia',
+  'tag.dataDerived':'sigue a los *arr',
   'items.fixed':'fijo',
   'items.dragTitle':'Arrastre para cambiar el orden (o use las flechas ↑ ↓)',
   'items.viaVpn':'por VPN',
@@ -2420,6 +2471,32 @@ function paintStatus(){
   document.querySelectorAll('a.btn[data-link]').forEach(paintLink);
 }
 
+/* Os tipos de etiqueta da lista, em ordem de leitura. A chave é o `data-kind`
+   do CSS — é ela que dá a cor —, e o rótulo da legenda é o que a bolinha
+   explica ao lado do "Limpar tudo". Etiqueta nova é uma linha aqui, a cor no
+   CSS e as strings no `I18N`. */
+const TAG_KINDS = ['tpv','tp','vpn','hw','route','cfg','data'];
+const tagHtml = (kind, texto) =>
+  `<span class="tag" data-kind="${kind}" title="${attr(t('tag.'+kind))}">${escHtml(texto)}</span>`;
+
+/* A pasta de mídia de uma instância, por extenso — é ela que distingue uma da
+   outra, e adivinhar caminho é o que faz duas importarem uma por cima da
+   outra. O Bazarr não tem pasta própria: ele monta as das instâncias que
+   segue, e o `dataReal()` já devolve a lista delas. */
+function dataTag(a){
+  if(svc(a.id).derived) return t('tag.dataDerived');
+  return dataReal(a);
+}
+
+/* A legenda: uma bolinha por tipo, com o nome do que ele marca. Ela some com a
+   lista vazia — sem serviço não há etiqueta a explicar. */
+function renderLegend(){
+  const box = $('#tagLegend');
+  if(!box) return;
+  box.innerHTML = added.length ? TAG_KINDS.map(k=>
+    `<span class="legItem" data-kind="${k}"><i></i>${escHtml(t('tag.'+k))}</span>`).join('') : '';
+}
+
 function renderItems(){
   const box = $('#items');
   // o reverse proxy é fixo: aparece sempre, sem editar nem excluir
@@ -2428,7 +2505,7 @@ function renderItems(){
       ${dotHtml(NGINX.id)}${icoHtml(NGINX)}
       <div class="meta">
         <div class="nm">${NGINX.name}
-          <span class="tag">${t('items.nginxPorts', DEFAULTS.http, DEFAULTS.https)}</span>
+          ${tagHtml('route', t('items.nginxPorts', DEFAULTS.http, DEFAULTS.https))}
         </div>
         <div class="ds">${NGINX.id} · ${sdesc(NGINX.id)} · ${t('items.ngxDir', NGINX.id)}</div>
       </div>
@@ -2445,17 +2522,20 @@ function renderItems(){
       ${dotHtml(cname(a))}${icoHtml(s, '', icoKey(a.id, a.tpv))}
       <div class="meta">
         <div class="nm">${a.title || s.name}
-          ${(s.tpAddon && a.tpv && a.tpv!=='std')?`<span class="tag tpv">${t('m.tpv'+tpvKey(a.tpv))}</span>`:''}
-          ${s.tpTheme?`<span class="tag" title="${attr(t('m.tp'))}">${attr(a.tpt || TP_THEME_DEF)}</span>`:''}
-          ${a.vpn?`<span class="tag">${t('items.viaVpn')}</span>`:''}
-          ${a.hw==='intel' ? `<span class="tag">${t('items.hwIntel')}</span>`
-            : a.hw==='nvidia' ? `<span class="tag">${t('items.hwNvidia')}</span>` : ''}
+          ${(s.tpAddon && a.tpv && a.tpv!=='std')
+            ? tagHtml('tpv', t('m.tpv'+tpvKey(a.tpv))) : ''}
+          ${s.tpTheme ? tagHtml('tp', a.tpt || TP_THEME_DEF) : ''}
+          ${a.vpn ? tagHtml('vpn', t('items.viaVpn')) : ''}
+          ${a.hw==='intel'  ? tagHtml('hw', t('items.hwIntel'))
+            : a.hw==='nvidia' ? tagHtml('hw', t('items.hwNvidia')) : ''}
           ${s.internal ? ''
-            : publishes(a) ? `<span class="tag">${t('items.hostPort', hostPortOf(a))}${
-                hostPortOf(a) === String(inner(a.id)) ? '' : ' → '+inner(a.id)}</span>`
-            : `<span class="tag">${route(a)} → ${inner(a.id)}</span>`}
+            : publishes(a) ? tagHtml('route', t('items.hostPort', hostPortOf(a)) +
+                (hostPortOf(a) === String(inner(a.id)) ? '' : ' → '+inner(a.id)))
+            : tagHtml('route', `${route(a)} → ${inner(a.id)}`)}
+          ${s.noVol ? '' : tagHtml('cfg', cfgReal(a))}
+          ${(s.media && !s.noVol) ? tagHtml('data', dataTag(a)) : ''}
         </div>
-        <div class="ds">${cname(a)}${(a.title && a.title!==s.name)?' ('+s.name+')':''}${s.noVol?' · '+sdesc(s.id):' · '+cfgReal(a)}${s.media&&!s.noVol?' · '+dataReal(a):''}</div>
+        <div class="ds">${cname(a)}${(a.title && a.title!==s.name)?' ('+s.name+')':''} · ${sdesc(s.id)}</div>
       </div>
       <div class="acts">
         ${s.internal ? '' : `<a class="btn${linkOn(cname(a))?'':' off'}"
@@ -2469,6 +2549,7 @@ function renderItems(){
       </div>
     </div>`;
   }).join('') : `<div class="empty">${t('items.empty')}</div>`);
+  renderLegend();
   $('#count').textContent = t('services.count', added.length);
   $('#clear').disabled = !added.length;
   $('#clear').textContent = t('btn.clear');

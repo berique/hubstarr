@@ -56,6 +56,11 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   other when importing, so the list says so in red, with the names and the
   path. Jellyfin, which mounts the whole library, and Bazarr, which follows the
   others, are left out of the check.
+- **Tags on the service row**, one colour per kind: the logo variant, the
+  interface theme, going out through the VPN, GPU acceleration, the address in
+  the stack, and the config and media folders in full. Below the list, next to
+  **Clear all**, a legend says what each colour marks — it goes away with an
+  empty list.
 - **Multiple instances** of Sonarr, Radarr, Lidarr, Bazarr and Prowlarr — they
   only need different titles. Sonarr and Radarr also get
   `SONARR__APP__INSTANCENAME` / `RADARR__APP__INSTANCENAME`.

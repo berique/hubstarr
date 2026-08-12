@@ -56,6 +56,11 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   atropelam na importação, então a lista avisa em vermelho, com os nomes e o
   caminho. O Jellyfin, que monta a biblioteca inteira, e o Bazarr, que segue as
   outras, ficam de fora da checagem.
+- **Etiquetas na linha do serviço**, uma cor por tipo: a variante do logotipo,
+  o tema da interface, a saída pela VPN, a aceleração por GPU, o endereço na
+  stack e as pastas de configuração e de mídia, por extenso. Abaixo da lista,
+  ao lado do **Limpar tudo**, uma legenda diz o que cada cor marca — ela some
+  com a lista vazia.
 - **Múltiplas instâncias** de Sonarr, Radarr, Lidarr, Bazarr e Prowlarr —
   basta o título ser diferente. Sonarr e Radarr recebem também
   `SONARR__APP__INSTANCENAME` / `RADARR__APP__INSTANCENAME`.

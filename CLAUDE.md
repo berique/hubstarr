@@ -121,7 +121,15 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    `extraLibs()` (Jellyfin, que junta as pastas de fora das outras instâncias
    com as do "+ pasta") — os dois já devolvem o caminho certo de cada instância,
    literal ou com variável; não remonte `${BASE_MEDIA}/…` na mão.
-6. **UI** — `renderCombo()`, `renderItems()` (a ordem da lista se muda
+6. **UI** — as etiquetas da linha do serviço saem todas do `tagHtml(kind,
+   texto)`, e o `kind` é o que dá a cor no CSS (`.tag[data-kind=…]`) e o rótulo
+   no `I18N` (`tag.<kind>`). O `TAG_KINDS` é a lista deles, na ordem de leitura,
+   e é dele que o `renderLegend()` monta a legenda ao lado do "Limpar tudo" —
+   cor sem legenda é adivinhação. Etiqueta nova é uma linha no `TAG_KINDS`, a
+   cor nas duas tabelas do CSS (a da etiqueta e a do ponto da legenda) e as
+   strings nos três idiomas; não monte `<span class="tag">` à mão.
+
+   `renderCombo()`, `renderItems()` (a ordem da lista se muda
    arrastando a **linha inteira** — o `.item` é que leva o `draggable`, e o
    `dragstart` desiste quando o gesto começa num `button`, `a` ou campo, senão
    arrastar comeria o clique no Link e no Editar. `moveInstance()` mexe no
