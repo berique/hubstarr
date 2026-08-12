@@ -39,6 +39,12 @@ pub struct Patch {
     /// INI: `[Seção]` → lista de `chave=valor`, na ordem em que a página as quer
     #[serde(default)]
     pub sections: Vec<(String, Vec<(String, String)>)>,
+    /// O que separa chave de valor no arquivo daquele app. O padrão é `=`, do
+    /// INI do Qt que o qBittorrent usa; o SABnzbd escreve `chave = valor`, com
+    /// os espaços, e é assim que ele relê o que está lá — quem sabe disso é a
+    /// página, que é a dona do formato de cada arquivo.
+    #[serde(default)]
+    pub sep: Option<String>,
     /// JSON: as chaves de primeiro nível a pôr por cima das que já estão lá
     #[serde(default)]
     pub json: Option<Value>,
@@ -49,7 +55,11 @@ impl Patch {
     fn merge(&self, atual: &str) -> Result<String, String> {
         match self.format.as_deref() {
             Some("json") => merge_json(atual, self.json.as_ref().unwrap_or(&Value::Null)),
-            _ => Ok(merge_ini(atual, &self.sections)),
+            _ => Ok(merge_ini(
+                atual,
+                &self.sections,
+                self.sep.as_deref().unwrap_or("="),
+            )),
         }
     }
 
@@ -87,7 +97,11 @@ fn safe_join(dir: &Path, name: &str) -> Result<PathBuf, String> {
 /// as outras chaves, os comentários, as seções que não conhecemos e até a
 /// ordem das linhas. Chave que não existe entra no fim da seção dela; seção
 /// que não existe entra no fim do arquivo.
-pub fn merge_ini(atual: &str, sections: &[(String, Vec<(String, String)>)]) -> String {
+pub fn merge_ini(
+    atual: &str,
+    sections: &[(String, Vec<(String, String)>)],
+    sep: &str,
+) -> String {
     let mut linhas: Vec<String> = atual.lines().map(String::from).collect();
 
     for (secao, pares) in sections {
@@ -116,7 +130,7 @@ pub fn merge_ini(atual: &str, sections: &[(String, Vec<(String, String)>)]) -> S
         };
 
         for (chave, valor) in pares {
-            let linha = format!("{chave}={valor}");
+            let linha = format!("{chave}{sep}{valor}");
             let achou = linhas[inicio + 1..fim]
                 .iter()
                 .position(|l| chave_de(l).as_deref() == Some(chave.as_str()))
@@ -280,7 +294,7 @@ mod tests {
     #[test]
     fn troca_a_chave_existente_e_nao_mexe_no_resto() {
         let atual = "[BitTorrent]\nSession\\Port=6881\n\n[Preferences]\nWebUI\\Username=velho\nWebUI\\Port=8181\n";
-        let novo = merge_ini(atual, &secoes());
+        let novo = merge_ini(atual, &secoes(), "=");
         assert!(novo.contains("WebUI\\Username=admin"));
         assert!(!novo.contains("velho"));
         // o que é do app fica onde estava
@@ -291,7 +305,7 @@ mod tests {
     #[test]
     fn chave_que_falta_entra_na_secao_dela() {
         let atual = "[Preferences]\nWebUI\\Username=velho\n\n[Network]\nProxy\\Type=0\n";
-        let novo = merge_ini(atual, &secoes());
+        let novo = merge_ini(atual, &secoes(), "=");
         let linhas: Vec<&str> = novo.lines().collect();
         let i = linhas.iter().position(|l| l.starts_with("WebUI\\APIKey")).unwrap();
         let sec = linhas.iter().position(|l| *l == "[Preferences]").unwrap();
@@ -302,14 +316,14 @@ mod tests {
 
     #[test]
     fn secao_que_falta_entra_no_fim() {
-        let novo = merge_ini("[BitTorrent]\nSession\\Port=6881\n", &secoes());
+        let novo = merge_ini("[BitTorrent]\nSession\\Port=6881\n", &secoes(), "=");
         assert!(novo.contains("[Preferences]"));
         assert!(novo.trim_end().ends_with("WebUI\\APIKey=qbt_novo"));
     }
 
     #[test]
     fn arquivo_vazio_nasce_so_com_as_nossas_chaves() {
-        let novo = merge_ini("", &secoes());
+        let novo = merge_ini("", &secoes(), "=");
         assert_eq!(
             novo,
             "[Preferences]\nWebUI\\Username=admin\nWebUI\\APIKey=qbt_novo\n"
@@ -319,14 +333,37 @@ mod tests {
     #[test]
     fn aplicar_de_novo_nao_duplica_nem_reordena() {
         let atual = "[Preferences]\nWebUI\\Username=admin\nWebUI\\APIKey=qbt_novo\n";
-        assert_eq!(merge_ini(atual, &secoes()), atual);
+        assert_eq!(merge_ini(atual, &secoes(), "="), atual);
     }
 
     #[test]
     fn comentario_e_linha_em_branco_atravessam() {
         let atual = "# escrito pelo app\n[Preferences]\nWebUI\\Username=velho\n";
-        let novo = merge_ini(atual, &secoes());
+        let novo = merge_ini(atual, &secoes(), "=");
         assert!(novo.starts_with("# escrito pelo app\n"));
+    }
+
+    /// O separador não é enfeite: o SABnzbd escreve `chave = valor`, com os
+    /// espaços, e é nessa forma que ele relê o arquivo. Escrever `chave=valor`
+    /// ali deixava a chave onde o app não a encontra.
+    #[test]
+    fn o_sabnzbd_leva_espaco_dos_dois_lados_do_igual() {
+        let atual = "[misc]\nhost_whitelist = velho,\ninet_exposure = 0\n";
+        let secoes = vec![(
+            "misc".to_string(),
+            vec![
+                ("host_whitelist".to_string(), "sabnzbd,localhost".to_string()),
+                ("api_key".to_string(), "abc123".to_string()),
+            ],
+        )];
+        let novo = merge_ini(atual, &secoes, " = ");
+        assert!(novo.contains("host_whitelist = sabnzbd,localhost"));
+        assert!(novo.contains("api_key = abc123"));
+        // o que já estava lá, e não veio no patch, fica como estava
+        assert!(novo.contains("inet_exposure = 0"));
+        // e o padrão continua sendo o do Qt, sem espaço
+        let qt = merge_ini("[BitTorrent]\n", &secoes, "=");
+        assert!(qt.contains("api_key=abc123"));
     }
 
     #[test]
@@ -354,12 +391,12 @@ mod tests {
     #[test]
     fn o_formato_escolhe_o_merge_e_o_ini_e_o_padrao() {
         let ini = Patch { service: "qbittorrent".into(), path: "x".into(), format: None,
-                          sections: secoes(), json: None };
+                          sections: secoes(), sep: None, json: None };
         assert!(ini.merge("").unwrap().contains("[Preferences]"));
         assert_eq!(ini.chaves(), 2);
 
         let js = Patch { service: "qbittorrent".into(), path: "x".into(),
-                         format: Some("json".into()), sections: vec![],
+                         format: Some("json".into()), sections: vec![], sep: None,
                          json: Some(serde_json::json!({"tv": {"save_path": "/d"}})) };
         assert!(js.merge("{}").unwrap().contains("\"tv\""));
         assert_eq!(js.chaves(), 1);

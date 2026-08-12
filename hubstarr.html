@@ -4366,8 +4366,9 @@ function makeZip(files){                       // files: [{name, text}]
    arquivo para a pasta do container que se configura o app. */
 function patchText(dados){
   if(dados.format === 'json') return JSON.stringify(dados.json, null, 4);
+  const sep = dados.sep || '=';
   return dados.sections.map(([sec, pares])=>
-    `[${sec}]\n` + pares.map(([k, v])=>`${k}=${v}`).join('\n')).join('\n\n');
+    `[${sec}]\n` + pares.map(([k, v])=>`${k}${sep}${v}`).join('\n')).join('\n\n');
 }
 
 function outFiles(){
@@ -4420,7 +4421,11 @@ function outDirs(){
    a página — o servidor só grava chave por chave, preservando o resto do
    arquivo. */
 const PATCH_DATA = {
-  sab:      a => ({format:'ini',  sections: sabPairs(a)}),
+  /* O `sep` é o que separa chave de valor no arquivo daquele app, e não é
+     detalhe de estilo: o SABnzbd escreve `chave = valor`, com os espaços, e é
+     nessa forma que ele relê o que está lá. O qBittorrent usa o INI do Qt, sem
+     espaço nenhum — daí o padrão ser `=` e só o SABnzbd trazer o seu. */
+  sab:      a => ({format:'ini',  sep:' = ', sections: sabPairs(a)}),
   // INI: seções com pares na ordem em que a página as quer
   qbit:     a => ({format:'ini',  sections: qbitPairs(a)}),
   // JSON: um objeto por categoria, que o servidor sobrepõe ao que já existe
