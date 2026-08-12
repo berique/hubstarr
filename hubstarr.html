@@ -1963,7 +1963,11 @@ const SERVICES = [
    conf:[{host:'sabnzbd.ini', target:'/config/sabnzbd.ini', patch:'sab'}],
    site:'https://sabnzbd.org'},
   {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true, tp:true,
-   conf:[{host:'config/config/network.xml', target:'/config/config/network.xml', pane:'#outJf', tab:'jf'}], site:'https://jellyfin.org'},
+   /* `/config/network.xml`, não `/config/config/…`: a configuração do Jellyfin
+      mora na raiz da pasta de config dele, ao lado do `system.xml` e do
+      `encoding.xml`. Montado um nível abaixo, o arquivo existia e era ignorado
+      — o app subia sem base URL e o subpath do nginx respondia 404. */
+   conf:[{host:'network.xml', target:'/config/network.xml', pane:'#outJf', tab:'jf'}], site:'https://jellyfin.org'},
   {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5', publish:true, site:'https://github.com/seerr-team/seerr'},
   {id:'flaresolverr',name:'FlareSolverr',port:8191,img:'ghcr.io/thephaseless/byparr:latest',color:'#ff7f50',noVol:true, internal:true, site:'https://github.com/ThePhaseless/Byparr', credit:'Byparr'},
   {id:'gluetun',  name:'Gluetun',   port:8000, img:'qmcgaw/gluetun:latest',                color:'#8b98a5', noVol:true, internal:true, vpnCfg:true, site:'https://github.com/qdm12/gluetun'},

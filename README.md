@@ -98,8 +98,9 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
 - **network.xml do Jellyfin**: com ele na stack, sai também a configuração de
   rede dele, com o `BaseUrl` no subpath do nginx e o `nginx` em `KnownProxies` —
   sem o primeiro a interface monta os links na raiz, sem o segundo ele registra
-  o IP do proxy no lugar do IP de quem pediu. Montada em
-  `/config/config/network.xml`.
+  o IP do proxy no lugar do IP de quem pediu. Montada em `/config/network.xml`,
+  ao lado do `system.xml` — um nível abaixo o Jellyfin não a lê, sobe sem base
+  URL e o subpath do nginx responde 404.
 - **qBittorrent.conf pronta**: quando ele está na stack, o Hubstarr monta a
   configuração inicial dele — pastas iguais às do compose, ajustes de proxy
   reverso e as credenciais no formato do próprio qBittorrent 5.2: a senha em

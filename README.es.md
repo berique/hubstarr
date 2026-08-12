@@ -105,7 +105,8 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   configuración de red, con el `BaseUrl` en el subpath de nginx y `nginx` en
   `KnownProxies` — sin lo primero la interfaz arma los enlaces en la raíz, sin
   lo segundo registra la IP del proxy en vez de la de quien pidió. Montado en
-  `/config/config/network.xml`.
+  `/config/network.xml`, al lado del `system.xml` — un nivel más abajo Jellyfin
+  no lo lee, arranca sin base URL y el subpath de nginx responde 404.
 - **qBittorrent.conf lista**: cuando está en la stack, Hubstarr arma su
   configuración inicial — rutas iguales a las del compose, ajustes de
   proxy inverso y las credenciales en el formato del propio qBittorrent 5.2: la

@@ -257,7 +257,10 @@ handler de `#mSave`.
   página de boas-vindas do nginx.
 - **Cada subpath do nginx casa com a base URL do app**: nos *arr é a variável
   `<APP>__SERVER__URLBASE`; no Jellyfin é o `BaseUrl` do `network.xml`, que por
-  isso é gerado; no SABnzbd é o `url_base` do `sabnzbd.ini`, que o servidor
+  isso é gerado — e que vai em **`/config/network.xml`**, a raiz da pasta de
+  config dele, ao lado do `system.xml`: montado um nível abaixo o arquivo existe
+  e é ignorado, o app sobe sem base URL e o subpath responde 404, sem nada no
+  log dizer por quê; no SABnzbd é o `url_base` do `sabnzbd.ini`, que o servidor
   escreve depois de subir. Serviço em subpath sem esse ajuste monta os links na raiz e
   quebra atrás do proxy — app sem base URL configurável não tem lugar num
   subpath, e é essa a razão de o **Seerr e o qBittorrent** publicarem porta em
