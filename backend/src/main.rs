@@ -220,17 +220,24 @@ async fn apply_config(State(ctx): State<Ctx>, Json(req): Json<apply::Req>) -> Re
         let ctx = ctx.clone();
         move |log| async move {
             let cfgarr = req.configarr();
+            let mut erro = None;
             if req.tem_o_que_fazer() {
-                apply::download_clients(req, log.clone()).await?;
+                erro = apply::download_clients(req, log.clone()).await.err();
             } else if cfgarr.is_some() {
                 apply::esperar(&req, &log).await?;
             }
-            // e os perfis de qualidade, que são arquivo — o Configarr lê o
-            // `config.yml` que a página gerou e escreve nos apps
+            /* E os perfis de qualidade, que são arquivo — o Configarr lê o
+               `config.yml` que a página gerou e escreve nos apps. Uma ligação
+               que não passou não cancela isto: são coisas independentes, e
+               perder os perfis porque um app estava fora do ar é
+               desproporcional. O erro volta no fim, sem se perder. */
             if let Some(c) = cfgarr {
                 deploy::configarr(&ctx.docker, &c, &log).await?;
             }
-            Ok(())
+            match erro {
+                Some(e) => Err(e),
+                None => Ok(()),
+            }
         }
     });
     Json(json!({"ok": true, "job": job})).into_response()
@@ -384,8 +391,9 @@ async fn start_deploy(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Respons
             match p.config {
                 Some(cfg) => {
                     let cfgarr = cfg.configarr();
+                    let mut erro = None;
                     if cfg.tem_o_que_fazer() {
-                        apply::download_clients(cfg, log.clone()).await?;
+                        erro = apply::download_clients(cfg, log.clone()).await.err();
                     } else if cfgarr.is_some() {
                         // nada a configurar pela API, mas os apps ainda
                         // precisam estar de pé para o Configarr escrever neles
@@ -393,11 +401,15 @@ async fn start_deploy(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Respons
                     }
                     /* E, por último, os perfis de qualidade: o Configarr roda
                        uma vez e sai, e depende dos apps de pé — é por isso que
-                       ele vem aqui, e não no `up` de cima. */
+                       ele vem aqui, e não no `up` de cima. Ligação que não
+                       passou não o cancela: uma coisa não depende da outra. */
                     if let Some(c) = cfgarr {
                         deploy::configarr(&ctx.docker, &c, &log).await?;
                     }
-                    Ok(())
+                    match erro {
+                        Some(e) => Err(e),
+                        None => Ok(()),
+                    }
                 }
                 None => Ok(()),
             }
