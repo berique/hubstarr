@@ -69,7 +69,19 @@
      espaça agora são as duas linhas. */
   .card h2.files{flex-direction:column;align-items:stretch;padding:0}
   .card h2.files .tabs{padding:12px 16px}
-  .card h2.files #stat{padding:8px 16px;border-top:1px solid var(--line)}
+  .card h2.files .statRow{display:flex;align-items:baseline;gap:10px;
+     padding:8px 16px;border-top:1px solid var(--line)}
+  /* as etiquetas são um flex próprio: assim elas começam ao lado da contagem
+     e quebram entre si, em vez de descerem todas juntas para a linha de baixo */
+  .card h2.files #stat{flex:none}
+  .card h2.files #statTags{display:flex;flex-wrap:wrap;gap:6px;min-width:0;flex:1}
+  /* uma etiqueta por container, com a cor do serviço no ponto. O `h2` é
+     maiúsculo e espaçado; a etiqueta volta ao texto normal, senão o nome do
+     container fica ilegível. */
+  .card h2.files .ctag{display:inline-flex;align-items:center;gap:5px;
+     text-transform:none;letter-spacing:0;margin:0}
+  .card h2.files .ctag i{width:7px;height:7px;border-radius:50%;
+     background:var(--c);flex:none}
 
   /* logotipos: SVG do dashboardicons.com, com fallback para a inicial colorida */
   .ico{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;
@@ -393,7 +405,10 @@ sudo sh get-docker.sh</pre>
         <button class="tab" data-tab="jf" style="display:none">network.xml</button>
         <button class="tab" data-tab="cfgarr" style="display:none">config.yml</button>
       </span>
-      <span id="stat"></span>
+      <span class="statRow">
+        <span id="stat"></span>
+        <span id="statTags"></span>
+      </span>
     </h2>
     <pre id="out"></pre>
     <pre id="outEnv" style="display:none"></pre>
@@ -4236,6 +4251,14 @@ function render(){
         `<span class="warn">${t('items.samePath', g.names, g.path)}</span>`).join('<br>')
     : `<span class="ok">${t('items.routes', routes)}</span>`;
   $('#stat').textContent = t('out.containers', list.length + 1);   // +1: nginx fixo
+  /* Uma etiqueta por container, na ordem em que eles saem no compose — a
+     mesma lista que a contagem conta, com o nginx à frente por ser a linha
+     fixa. O título de cada uma é o `container_name`, que é como o docker o
+     chama e o que o nginx e a Configuração usam para se referir a ele. */
+  $('#statTags').innerHTML = [{nome:NGINX.name, cor:NGINX.color, key:NGINX.id}]
+    .concat(list.map(a=>({nome:a.title || svc(a.id).name, cor:svc(a.id).color, key:cname(a)})))
+    .map(x=>`<span class="tag ctag" title="${attr(x.key)}">` +
+            `<i style="--c:${attr(x.cor)}"></i>${escHtml(x.nome)}</span>`).join('');
   $('#summary').textContent = list.map(a=>a.title||svc(a.id).name).join(' · ') || t('out.empty');
   saveSettings();  // com servidor atrás, a stack sobrevive ao reload; sem ele, não faz nada
 }
