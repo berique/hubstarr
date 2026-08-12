@@ -84,7 +84,9 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   `dracula`, `dark`, `organizr` (the default), `space-gray`, `overseerr` and
   `nord`. Below the field, a link shows the chosen palette's screenshot in a
   modal over the service's own; the image comes from the
-  [theme.park](https://docs.theme-park.dev/) docs, one per app.
+  [theme.park](https://docs.theme-park.dev/) docs, one per app. In the list, the
+  row of whoever has a theme carries a tag with the chosen one, next to the
+  variant.
 - **FlareSolverr alongside Prowlarr**: in the Prowlarr modal, a checkbox that
   is on by default brings FlareSolverr into the stack — it is what solves
   Cloudflare's anti-bot challenge on protected indexers. Set it up in Prowlarr

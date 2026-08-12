@@ -83,7 +83,8 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   `dracula`, `dark`, `organizr` (o padrão), `space-gray`, `overseerr` e `nord`.
   Abaixo do campo, um link mostra a captura da paleta escolhida num modal
   sobre o do serviço; a imagem vem da documentação do
-  [theme.park](https://docs.theme-park.dev/), uma por app.
+  [theme.park](https://docs.theme-park.dev/), uma por app. Na lista, a linha
+  de quem tem tema traz uma etiqueta com o escolhido, ao lado da variante.
 - **FlareSolverr junto do Prowlarr**: no modal do Prowlarr, um checkbox
   marcado por padrão traz o FlareSolverr para a stack — é ele que resolve o
   desafio anti-bot da Cloudflare nos indexadores protegidos. Configure-o no

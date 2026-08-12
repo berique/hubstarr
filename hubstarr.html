@@ -2454,6 +2454,7 @@ function renderItems(){
       <div class="meta">
         <div class="nm">${a.title || s.name}
           ${(s.tpAddon && a.tpv && a.tpv!=='std')?`<span class="tag tpv">${t('m.tpv'+tpvKey(a.tpv))}</span>`:''}
+          ${s.tpTheme?`<span class="tag" title="${attr(t('m.tp'))}">${attr(a.tpt || TP_THEME_DEF)}</span>`:''}
           ${a.vpn?`<span class="tag">${t('items.viaVpn')}</span>`:''}
           ${a.hw==='intel' ? `<span class="tag">${t('items.hwIntel')}</span>`
             : a.hw==='nvidia' ? `<span class="tag">${t('items.hwNvidia')}</span>` : ''}
