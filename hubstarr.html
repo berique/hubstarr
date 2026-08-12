@@ -3865,6 +3865,11 @@ function build(){
   L.push(``);
   L.push(`<span class="k">networks</span>:`);
   L.push(`  <span class="k">${NETWORK}</span>:`);
+  /* O `name` fixa o nome real da rede. Sem ele o compose o prefixa com o nome
+     do projeto — a pasta em que os arquivos estão —, e a rede vira
+     `<pasta>_starrnet`: quem chega de fora do compose, como o Configarr no
+     `docker run`, não a acha pelo nome que a página anuncia. */
+  L.push(`    <span class="k">name</span>: <span class="v">${NETWORK}</span>`);
   L.push(`    <span class="k">driver</span>: <span class="v">bridge</span>`);
   return {html:L.join('\n'), list};
 }
