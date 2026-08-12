@@ -3765,7 +3765,11 @@ function qbitPairs(a){
 }
 
 function buildQbit(list){
-  const a = list.find(x=>svc(x.id).conf);
+  /* Pelo id, não por "quem tem `conf`": o Jellyfin e o Configarr também têm
+     arquivo próprio, e com um deles na stack sem o qBittorrent este gerador
+     pegava a instância errada e morria no `qbitConfPath`, levando o render
+     inteiro junto. */
+  const a = list.find(x=>x.id === 'qbittorrent');
   if(!a) return '';
   const Q = [];
   const c = txt => `<span class="c"># ${txt}</span>`;
