@@ -341,7 +341,11 @@ ela que monta os caminhos), `deploy.rs` (`docker compose up -d`/`down` na
 pasta da stack, mais o `docker_ok()` que o `api/health` devolve — ele pergunta
 por `docker compose version`, não só pelo docker, porque o plugin é pacote à
 parte e é ele que sobe a stack; sem ele a página abre o bloco "Precisa instalar
-o Docker?" e mostra o aviso `#noDocker`), `apply.rs` (v0.3: a Configuração inteira
+o Docker?" e mostra o aviso `#noDocker`; o `up_one`/`stop_one` é um container só, o que o clique no
+ponto de status da lista chama por `POST /api/service/:key/:action` — `up` sobe
+com `--no-deps`, para não arrastar vizinho parado, e `down` é um `stop`, que
+deixa o container existindo em vez de sumir. A chave vira argumento de comando,
+então passa pelo `ok_service()` antes), `apply.rs` (v0.3: a Configuração inteira
 aplicada pela API — clientes de download em cada *arr **e no próprio Prowlarr**,
 cada *arr no Prowlarr, e o Media Management mais a nomenclatura de cada família.
 

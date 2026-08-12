@@ -159,6 +159,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/files", post(write_files))
         .route("/api/deploy", post(start_deploy))
         .route("/api/down", post(start_down))
+        .route("/api/service/:key/:action", post(start_service))
         .route("/api/config/apply", post(apply_config))
         .route("/api/shot/:app/:theme", get(shot))
         .route("/api/status", get(stack_status))
@@ -379,6 +380,36 @@ async fn start_down(State(ctx): State<Ctx>) -> Response {
     let job = ctx.jobs.spawn({
         let ctx = ctx.clone();
         move |log| async move { deploy::down(&ctx.docker, &ctx.base, log).await }
+    });
+    Json(json!({"ok": true, "job": job})).into_response()
+}
+
+/// Um container só, subido ou parado — é o clique no ponto de status da lista.
+/// Nada é gravado aqui: o `up` de um serviço usa o compose que já está na
+/// pasta, então quem ainda não subiu a stack inteira uma vez não tem o que
+/// subir. A chave é o `cname()` da página, que é o nome do serviço no compose;
+/// ela é conferida antes de virar argumento de comando.
+async fn start_service(State(ctx): State<Ctx>, Path((key, action)): Path<(String, String)>) -> Response {
+    if !deploy::ok_service(&key) {
+        return fail("nome de serviço inválido");
+    }
+    let up = match action.as_str() {
+        "up" => true,
+        "down" => false,
+        _ => return fail("ação desconhecida"),
+    };
+    if !ctx.base.join("docker-compose.yml").exists() {
+        return fail("a stack ainda não foi gravada nesta pasta");
+    }
+    let job = ctx.jobs.spawn({
+        let ctx = ctx.clone();
+        move |log| async move {
+            if up {
+                deploy::up_one(&ctx.docker, &ctx.base, &key, log).await
+            } else {
+                deploy::stop_one(&ctx.docker, &ctx.base, &key, log).await
+            }
+        }
     });
     Json(json!({"ok": true, "job": job})).into_response()
 }

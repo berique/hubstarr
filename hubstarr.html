@@ -100,10 +100,13 @@
   .item{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);
         border-radius:8px;background:var(--panel-2)}
   /* ponto de status do container: só aparece com servidor atrás da página,
-     porque é ele que sabe o que está no ar */
-  .stDot{width:9px;height:9px;border-radius:50%;flex:none;display:none;
-         border:1px solid var(--muted);background:transparent}
+     porque é ele que sabe o que está no ar. É um <button> porque clicar nele
+     sobe ou derruba aquele container — o ponto é o interruptor dele. */
+  .stDot{width:9px;height:9px;border-radius:50%;flex:none;display:none;padding:0;
+         border:1px solid var(--muted);background:transparent;cursor:pointer}
   body.srvOn .stDot{display:block}
+  .stDot:hover{transform:scale(1.35)}
+  .stDot[disabled]{cursor:progress;opacity:.5}
   .stDot[data-st="running"]{background:var(--accent-2);border-color:var(--accent-2);
          box-shadow:0 0 0 3px color-mix(in srgb, var(--accent-2) 22%, transparent)}
   .stDot[data-st="unhealthy"]{background:var(--c-ph);border-color:var(--c-ph)}
@@ -877,6 +880,8 @@ const I18N = {
   'tour.theme':'Alterna entre claro e escuro. É só da página; o tema dos apps sai do campo <b>Tema</b> de cada serviço.',
   'log.up':'Subindo a stack',
   'log.down':'Derrubando a stack',
+  'log.svcUp':n=>`Subindo o ${n}`,
+  'log.svcDown':n=>`Derrubando o ${n}`,
   'log.apply':'Aplicando a Configuração',
   'log.running':'rodando…',
   'log.done':'pronto ✓',
@@ -886,6 +891,8 @@ const I18N = {
   'st.down':s=>`Parado${s?' — '+s:''}`,
   'st.unhealthy':s=>`No ar, mas sem passar no healthcheck${s?' — '+s:''}`,
   'st.none':'Container não criado — a stack ainda não subiu',
+  'st.doUp':'clique para subir só este',
+  'st.doDown':'clique para derrubar só este',
   'btn.help':'O que é isso?',
   'env.hIds':'Usuário e grupo do host que os containers assumem para escrever nos volumes. Saem no <b>.env</b> como <b>PUID</b>/<b>PGID</b>; no seu usuário, veja com <b>id -u</b> e <b>id -g</b>.',
   'env.hTz':'Fuso dos containers, em <b>TZ</b> — mexe nos horários de log, agendamento e renomeio. A lista é a IANA inteira; o valor inicial é o desta máquina.',
@@ -1273,6 +1280,8 @@ const I18N = {
   'tour.theme':'Switches between light and dark. It is the page only; the apps\' theme comes from each service\'s <b>Theme</b> field.',
   'log.up':'Bringing the stack up',
   'log.down':'Tearing the stack down',
+  'log.svcUp':n=>`Bringing ${n} up`,
+  'log.svcDown':n=>`Taking ${n} down`,
   'log.apply':'Applying the Configuration',
   'log.running':'running…',
   'log.done':'done ✓',
@@ -1282,6 +1291,8 @@ const I18N = {
   'st.down':s=>`Stopped${s?' — '+s:''}`,
   'st.unhealthy':s=>`Up, but failing its healthcheck${s?' — '+s:''}`,
   'st.none':'Container not created — the stack has not been brought up yet',
+  'st.doUp':'click to bring just this one up',
+  'st.doDown':'click to take just this one down',
   'btn.help':'What is this?',
   'env.hIds':'Host user and group the containers take on to write in the volumes. They land in <b>.env</b> as <b>PUID</b>/<b>PGID</b>; for your own user, check <b>id -u</b> and <b>id -g</b>.',
   'env.hTz':'Container time zone, as <b>TZ</b> — it drives log timestamps, scheduling and renaming. The list is the whole IANA database; the initial value is this machine\'s.',
@@ -1669,6 +1680,8 @@ const I18N = {
   'tour.theme':'Alterna entre claro y oscuro. Es solo de la página; el tema de las apps sale del campo <b>Tema</b> de cada servicio.',
   'log.up':'Levantando la stack',
   'log.down':'Derribando la stack',
+  'log.svcUp':n=>`Levantando el ${n}`,
+  'log.svcDown':n=>`Derribando el ${n}`,
   'log.apply':'Aplicando la Configuración',
   'log.running':'ejecutando…',
   'log.done':'listo ✓',
@@ -1678,6 +1691,8 @@ const I18N = {
   'st.down':s=>`Parado${s?' — '+s:''}`,
   'st.unhealthy':s=>`En marcha, pero sin pasar el healthcheck${s?' — '+s:''}`,
   'st.none':'Contenedor no creado — la stack todavía no se levantó',
+  'st.doUp':'clic para levantar solo este',
+  'st.doDown':'clic para derribar solo este',
   'btn.help':'¿Qué es esto?',
   'env.hIds':'Usuario y grupo del host que los contenedores asumen para escribir en los volúmenes. Salen en el <b>.env</b> como <b>PUID</b>/<b>PGID</b>; para tu usuario, mira <b>id -u</b> e <b>id -g</b>.',
   'env.hTz':'Zona horaria de los contenedores, como <b>TZ</b> — afecta a los horarios de log, la programación y el renombrado. La lista es la IANA entera; el valor inicial es el de esta máquina.',
@@ -2311,9 +2326,16 @@ function dotOf(key){
 const attr = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;')
   .replace(/</g,'&lt;');
 
+/* O ponto é também o interruptor do container: no ar, o clique para; parado
+   (ou nem criado), o clique sobe só ele. A dica diz as duas coisas — o estado
+   e o que o clique vai fazer. */
+const dotAct = key => dotOf(key).st === 'stopped' || dotOf(key).st === 'none' ? 'up' : 'down';
+const dotTip = key => dotOf(key).tip + ' — ' + t(dotAct(key)==='up' ? 'st.doUp' : 'st.doDown');
+
 const dotHtml = key =>{
   const d = dotOf(key);
-  return `<span class="stDot" data-st="${d.st}" data-dot="${attr(key)}" title="${attr(d.tip)}"></span>`;
+  return `<button class="stDot" type="button" data-st="${d.st}" data-dot="${attr(key)}"
+    title="${attr(dotTip(key))}"></button>`;
 };
 
 /* O "Link" só abre alguma coisa com o container no ar, e quem sabe disso é o
@@ -2337,7 +2359,7 @@ function paintStatus(){
   document.querySelectorAll('.stDot').forEach(el=>{
     const d = dotOf(el.dataset.dot);
     el.dataset.st = d.st;
-    el.title = d.tip;
+    el.title = dotTip(el.dataset.dot);
   });
   document.querySelectorAll('a.btn[data-link]').forEach(paintLink);
 }
@@ -2392,6 +2414,9 @@ function renderItems(){
 }
 
 $('#items').onclick = e=>{
+  // o ponto de status vem antes: ele é um <button> sem `data-act`
+  const dot = e.target.closest('.stDot');
+  if(dot) return toggleService(dot);
   const btn = e.target.closest('button[data-act]'); if(!btn) return;
   if(btn.dataset.act==='ngx') return openNgx();
   const key = btn.closest('.item').dataset.key;
@@ -4491,6 +4516,24 @@ async function pollStatus(){
     STATUS = j.services || {};
     paintStatus();
   }catch(e){ /* servidor caiu: os pontos ficam como estavam */ }
+}
+
+/* Clicar no ponto sobe ou derruba aquele container, sozinho: no ar, ele para;
+   parado ou nem criado, ele sobe (com `--no-deps`, para não arrastar vizinho).
+   Nada é gravado antes — o servidor usa o compose que já está na pasta, então
+   isso é para a stack que já subiu ao menos uma vez, e não substitui o Subir.
+   Sem servidor o ponto nem aparece, e sem docker não há o que fazer. */
+async function toggleService(dot){
+  if(!SERVER || !SERVER.docker || dot.disabled) return;
+  const key = dot.dataset.dot, act = dotAct(key);
+  const a = byKey(key);
+  const nm = key === NGINX.id ? NGINX.name : (a ? (a.title || svc(a.id).name) : key);
+  dot.disabled = true;
+  try{
+    await runJob(()=> api('service/' + encodeURIComponent(key) + '/' + act, {method:'POST'}),
+                 t(act==='up' ? 'log.svcUp' : 'log.svcDown', nm));
+  } finally { dot.disabled = false; }
+  pollStatus();
 }
 
 applyI18n(); renderCombo(); renderItems(); render();

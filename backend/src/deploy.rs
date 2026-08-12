@@ -91,6 +91,33 @@ pub async fn down(docker: &str, dir: &Path, log: Log) -> Result<(), String> {
     run(docker, &["compose", "down"], dir, &log).await
 }
 
+/// Nome de serviço que pode virar argumento do compose. O `cname()` da página
+/// só produz minúsculas, dígitos e hífen; o que fugir disso não veio de lá e
+/// não entra na linha de comando. Hífen no começo é recusado à parte: seria
+/// nome válido pela regra das letras, mas o compose o leria como opção.
+pub fn ok_service(key: &str) -> bool {
+    !key.is_empty()
+        && !key.starts_with('-')
+        && key.len() <= 64
+        && key
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-' || c == '_')
+}
+
+/// Sobe um container só, sem tocar nos outros. `--no-deps` é o que mantém a
+/// promessa do clique: quem está parado ao lado continua parado.
+pub async fn up_one(docker: &str, dir: &Path, key: &str, log: Log) -> Result<(), String> {
+    run(docker, &["compose", "up", "-d", "--no-deps", key], dir, &log).await
+}
+
+/// Para um container só. É `stop`, não `down`: o `down` derruba a stack
+/// inteira, e aqui o que se quer é o inverso — só aquele serviço sai do ar, e
+/// o container continua existindo para o ponto voltar a "parado" em vez de
+/// "não criado".
+pub async fn stop_one(docker: &str, dir: &Path, key: &str, log: Log) -> Result<(), String> {
+    run(docker, &["compose", "stop", key], dir, &log).await
+}
+
 /// Um `docker compose <args>` qualquer na pasta da stack — é como o `patch.rs`
 /// para e sobe um container só, em volta da edição da configuração dele.
 pub async fn compose(docker: &str, args: &[&str], dir: &Path, log: &Log) -> Result<(), String> {
@@ -134,5 +161,20 @@ where
     let mut lines = BufReader::new(handle).lines();
     while let Ok(Some(line)) = lines.next_line().await {
         log.line(line);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ok_service;
+
+    #[test]
+    fn nome_de_servico_so_aceita_o_que_o_cname_produz() {
+        assert!(ok_service("sonarr-4k"));
+        assert!(!ok_service(""));
+        assert!(!ok_service("--rmi")); // o compose leria isso como opção
+        assert!(!ok_service("sonarr; rm -rf /"));
+        assert!(!ok_service("../fora"));
+        assert!(!ok_service("Sonarr"));
     }
 }
