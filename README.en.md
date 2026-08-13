@@ -180,6 +180,12 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   field is mandatory in the app, and whichever you untick keeps the format it
   already has instead of losing it. All three parts of the Configuration reach
   the apps, through **Bring up** and **Apply to the stack**.
+- **Root folders ready**: every Sonarr, Radarr and Lidarr gets the folder the
+  compose mounts into it — `/data/tv`, `/data/movies`, `/data/music` — at the
+  path the container sees. Without it the first series or movie stops at a *You
+  must add a root folder*, and the path typed by hand is usually the host's,
+  which the app accepts and then finds nothing in. Whatever is already there
+  stays: removing a root folder takes the library with it.
 - **Quality profiles and custom formats** from the [TRaSH Guides](https://trash-guides.info),
   per instance: every Sonarr and Radarr in the stack picks the profiles it wants
   — **HD (1080p)**, **4K (2160p)**, **Remux 4K**, **Anime** — and that is how the

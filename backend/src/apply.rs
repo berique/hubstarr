@@ -97,6 +97,10 @@ struct Arr {
     /// de fora, e não mandar a chave é o que faz o app manter a dele
     #[serde(default)]
     skip_naming: Vec<String>,
+    /// as pastas raiz do app, como o container as enxerga — a página as tira
+    /// dos binds que ela mesma montou no compose
+    #[serde(default)]
+    root_folders: Vec<String>,
 }
 
 #[derive(Deserialize)]
@@ -176,6 +180,7 @@ fn alvo_prowlarr(p: &Prowlarr) -> Arr {
         internal_url: String::new(),
         sync: false,
         skip_naming: Vec::new(),
+        root_folders: Vec::new(),
     }
 }
 
@@ -192,6 +197,7 @@ impl Arr {
             internal_url: String::new(),
             sync: false,
             skip_naming: self.skip_naming.clone(),
+            root_folders: self.root_folders.clone(),
         }
     }
 }
@@ -417,6 +423,7 @@ pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
         falhas += categorias_do_cliente(&http, &req, client, &log).await;
     }
     for arr in &req.arrs {
+        falhas += pastas_raiz(&http, &base, &req, arr, &log).await;
         falhas += media_management(&http, &base, &req, arr, &log).await;
     }
     if falhas > 0 {
@@ -864,6 +871,62 @@ fn merge(atual: &mut Value, de: &Map<String, Value>, mapa: &[(&str, &str)]) -> R
 /// O Media Management e a nomenclatura de uma instância. São dois recursos
 /// únicos (sem id na rota, mas com id no corpo), então cada um é lido, mexido
 /// e devolvido inteiro.
+/* As pastas raiz de um *arr — o *Root Folder*, que é onde ele guarda o que
+   baixa. Os caminhos vêm da página, que é quem monta os binds do compose e
+   portanto sabe o que o container enxerga.
+
+   Acrescenta o que falta e não mexe no que já está lá: pasta raiz é coisa que
+   se remove com a biblioteca junto, então tirar a que alguém pôs à mão seria
+   estrago, não configuração. O app recusa a que já existe com um 400, e por
+   isso a lista é lida antes.
+
+   Pasta que o app não consegue acessar também vira 400 — é o caso de mandar o
+   caminho do host em vez do de dentro do container. A mensagem dele vai para o
+   log inteira: ela diz qual é o caminho. */
+async fn pastas_raiz(
+    http: &reqwest::Client,
+    base: &str,
+    req: &Req,
+    arr: &Arr,
+    log: &Log,
+) -> usize {
+    if arr.root_folders.is_empty() {
+        return 0;
+    }
+    let url = format!("{base}{}/api/{}/rootfolder", arr.route, arr.api);
+    let atuais = match list(http, &url, &req.api_key).await {
+        Ok(v) => v,
+        Err(e) => {
+            log.line(format!("{} → pastas raiz: {e}", arr.name));
+            return 1;
+        }
+    };
+    let ja_tem: Vec<&str> = atuais
+        .iter()
+        .filter_map(|v| v.get("path").and_then(|p| p.as_str()))
+        // o app guarda com a barra final às vezes, e compará-las como texto
+        // faria a mesma pasta entrar duas vezes
+        .map(|p| p.trim_end_matches('/'))
+        .collect();
+
+    let mut falhas = 0;
+    for pasta in &arr.root_folders {
+        let alvo = pasta.trim_end_matches('/');
+        if ja_tem.contains(&alvo) {
+            log.line(format!("{} → pasta raiz {pasta}: já estava lá", arr.name));
+            continue;
+        }
+        match send(http, &url, &req.api_key, None, json!({"path": pasta})).await {
+            Ok(()) => log.line(format!("{} → pasta raiz {pasta}: pronta", arr.name)),
+            Err(e) => {
+                log.line(format!("{} → pasta raiz {pasta}: {e}", arr.name));
+                falhas += 1;
+            }
+        }
+    }
+    falhas
+}
+
 async fn media_management(
     http: &reqwest::Client,
     base: &str,
@@ -1125,6 +1188,7 @@ mod tests {
             internal_url: format!("http://{key}:8989/{key}"),
             sync: true,
             skip_naming: Vec::new(),
+            root_folders: vec![format!("/data/{key}")],
         }
     }
 

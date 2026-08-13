@@ -389,7 +389,15 @@ com `--no-deps`, para não arrastar vizinho parado, e `down` é um `stop`, que
 deixa o container existindo em vez de sumir. A chave vira argumento de comando,
 então passa pelo `ok_service()` antes), `apply.rs` (v0.3: a Configuração inteira
 aplicada pela API — clientes de download em cada *arr **e no próprio Prowlarr**,
-cada *arr no Prowlarr, e o Media Management mais a nomenclatura de cada família.
+cada *arr no Prowlarr, o Media Management mais a nomenclatura de cada família, e
+as **pastas raiz** de cada instância.
+
+A pasta raiz é o caminho **de dentro do container** (`/data` mais a subpasta da
+instância), e quem o monta é a página, no `rootFolders()` — é ela que escreve os
+binds do compose, então é ela que sabe o que o app enxerga. Mandar o caminho do
+host não dá erro na hora: o *arr aceita e depois não acha arquivo nenhum. O
+`pastas_raiz()` acrescenta o que falta e **não tira** o que já está lá — remover
+pasta raiz leva a biblioteca junto.
 
 Com o FlareSolverr na stack, ele também entra no Prowlarr, em Settings →
 Indexers → Indexer Proxies, com a **etiqueta `flaresolverr`** — criada ali

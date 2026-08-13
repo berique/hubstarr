@@ -176,6 +176,12 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   obrigatório no app, e a que você desmarcar mantém o formato que já tem, em vez
   de perdê-lo. As três partes da Configuração chegam aos apps pelo **Subir** e
   pelo **Aplicar na stack**.
+- **Pastas raiz prontas**: cada Sonarr, Radarr e Lidarr recebe a pasta que o
+  compose monta nele — `/data/tv`, `/data/movies`, `/data/music` —, no caminho
+  que o container enxerga. Sem isso a primeira série ou filme para num *You must
+  add a root folder*, e o caminho digitado à mão costuma ser o do host, que o
+  app aceita e depois não acha. O que já estiver lá fica: pasta raiz se remove
+  com a biblioteca junto.
 - **Perfis de qualidade e custom formats** do [TRaSH Guides](https://trash-guides.info),
   por instância: cada Sonarr e cada Radarr da stack escolhe os perfis do guia
   que quer — **HD (1080p)**, **4K (2160p)**, **Remux 4K**, **Anime** —, e é assim

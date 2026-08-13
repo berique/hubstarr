@@ -4821,6 +4821,23 @@ function skipNaming(a){
   const sc = (CONFIG.mm[a.id] && CONFIG.mm[a.id].naming.scope) || {};
   return perInstFields(a.id).filter(k=> sc[k] && sc[k][cname(a)] === false);
 }
+/* As pastas raiz que o *arr vai oferecer ao adicionar série ou filme — o
+   *Root Folder* dele. São os caminhos **de dentro do container**, que é o que
+   o app enxerga: o compose monta a pasta de mídia da instância em `/data` mais
+   a subpasta dela, e é isso que vai aqui.
+
+   Sem elas o app sobe com a lista vazia e a primeira adição para num "You must
+   add a root folder", com o caminho a ser digitado à mão — e digitar o caminho
+   do host ali é o erro que faz o *arr não achar nada.
+
+   O Bazarr não entra: ele não tem pasta raiz, segue as instâncias que já as
+   têm. O Jellyfin também não — biblioteca não é pasta raiz de *arr. */
+function rootFolders(a){
+  const s = svc(a.id);
+  if(!s.media || s.noVol || s.derived || s.dlClient) return [];
+  return ['/data' + (a.data ? '/' + a.data : '')];
+}
+
 const CAT_FIELD = {sonarr:'tvCategory', radarr:'movieCategory', lidarr:'musicCategory'};
 function applyPayload(){
   syncConfig();   // idem: o payload sai completo mesmo sem passar pelo modal
@@ -4839,7 +4856,8 @@ function applyPayload(){
                              sync: CONFIG.apps[cname(a)] !== false,
                              // formato que esta instância não recebe fica como
                              // está no app: o campo é obrigatório lá
-                             skipNaming: skipNaming(a)})),
+                             skipNaming: skipNaming(a),
+                             rootFolders: rootFolders(a)})),
     // o Media Management vai como está: é por família, e quem traduz cada
     // opção para o nome que a API usa é o servidor
     mm: CONFIG.mm,

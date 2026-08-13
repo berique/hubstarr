@@ -42,8 +42,12 @@ jobs:
       # O docker compose também já vem instalado: o que a página gera passa
       # pelo validador dele, que é quem vai recusar o arquivo na máquina de
       # quem usa.
+      # o `yaml` é do próprio verificador, para reler o compose que a página
+      # gerou e conferir as pastas raiz contra os binds
       - name: O compose gerado é válido
-        run: python3 tools/check-compose.py
+        run: |
+          python3 -m pip install --quiet pyyaml
+          python3 tools/check-compose.py
 
   servidor:
     name: Servidor

@@ -85,7 +85,9 @@ try{
   applyI18n(); renderCombo(); renderItems(); render();
   const ta = document.createElement('textarea');
   ta.id = 'saida';
-  ta.textContent = JSON.stringify(outFiles());
+  ta.textContent = JSON.stringify({arquivos: outFiles(),
+                                   arrs: (SERVER = {ok:true, docker:true, dir:'/srv/stack'})
+                                         && applyPayload().arrs});
   document.body.appendChild(ta);
   document.title = 'OK';
 }catch(e){ document.title = 'ERRO: ' + e.message + ' @@ ' + (e.stack||'').split('\\n')[1]; }
@@ -121,13 +123,40 @@ try{
     return json.loads(html.unescape(bruto.group(1)))
 
 
+def conferir_raizes(compose, arrs):
+    """A pasta raiz de cada *arr é o caminho que o container enxerga.
+
+    O app guarda ali o que baixa, e o caminho que ele recebe tem de ser o
+    destino de um bind — não o do host. Mandar o do host não dá erro nenhum na
+    hora: o *arr aceita, e só depois não acha arquivo nenhum. Os dois lados
+    saem da mesma página, e é justamente por isso que podem divergir sem que
+    ninguém veja.
+    """
+    import yaml
+    conf = yaml.safe_load(compose)
+    ruim = 0
+    for arr in arrs:
+        servico = conf['services'].get(arr['key'], {})
+        alvos = {v['target'] for v in servico.get('volumes', [])
+                 if isinstance(v, dict) and v['target'].startswith('/data')}
+        for pasta in arr.get('rootFolders', []):
+            if pasta not in alvos:
+                print(f"{arr['key']}: pasta raiz {pasta} não é montada "
+                      f"(o compose monta {sorted(alvos) or 'nada em /data'})", file=sys.stderr)
+                ruim += 1
+    if ruim:
+        sys.exit('pasta raiz que o container não enxerga')
+    print('pastas raiz batem com os binds')
+
+
 def main():
     pagina = sys.argv[1] if len(sys.argv) > 1 else 'hubstarr.html'
     # a pasta vai no HOME, não em /tmp: o chromium empacotado como snap não lê
     # /tmp, e a página abriria em branco — o erro que aparece é a página não
     # ter montado stack nenhuma, que não diz nada sobre a causa
     with tempfile.TemporaryDirectory(dir=os.path.expanduser('~')) as saida:
-        arquivos = gerar(pagina, saida)
+        saiu = gerar(pagina, saida)
+        arquivos = saiu['arquivos']
         nomes = [f['name'] for f in arquivos]
         print('a página gerou:', ', '.join(nomes))
 
@@ -151,6 +180,9 @@ def main():
             if esperado not in servicos:
                 sys.exit(f'o compose saiu sem o {esperado}')
         print('compose válido')
+
+        compose = [f for f in arquivos if f['name'] == 'docker-compose.yml'][0]['text']
+        conferir_raizes(compose, saiu['arrs'])
 
 
 if __name__ == '__main__':
