@@ -269,7 +269,8 @@ cargo run --release
 Abra `http://127.0.0.1:7878`. A página é a mesma — servida pelo binário, que a
 traz embutida —, com duas coisas a mais: o selo **servidor** no topo e, nos
 arquivos gerados, os botões **Subir** e **Derrubar**. Ao abrir, ela pergunta ao
-servidor se há `docker compose` ali; se não houver, avisa e já abre o bloco
+servidor se há `docker compose` — ou `podman compose`, que ele procura sozinho
+quando o docker não responde — ali; se não houver, avisa e já abre o bloco
 **Precisa instalar o Docker?**. Sem `docker compose` ali, **Subir** e
 **Derrubar** ficam desabilitados, com a explicação na dica dos botões.
 
@@ -278,7 +279,7 @@ servidor se há `docker compose` ali; se não houver, avisa e já abre o bloco
 | `--addr`   | `127.0.0.1:7878`         | endereço em que o servidor atende               |
 | `--dir`    | `./stack`                | pasta em que os arquivos gerados são gravados   |
 | `--db`     | `~/.hubstarr/hubstarr.db`| banco em que a stack é guardada                 |
-| `--docker` | `docker`                 | comando do docker, para quem usa podman         |
+| `--docker` | `docker`, ou `podman`    | comando do compose; sem a opção, vale o primeiro dos dois que responder |
 
 A stack fica no banco com as instâncias, o Ambiente e a Configuração em
 tabelas próprias — o estado da página, normalizado, e não um blob de JSON. Ela

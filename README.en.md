@@ -274,7 +274,8 @@ cargo run --release
 Open `http://127.0.0.1:7878`. The page is the same one — served by the binary,
 which carries it embedded — with two extras: the **server** badge at the top
 and, in the generated files, the **Bring up** and **Tear down** buttons. On
-load it asks the server whether `docker compose` is there; if it is not, it
+load it asks the server whether `docker compose` — or `podman compose`, which
+it looks for on its own when docker does not answer — is there; if it is not, it
 warns and opens the **Need to install Docker?** block for you. With no
 `docker compose` there, **Bring up** and **Tear down** are disabled, and the
 button tooltip says why.
@@ -284,7 +285,7 @@ button tooltip says why.
 | `--addr`   | `127.0.0.1:7878`          | address the server listens on                 |
 | `--dir`    | `./stack`                 | folder the generated files are written to     |
 | `--db`     | `~/.hubstarr/hubstarr.db` | database the stack is kept in                 |
-| `--docker` | `docker`                  | the docker command, for podman users          |
+| `--docker` | `docker`, or `podman`     | the compose command; without the option, whichever of the two answers first |
 
 The stack lives in the database with its instances, Environment and
 Configuration in tables of their own — the page state, normalized, not a JSON

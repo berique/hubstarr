@@ -281,7 +281,8 @@ cargo run --release
 Abre `http://127.0.0.1:7878`. La página es la misma — servida por el binario,
 que la trae embebida — con dos cosas más: el distintivo **servidor** arriba y,
 en los archivos generados, los botones **Levantar** y **Derribar**. Al abrirse
-le pregunta al servidor si hay `docker compose` ahí; si no lo hay, avisa y abre
+le pregunta al servidor si hay `docker compose` —o `podman compose`, que busca
+solo cuando docker no responde— ahí; si no lo hay, avisa y abre
 ya el bloque **¿Necesitas instalar Docker?**. Sin `docker compose` ahí,
 **Levantar** y **Derribar** quedan deshabilitados, con la explicación en la
 ayuda de los botones.
@@ -291,7 +292,7 @@ ayuda de los botones.
 | `--addr`   | `127.0.0.1:7878`          | dirección en la que atiende el servidor       |
 | `--dir`    | `./stack`                 | carpeta en la que se graban los archivos      |
 | `--db`     | `~/.hubstarr/hubstarr.db` | base en la que se guarda la stack             |
-| `--docker` | `docker`                  | comando de docker, para quien usa podman      |
+| `--docker` | `docker`, o `podman`      | comando del compose; sin la opción, vale el primero de los dos que responda |
 
 La stack vive en la base con sus instancias, el Entorno y la Configuración en
 tablas propias — el estado de la página, normalizado, y no un blob de JSON. Es

@@ -16,7 +16,29 @@ use crate::jobs::Log;
 /// O `docker compose` responde? É o que a página usa para avisar antes de
 /// tentar subir. Pergunta pelo plugin, não só pelo docker: é o `compose` que
 /// sobe a stack, e ele é um pacote à parte que pode faltar num docker que
-/// está lá e funcionando.
+/// está lá e funcionando. Vale igual para o `podman compose`.
+/// Os motores que sabemos rodar, na ordem em que são tentados quando ninguém
+/// passou `--docker`. O `podman` entra aqui porque o `podman compose` roda o
+/// mesmo arquivo — quem tem só ele instalado não tem `docker` nenhum a
+/// encontrar, e a página abriria o aviso de "instale o Docker" com a máquina
+/// pronta para subir a stack.
+pub const ENGINES: [&str; 2] = ["docker", "podman"];
+
+/// Qual motor usar: o que veio na linha de comando, se veio, senão o primeiro
+/// dos `ENGINES` que responder. Sem nenhum, fica o `docker` — é o que a
+/// mensagem do `docker_ok()` na página fala de instalar.
+pub async fn pick_engine(escolhido: Option<String>) -> String {
+    if let Some(c) = escolhido {
+        return c;
+    }
+    for e in ENGINES {
+        if docker_ok(e).await {
+            return e.to_string();
+        }
+    }
+    ENGINES[0].to_string()
+}
+
 pub async fn docker_ok(docker: &str) -> bool {
     Command::new(docker)
         .args(["compose", "version"])

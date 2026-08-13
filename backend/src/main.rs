@@ -61,7 +61,8 @@ Exemplos:
   hubstarr                            atende só nesta máquina, em 127.0.0.1:7878
   hubstarr --addr 0.0.0.0:7878        atende também na rede local
   hubstarr --dir /srv/stack           põe os arquivos da stack em outro lugar
-  hubstarr --docker podman            usa o podman no lugar do docker
+  hubstarr --docker podman            força o podman (sem isso, ele já é usado
+                                      quando o docker não responde)
 
 Cuidado com o endereço: 127.0.0.1 é sempre a máquina em que o NAVEGADOR está
 rodando. Se você navega de outro computador, use --addr 0.0.0.0:7878 e abra o
@@ -89,9 +90,9 @@ struct Args {
     #[arg(long, value_name = "ARQUIVO", default_value_os_t = default_db())]
     db: PathBuf,
 
-    /// Comando do docker (para quem usa podman ou um wrapper)
-    #[arg(long, value_name = "COMANDO", default_value = "docker")]
-    docker: String,
+    /// Comando do docker (padrão: docker, e podman quando só ele responde)
+    #[arg(long, value_name = "COMANDO")]
+    docker: Option<String>,
 
     /// Mostra esta ajuda
     #[arg(short = 'h', long, action = clap::ArgAction::Help)]
@@ -140,10 +141,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("  Para editar uma delas, rode outro servidor com --dir e --db próprios.");
         }
     }
+    let docker = deploy::pick_engine(args.docker).await;
+    if docker != deploy::ENGINES[0] {
+        println!("Usando o {docker} para rodar o compose.");
+    }
     let ctx: Ctx = Arc::new(App {
         base,
         db_path: db_path.clone(),
-        docker: args.docker,
+        docker,
         jobs: Jobs::new(),
         db,
     });

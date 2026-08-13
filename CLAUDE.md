@@ -383,7 +383,11 @@ ela que monta os caminhos), `deploy.rs` (`docker compose up -d`/`down` na
 pasta da stack, mais o `docker_ok()` que o `api/health` devolve — ele pergunta
 por `docker compose version`, não só pelo docker, porque o plugin é pacote à
 parte e é ele que sobe a stack; sem ele a página abre o bloco "Precisa instalar
-o Docker?" e mostra o aviso `#noDocker`; o `up_one`/`stop_one` é um container só, o que o clique no
+o Docker?" e mostra o aviso `#noDocker`. Em quem esse teste é feito sai do
+`pick_engine()`, resolvido uma vez na subida: o comando do `--docker`, se veio,
+senão o primeiro dos `ENGINES` (`docker`, `podman`) que passar — o
+`podman compose` roda o mesmo arquivo, e máquina que só tem ele não tem docker
+nenhum a encontrar; o `up_one`/`stop_one` é um container só, o que o clique no
 ponto de status da lista chama por `POST /api/service/:key/:action` — `up` sobe
 com `--no-deps`, para não arrastar vizinho parado, e `down` é um `stop`, que
 deixa o container existindo em vez de sumir. A chave vira argumento de comando,
