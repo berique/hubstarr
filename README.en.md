@@ -102,12 +102,16 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
 - **Per-field help** in the Environment and in the Configuration: every row has
   a `?` that opens an explanation of what the value does — and, in the
   Environment, of how it lands in the generated files.
-- **Jellyfin's network.xml**: with it in the stack, its network configuration
-  comes out too, with `BaseUrl` set to the nginx subpath and `nginx` in
-  `KnownProxies` — without the first the UI builds its links at the root,
-  without the second it logs the proxy's IP instead of the caller's. Mounted at
-  `/config/network.xml`, next to `system.xml` — one level below Jellyfin does not
-  read it, starts with no base URL, and the nginx subpath answers 404.
+- **Jellyfin's network.xml**: with it in the stack, `BaseUrl` set to the nginx
+  subpath and `nginx` in `KnownProxies` — without the first the UI builds its
+  links at the root and the subpath answers 404, without the second it logs the
+  proxy's IP instead of the caller's. The file is **not mounted**: it belongs to
+  Jellyfin, which migrates its network configuration on startup, and mounting
+  ours would freeze what it keeps in there. With a server, **Bring up** waits for
+  the app to create the file, checks whether the base URL is there, writes what
+  is missing and restarts just that container — every other key stays as it was.
+  With no server, it comes in the `.zip`, at the path the app reads it from
+  (`/config/network.xml`, next to `system.xml`).
 - **A ready qBittorrent.conf**: when it is in the stack, Hubstarr builds its
   initial configuration — paths matching the compose file, reverse-proxy
   settings and the credentials in qBittorrent 5.2's own format: the password as

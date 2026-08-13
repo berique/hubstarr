@@ -169,7 +169,11 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    montado. **`patch`** muda o destino da entrada: em vez de bind, ela vira
    chaves que o servidor escreve na configuração que o próprio app criou, depois
    do `up` — o valor da flag é a chave do `PATCH_DATA`, que diz o formato
-   (`ini` ou `json`) e quem monta os dados. O `outPatches()` é o que a página
+   (`ini`, `json` ou `xml`) e quem monta os dados. O `xml` é o `network.xml` do
+   Jellyfin: o `merge_xml` do servidor não é parser, é a mesma ideia do INI —
+   elemento de primeiro nível que existe é trocado no lugar (inclusive quando
+   ocupa várias linhas), o que falta entra antes de fechar a raiz, e o resto do
+   arquivo não se toca. O `outPatches()` é o que a página
    manda junto do `up`, e no `.zip` a entrada sai no caminho em que o app lê o
    arquivo, não no `host`. Eles
    emitem **HTML com spans de realce** (`<span class="k">`/`v`/`c`); o texto
@@ -264,11 +268,13 @@ handler de `#mSave`.
   atende quem chega sem casar com o `server_name`, e a stack toda responde a
   página de boas-vindas do nginx.
 - **Cada subpath do nginx casa com a base URL do app**: nos *arr é a variável
-  `<APP>__SERVER__URLBASE`; no Jellyfin é o `BaseUrl` do `network.xml`, que por
-  isso é gerado — e que vai em **`/config/network.xml`**, a raiz da pasta de
-  config dele, ao lado do `system.xml`: montado um nível abaixo o arquivo existe
-  e é ignorado, o app sobe sem base URL e o subpath responde 404, sem nada no
-  log dizer por quê; no SABnzbd é o `url_base` do `sabnzbd.ini`, que o servidor
+  `<APP>__SERVER__URLBASE`; no Jellyfin é o `BaseUrl` do `network.xml`, que o
+  servidor escreve depois de subir (`patch`, formato `xml`) em
+  **`/config/network.xml`** — a raiz da pasta de config, ao lado do
+  `system.xml`. Montá-lo não serve: o arquivo é do app, que migra a
+  configuração de rede ao subir, e num nível errado ele existe e é ignorado —
+  o app sobe sem base URL e o subpath responde 404, sem nada no log dizer por
+  quê; no SABnzbd é o `url_base` do `sabnzbd.ini`, que o servidor
   escreve depois de subir. Serviço em subpath sem esse ajuste monta os links na raiz e
   quebra atrás do proxy — app sem base URL configurável não tem lugar num
   subpath, e é essa a razão de o **Seerr e o qBittorrent** publicarem porta em

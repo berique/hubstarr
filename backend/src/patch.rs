@@ -48,6 +48,10 @@ pub struct Patch {
     /// JSON: as chaves de primeiro nível a pôr por cima das que já estão lá
     #[serde(default)]
     pub json: Option<Value>,
+    /// XML: elementos de primeiro nível. Valor de texto vira `<K>v</K>`; lista
+    /// vira `<K><string>a</string>…</K>`, que é como o Jellyfin guarda as dele.
+    #[serde(default)]
+    pub xml: Option<Map<String, Value>>,
 }
 
 impl Patch {
@@ -55,6 +59,7 @@ impl Patch {
     fn merge(&self, atual: &str) -> Result<String, String> {
         match self.format.as_deref() {
             Some("json") => merge_json(atual, self.json.as_ref().unwrap_or(&Value::Null)),
+            Some("xml") => merge_xml(atual, self.xml.as_ref().unwrap_or(&Map::new())),
             _ => Ok(merge_ini(
                 atual,
                 &self.sections,
@@ -72,6 +77,7 @@ impl Patch {
                 .and_then(|v| v.as_object())
                 .map(|m| m.len())
                 .unwrap_or(0),
+            Some("xml") => self.xml.as_ref().map(|m| m.len()).unwrap_or(0),
             _ => self.sections.iter().map(|(_, v)| v.len()).sum(),
         }
     }
@@ -164,6 +170,83 @@ pub fn merge_ini(
 ///
 /// Arquivo ilegível não é motivo para parar: o app o reescreve inteiro na
 /// próxima vez, e o que interessa é o nosso chegar lá.
+/* Os elementos que o Hubstarr governa dentro de um XML de configuração — hoje
+   o `network.xml` do Jellyfin.
+
+   Não é um parser de XML: é a mesma ideia do merge do INI, linha a linha. O
+   elemento que já existe é trocado no lugar, com a indentação dele; o que falta
+   entra antes da tag de fechamento da raiz. Todo o resto do arquivo — ordem,
+   comentários, o que o app guardou — fica como estava, porque quem manda nele é
+   o app.
+
+   Vale só para elemento de primeiro nível cujo valor cabe numa linha, que é o
+   caso do `BaseUrl`. Lista vira `<K><string>a</string>…</K>`, na forma em que o
+   Jellyfin as escreve. */
+pub fn merge_xml(atual: &str, nosso: &Map<String, Value>) -> Result<String, String> {
+    if nosso.is_empty() {
+        return Ok(atual.to_string());
+    }
+    let mut linhas: Vec<String> = atual.lines().map(String::from).collect();
+
+    for (chave, valor) in nosso {
+        let corpo = match valor {
+            Value::Array(itens) => itens
+                .iter()
+                .map(|i| format!("<string>{}</string>", esc_xml(&texto_de(i))))
+                .collect::<String>(),
+            v => esc_xml(&texto_de(v)),
+        };
+
+        let abre = format!("<{chave}>");
+        let vazio = format!("<{chave} />");
+        let achou = linhas.iter().position(|l| {
+            let t = l.trim_start();
+            t.starts_with(&abre) || t.starts_with(&vazio)
+        });
+        match achou {
+            Some(i) => {
+                // o elemento pode estar aberto numa linha e fechado noutra:
+                // o que houver entre as duas sai junto
+                let ind: String = linhas[i].chars().take_while(|c| c.is_whitespace()).collect();
+                let fecha = format!("</{chave}>");
+                let fim = linhas[i..]
+                    .iter()
+                    .position(|l| l.contains(&fecha))
+                    .map(|k| i + k)
+                    .unwrap_or(i);
+                linhas.splice(i..=fim, [format!("{ind}<{chave}>{corpo}</{chave}>")]);
+            }
+            None => {
+                // entra antes de fechar a raiz, com a indentação de quem já está lá
+                let fim = linhas
+                    .iter()
+                    .rposition(|l| l.trim_start().starts_with("</"))
+                    .unwrap_or(linhas.len());
+                linhas.insert(fim, format!("  <{chave}>{corpo}</{chave}>"));
+            }
+        }
+    }
+    let mut out = linhas.join("\n");
+    if atual.ends_with('\n') || !atual.is_empty() {
+        out.push('\n');
+    }
+    Ok(out)
+}
+
+/// O texto de um valor JSON: string sem as aspas, o resto como veio.
+fn texto_de(v: &Value) -> String {
+    match v {
+        Value::String(s) => s.clone(),
+        outro => outro.to_string(),
+    }
+}
+
+fn esc_xml(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+}
+
 pub fn merge_json(atual: &str, nosso: &Value) -> Result<String, String> {
     let mut obj: Map<String, Value> = serde_json::from_str(atual).unwrap_or_default();
     let nosso = nosso
@@ -391,12 +474,12 @@ mod tests {
     #[test]
     fn o_formato_escolhe_o_merge_e_o_ini_e_o_padrao() {
         let ini = Patch { service: "qbittorrent".into(), path: "x".into(), format: None,
-                          sections: secoes(), sep: None, json: None };
+                          sections: secoes(), sep: None, json: None, xml: None };
         assert!(ini.merge("").unwrap().contains("[Preferences]"));
         assert_eq!(ini.chaves(), 2);
 
         let js = Patch { service: "qbittorrent".into(), path: "x".into(),
-                         format: Some("json".into()), sections: vec![], sep: None,
+                         format: Some("json".into()), sections: vec![], sep: None, xml: None,
                          json: Some(serde_json::json!({"tv": {"save_path": "/d"}})) };
         assert!(js.merge("{}").unwrap().contains("\"tv\""));
         assert_eq!(js.chaves(), 1);
@@ -409,5 +492,45 @@ mod tests {
         assert!(safe_join(dir, "../fora.conf").is_err());
         assert!(safe_join(dir, "/etc/passwd").is_err());
         assert!(safe_join(dir, "").is_err());
+    }
+
+    /// O `network.xml` do Jellyfin: o que já está lá é trocado no lugar, o que
+    /// falta entra antes de fechar a raiz, e o resto do arquivo não se mexe.
+    #[test]
+    fn o_xml_troca_o_que_existe_e_acrescenta_o_que_falta() {
+        let atual = "<?xml version=\"1.0\"?>\n<NetworkConfiguration>\n  \
+                     <EnableIPv6>true</EnableIPv6>\n  <BaseUrl></BaseUrl>\n\
+                     </NetworkConfiguration>\n";
+        let mut nosso = Map::new();
+        nosso.insert("BaseUrl".into(), Value::String("/jellyfin".into()));
+        nosso.insert(
+            "KnownProxies".into(),
+            Value::Array(vec![Value::String("nginx".into())]),
+        );
+        let novo = merge_xml(atual, &nosso).unwrap();
+        assert!(novo.contains("<BaseUrl>/jellyfin</BaseUrl>"));
+        assert!(novo.contains("<KnownProxies><string>nginx</string></KnownProxies>"));
+        // o que o app guardou fica
+        assert!(novo.contains("<EnableIPv6>true</EnableIPv6>"));
+        // e não duplica: aplicar de novo dá o mesmo arquivo
+        assert_eq!(merge_xml(&novo, &nosso).unwrap(), novo);
+        assert_eq!(novo.matches("<BaseUrl>").count(), 1);
+    }
+
+    /// Elemento que ocupa várias linhas — como o Jellyfin escreve as listas —
+    /// é trocado inteiro, sem deixar metade para trás.
+    #[test]
+    fn o_xml_troca_o_elemento_de_varias_linhas_inteiro() {
+        let atual = "<Config>\n  <KnownProxies>\n    <string>velho</string>\n  \
+                     </KnownProxies>\n</Config>\n";
+        let mut nosso = Map::new();
+        nosso.insert(
+            "KnownProxies".into(),
+            Value::Array(vec![Value::String("nginx".into())]),
+        );
+        let novo = merge_xml(atual, &nosso).unwrap();
+        assert!(novo.contains("<KnownProxies><string>nginx</string></KnownProxies>"));
+        assert!(!novo.contains("velho"));
+        assert_eq!(novo.matches("KnownProxies").count(), 2);   // abre e fecha, uma vez
     }
 }

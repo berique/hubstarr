@@ -100,12 +100,15 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
 - **Ajuda por campo** no Ambiente e na Configuração: cada linha tem um `?` que
   abre uma explicação do que aquele valor faz — e, no Ambiente, de como ele sai
   nos arquivos gerados.
-- **network.xml do Jellyfin**: com ele na stack, sai também a configuração de
-  rede dele, com o `BaseUrl` no subpath do nginx e o `nginx` em `KnownProxies` —
-  sem o primeiro a interface monta os links na raiz, sem o segundo ele registra
-  o IP do proxy no lugar do IP de quem pediu. Montada em `/config/network.xml`,
-  ao lado do `system.xml` — um nível abaixo o Jellyfin não a lê, sobe sem base
-  URL e o subpath do nginx responde 404.
+- **network.xml do Jellyfin**: com ele na stack, o `BaseUrl` no subpath do
+  nginx e o `nginx` em `KnownProxies` — sem o primeiro a interface monta os
+  links na raiz e o subpath responde 404, sem o segundo ele registra o IP do
+  proxy no lugar do IP de quem pediu. O arquivo **não é montado**: ele é do
+  Jellyfin, que migra a configuração de rede ao subir, e montá-lo congelaria o
+  que ele guarda ali. Com servidor, o **Subir** espera o app criar o arquivo,
+  confere se a base URL está lá, escreve a que falta e reinicia só ele — as
+  demais chaves ficam como estavam. Sem servidor, ele sai no `.zip`, no caminho
+  em que o app o lê (`/config/network.xml`, ao lado do `system.xml`).
 - **qBittorrent.conf pronta**: quando ele está na stack, o Hubstarr monta a
   configuração inicial dele — pastas iguais às do compose, ajustes de proxy
   reverso e as credenciais no formato do próprio qBittorrent 5.2: a senha em

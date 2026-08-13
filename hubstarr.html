@@ -429,7 +429,6 @@ sudo sh get-docker.sh</pre>
         <button class="tab on" data-tab="yml">docker-compose.yml</button>
         <button class="tab" data-tab="env">.env</button>
         <button class="tab" data-tab="nginx">nginx.conf</button>
-        <button class="tab" data-tab="jf" style="display:none">network.xml</button>
         <button class="tab" data-tab="cfgarr" style="display:none">config.yml</button>
       </span>
       <span class="statRow">
@@ -440,7 +439,6 @@ sudo sh get-docker.sh</pre>
     <pre id="out"></pre>
     <pre id="outEnv" style="display:none"></pre>
     <pre id="outNginx" style="display:none"></pre>
-    <pre id="outJf" style="display:none"></pre>
     <pre id="outCfgarr" style="display:none"></pre>
     <div class="bar">
       <span class="sp"></span>
@@ -2008,11 +2006,13 @@ const SERVICES = [
    conf:[{host:'sabnzbd.ini', target:'/config/sabnzbd.ini', patch:'sab'}],
    site:'https://sabnzbd.org'},
   {id:'jellyfin', name:'Jellyfin',  port:8096, img:'lscr.io/linuxserver/jellyfin:latest',  color:'#7b68ee', media:true, mdir:'', hw:true, library:true, tp:true,
-   /* `/config/network.xml`, não `/config/config/…`: a configuração do Jellyfin
-      mora na raiz da pasta de config dele, ao lado do `system.xml` e do
-      `encoding.xml`. Montado um nível abaixo, o arquivo existia e era ignorado
-      — o app subia sem base URL e o subpath do nginx respondia 404. */
-   conf:[{host:'network.xml', target:'/config/network.xml', pane:'#outJf', tab:'jf'}], site:'https://jellyfin.org'},
+   /* O `network.xml` é dele, não nosso: montá-lo congelaria tudo o que ele
+      guarda ali, e o arquivo ainda muda de forma entre versões — o Jellyfin
+      migra a configuração de rede ao subir. Por isso é `patch`: o servidor
+      espera o app criar o arquivo, confere se a base URL está lá, põe a que
+      falta e reinicia só ele. Fica em `/config/network.xml`, a raiz da pasta de
+      config, ao lado do `system.xml`. */
+   conf:[{host:'network.xml', target:'/config/network.xml', patch:'jellyfin'}], site:'https://jellyfin.org'},
   {id:'seerr',    name:'Seerr',     port:5055, img:'ghcr.io/seerr-team/seerr:latest',      color:'#6d5ef5', publish:true, site:'https://github.com/seerr-team/seerr'},
   {id:'flaresolverr',name:'FlareSolverr',port:8191,img:'ghcr.io/thephaseless/byparr:latest',color:'#ff7f50',noVol:true, internal:true, site:'https://github.com/ThePhaseless/Byparr', credit:'Byparr'},
   {id:'gluetun',  name:'Gluetun',   port:8000, img:'qmcgaw/gluetun:latest',                color:'#8b98a5', noVol:true, internal:true, vpnCfg:true, site:'https://github.com/qdm12/gluetun'},
@@ -4170,52 +4170,16 @@ function qbitCats(a){
 
 /* network.xml do Jellyfin: ele precisa saber o subpath em que o nginx o serve,
    senão a interface monta os links na raiz. O resto é o padrão dele. */
-function buildJellyfin(list){
-  const a = list.find(x=>x.id === 'jellyfin');
-  if(!a) return '';
-  const X = [];
-  const esc = v => String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const tag = (name, val, ind='  ') =>
-    X.push(`${ind}<span class="k">&lt;${name}&gt;</span><span class="v">${esc(val)}</span>` +
-           `<span class="k">&lt;/${name}&gt;</span>`);
-  const open = (name, ind='  ') => X.push(`${ind}<span class="k">&lt;${name}&gt;</span>`);
-  const close = (name, ind='  ') => X.push(`${ind}<span class="k">&lt;/${name}&gt;</span>`);
-  const empty = (name, ind='  ') => X.push(`${ind}<span class="k">&lt;${name} /&gt;</span>`);
+/* As chaves que o Hubstarr governa no `network.xml` do Jellyfin. Só estas duas:
+   o resto do arquivo é dele, e mexer no que não precisamos seria desfazer
+   escolha de quem usa.
 
-  X.push(`<span class="c">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span>`);
-  X.push(`<span class="k">&lt;NetworkConfiguration</span> ` +
-         `<span class="v">xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ` +
-         `xmlns:xsd="http://www.w3.org/2001/XMLSchema"</span><span class="k">&gt;</span>`);
-  tag('BaseUrl', route(a) === '/' ? '' : route(a));
-  tag('EnableHttps', 'false');
-  tag('RequireHttps', 'false');
-  tag('InternalHttpPort', inner(a.id));
-  tag('InternalHttpsPort', 8920);
-  tag('PublicHttpPort', inner(a.id));
-  tag('PublicHttpsPort', 8920);
-  tag('AutoDiscovery', 'true');
-  tag('EnableIPv4', 'true');
-  tag('EnableIPv6', 'false');
-  tag('EnableRemoteAccess', 'true');
-  open('LocalNetworkSubnets');
-  tag('string', '10.0.0.0/24', '    ');
-  close('LocalNetworkSubnets');
-  empty('LocalNetworkAddresses');
-  // quem chega é sempre o reverse proxy: sem isso o Jellyfin vê o IP dele
-  // no lugar do IP de quem pediu
-  open('KnownProxies');
-  tag('string', NGINX.id, '    ');
-  close('KnownProxies');
-  tag('IgnoreVirtualInterfaces', 'true');
-  open('VirtualInterfaceNames');
-  tag('string', 'veth', '    ');
-  close('VirtualInterfaceNames');
-  tag('EnablePublishedServerUriByRequest', 'false');
-  empty('PublishedServerUriBySubnet');
-  empty('RemoteIPFilter');
-  tag('IsRemoteIPFilterBlacklist', 'false');
-  X.push(`<span class="k">&lt;/NetworkConfiguration&gt;</span>`);
-  return X.join('\n');
+   Sem o `BaseUrl` a interface monta os links na raiz e o subpath do nginx
+   responde 404; sem o `nginx` em `KnownProxies` ele registra o IP do proxy no
+   lugar do IP de quem pediu. Base URL vazia é a raiz — é assim que ele a
+   escreve, e é o que sai quando o Jellyfin é o único serviço da stack. */
+function jellyfinKeys(a){
+  return {BaseUrl: route(a) === '/' ? '' : route(a), KnownProxies: [NGINX.id]};
 }
 
 /* config.yml do Configarr (v0.4): os perfis de qualidade e os custom formats do
@@ -4292,7 +4256,7 @@ function render(){
   $('#outEnv').innerHTML = buildEnv(list);
   $('#outNginx').innerHTML = buildNginx(list);
   // abas de config: uma por serviço que gera arquivo próprio
-  const confs = {jf:buildJellyfin(list), cfgarr:buildConfigarr(list)};
+  const confs = {cfgarr:buildConfigarr(list)};
   Object.entries(confs).forEach(([k, txt])=>{
     $(PANES[k]).innerHTML = txt;
     $(`.tab[data-tab="${k}"]`).style.display = txt ? '' : 'none';
@@ -4317,8 +4281,7 @@ function render(){
 }
 
 let tab = 'yml';
-const PANES = {yml:'#out', env:'#outEnv', nginx:'#outNginx',
-               jf:'#outJf', cfgarr:'#outCfgarr'};
+const PANES = {yml:'#out', env:'#outEnv', nginx:'#outNginx', cfgarr:'#outCfgarr'};
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   tab = t.dataset.tab;
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on', x===t));
@@ -4442,6 +4405,13 @@ function makeZip(files){                       // files: [{name, text}]
    arquivo para a pasta do container que se configura o app. */
 function patchText(dados){
   if(dados.format === 'json') return JSON.stringify(dados.json, null, 4);
+  if(dados.format === 'xml'){
+    const esc = v => String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const corpo = Object.entries(dados.xml).map(([k, v])=>
+      `  <${k}>${Array.isArray(v) ? v.map(x=>`<string>${esc(x)}</string>`).join('') : esc(v)}</${k}>`);
+    return `<?xml version="1.0" encoding="utf-8"?>\n<NetworkConfiguration>\n` +
+           corpo.join('\n') + `\n</NetworkConfiguration>`;
+  }
   const sep = dados.sep || '=';
   return dados.sections.map(([sec, pares])=>
     `[${sec}]\n` + pares.map(([k, v])=>`${k}${sep}${v}`).join('\n')).join('\n\n');
@@ -4513,6 +4483,8 @@ function outDirs(){
    a página — o servidor só grava chave por chave, preservando o resto do
    arquivo. */
 const PATCH_DATA = {
+  // XML: elementos de primeiro nível que o servidor põe no arquivo do app
+  jellyfin: a => ({format:'xml', xml: jellyfinKeys(a)}),
   /* O `sep` é o que separa chave de valor no arquivo daquele app, e não é
      detalhe de estilo: o SABnzbd escreve `chave = valor`, com os espaços, e é
      nessa forma que ele relê o que está lá. O qBittorrent usa o INI do Qt, sem
