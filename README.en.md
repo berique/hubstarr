@@ -469,17 +469,19 @@ copying one of the blocks and translating the values.
 
 What is not there yet, in the order it would make sense to happen. The
 milestones are versions, not dates: each one only starts after the previous, because
-it depends on it. The repository is at **v0.4** today — the page, the server
+it depends on it. The repository is at **v0.5** today — the page, the server
 that keeps the stack and brings it up in Docker, the Configuration applied to
-the apps and the TRaSH Guides profiles through Configarr.
+the apps and the whole TRaSH Guides through Configarr: profiles, custom formats
+with the guide's scores, and the quality definitions.
 
 | Milestone | Delivers                                          | Done when                                                                          |
 | --------- | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | ~~**v0.2**~~ | ~~A backend wiring `hubstarr.html` to Docker~~ | ✅ the page writes the files and brings the stack up without going through the `.zip` |
 | ~~**v0.3**~~ | ~~Automatic stack configuration from the backend~~ | ✅ Prowlarr, download clients and Media Management leave the interface and become API calls |
 | ~~**v0.4**~~ | ~~Custom formats and profiles per stack~~ | ✅ the TRaSH Guides profiles, per instance, applied by Configarr |
-| **v0.5**  | Compatibility with the TRaSH Guides               | quality definitions, custom format scores and the rest of the guide's recommendations come ready |
-| **v0.6**  | Localized media search                            | the search language can be picked and the *arr apps find the right release          |
+| ~~**v0.5**~~ | ~~Compatibility with the TRaSH Guides~~        | ✅ quality definitions and custom format scores come in the templates Configarr applies |
+| **v0.6**  | Configurable project and container names          | Hubstarr lives alongside a stack already using those names on the same machine — and more than one stack fits again |
+| **v0.7**  | Localized media search                            | the search language can be picked and the *arr apps find the right release          |
 
 ## Checks
 

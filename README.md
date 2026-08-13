@@ -459,17 +459,19 @@ e traduzir os valores.
 
 O que ainda não existe, na ordem em que faria sentido acontecer. Os marcos são
 versões, não datas: cada um só começa depois do anterior, porque depende dele.
-Hoje o repositório está no **v0.4** — a página, o servidor que guarda a stack e
-a sobe no Docker, a Configuração aplicada nos apps e os perfis do TRaSH Guides
-pelo Configarr.
+Hoje o repositório está no **v0.5** — a página, o servidor que guarda a stack e
+a sobe no Docker, a Configuração aplicada nos apps e o TRaSH Guides inteiro pelo
+Configarr: perfis, custom formats com os scores do guia e as quality
+definitions.
 
 | Marco    | Entrega                                              | Fecha quando                                                                            |
 | -------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | ~~**v0.2**~~ | ~~Backend ligando o `hubstarr.html` ao Docker~~   | ✅ a página grava os arquivos e sobe a stack sem passar pelo `.zip`                       |
 | ~~**v0.3**~~ | ~~Configuração automática das stacks pelo backend~~ | ✅ Prowlarr, clientes de download e Media Management saem da interface e viram chamada de API |
 | ~~**v0.4**~~ | ~~Custom formats e profiles próprios de cada stack~~ | ✅ os perfis do TRaSH Guides, por instância, aplicados pelo Configarr |
-| **v0.5** | Compatibilidade com o TRaSH Guides                    | quality definitions, scores de custom format e as demais recomendações do guia saem prontas |
-| **v0.6** | Busca localizada de mídia                             | dá para escolher o idioma da busca e os *arr acham o lançamento certo                      |
+| ~~**v0.5**~~ | ~~Compatibilidade com o TRaSH Guides~~            | ✅ quality definitions e scores de custom format vêm nos templates que o Configarr aplica |
+| **v0.6** | Nome de projeto e de container configurável           | o Hubstarr convive com uma stack que já use esses nomes na mesma máquina — e volta a caber mais de uma |
+| **v0.7** | Busca localizada de mídia                             | dá para escolher o idioma da busca e os *arr acham o lançamento certo                      |
 
 ## Verificações
 

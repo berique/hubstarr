@@ -478,17 +478,19 @@ bloques y traducir los valores.
 
 Lo que todavía no existe, en el orden en que tendría sentido que ocurra. Los
 hitos son versiones, no fechas: cada uno solo empieza después del anterior, porque
-depende de él. Hoy el repositorio está en **v0.4** — la página, el servidor que
+depende de él. Hoy el repositorio está en **v0.5** — la página, el servidor que
 guarda la stack y la levanta en Docker, la Configuración aplicada en las apps y
-los perfiles del TRaSH Guides por Configarr.
+el TRaSH Guides entero por Configarr: perfiles, custom formats con los scores de
+la guía y las quality definitions.
 
 | Hito     | Entrega                                              | Se cierra cuando                                                                        |
 | -------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | ~~**v0.2**~~ | ~~Un backend que conecte `hubstarr.html` con Docker~~ | ✅ la página graba los archivos y levanta la stack sin pasar por el `.zip`              |
 | ~~**v0.3**~~ | ~~Configuración automática de las stacks desde el backend~~ | ✅ Prowlarr, clientes de descarga y Media Management salen de la interfaz y son llamadas de API |
 | ~~**v0.4**~~ | ~~Custom formats y profiles propios de cada stack~~ | ✅ los perfiles del TRaSH Guides, por instancia, aplicados por Configarr |
-| **v0.5** | Compatibilidad con TRaSH Guides                       | quality definitions, scores de custom format y el resto de las recomendaciones de la guía ya listas |
-| **v0.6** | Búsqueda localizada de medios                         | se puede elegir el idioma de la búsqueda y los *arr encuentran el lanzamiento correcto     |
+| ~~**v0.5**~~ | ~~Compatibilidad con TRaSH Guides~~               | ✅ quality definitions y scores de custom format vienen en los templates que aplica Configarr |
+| **v0.6** | Nombre de proyecto y de contenedor configurable       | Hubstarr convive con una stack que ya use esos nombres en la misma máquina — y vuelve a caber más de una |
+| **v0.7** | Búsqueda localizada de medios                         | se puede elegir el idioma de la búsqueda y los *arr encuentran el lanzamiento correcto     |
 
 ## Comprobaciones
 

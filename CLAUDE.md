@@ -643,8 +643,8 @@ Duas armadilhas do `added` injetado, as duas já custaram uma rodada:
 
 O roadmap fica nos três READMEs, numa tabela por marco de versão; o texto
 autoritativo é o do `README.md`, e mexer nele é mexer nos três. Hoje o
-repositório é o **v0.4** — a página, o servidor de `backend/`, a Configuração
-aplicada nos apps e os perfis do TRaSH Guides pelo Configarr.
+repositório é o **v0.5** — a página, o servidor de `backend/`, a Configuração
+aplicada nos apps e o TRaSH Guides inteiro pelo Configarr.
 
 - ~~**v0.2**~~ — feito: o backend liga o `hubstarr.html` ao Docker e guarda a
   stack. Uma primeira versão dele existiu e foi removida no `ba54e1a`; a de
@@ -663,11 +663,19 @@ aplicada nos apps e os perfis do TRaSH Guides pelo Configarr.
   nenhum, serve só para o Aplicar.
 - ~~**v0.4**~~ — feito: perfis de qualidade e custom formats por instância, do
   TRaSH Guides, aplicados pelo Configarr — ver "Perfis de qualidade" acima.
-- **v0.5** — compatibilidade com o TRaSH Guides além da nomenclatura, que já
-  saiu de fábrica: quality definitions, scores de custom format e o resto do
-  guia. O JSON de origem dele (`docs/json/...` no repositório TRaSH-Guides) é
-  a fonte, não a página renderizada.
-- **v0.6** — busca localizada de mídia, com o idioma da busca escolhível.
+- ~~**v0.5**~~ — feito junto do v0.4, e não por acaso: cada preset manda o trio
+  do guia — o perfil, os custom formats **com os scores dele** e a quality
+  definition. Era isto que o marco pedia, e veio dos templates do Recyclarr em
+  vez do JSON do TRaSH lido na mão.
+- **v0.6** — nome de projeto e de container configurável. Hoje o
+  `container_name` é o `cname()`, fixo: subir uma stack numa máquina que já
+  tenha um `sonarr` ou um `nginx` **toma o nome do que está rodando**, e o
+  `docker compose down` de uma pasta chamada `stack` leva junto o que outra
+  pasta de mesmo nome criou — o Compose tira o nome do projeto do nome da
+  pasta. Aconteceu duas vezes numa sessão só. Resolve com um prefixo no
+  Ambiente, e de quebra reabre o caminho para mais de uma stack, que foi
+  removido no passado.
+- **v0.7** — busca localizada de mídia, com o idioma da busca escolhível.
 
 Marco é ordem, não calendário: cada um depende do anterior. Ao propor mudança
 que caia num deles, diga em qual — e não comece o de baixo antes do de cima.
