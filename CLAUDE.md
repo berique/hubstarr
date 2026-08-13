@@ -494,6 +494,14 @@ linha só — o `CHECK (id = 1)` é o que a mantém única), `instance` +
 
 - **A chave da instância é o `cname()`** — o `container_name`. Editar o título
   muda a chave, então o `PUT` carrega o `old` e o editar vira um renomear.
+- **O `PUT /api/settings` é o único caminho que apaga instância sem ninguém ter
+  clicado em "Excluir"**: manda a lista de chaves, e o `reconcile()` tira o que
+  não veio nela. Página com a lista errada — a que não conseguiu ler o estado,
+  uma aba velha voltando à vida — apaga a stack por aí. Por isso cada PUT deixa
+  uma linha na saída do servidor, com a hora, quantas chaves vieram e **quais
+  saíram**: quando isso acontecer de novo, o log diz quem mandou o quê em vez de
+  sobrar especulação. O `reconcile()` devolve o que apagou justamente para essa
+  linha.
 - **`cfg_mm` é por `service_id`**, não por instância: Media Management é por
   família, como na página.
 - **`instance.extra`** guarda o que não virou coluna e volta espalhado no

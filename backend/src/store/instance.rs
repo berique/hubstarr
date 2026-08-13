@@ -124,12 +124,26 @@ impl Db {
     }
 
     /// Alinha o banco com a lista que a página tem agora: acerta a ordem e
-    /// apaga o que saiu.
-    pub fn reconcile(&self, keys: &[String]) -> Result<(), String> {
+    /// apaga o que saiu. Devolve o que apagou — é a única operação da API que
+    /// tira instância sem ninguém ter clicado em "Excluir", então quem chama a
+    /// registra no log.
+    pub fn reconcile(&self, keys: &[String]) -> Result<Vec<String>, String> {
         let list = serde_json::to_string(keys).map_err(|e| e.to_string())?;
         let mut conn = self.lock()?;
         let tx = conn.transaction().map_err(|e| e.to_string())?;
+        let saiu: Vec<String>;
         {
+            saiu = tx
+                .prepare(
+                    "SELECT key FROM instance
+                      WHERE key NOT IN (SELECT value FROM json_each(?1))
+                      ORDER BY ord, key",
+                )
+                .and_then(|mut q| {
+                    q.query_map(params![list], |r| r.get(0))?
+                        .collect::<Result<Vec<String>, _>>()
+                })
+                .map_err(|e| e.to_string())?;
             tx.execute(
                 "DELETE FROM instance
                   WHERE key NOT IN (SELECT value FROM json_each(?1))",
@@ -144,7 +158,8 @@ impl Db {
                     .map_err(|e| e.to_string())?;
             }
         }
-        tx.commit().map_err(|e| e.to_string())
+        tx.commit().map_err(|e| e.to_string())?;
+        Ok(saiu)
     }
 
     /// Remonta o `added` da página: na ordem da lista, com as `libs` de volta
@@ -268,9 +283,22 @@ mod tests {
         let db = Db::memory().unwrap();
         db.put_instance(&inc("a", None, 0, json!({"id":"sonarr"}))).unwrap();
         db.put_instance(&inc("b", None, 1, json!({"id":"radarr"}))).unwrap();
-        db.reconcile(&["b".to_string()]).unwrap();
+        let saiu = db.reconcile(&["b".to_string()]).unwrap();
+        // o que saiu volta para quem chamou, que é quem o escreve no log
+        assert_eq!(saiu, vec!["a".to_string()]);
         let all = db.instances().unwrap();
         assert_eq!(all.len(), 1);
         assert_eq!(all[0]["id"], json!("radarr"));
+    }
+
+    /// Lista igual à que está lá não apaga nada, e é esse o caso comum — o
+    /// `saveSettings()` roda no fim de cada `render()`.
+    #[test]
+    fn reconcile_sem_novidade_nao_apaga_nada() {
+        let db = Db::memory().unwrap();
+        db.put_instance(&inc("a", None, 0, json!({"id":"sonarr"}))).unwrap();
+        let saiu = db.reconcile(&["a".to_string()]).unwrap();
+        assert!(saiu.is_empty());
+        assert_eq!(db.instances().unwrap().len(), 1);
     }
 }

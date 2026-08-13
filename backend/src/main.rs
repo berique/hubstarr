@@ -299,23 +299,76 @@ struct Settings {
     keys: Option<Vec<String>>,
 }
 
+/* Este é o único caminho que apaga instância sem ninguém ter clicado em
+   "Excluir": a lista de chaves manda, e o que não vier nela sai. Uma página com
+   a lista errada — a que não conseguiu ler o estado, ou uma aba velha voltando
+   à vida — apaga a stack por aqui, e sem log não há como saber depois quem
+   mandou o quê. Por isso cada PUT deixa uma linha na saída do servidor, e a
+   linha diz quantas chaves vieram e **quais saíram**. */
 async fn save_settings(State(ctx): State<Ctx>, Json(s): Json<Settings>) -> Response {
-    let done = (|| -> Result<(), String> {
+    let done = (|| -> Result<Vec<String>, String> {
         if let Some(v) = &s.defaults {
             ctx.db.put_env(v)?;
         }
         if let Some(v) = &s.config {
             ctx.db.put_config(v)?;
         }
-        if let Some(k) = &s.keys {
-            ctx.db.reconcile(k)?;
+        match &s.keys {
+            Some(k) => ctx.db.reconcile(k),
+            None => Ok(vec![]),
         }
-        Ok(())
     })();
+    let quantas = s.keys.as_ref().map(|k| k.len());
     match done {
-        Ok(()) => Json(json!({"ok": true})).into_response(),
-        Err(e) => fail(&e),
+        Ok(saiu) => {
+            let lista = match quantas {
+                Some(n) => format!("{n} chave(s)"),
+                None => "sem lista de chaves".to_string(),
+            };
+            let apagou = if saiu.is_empty() {
+                String::new()
+            } else {
+                format!(" — apagou {}", saiu.join(", "))
+            };
+            println!("{} PUT /api/settings: {lista}{apagou}", carimbo());
+            Json(json!({"ok": true})).into_response()
+        }
+        Err(e) => {
+            println!("{} PUT /api/settings: falhou ({e})", carimbo());
+            fail(&e)
+        }
     }
+}
+
+/// A hora em UTC, `2026-08-13 22:41:07Z`, sem crate a mais — o log só precisa
+/// disso, e uma dependência para formatar data sairia caro no `--locked` do CI.
+fn carimbo() -> String {
+    carimbo_de(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0),
+    )
+}
+
+fn carimbo_de(s: u64) -> String {
+    let (dias, hora) = (s / 86_400, s % 86_400);
+    // dias desde 1970 → data civil, o algoritmo do Howard Hinnant
+    let z = dias as i64 + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z.rem_euclid(146_097);
+    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let y = era * 400 + yoe + i64::from(m <= 2);
+    format!(
+        "{y:04}-{m:02}-{d:02} {:02}:{:02}:{:02}Z",
+        hora / 3600,
+        (hora % 3600) / 60,
+        hora % 60
+    )
 }
 
 /// Um serviço adicionado ou editado: uma linha só, criada ou atualizada.
@@ -497,4 +550,18 @@ fn fail(msg: &str) -> Response {
         Json(json!({"ok": false, "error": msg})),
     )
         .into_response()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::carimbo_de;
+
+    #[test]
+    fn o_carimbo_do_log_e_a_data_em_utc() {
+        assert_eq!(carimbo_de(0), "1970-01-01 00:00:00Z");
+        // conferido com `date -u -d @1786992067`
+        assert_eq!(carimbo_de(1_786_992_067), "2026-08-17 18:41:07Z");
+        // ano bissexto, o 29 de fevereiro que os cálculos de data costumam perder
+        assert_eq!(carimbo_de(1_709_164_800), "2024-02-29 00:00:00Z");
+    }
 }
