@@ -67,12 +67,12 @@ def abrir(navegador, pagina, saida):
             r = subprocess.run(
                 [navegador, modo, *OPCOES, f'--user-data-dir={saida}/perfil-{modo[-3:]}',
                  '--dump-dom', f'file://{pagina}'],
-                capture_output=True, text=True, timeout=90)
+                capture_output=True, text=True, timeout=60)
             if r.stdout.strip():
                 return r.stdout
             erro = f'{modo}: saiu sem DOM ({r.stderr.strip()[:200]})'
         except subprocess.TimeoutExpired:
-            erro = f'{modo}: não respondeu em 90s'
+            erro = f'{modo}: não respondeu em 60s'
         print(f'  {erro}, tentando de novo', file=sys.stderr)
     sys.exit(f'o navegador não abriu a página — {erro}')
 
@@ -102,12 +102,14 @@ try{
     tmp = os.path.join(saida, 'pagina.html')
     open(tmp, 'w', encoding='utf-8').write(corpo)
 
-    # o CI diz onde está o navegador que instalou; fora dele, o que houver
+    # o `$CHROME` manda, quando alguém o aponta; fora isso, o primeiro que
+    # existir na máquina
     navegador = os.environ.get('CHROME') or next(
-        (n for n in ('chromium', 'chromium-browser', 'google-chrome', 'chrome')
+        (n for n in ('google-chrome', 'chromium', 'chromium-browser', 'chrome')
          if shutil.which(n)), None)
     if not navegador:
         sys.exit('sem um navegador para abrir a página (instale o chromium ou aponte $CHROME)')
+    print('navegador:', navegador)
 
     dom = abrir(navegador, tmp, saida)
 

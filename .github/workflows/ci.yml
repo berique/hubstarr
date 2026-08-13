@@ -33,19 +33,16 @@ jobs:
       - name: As três traduções têm as mesmas chaves
         run: python3 tools/check-i18n.py hubstarr.html
 
-      # A checagem do compose abre a página num navegador: é dela que sai o
-      # arquivo, e o `textContent` dos panes só existe com a página rodando.
-      # O navegador é instalado de propósito, em vez de contar com o que vier
-      # na imagem do runner.
-      - uses: browser-actions/setup-chrome@v1
-        id: chrome
-
-      # O docker compose vem instalado no runner: o que a página gera passa
+      # A checagem abre a página num navegador — é dela que sai o arquivo, e o
+      # `textContent` dos panes só existe com a página rodando. Vale o Chrome
+      # que já vem na imagem do runner: o chromium avulso da `setup-chrome`
+      # fica pendurado no `--dump-dom` e nunca devolve o DOM, nos dois modos
+      # headless.
+      #
+      # O docker compose também já vem instalado: o que a página gera passa
       # pelo validador dele, que é quem vai recusar o arquivo na máquina de
       # quem usa.
       - name: O compose gerado é válido
-        env:
-          CHROME: ${{ steps.chrome.outputs.chrome-path }}
         run: python3 tools/check-compose.py
 
   servidor:
