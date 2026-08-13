@@ -4,11 +4,17 @@
 
 [<img src="docs/badge-license.svg" alt="License: GPL-3.0" height="20">](LICENSE)
 
-Single-page prototype that builds the `docker-compose.yml`, the `.env` and the
-`nginx.conf` for a media stack (*arr apps + download clients + media server),
-with no external dependencies. The page works on its own, opened from disk; an
-[optional server](#optional-server) keeps the stacks in SQLite and brings the
-stack up in Docker without going through the `.zip`.
+Prototype that builds and brings up a media stack (*arr apps + download clients
++ media server): the `docker-compose.yml`, the `.env` and the `nginx.conf`, and
+then the apps configured into one another. The [server](#server) is Hubstarr —
+it keeps the stack in SQLite, writes the files, brings it up in Docker and
+configures the apps through each one's API.
+
+The interface is a **single page with no external dependency**, which the server
+carries embedded. It also opens on its own, straight from disk, and there it
+generates the files into a `.zip` — but only that: with no server there is no
+stack running, no qBittorrent password, no Jellyfin base URL, no TRaSH Guides
+profile. It is the mode for whoever wants just the files.
 
 > [!WARNING]
 > **Prototype.** Hubstarr was not designed for production use: the files it
@@ -16,10 +22,17 @@ stack up in Docker without going through the `.zip`.
 > monitoring. Review everything — passwords, ports, certificates and
 > permissions — before exposing the stack to any network other than your own.
 
-Open `hubstarr.html` in a browser. That's it — the file is
-self-contained (the logos are embedded as data URIs). The **Environment** opens
-with it: that is where the base paths everything else uses come from. Once
-closed, it is still behind the button at the top.
+Run the server and open its address:
+
+```sh
+cd backend
+cargo run --release      # http://127.0.0.1:7878
+```
+
+The **Environment** opens with it: that is where the base paths everything else
+uses come from. Once closed, it is still behind the button at the top. Just the
+files, without bringing anything up? Open `hubstarr.html` straight in a
+browser — it is self-contained, with the logos embedded as data URIs.
 
 ![The interface: service list on the left, generated files on the right](docs/screenshot.png)
 
@@ -231,15 +244,19 @@ holding the files:
 docker compose up -d
 ```
 
-## Optional server
+## Server
 
-The page is still the product: it is the one generating the files, and opened
-from disk it works in full, with the `.zip` and nothing else. The server in
-`backend/` adds what the browser cannot reach on its own — **keeping the stacks
-between sessions**, writing the files to disk and bringing the stack up in
-Docker; with it up, the `.zip` button leaves the bar, because **Bring up**
-writes the same files. It never generates content: it receives ready-made
-whatever the page's generators built.
+The server in `backend/` is what makes the stack exist: it **keeps the stacks
+between sessions**, writes the files to disk, brings everything up in Docker and
+configures the apps into one another — the download clients in each *arr, the
+*arr apps in Prowlarr, Media Management, naming and the TRaSH Guides profiles.
+With it up, the `.zip` button leaves the bar, because **Bring up** writes the
+same files.
+
+What it does **not** do is generate content: it receives ready-made whatever the
+page's generators built. That division is what keeps the generators in a single
+place, and it is what lets the page open on its own from disk when someone wants
+just the files.
 
 Building and running it needs [Rust](https://rustup.rs):
 
@@ -446,9 +463,9 @@ copying one of the blocks and translating the values.
 
 What is not there yet, in the order it would make sense to happen. The
 milestones are versions, not dates: each one only starts after the previous, because
-it depends on it. The repository is at **v0.4** today — the page, the optional
-server that keeps the stacks and brings them up in Docker, the Configuration
-applied to the apps and the TRaSH Guides profiles through Configarr.
+it depends on it. The repository is at **v0.4** today — the page, the server
+that keeps the stack and brings it up in Docker, the Configuration applied to
+the apps and the TRaSH Guides profiles through Configarr.
 
 | Milestone | Delivers                                          | Done when                                                                          |
 | --------- | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
@@ -479,12 +496,12 @@ publishes both next to that version's `hubstarr.html`.
 
 ## Status
 
-The page is an interface prototype, but the **Configuration** is no longer just
-interface: the choices are kept — in the page, and in the database when a server
-is there — and, with a server and the stack up, all three of its parts turn into
-API calls through **Apply to the stack**. The generated files were always the real thing —
-download the `.zip` and run `docker compose up -d` in the folder you unpacked it
-into, or let the server do both.
+The interface is a prototype, but what it produces is not: the files are the
+real thing, and the **Configuration** turns into API calls on each app through
+**Bring up** and **Apply to the stack**. Running the server, a stack goes from
+nothing to configured. Opening just the page, you get the files in a `.zip`, to
+run `docker compose up -d` by hand — and whatever depends on an API is left for
+you to do in the apps.
 
 ## License
 

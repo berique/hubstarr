@@ -4,11 +4,17 @@
 
 [<img src="docs/badge-licencia.svg" alt="Licencia: GPL-3.0" height="20">](LICENSE)
 
-Prototipo de página única que arma el `docker-compose.yml`, el `.env` y el
-`nginx.conf` de una stack multimedia (*arr + clientes de descarga + servidor
-multimedia), sin dependencias externas. La página funciona sola, abierta desde
-el disco; un [servidor opcional](#servidor-opcional) guarda las stacks en SQLite
-y levanta la stack en Docker sin pasar por el `.zip`.
+Prototipo que arma y levanta una stack multimedia (*arr + clientes de descarga
++ servidor multimedia): el `docker-compose.yml`, el `.env` y el `nginx.conf`, y
+después las apps configuradas unas en otras. El [servidor](#servidor) es
+Hubstarr — guarda la stack en SQLite, graba los archivos, la levanta en Docker
+y configura las apps por la API de cada una.
+
+La interfaz es una **página única sin dependencia externa**, que el servidor
+trae incrustada. También abre sola, directamente desde el disco, y ahí genera
+los archivos en un `.zip` — pero solo eso: sin servidor no hay stack en marcha,
+ni contraseña de qBittorrent, ni base URL de Jellyfin, ni perfil del TRaSH
+Guides. Es el modo de quien quiere solo los archivos.
 
 > [!WARNING]
 > **Prototipo.** Hubstarr no fue diseñado para uso en producción: los archivos
@@ -17,10 +23,17 @@ y levanta la stack en Docker sin pasar por el `.zip`.
 > certificados y permisos — antes de exponer la stack a cualquier red que no
 > sea la tuya.
 
-Abre `hubstarr.html` en el navegador. Eso es todo — el archivo es
-autocontenido (los logotipos van incrustados como data URI). El **Entorno** se
-abre junto: de ahí salen las rutas base que usa todo lo demás. Si lo cierras,
-sigue en el botón de arriba.
+Ejecuta el servidor y abre su dirección:
+
+```sh
+cd backend
+cargo run --release      # http://127.0.0.1:7878
+```
+
+El **Entorno** se abre junto: de ahí salen las rutas base que usa todo lo demás.
+Si lo cierras, sigue en el botón de arriba. ¿Solo los archivos, sin levantar
+nada? Abre el `hubstarr.html` directamente en el navegador — es autocontenido,
+con los logotipos incrustados como data URI.
 
 ![La interfaz: lista de servicios a la izquierda, archivos generados a la derecha](docs/screenshot.png)
 
@@ -238,15 +251,19 @@ carpeta de los archivos:
 docker compose up -d
 ```
 
-## Servidor opcional
+## Servidor
 
-La página sigue siendo el producto: es ella la que genera los archivos, y
-abierta desde el disco funciona entera, con el `.zip` y nada más. El servidor de
-`backend/` añade lo que el navegador no alcanza solo — **guardar las stacks
-entre sesiones**, grabar los archivos en disco y levantar la stack en Docker;
-con él en marcha, el botón del `.zip` sale de la barra, porque **Levantar** graba
-los mismos archivos. Nunca genera contenido: recibe ya listo lo que armaron los
-generadores de la página.
+El servidor de `backend/` es lo que hace que la stack exista: **guarda las
+stacks entre sesiones**, graba los archivos en disco, lo levanta todo en Docker
+y configura las apps unas en otras — los clientes de descarga en cada *arr, los
+*arr en Prowlarr, el Media Management, la nomenclatura y los perfiles del TRaSH
+Guides. Con él en marcha, el botón del `.zip` sale de la barra, porque
+**Levantar** graba los mismos archivos.
+
+Lo que **no** hace es generar contenido: recibe ya listo lo que armaron los
+generadores de la página. Esa división es la que mantiene los generadores en un
+solo lugar, y es la que deja a la página abrir sola desde el disco cuando
+alguien quiere solo los archivos.
 
 Compilarlo y ejecutarlo necesita [Rust](https://rustup.rs):
 
@@ -455,9 +472,9 @@ bloques y traducir los valores.
 
 Lo que todavía no existe, en el orden en que tendría sentido que ocurra. Los
 hitos son versiones, no fechas: cada uno solo empieza después del anterior, porque
-depende de él. Hoy el repositorio está en **v0.4** — la página, el servidor
-opcional que guarda las stacks y las levanta en Docker, la Configuración
-aplicada en las apps y los perfiles del TRaSH Guides por Configarr.
+depende de él. Hoy el repositorio está en **v0.4** — la página, el servidor que
+guarda la stack y la levanta en Docker, la Configuración aplicada en las apps y
+los perfiles del TRaSH Guides por Configarr.
 
 | Hito     | Entrega                                              | Se cierra cuando                                                                        |
 | -------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------- |
@@ -489,13 +506,12 @@ publica ambos junto al `hubstarr.html` de esa versión.
 
 ## Estado
 
-La página es un prototipo de interfaz, pero la **Configuración** ya no es solo
-interfaz: las opciones se guardan — en ella, y en la base cuando hay servidor —
-y, con servidor y la stack en marcha, sus tres partes se vuelven llamadas de API
-por el **Aplicar en la stack**. Los archivos generados siempre
-fueron de verdad — basta con descargar el `.zip` y ejecutar
-`docker compose up -d` en la carpeta donde se descomprimió, o dejar que el
-servidor haga las dos cosas.
+La interfaz es un prototipo, pero lo que produce no lo es: los archivos son de
+verdad, y la **Configuración** se vuelve llamada de API en cada app por el
+**Levantar** y el **Aplicar en la stack**. Ejecutando el servidor, una stack
+sale de la nada y llega configurada. Abriendo solo la página, salen los
+archivos en un `.zip`, para ejecutar `docker compose up -d` a mano — y lo que
+depende de API queda para que lo hagas en las apps.
 
 ## Licencia
 

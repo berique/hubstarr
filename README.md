@@ -4,11 +4,17 @@
 
 [<img src="docs/badge-licenca.svg" alt="Licença: GPL-3.0" height="20">](LICENSE)
 
-Protótipo de página única que monta o `docker-compose.yml`, o `.env` e o
-`nginx.conf` de uma stack de mídia (*arr + clientes de download + servidor de
-mídia), sem dependências externas. A página funciona sozinha, aberta do disco;
-um [servidor opcional](#servidor-opcional) guarda as stacks em SQLite e sobe a
-stack no Docker sem passar pelo `.zip`.
+Protótipo que monta e sobe uma stack de mídia (*arr + clientes de download +
+servidor de mídia): o `docker-compose.yml`, o `.env` e o `nginx.conf`, e depois
+os apps configurados uns nos outros. O [servidor](#servidor) é o Hubstarr —
+ele guarda a stack em SQLite, grava os arquivos, sobe no Docker e configura os
+apps pela API de cada um.
+
+A interface é uma **página única sem dependência externa**, que o servidor traz
+embutida. Ela também abre sozinha, direto do disco, e ali gera os arquivos num
+`.zip` — mas só isso: sem servidor não há stack no ar, nem senha do
+qBittorrent, nem base URL do Jellyfin, nem perfil do TRaSH Guides. É o modo de
+quem quer só os arquivos.
 
 > [!WARNING]
 > **Protótipo.** O Hubstarr não foi projetado para uso em produção: os arquivos
@@ -16,10 +22,17 @@ stack no Docker sem passar pelo `.zip`.
 > ou monitoramento. Revise tudo — senhas, portas, certificados e permissões —
 > antes de expor a stack a qualquer rede que não seja a sua.
 
-Abra `hubstarr.html` no navegador. É só isso — o arquivo é
-autocontido (os logotipos vêm embutidos como data URI). O **Ambiente** abre
-junto: é dali que saem as bases de caminho que todo o resto usa. Fechou, ele
-continua no botão do topo.
+Rode o servidor e abra o endereço dele:
+
+```sh
+cd backend
+cargo run --release      # http://127.0.0.1:7878
+```
+
+O **Ambiente** abre junto: é dali que saem as bases de caminho que todo o resto
+usa. Fechou, ele continua no botão do topo. Só os arquivos, sem subir nada?
+Abra o `hubstarr.html` direto no navegador — ele é autocontido, com os
+logotipos embutidos como data URI.
 
 ![A interface: lista de serviços à esquerda, arquivos gerados à direita](docs/screenshot.png)
 
@@ -227,15 +240,18 @@ dos arquivos:
 docker compose up -d
 ```
 
-## Servidor (opcional)
+## Servidor
 
-A página continua sendo o produto: é ela que gera os arquivos, e aberta do
-disco funciona inteira, com o `.zip` e mais nada. O servidor em `backend/`
-acrescenta o que o navegador não alcança sozinho — **guardar as stacks entre
-sessões**, gravar os arquivos em disco e subir a stack no Docker; com ele no
-ar, o botão do `.zip` sai da barra, porque o **Subir** grava os mesmos
-arquivos. Ele nunca
-gera conteúdo: recebe pronto o que os geradores da página montaram.
+O servidor em `backend/` é o que faz a stack existir: ele **guarda as stacks
+entre sessões**, grava os arquivos em disco, sobe tudo no Docker e configura os
+apps uns nos outros — os clientes de download em cada *arr, os *arr no
+Prowlarr, o Media Management, a nomenclatura e os perfis do TRaSH Guides. Com
+ele no ar, o botão do `.zip` sai da barra, porque o **Subir** grava os mesmos
+arquivos.
+
+O que ele **não** faz é gerar conteúdo: recebe pronto o que os geradores da
+página montaram. É essa divisão que mantém os geradores num lugar só, e é ela
+que deixa a página abrir sozinha do disco quando alguém quer só os arquivos.
 
 Compilar e rodar precisa do [Rust](https://rustup.rs):
 
@@ -437,9 +453,9 @@ e traduzir os valores.
 
 O que ainda não existe, na ordem em que faria sentido acontecer. Os marcos são
 versões, não datas: cada um só começa depois do anterior, porque depende dele.
-Hoje o repositório está no **v0.4** — a página, o servidor opcional que guarda
-as stacks e as sobe no Docker, a Configuração aplicada nos apps e os perfis do
-TRaSH Guides pelo Configarr.
+Hoje o repositório está no **v0.4** — a página, o servidor que guarda a stack e
+a sobe no Docker, a Configuração aplicada nos apps e os perfis do TRaSH Guides
+pelo Configarr.
 
 | Marco    | Entrega                                              | Fecha quando                                                                            |
 | -------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -470,12 +486,12 @@ os dois junto do `hubstarr.html` daquela versão.
 
 ## Status
 
-A página é um protótipo de interface, mas a **Configuração** não é mais só
-interface: as escolhas ficam guardadas — na página, e no banco quando há
-servidor — e, com servidor e a stack no ar, as três partes dela viram chamada de
-API pelo **Aplicar na stack**. Os arquivos gerados, esses sempre foram
-de verdade — é baixar o `.zip` e rodar o `docker compose up -d` na pasta onde
-ele foi aberto, ou deixar o servidor fazer os dois.
+A interface é um protótipo, mas o que ela produz não é: os arquivos são de
+verdade, e a **Configuração** vira chamada de API em cada app pelo **Subir** e
+pelo **Aplicar na stack**. Rodando o servidor, uma stack sai do nada e chega
+configurada. Abrindo só a página, saem os arquivos num `.zip`, para rodar
+`docker compose up -d` na mão — e o que depende de API fica para você fazer nos
+apps.
 
 ## Licença
 
