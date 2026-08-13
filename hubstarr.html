@@ -2355,7 +2355,11 @@ function derivedMounts(s){
     const key = dataPath(x);
     if(seen.has(key)) return;
     seen.add(key);
-    out.push({name:x.data, source:key, real:dataReal(x)});
+    /* o nome é a subpasta; instância com caminho fora das bases não tem uma,
+       e aí vale a última parte do caminho — sem isto o Bazarr montava
+       `/data/undefined`, um destino que não existe em lugar nenhum */
+    const nome = x.data || String(x.abs || '').replace(/\/+$/, '').split('/').pop() || cname(x);
+    out.push({name:nome, source:key, real:dataReal(x)});
   });
   if(out.length) return out;
   return s.derived.map(id=>svc(id).mdir).filter(Boolean)
