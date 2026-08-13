@@ -131,19 +131,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let db_path = args.db;
     let (db, migrated) = store::Db::open(&db_path)?;
+    // o log mora ao lado do banco, e não na pasta da stack: ele é do servidor,
+    // não da stack — o `--dir` se apaga e se refaz, o `--db` é o que dura
+    abrir_log(&db_path);
     if let Some(m) = migrated {
-        println!("Banco migrado para o modelo de uma stack só (era o de várias).");
-        println!("  A stack que ficou gravava em {}", m.kept);
+        registra("Banco migrado para o modelo de uma stack só (era o de várias).");
+        registra(format!("  A stack que ficou gravava em {}", m.kept));
         for d in &m.dropped {
-            println!("  Descartada a stack que gravava em {d} — os arquivos dela ficam onde estão");
+            registra(format!(
+                "  Descartada a stack que gravava em {d} — os arquivos dela ficam onde estão"
+            ));
         }
         if !m.dropped.is_empty() {
-            println!("  Para editar uma delas, rode outro servidor com --dir e --db próprios.");
+            registra("  Para editar uma delas, rode outro servidor com --dir e --db próprios.");
         }
     }
     let docker = deploy::pick_engine(args.docker).await;
     if docker != deploy::ENGINES[0] {
-        println!("Usando o {docker} para rodar o compose.");
+        registra(format!("Usando o {docker} para rodar o compose."));
     }
     let ctx: Ctx = Arc::new(App {
         base,
@@ -172,12 +177,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_state(ctx.clone());
 
     let listener = tokio::net::TcpListener::bind(&args.addr).await?;
-    println!(
-        "Hubstarr em http://{}  (stack em {}, banco em {})",
+    registra(format!(
+        "Hubstarr em http://{}  (stack em {}, banco em {}, log em {})",
         args.addr,
         ctx.base.display(),
-        db_path.display()
-    );
+        db_path.display(),
+        caminho_do_log(&db_path).display()
+    ));
     axum::serve(listener, app).await?;
     Ok(())
 }
@@ -330,11 +336,11 @@ async fn save_settings(State(ctx): State<Ctx>, Json(s): Json<Settings>) -> Respo
             } else {
                 format!(" — apagou {}", saiu.join(", "))
             };
-            println!("{} PUT /api/settings: {lista}{apagou}", carimbo());
+            registra(format!("{} PUT /api/settings: {lista}{apagou}", carimbo()));
             Json(json!({"ok": true})).into_response()
         }
         Err(e) => {
-            println!("{} PUT /api/settings: falhou ({e})", carimbo());
+            registra(format!("{} PUT /api/settings: falhou ({e})", carimbo()));
             fail(&e)
         }
     }
@@ -534,6 +540,48 @@ async fn job_status(State(ctx): State<Ctx>, Path(id): Path<u64>) -> Response {
     }
 }
 
+/* ---------- log do servidor ---------- */
+
+/* O que o servidor escreve vai para a saída **e** para um arquivo, ao lado do
+   banco. A saída sozinha se perde: quem sobe o servidor por um `systemd`, um
+   `nohup` ou uma sessão de terminal que fechou não tem onde olhar depois — e é
+   depois que a gente vai olhar, quando a stack tiver mudado sozinha e a
+   pergunta for "quem mandou o quê, e quando".
+
+   Ele **acrescenta**, nunca reescreve: o histórico entre reinícios é o que dá
+   valor ao arquivo. E o log que falha não derruba o servidor — no máximo se
+   volta a ter só a saída, que é onde estávamos antes. */
+static LOG: std::sync::OnceLock<std::sync::Mutex<std::fs::File>> = std::sync::OnceLock::new();
+
+fn caminho_do_log(db_path: &std::path::Path) -> PathBuf {
+    db_path
+        .parent()
+        .unwrap_or(std::path::Path::new("."))
+        .join("servidor.log")
+}
+
+fn abrir_log(db_path: &std::path::Path) {
+    let p = caminho_do_log(db_path);
+    match std::fs::OpenOptions::new().create(true).append(true).open(&p) {
+        Ok(f) => {
+            let _ = LOG.set(std::sync::Mutex::new(f));
+        }
+        // sem o arquivo o servidor continua inteiro, só sem histórico
+        Err(e) => println!("(sem log em {}: {e})", p.display()),
+    }
+}
+
+fn registra(msg: impl AsRef<str>) {
+    let msg = msg.as_ref();
+    println!("{msg}");
+    if let Some(f) = LOG.get() {
+        if let Ok(mut f) = f.lock() {
+            use std::io::Write;
+            let _ = writeln!(f, "{msg}");
+        }
+    }
+}
+
 /* ---------- utilidades ---------- */
 
 /// A raiz das configurações, que vem do Ambiente guardado e nunca do que o
@@ -555,6 +603,22 @@ fn fail(msg: &str) -> Response {
 #[cfg(test)]
 mod tests {
     use super::carimbo_de;
+
+    /// O log é do servidor, não da stack: ele fica ao lado do banco, que é o
+    /// que dura — a pasta do `--dir` se apaga e se refaz.
+    #[test]
+    fn o_log_fica_ao_lado_do_banco() {
+        use std::path::Path;
+        assert_eq!(
+            super::caminho_do_log(Path::new("/home/x/.hubstarr/hubstarr.db")),
+            Path::new("/home/x/.hubstarr/servidor.log")
+        );
+        // banco sem pasta nenhuma no caminho: o log fica no diretório atual
+        assert_eq!(
+            super::caminho_do_log(Path::new("hubstarr.db")),
+            Path::new("servidor.log")
+        );
+    }
 
     #[test]
     fn o_carimbo_do_log_e_a_data_em_utc() {

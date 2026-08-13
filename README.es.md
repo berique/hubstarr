@@ -307,6 +307,12 @@ ayuda de los botones.
 | `--db`     | `~/.hubstarr/hubstarr.db` | base en la que se guarda la stack             |
 | `--docker` | `docker`, o `podman`      | comando del compose; sin la opción, vale el primero de los dos que responda |
 
+El servidor escribe lo que hace en su salida y en un `servidor.log` junto a la
+base (`~/.hubstarr/servidor.log` con el `--db` de fábrica): el arranque, el
+motor de contenedores elegido y cada guardado de estado que llega de la página
+— cuántos servicios vinieron y cuáles salieron de la stack. El archivo añade,
+nunca reescribe, y es donde mirar cuando la stack cambió y no se sabe por qué.
+
 La stack vive en la base con sus instancias, el Entorno y la Configuración en
 tablas propias — el estado de la página, normalizado, y no un blob de JSON. Es
 una sola, la de la carpeta del `--dir`: para mantener otra, apunta el `--dir`

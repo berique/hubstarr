@@ -300,6 +300,13 @@ button tooltip says why.
 | `--db`     | `~/.hubstarr/hubstarr.db` | database the stack is kept in                 |
 | `--docker` | `docker`, or `podman`     | the compose command; without the option, whichever of the two answers first |
 
+The server writes what it does both to its output and to a `servidor.log` next
+to the database (`~/.hubstarr/servidor.log` with the default `--db`): startup,
+the container engine it picked, and every state save coming from the page — how
+many services came in and which ones left the stack. The file appends, never
+rewrites, and it is where to look when the stack changed and you do not know
+why.
+
 The stack lives in the database with its instances, Environment and
 Configuration in tables of their own — the page state, normalized, not a JSON
 blob. There is only one, the one in the `--dir` folder: to keep a second one,

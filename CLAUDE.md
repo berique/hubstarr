@@ -348,6 +348,13 @@ dele diz; é a primeira coisa a olhar. `cargo test` roda os testes do modelo e d
 `./stack`, a pasta em que os arquivos são gravados), `--db` (padrão
 `~/.hubstarr/hubstarr.db`), `--docker`.
 
+O que ele escreve vai para a saída **e** para o `servidor.log`, ao lado do
+banco — não na pasta da stack: o log é do servidor, e o `--dir` se apaga e se
+refaz enquanto o `--db` dura. É `append`, nunca reescrita, porque o valor dele
+é justamente o histórico entre reinícios; e o arquivo que não abre vira um
+aviso na saída, não um servidor que não sobe. Quem escreve é o `registra()`, e
+`println!` no `main.rs` é sinal de linha que não vai ao arquivo.
+
 **A stack é uma só**, a da pasta do `--dir`: nenhum caminho da API leva id e
 nenhuma tabela tem `stack_id`. Manter duas é rodar dois servidores, cada um com
 o seu `--dir` e o seu `--db`. Já houve seletor de stack no cabeçalho, com
