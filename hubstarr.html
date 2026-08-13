@@ -3008,6 +3008,10 @@ const ARRS = ['sonarr','radarr','lidarr'];
    próprias, que já vêm criadas na instalação (tv, movies, music), e é por elas
    que ele separa o que baixa. Cliente que não estiver aqui usa o `CATEGORY`. */
 const CATEGORY = {sonarr:'tv-sonarr', radarr:'radarr', lidarr:'lidarr'};
+/* A categoria do que o Prowlarr baixa por conta própria — busca manual dele,
+   que não veio de instância nenhuma. O servidor usa o mesmo nome ao registrar
+   o cliente nele; mudar aqui é mudar nos dois. */
+const CAT_PROWLARR = 'prowlarr';
 const CLIENT_CATEGORY = {sabnzbd:{sonarr:'tv', radarr:'movies', lidarr:'music'}};
 const catDefault = (a, c) => {
   const own = c && CLIENT_CATEGORY[c.id];
@@ -4157,17 +4161,45 @@ function sabPairs(a){
    chaves saem ordenadas para o arquivo não mudar de ordem a cada render. */
 /* As categorias, como dados — fonte única do painel e do que o servidor
    escreve. Chaves ordenadas para o arquivo não mudar de ordem a cada render. */
-function qbitCats(a){
-  const dl = '/downloads' + (a.data ? '/'+a.data : '');
+/* As categorias que um cliente de download recebe: uma por instância de *arr,
+   mais a do Prowlarr, que não é de instância nenhuma — é onde cai o que ele
+   pega avulso. Fonte única: daqui saem o `categories.json` do qBittorrent, as
+   categorias que o servidor cria no SABnzbd e as pastas de cada uma. */
+function catsOf(a){
   const st = CONFIG.clients[cname(a)];
-  // a do Prowlarr não é de instância nenhuma: é onde cai o que ele pega avulso
-  const doProwlarr = has('prowlarr') ? ['prowlarr'] : [];
-  const cats = [...new Set(arrList()
+  const doProwlarr = has('prowlarr') ? [CAT_PROWLARR] : [];
+  return [...new Set(arrList()
     .map(x=>String((st && st.cats && st.cats[cname(x)]) || catDefault(x, a)).trim())
     .concat(doProwlarr)
     .filter(Boolean))].sort();
+}
+
+function qbitCats(a){
+  const dl = '/downloads' + (a.data ? '/'+a.data : '');
   const out = {};
-  cats.forEach(cat=> out[cat] = {save_path: dl + '/' + cat});
+  catsOf(a).forEach(cat=> out[cat] = {save_path: dl + '/' + cat});
+  return out;
+}
+
+/* Onde cada categoria cai **no host** — é o que o servidor precisa criar antes
+   de subir. O torrent guarda direto na pasta de download da instância
+   (`…/torrents/tv-sonarr`); o usenet guarda no `complete_dir`, que é onde o
+   SABnzbd move o que terminou (`…/usenet/complete/tv`).
+
+   Elas existirem de véspera não é detalhe: quem as cria senão é o app, e aí
+   elas nascem com o dono dele — ou, pior, o docker as cria como root ao montar
+   um caminho que falta, e nem o app nem o *arr escrevem ali. */
+function catDirs(){
+  const out = [];
+  clientList().forEach(c=>{
+    const s = svc(c.id);
+    const base = s.dlDirs ? varsToReal(dlDone(c)) : dataReal(c);
+    if(!base || base.includes('${')) return;
+    catsOf(c).forEach(cat=>{
+      const d = `${base.replace(/\/+$/, '')}/${cat}`;
+      if(!out.includes(d)) out.push(d);
+    });
+  });
   return out;
 }
 
@@ -4479,6 +4511,8 @@ function outDirs(){
     const d = CFGARR_DIR() + sub;
     if(!out.includes(d)) out.push(d);
   });
+  // e a pasta de cada categoria, dentro do cliente que a recebe
+  catDirs().forEach(d=>{ if(!out.includes(d)) out.push(d); });
   return out;
 }
 
