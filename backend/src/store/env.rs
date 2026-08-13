@@ -11,7 +11,7 @@ use serde_json::{Map, Value};
 use super::Db;
 
 /// (chave no `DEFAULTS`, coluna). O `tls` fica de fora: é o único booleano.
-const ENV_COLS: [(&str, &str); 23] = [
+const ENV_COLS: [(&str, &str); 25] = [
     ("restart", "restart"),
     ("cfg", "cfg"),
     ("data", "data"),
@@ -25,6 +25,9 @@ const ENV_COLS: [(&str, &str); 23] = [
     ("qbitUser", "qbit_user"),
     ("qbitPass", "qbit_pass"),
     ("qbitKey", "qbit_key"),
+    // o administrador do Jellyfin, que o Subir usa no assistente dele
+    ("jfUser", "jf_user"),
+    ("jfPass", "jf_pass"),
     ("domain", "domain"),
     ("cert", "cert"),
     ("tlsKey", "tls_key"),
@@ -122,6 +125,19 @@ mod tests {
         assert_eq!(back["tls"], json!(true));
         assert_eq!(back["domain"], json!("casa.example"));
         assert_eq!(back["cert"], json!(""));
+    }
+
+    /// As credenciais do Jellyfin não vão para arquivo nenhum, então o banco é
+    /// o único lugar em que elas sobrevivem ao reload — se caírem aqui, o Subir
+    /// deixa de passar pelo assistente e ninguém entende por quê.
+    #[test]
+    fn as_credenciais_do_jellyfin_atravessam() {
+        let db = Db::memory().unwrap();
+        db.put_env(&json!({"jfUser": "henrique", "jfPass": "segredo"}))
+            .unwrap();
+        let back = db.env().unwrap();
+        assert_eq!(back["jfUser"], json!("henrique"));
+        assert_eq!(back["jfPass"], json!("segredo"));
     }
 
     #[test]

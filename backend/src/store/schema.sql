@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS stack_env (
   qbit_user TEXT NOT NULL DEFAULT '',
   qbit_pass TEXT NOT NULL DEFAULT '',
   qbit_key  TEXT NOT NULL DEFAULT '',
+  jf_user   TEXT NOT NULL DEFAULT '',
+  jf_pass   TEXT NOT NULL DEFAULT '',
   tls       INTEGER NOT NULL DEFAULT 0,
   domain    TEXT NOT NULL DEFAULT '',
   cert      TEXT NOT NULL DEFAULT '',

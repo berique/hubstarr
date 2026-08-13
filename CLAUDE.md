@@ -48,7 +48,12 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    porta deles no host; a porta escolhida fica na instância, em `hostPort`, e o
    campo dela é do modal do serviço), `vpnCfg` (gluetun: as
    credenciais da VPN no modal dele),
-   `webAuth` + `conf` (qBittorrent: usuário/senha/API key no modal dele e os
+   `webAuth` (usuário e senha de quem tem interface própria — o valor da flag
+   diz *de quem* são, e é a chave do `WEB_AUTH`, que aponta para o par no
+   `DEFAULTS`: `'qbit'` vai para a conf do qBittorrent e `'jf'` é o
+   administrador que o Subir cria no assistente do Jellyfin, e não vai para
+   arquivo nenhum. O bloco do modal é um só; a linha da API key é do
+   qBittorrent), `conf` (qBittorrent: os
    dois arquivos dele — nenhum dos dois é montado, o servidor os escreve depois
    de subir; ver `patch` abaixo), `cdh` (SABnzbd: gerenciamento de
    downloads concluídos na Configuração), `dlKey` (SABnzbd: a API key no modal
@@ -403,6 +408,23 @@ host não dá erro na hora: o *arr aceita e depois não acha arquivo nenhum. O
 `pastas_raiz()` acrescenta o que falta e **não tira** o que já está lá — remover
 pasta raiz leva a biblioteca junto.
 
+O **Jellyfin** é a única volta que não fala a API dos *arr: sem `X-Api-Key`,
+com requisições próprias, e é o `StartupWizardCompleted` do
+`/System/Info/Public` que escolhe o caminho. Assistente aberto é a janela em
+que o `FirstTimeSetupOrElevated` dele aceita criar usuário e biblioteca **sem
+token** — daí a ordem, com as bibliotecas *antes* do `Startup/Complete`.
+Assistente fechado exige token, e ele sai do usuário e senha do modal
+(`webAuth: 'jf'`); sem eles, é uma linha no log, não uma falha da stack. O
+`Complete` só é chamado quando houve administrador a criar: fechar o assistente
+sem conta nenhuma entrega um Jellyfin em que ninguém entra. Biblioteca que já
+existe não é tocada e nenhuma é removida, pela mesma razão da pasta raiz. Quem
+monta a lista é a página, no `jellyfinLibs()`, com o caminho **de dentro do
+container** — e ele **não** é a pasta raiz do *arr: o Jellyfin monta a base
+inteira em `/data` mais uma pasta por caminho de fora dela, e é contra esses
+binds que a biblioteca tem de bater. Caminho que ele não enxerga não dá erro: a
+biblioteca nasce vazia e calada, e é por isso que o `check-compose.py` a
+confere contra os binds do compose.
+
 Com o FlareSolverr na stack, ele também entra no Prowlarr, em Settings →
 Indexers → Indexer Proxies, com a **etiqueta `flaresolverr`** — criada ali
 mesmo, se não existir. A etiqueta não é enfeite: o Prowlarr casa proxy com
@@ -708,6 +730,10 @@ máquina:
   `textContent` dos panes, e erro de indentação ou de `${...}` só aparece
   quando o docker recusa o arquivo. A pasta temporária dele vai no `HOME`, não
   em `/tmp` — o chromium do snap não lê `/tmp`, e a página abriria em branco.
+  Ele relê o compose gerado (com o `yaml`, que o CI instala) e confere contra os
+  binds duas coisas que o app aceitaria calado: as **pastas raiz** dos *arr e as
+  **bibliotecas** do Jellyfin. Caminho que o container não enxerga não vira erro
+  em lugar nenhum — vira biblioteca vazia.
 
 `release.yml` roda só em tag `v*`: compila o servidor para x86_64 e arm64 (o
 arm64 precisa do `gcc-aarch64-linux-gnu`, porque o rusqlite traz o SQLite

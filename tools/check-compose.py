@@ -85,9 +85,10 @@ try{
   applyI18n(); renderCombo(); renderItems(); render();
   const ta = document.createElement('textarea');
   ta.id = 'saida';
+  SERVER = {ok:true, docker:true, dir:'/srv/stack'};
   ta.textContent = JSON.stringify({arquivos: outFiles(),
-                                   arrs: (SERVER = {ok:true, docker:true, dir:'/srv/stack'})
-                                         && applyPayload().arrs});
+                                   arrs: applyPayload().arrs,
+                                   jellyfin: applyPayload().jellyfin});
   document.body.appendChild(ta);
   document.title = 'OK';
 }catch(e){ document.title = 'ERRO: ' + e.message + ' @@ ' + (e.stack||'').split('\\n')[1]; }
@@ -121,6 +122,33 @@ try{
 
     bruto = re.search(r'<textarea id="saida">(.*?)</textarea>', dom, re.S)
     return json.loads(html.unescape(bruto.group(1)))
+
+
+def conferir_bibliotecas(compose, jf):
+    """Cada biblioteca do Jellyfin é um caminho que ele enxerga.
+
+    Mesmo erro das pastas raiz, e mais calado ainda: o Jellyfin aceita qualquer
+    caminho e a biblioteca simplesmente nasce vazia. O que ele monta é a base
+    inteira em `/data` mais uma pasta por caminho de fora, e é contra esses
+    binds que as bibliotecas têm de bater.
+    """
+    if not jf:
+        return
+    import yaml
+    conf = yaml.safe_load(compose)
+    alvos = {v['target'] for v in conf['services']['jellyfin'].get('volumes', [])
+             if isinstance(v, dict) and v['target'].startswith('/data')}
+    ruim = 0
+    for lib in jf['libs']:
+        # a base cobre tudo o que está debaixo dela
+        if lib['path'] in alvos or ('/data' in alvos and lib['path'].startswith('/data/')):
+            continue
+        print(f"jellyfin: biblioteca {lib['path']} não é montada "
+              f"(o compose monta {sorted(alvos)})", file=sys.stderr)
+        ruim += 1
+    if ruim:
+        sys.exit('biblioteca que o container não enxerga')
+    print(f"{len(jf['libs'])} bibliotecas do Jellyfin batem com os binds")
 
 
 def conferir_raizes(compose, arrs):
@@ -183,6 +211,7 @@ def main():
 
         compose = [f for f in arquivos if f['name'] == 'docker-compose.yml'][0]['text']
         conferir_raizes(compose, saiu['arrs'])
+        conferir_bibliotecas(compose, saiu.get('jellyfin'))
 
 
 if __name__ == '__main__':

@@ -192,6 +192,19 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   *You must add a root folder*, y la ruta escrita a mano suele ser la del host,
   que la app acepta y después no encuentra. Lo que ya esté ahí se queda: quitar
   una carpeta raíz se lleva la biblioteca con ella.
+- **Jellyfin listo para usar**: con él en la stack, el **Levantar** pasa por el
+  asistente inicial — la interfaz en el idioma de la página, el administrador de
+  su modal y el acceso remoto — y crea una biblioteca por instancia de Sonarr,
+  Radarr y Lidarr, con el tipo correcto (series, películas, música) y la ruta **de
+  dentro del contenedor**, la misma que el *arr recibe como carpeta raíz: esa
+  igualdad es la que hace que la biblioteca liste justo lo que el *arr importó.
+  Las carpetas sueltas de su modal entran como bibliotecas mixtas. Usuario y
+  contraseña en blanco significan "no toques el asistente": las bibliotecas
+  entran igual, pero él queda abierto para que termines en el navegador —
+  concluirlo sin administrador dejaría a Jellyfin sin ninguna cuenta con la que
+  entrar. En un Jellyfin cuyo asistente ya se completó, el usuario y la
+  contraseña del modal son los que le dan a Hubstarr el token para crear las
+  bibliotecas. Una biblioteca que ya existe no se toca, y ninguna se elimina.
 - **Perfiles de calidad y custom formats** del [TRaSH Guides](https://trash-guides.info),
   por instancia: cada Sonarr y cada Radarr de la stack elige los perfiles de la
   guía que quiere — **HD (1080p)**, **4K (2160p)**, **Remux 4K**, **Anime** —, y

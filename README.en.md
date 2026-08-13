@@ -186,6 +186,19 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   must add a root folder*, and the path typed by hand is usually the host's,
   which the app accepts and then finds nothing in. Whatever is already there
   stays: removing a root folder takes the library with it.
+- **Jellyfin ready to use**: with it in the stack, **Bring up** walks the startup
+  wizard — the UI in the page's language, the administrator from its modal and
+  remote access — and creates one library per Sonarr, Radarr and Lidarr instance,
+  with the right type (shows, movies, music) and the path **inside the
+  container**, the same one the *arr gets as its root folder: that sameness is
+  what makes the library list exactly what the *arr imported. The loose folders
+  from its modal come in as mixed libraries. A blank username and password mean
+  "leave the wizard alone": the libraries still go in, but it stays open for you
+  to finish in the browser — completing it with no administrator would leave
+  Jellyfin with no account to log in with. On a Jellyfin whose wizard is already
+  done, the username and password from the modal are what give Hubstarr the token
+  to create the libraries. A library that already exists is left alone, and none
+  is ever removed.
 - **Quality profiles and custom formats** from the [TRaSH Guides](https://trash-guides.info),
   per instance: every Sonarr and Radarr in the stack picks the profiles it wants
   — **HD (1080p)**, **4K (2160p)**, **Remux 4K**, **Anime** — and that is how the

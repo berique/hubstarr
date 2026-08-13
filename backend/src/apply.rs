@@ -40,6 +40,9 @@ pub struct Req {
     /// o resolvedor de desafios da Cloudflare, quando ele está na stack
     #[serde(default)]
     solver: Option<Solver>,
+    /// o Jellyfin da stack: o assistente inicial e as bibliotecas
+    #[serde(default)]
+    jellyfin: Option<Jellyfin>,
     /// Media Management e nomenclatura, por família — como na página, é por
     /// app e não por instância
     #[serde(default)]
@@ -50,6 +53,36 @@ pub struct Req {
     /// roda. Ausente ou nulo: não há perfil a aplicar.
     #[serde(default)]
     configarr: Option<crate::deploy::Configarr>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Jellyfin {
+    /// o nome do servidor, que é o título da instância
+    name: String,
+    /// como o servidor o alcança: pelo nginx, no subpath dele
+    url: String,
+    /// o administrador a criar no assistente; vazio significa "não mexa nele"
+    #[serde(default)]
+    user: String,
+    #[serde(default)]
+    pass: String,
+    /// o idioma da interface, no formato do .NET (`pt-BR`, `en-US`)
+    #[serde(default)]
+    culture: String,
+    libs: Vec<JfLib>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct JfLib {
+    name: String,
+    /// `tvshows`, `movies`, `music` — vazio é biblioteca mista
+    #[serde(default)]
+    #[serde(rename = "type")]
+    tipo: String,
+    /// o caminho **de dentro do container**, que é o que o app enxerga
+    path: String,
 }
 
 #[derive(Deserialize)]
@@ -154,7 +187,10 @@ impl Req {
             && (!self.clients.is_empty() || self.prowlarr.is_some() || !self.mm.is_empty());
         let pelo_prowlarr = self.prowlarr.is_some()
             && (!self.clients.is_empty() || self.solver.is_some() || !self.arrs.is_empty());
-        pelos_arrs || pelo_prowlarr
+        // o Jellyfin vale por si: uma stack só com ele tem o assistente e as
+        // bibliotecas a fazer
+        let pelo_jellyfin = self.jellyfin.is_some();
+        pelos_arrs || pelo_prowlarr || pelo_jellyfin
     }
 
     /// Rodar o Configarr depois? Independe do `tem_o_que_fazer()`: uma stack sem
@@ -425,6 +461,10 @@ pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
     for arr in &req.arrs {
         falhas += pastas_raiz(&http, &base, &req, arr, &log).await;
         falhas += media_management(&http, &base, &req, arr, &log).await;
+    }
+    // o Jellyfin não é *arr e não fala a API deles: volta própria, no fim
+    if let Some(jf) = &req.jellyfin {
+        falhas += jellyfin(&http, jf, &log).await;
     }
     if falhas > 0 {
         return Err(format!("{falhas} ligação(ões) não passaram"));
@@ -868,9 +908,288 @@ fn merge(atual: &mut Value, de: &Map<String, Value>, mapa: &[(&str, &str)]) -> R
     Ok(())
 }
 
-/// O Media Management e a nomenclatura de uma instância. São dois recursos
-/// únicos (sem id na rota, mas com id no corpo), então cada um é lido, mexido
-/// e devolvido inteiro.
+/* O Jellyfin: o assistente inicial e as bibliotecas.
+
+   Ele não usa o `X-Api-Key` dos *arr, então estas chamadas montam as próprias
+   requisições — como as categorias do SABnzbd já fazem. São dois caminhos, e
+   quem escolhe é o `StartupWizardCompleted` do `/System/Info/Public`, que
+   responde sem autenticação nenhuma:
+
+   - **Assistente aberto**: a política `FirstTimeSetupOrElevated` do Jellyfin
+     libera criar usuário e biblioteca **sem token**, enquanto ele não terminar.
+     Por isso a ordem importa — as bibliotecas entram *antes* do `Complete`, e
+     depois dele a porta se fecha.
+   - **Assistente fechado**: é preciso um token, e ele sai do usuário e senha do
+     modal. Sem eles, não há o que fazer: vira uma linha no log, não uma falha
+     da stack.
+
+   O `Complete` só é chamado quando houve administrador a criar: sem conta
+   nenhuma, um Jellyfin com o assistente fechado não deixa ninguém entrar.
+
+   Biblioteca que já existe não é tocada, e nenhuma é removida: apagar leva
+   junto o que o dono organizou. */
+const JF_CLIENT: &str = "Hubstarr";
+
+async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
+    let base = jf.url.trim_end_matches('/').to_string();
+    esperar_url(http, &format!("{base}/System/Info/Public"), &jf.name, log).await;
+
+    let pronto = match http.get(format!("{base}/System/Info/Public")).send().await {
+        Ok(r) => {
+            let txt = r.text().await.unwrap_or_default();
+            serde_json::from_str::<Value>(&txt)
+                .ok()
+                .and_then(|v| v["StartupWizardCompleted"].as_bool())
+                // sem saber, o caminho seguro é o que pede token: mexer no
+                // assistente de quem já o concluiu é que seria estrago
+                .unwrap_or(true)
+        }
+        Err(e) => {
+            log.line(format!("{}: não respondeu ({e})", jf.name));
+            return 1;
+        }
+    };
+
+    let mut falhas = 0;
+    let mut token = String::new();
+
+    if !pronto {
+        falhas += assistente(http, &base, jf, log).await;
+    } else if !jf.user.is_empty() && !jf.pass.is_empty() {
+        match autenticar(http, &base, jf).await {
+            Ok(t) => token = t,
+            Err(e) => {
+                log.line(format!("{} → entrar como {}: {e}", jf.name, jf.user));
+                return falhas + 1;
+            }
+        }
+    } else {
+        /* Assistente já concluído e sem credencial: as bibliotecas exigem
+           token, e adivinhar não é opção. Dizer isso é melhor do que uma volta
+           que não faz nada em silêncio. */
+        log.line(format!(
+            "{}: o assistente já foi concluído — preencha usuário e senha no modal dele para o Hubstarr criar as bibliotecas",
+            jf.name
+        ));
+        return falhas;
+    }
+
+    falhas += bibliotecas(http, &base, jf, &token, log).await;
+
+    /* Por último: fechar o assistente sela o que entrou sem token. Só que
+       fechá-lo sem ter criado administrador nenhum entrega um Jellyfin sem
+       conta em que entrar — então, sem credencial no modal, ele fica aberto de
+       propósito, com as bibliotecas já lá, para quem sobe terminar no
+       navegador. */
+    let criou_admin = !jf.user.is_empty() && !jf.pass.is_empty();
+    if !pronto && !criou_admin {
+        log.line(format!(
+            "{}: bibliotecas prontas, mas o assistente fica aberto — sem usuário e senha no modal dele, concluí-lo deixaria o Jellyfin sem conta nenhuma",
+            jf.name
+        ));
+    }
+    if !pronto && criou_admin {
+        let r = http
+            .post(format!("{base}/Startup/Complete"))
+            .header("Content-Length", "0")
+            .send()
+            .await;
+        match r {
+            Ok(r) if r.status().is_success() => {
+                log.line(format!("{} → assistente concluído", jf.name))
+            }
+            Ok(r) => {
+                log.line(format!("{} → assistente: HTTP {}", jf.name, r.status().as_u16()));
+                falhas += 1;
+            }
+            Err(e) => {
+                log.line(format!("{} → assistente: não respondeu ({e})", jf.name));
+                falhas += 1;
+            }
+        }
+    }
+    falhas
+}
+
+/// O assistente inicial, na ordem em que o Jellyfin o espera. Nada aqui leva
+/// token: é a janela em que ele aceita sem.
+async fn assistente(http: &reqwest::Client, base: &str, jf: &Jellyfin, log: &Log) -> usize {
+    let mut falhas = 0;
+    let mut passo = |ok: bool, o_que: &str, detalhe: String| {
+        if ok {
+            log.line(format!("{} → {o_que}: pronto", jf.name));
+        } else {
+            log.line(format!("{} → {o_que}: {detalhe}", jf.name));
+            falhas += 1;
+        }
+    };
+
+    if !jf.culture.is_empty() {
+        let corpo = json!({
+            "ServerName": jf.name,
+            "UICulture": jf.culture,
+            "MetadataCountryCode": pais_de(&jf.culture),
+            "PreferredMetadataLanguage": idioma_de(&jf.culture),
+        });
+        let (ok, d) = post_json(http, &format!("{base}/Startup/Configuration"), "", corpo).await;
+        passo(ok, "idioma", d);
+    }
+
+    if !jf.user.is_empty() && !jf.pass.is_empty() {
+        let corpo = json!({"Name": jf.user, "Password": jf.pass});
+        let (ok, d) = post_json(http, &format!("{base}/Startup/User"), "", corpo).await;
+        passo(ok, &format!("administrador {}", jf.user), d);
+    }
+
+    let corpo = json!({"EnableRemoteAccess": true, "EnableAutomaticPortMapping": false});
+    let (ok, d) = post_json(http, &format!("{base}/Startup/RemoteAccess"), "", corpo).await;
+    passo(ok, "acesso remoto", d);
+    falhas
+}
+
+/// O token de um Jellyfin já configurado. O cabeçalho `Authorization` com os
+/// campos do MediaBrowser é obrigatório: sem ele a chamada é recusada antes de
+/// olhar a senha.
+async fn autenticar(http: &reqwest::Client, base: &str, jf: &Jellyfin) -> Result<String, String> {
+    let r = http
+        .post(format!("{base}/Users/AuthenticateByName"))
+        .header(
+            "Authorization",
+            format!(
+                "MediaBrowser Client=\"{JF_CLIENT}\", Device=\"{JF_CLIENT}\", \
+                 DeviceId=\"hubstarr\", Version=\"{}\"",
+                env!("CARGO_PKG_VERSION")
+            ),
+        )
+        .header("Content-Type", "application/json")
+        .body(json!({"Username": jf.user, "Pw": jf.pass}).to_string())
+        .send()
+        .await
+        .map_err(|e| format!("não respondeu ({e})"))?;
+    let st = r.status();
+    let txt = r.text().await.unwrap_or_default();
+    if !st.is_success() {
+        return Err(erro(st, &txt));
+    }
+    serde_json::from_str::<Value>(&txt)
+        .ok()
+        .and_then(|v| v["AccessToken"].as_str().map(String::from))
+        .ok_or_else(|| "entrou, mas não veio token".to_string())
+}
+
+/// As bibliotecas que faltam. O que já está lá fica como está — o dono pode ter
+/// mexido nas opções, e sobrescrever seria desfazer escolha dele.
+async fn bibliotecas(
+    http: &reqwest::Client,
+    base: &str,
+    jf: &Jellyfin,
+    token: &str,
+    log: &Log,
+) -> usize {
+    let url = format!("{base}/Library/VirtualFolders");
+    let atuais: Vec<Value> = match http
+        .get(&url)
+        .header("X-Emby-Token", token)
+        .send()
+        .await
+    {
+        Ok(r) if r.status().is_success() => serde_json::from_str(&r.text().await.unwrap_or_default())
+            .unwrap_or_default(),
+        Ok(r) => {
+            log.line(format!("{} → bibliotecas: HTTP {}", jf.name, r.status().as_u16()));
+            return 1;
+        }
+        Err(e) => {
+            log.line(format!("{} → bibliotecas: não respondeu ({e})", jf.name));
+            return 1;
+        }
+    };
+    let ja_tem: Vec<String> = atuais
+        .iter()
+        .flat_map(|v| v["Locations"].as_array().cloned().unwrap_or_default())
+        .filter_map(|p| p.as_str().map(|s| s.trim_end_matches('/').to_string()))
+        .collect();
+
+    let mut falhas = 0;
+    for lib in &jf.libs {
+        let alvo = lib.path.trim_end_matches('/');
+        if ja_tem.iter().any(|p| p == alvo) {
+            log.line(format!("{} → biblioteca {}: já estava lá", jf.name, lib.path));
+            continue;
+        }
+        let mut pedido = format!(
+            "{url}?name={}&paths={}&refreshLibrary=true",
+            enc(&lib.name),
+            enc(&lib.path)
+        );
+        if !lib.tipo.is_empty() {
+            pedido.push_str(&format!("&collectionType={}", lib.tipo));
+        }
+        // o corpo é obrigatório mesmo vazio: sem ele o Jellyfin devolve 400
+        let (ok, d) = post_json(http, &pedido, token, json!({"LibraryOptions": {}})).await;
+        if ok {
+            log.line(format!("{} → biblioteca {} ({}): pronta", jf.name, lib.name, lib.path));
+        } else {
+            log.line(format!("{} → biblioteca {}: {d}", jf.name, lib.name));
+            falhas += 1;
+        }
+    }
+    falhas
+}
+
+/// POST com corpo JSON, com o token quando há um. Devolve se deu certo e, se
+/// não, o que o app respondeu.
+async fn post_json(
+    http: &reqwest::Client,
+    url: &str,
+    token: &str,
+    corpo: Value,
+) -> (bool, String) {
+    let mut req = http
+        .post(url)
+        .header("Content-Type", "application/json")
+        .body(corpo.to_string());
+    if !token.is_empty() {
+        req = req.header("X-Emby-Token", token);
+    }
+    match req.send().await {
+        Ok(r) => {
+            let st = r.status();
+            if st.is_success() {
+                (true, String::new())
+            } else {
+                let txt = r.text().await.unwrap_or_default();
+                (false, erro(st, &txt))
+            }
+        }
+        Err(e) => (false, format!("não respondeu ({e})")),
+    }
+}
+
+/// Escapa o que vai na query — nome de biblioteca tem espaço, e caminho tem
+/// barra.
+fn enc(s: &str) -> String {
+    s.bytes()
+        .map(|b| match b {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                (b as char).to_string()
+            }
+            _ => format!("%{b:02X}"),
+        })
+        .collect()
+}
+
+/// `pt-BR` → `BR`, `en-US` → `US`. Sem região, o país fica vazio e o Jellyfin
+/// usa o padrão dele.
+fn pais_de(culture: &str) -> String {
+    culture.split('-').nth(1).unwrap_or("").to_string()
+}
+
+/// `pt-BR` → `pt`: o idioma dos metadados é só a primeira parte.
+fn idioma_de(culture: &str) -> String {
+    culture.split('-').next().unwrap_or("en").to_string()
+}
+
 /* As pastas raiz de um *arr — o *Root Folder*, que é onde ele guarda o que
    baixa. Os caminhos vêm da página, que é quem monta os binds do compose e
    portanto sabe o que o container enxerga.
@@ -927,6 +1246,9 @@ async fn pastas_raiz(
     falhas
 }
 
+/// O Media Management e a nomenclatura de uma instância. São dois recursos
+/// únicos (sem id na rota, mas com id no corpo), então cada um é lido, mexido
+/// e devolvido inteiro.
 async fn media_management(
     http: &reqwest::Client,
     base: &str,
@@ -1455,6 +1777,7 @@ mod tests {
             clients: vec![],
             prowlarr: Some(Prowlarr { route: "/prowlarr".into(), url: "http://p:9696".into() }),
             solver: Some(Solver { name: "FlareSolverr".into(), url: "http://f:8191".into() }),
+            jellyfin: None,
             mm: Map::new(),
             configarr: None,
         };
@@ -1473,6 +1796,7 @@ mod tests {
             clients,
             prowlarr: None,
             solver: None,
+            jellyfin: None,
             mm: Map::new(),
             configarr: None,
         };
@@ -1492,6 +1816,7 @@ mod tests {
             clients: vec![],
             prowlarr: None,
             solver: None,
+            jellyfin: None,
             mm: Map::new(),
             configarr: Some(crate::deploy::Configarr {
                 dir: "/cfg/configarr".into(),

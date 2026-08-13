@@ -182,6 +182,19 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   add a root folder*, e o caminho digitado à mão costuma ser o do host, que o
   app aceita e depois não acha. O que já estiver lá fica: pasta raiz se remove
   com a biblioteca junto.
+- **Jellyfin pronto para usar**: com ele na stack, o **Subir** passa pelo
+  assistente inicial — a interface no idioma da página, o administrador do modal
+  dele e o acesso remoto — e cria uma biblioteca por instância de Sonarr, Radarr
+  e Lidarr, com o tipo certo (séries, filmes, música) e o caminho **de dentro do
+  container**, o mesmo que o *arr recebe como pasta raiz: é essa igualdade que
+  faz a biblioteca listar justamente o que o *arr importou. As pastas avulsas do
+  modal dele entram como bibliotecas mistas. Usuário e senha em branco significam
+  "não mexa no assistente": as bibliotecas entram do mesmo jeito, mas ele fica
+  aberto para você terminar no navegador — concluí-lo sem administrador deixaria
+  o Jellyfin sem conta nenhuma em que entrar. Num Jellyfin cujo assistente já foi
+  concluído, é o usuário e a senha do modal que dão ao Hubstarr o token para
+  criar as bibliotecas. Biblioteca que já existe não é tocada, e nenhuma é
+  removida.
 - **Perfis de qualidade e custom formats** do [TRaSH Guides](https://trash-guides.info),
   por instância: cada Sonarr e cada Radarr da stack escolhe os perfis do guia
   que quer — **HD (1080p)**, **4K (2160p)**, **Remux 4K**, **Anime** —, e é assim
