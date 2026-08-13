@@ -5,7 +5,7 @@
    snake_case na tabela — e é o único lugar em que ele aparece: acrescentar uma
    chave ao Ambiente é acrescentar uma coluna no `schema.sql` e uma linha aqui. */
 
-use rusqlite::{params, OptionalExtension};
+use rusqlite::{params, Connection, OptionalExtension};
 use serde_json::{Map, Value};
 
 use super::Db;
@@ -39,6 +39,49 @@ const ENV_COLS: [(&str, &str); 25] = [
     ("ovpnPass", "ovpn_pass"),
     ("countries", "countries"),
 ];
+
+/* As colunas do `ENV_COLS` que faltam num banco de uma versão anterior.
+
+   Acrescentar uma chave ao Ambiente é acrescentar uma coluna ao `schema.sql` e
+   uma linha ali em cima — só que o `CREATE TABLE IF NOT EXISTS` não mexe em
+   tabela que já existe, então o banco de quem já tinha stack fica sem ela. E
+   uma coluna faltando não é um detalhe: o `SELECT` do `env()` nomeia todas, e
+   sem uma delas **toda** leitura do Ambiente falha — a página abre com a stack
+   vazia e, no primeiro save, o `reconcile()` apaga as instâncias que ela não
+   viu. Foi exatamente isso que o `jf_user`/`jf_pass` fez.
+
+   Por isso a lista manda em quem já existe também: coluna que falta entra como
+   TEXT vazio, que é o padrão do `schema.sql` e o que a página entende como "não
+   preenchido". O `tls` fica de fora porque não está no `ENV_COLS` — é o único
+   booleano, e nasceu com a tabela. */
+pub(crate) fn ensure_env_cols(conn: &Connection) -> Result<(), String> {
+    let mut tem = std::collections::HashSet::new();
+    {
+        let mut q = conn
+            .prepare("SELECT name FROM pragma_table_info('stack_env')")
+            .map_err(|e| e.to_string())?;
+        let linhas = q
+            .query_map([], |r| r.get::<_, String>(0))
+            .map_err(|e| e.to_string())?;
+        for l in linhas {
+            tem.insert(l.map_err(|e| e.to_string())?);
+        }
+    }
+    // tabela que ainda não existe é assunto do schema.sql, não daqui
+    if tem.is_empty() {
+        return Ok(());
+    }
+    for (_, col) in ENV_COLS {
+        if !tem.contains(col) {
+            conn.execute(
+                &format!("ALTER TABLE stack_env ADD COLUMN {col} TEXT NOT NULL DEFAULT ''"),
+                [],
+            )
+            .map_err(|e| format!("acrescentando {col} ao stack_env: {e}"))?;
+        }
+    }
+    Ok(())
+}
 
 impl Db {
     /// Grava o Ambiente. O que não vier no JSON fica como está.
@@ -149,6 +192,57 @@ mod tests {
         // o segundo put não criou outra linha nem apagou o que o primeiro pôs
         assert_eq!(back["tz"], json!("UTC"));
         assert_eq!(back["puid"], json!("1000"));
+    }
+
+    /// O banco de uma versão anterior não tem as colunas que o Ambiente ganhou
+    /// depois. Sem o `ensure_env_cols`, o `SELECT` que as nomeia falha inteiro
+    /// — e a página, que trata isso como "não há nada guardado", abre vazia e
+    /// manda apagar o resto.
+    #[test]
+    fn coluna_que_faltava_no_banco_antigo_entra_na_abertura() {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        // o stack_env como era antes do jf_user/jf_pass
+        conn.execute_batch(
+            "CREATE TABLE stack_env (
+               id INTEGER PRIMARY KEY CHECK (id = 1),
+               restart TEXT NOT NULL DEFAULT '', cfg TEXT NOT NULL DEFAULT '',
+               data TEXT NOT NULL DEFAULT '', dl TEXT NOT NULL DEFAULT '',
+               http TEXT NOT NULL DEFAULT '', https TEXT NOT NULL DEFAULT '',
+               puid TEXT NOT NULL DEFAULT '', pgid TEXT NOT NULL DEFAULT '',
+               tz TEXT NOT NULL DEFAULT '', api_key TEXT NOT NULL DEFAULT '',
+               qbit_user TEXT NOT NULL DEFAULT '', qbit_pass TEXT NOT NULL DEFAULT '',
+               qbit_key TEXT NOT NULL DEFAULT '', tls INTEGER NOT NULL DEFAULT 0,
+               domain TEXT NOT NULL DEFAULT '', cert TEXT NOT NULL DEFAULT '',
+               tls_key TEXT NOT NULL DEFAULT '', vpn_prov TEXT NOT NULL DEFAULT '',
+               vpn_type TEXT NOT NULL DEFAULT '', wg_key TEXT NOT NULL DEFAULT '',
+               wg_addr TEXT NOT NULL DEFAULT '', ovpn_user TEXT NOT NULL DEFAULT '',
+               ovpn_pass TEXT NOT NULL DEFAULT '', countries TEXT NOT NULL DEFAULT ''
+             );
+             INSERT INTO stack_env (id, tz) VALUES (1, 'America/Sao_Paulo');",
+        )
+        .unwrap();
+        ensure_env_cols(&conn).unwrap();
+        let db = Db::from_conn(conn);
+        let back = db.env().unwrap();
+        // o que já estava guardado atravessa, e o que faltava vem vazio
+        assert_eq!(back["tz"], json!("America/Sao_Paulo"));
+        assert_eq!(back["jfUser"], json!(""));
+        // e a coluna nova aceita escrita como qualquer outra
+        db.put_env(&json!({"jfUser": "henrique"})).unwrap();
+        assert_eq!(db.env().unwrap()["jfUser"], json!("henrique"));
+    }
+
+    /// Rodar de novo num banco já em dia não muda nada — é o mesmo caminho da
+    /// primeira abertura e das seguintes.
+    #[test]
+    fn acrescentar_coluna_de_novo_nao_faz_nada() {
+        let db = Db::memory().unwrap();
+        db.put_env(&json!({"jfPass": "segredo"})).unwrap();
+        let conn = db.lock().unwrap();
+        ensure_env_cols(&conn).unwrap();
+        ensure_env_cols(&conn).unwrap();
+        drop(conn);
+        assert_eq!(db.env().unwrap()["jfPass"], json!("segredo"));
     }
 
     #[test]

@@ -41,6 +41,9 @@ impl Db {
         let done = migrate::run(&conn)?;
         conn.execute_batch(include_str!("schema.sql"))
             .map_err(|e| e.to_string())?;
+        // o schema não acrescenta coluna a tabela que já existe, e o Ambiente é
+        // a tabela que cresce uma coluna por chave nova — ver `ensure_env_cols`
+        env::ensure_env_cols(&conn)?;
         Ok((Db(Arc::new(Mutex::new(conn))), done))
     }
 
