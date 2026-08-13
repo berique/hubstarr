@@ -499,6 +499,14 @@ linha só — o `CHECK (id = 1)` é o que a mantém única), `instance` +
 - **`instance.extra`** guarda o que não virou coluna e volta espalhado no
   objeto. Uma flag nova no `SERVICES` não exige migração — só acrescente à
   `COLUMNS` o que precisar de coluna de verdade.
+- **Chave nova no Ambiente é coluna nova, e o `schema.sql` sozinho não a
+  acrescenta**: o `CREATE TABLE IF NOT EXISTS` não mexe em tabela que já
+  existe. Quem a põe no banco de quem já tinha stack é o `ensure_env_cols()`,
+  que roda na abertura, compara o `ENV_COLS` com o `PRAGMA table_info` e faz o
+  `ALTER TABLE` do que faltar. Não é zelo: o `SELECT` do `env()` nomeia todas
+  as colunas, e uma faltando derruba **toda** leitura do Ambiente — a página
+  entende isso como banco vazio e o primeiro save apaga as instâncias. Já
+  aconteceu, com o `jf_user`/`jf_pass`.
 
 Tirar um serviço do catálogo não tira a instância dele do banco de quem já a
 tinha. Por isso o `applyState()` filtra o que voltou
@@ -531,6 +539,14 @@ o estado guardado — sem id nenhum, porque a stack é a do servidor.
 (debounce no fim do `render()`) manda Ambiente, Configuração e a lista de chaves — é ela que acerta a ordem e apaga o
 que saiu sem passar pelo modal. A flag `loading` existe para o estado que vem do
 banco não ser gravado de volta enquanto está sendo aplicado.
+
+A outra flag, a `readOnly`, é a rede de segurança dessa mesma lista de chaves:
+carregamento que **falhou** (qualquer resposta do `api/state` que não seja 200
+ou 204) deixa a tela com uma stack vazia que não é a do banco, e seguir daí
+grava essa lista por cima — o `reconcile()` apaga o que não vier nela. Então o
+`openStack()` a liga, o aviso `#noState` aparece e as três funções que gravam
+(`putInstance`, `delInstance`, `saveSettings`) desistem até alguém recarregar a
+página. 204 é banco vazio e continua sendo começo normal.
 
 ## Perfis de qualidade (v0.4)
 

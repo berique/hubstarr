@@ -371,6 +371,9 @@
   <p class="protoWarn" data-i18n-html="proto.warn"></p>
   <!-- só aparece com servidor atrás da página e sem o docker compose nele -->
   <p class="protoWarn" id="noDocker" hidden data-i18n-html="docker.missing"></p>
+  <!-- a stack guardada não veio: a página fica em modo de leitura, sem gravar
+       por cima do que está no banco -->
+  <p class="protoWarn" id="noState" hidden data-i18n-html="state.failed"></p>
   <!-- aviso acima dos dois painéis, na largura toda -->
   <details class="notice" id="dockerHelp">
     <summary data-i18n="docker.h">Precisa instalar o Docker?</summary>
@@ -922,6 +925,7 @@ const I18N = {
   'srv.noDocker':'o docker compose não respondeu neste servidor',
   'btn.noDocker':'O docker compose não respondeu neste servidor: instale-o para subir e derrubar a stack daqui',
   'docker.missing':'<b>Sem o Docker Compose neste servidor.</b> O Hubstarr continua gerando os arquivos e guardando a stack, mas <b>Subir</b> e <b>Derrubar</b> vão falhar até o plugin Compose estar instalado — veja abaixo como instalá-lo.',
+  'state.failed':'<b>A stack guardada não pôde ser lida.</b> O servidor respondeu com um erro, então a página está mostrando uma stack vazia que <b>não é</b> a sua — e, para não gravar por cima do que está no banco, ela não salva nada enquanto isso durar. Veja o erro no console do navegador e recarregue depois de resolvê-lo.',
   'tour.skip':'Pular',
   'tour.prev':'Anterior',
   'tour.next':'Próximo',
@@ -1335,6 +1339,7 @@ const I18N = {
   'srv.noDocker':'docker compose did not answer on this server',
   'btn.noDocker':'docker compose did not answer on this server: install it to bring the stack up and down from here',
   'docker.missing':'<b>No Docker Compose on this server.</b> Hubstarr still generates the files and keeps the stack, but <b>Bring up</b> and <b>Tear down</b> will fail until the Compose plugin is installed — see below how to install it.',
+  'state.failed':'<b>The saved stack could not be read.</b> The server answered with an error, so the page is showing an empty stack that is <b>not</b> yours — and, so as not to write over what is in the database, it saves nothing while this lasts. Check the browser console for the error and reload once it is fixed.',
   'tour.skip':'Skip',
   'tour.prev':'Back',
   'tour.next':'Next',
@@ -1748,6 +1753,7 @@ const I18N = {
   'srv.noDocker':'docker compose no respondió en este servidor',
   'btn.noDocker':'docker compose no respondió en este servidor: instálalo para levantar y derribar la stack desde aquí',
   'docker.missing':'<b>Sin Docker Compose en este servidor.</b> Hubstarr sigue generando los archivos y guardando la stack, pero <b>Levantar</b> y <b>Derribar</b> fallarán hasta que el plugin Compose esté instalado — mira abajo cómo instalarlo.',
+  'state.failed':'<b>La stack guardada no se pudo leer.</b> El servidor respondió con un error, así que la página muestra una stack vacía que <b>no es</b> la tuya — y, para no grabar sobre lo que está en la base, no guarda nada mientras esto dure. Mira el error en la consola del navegador y recarga cuando esté resuelto.',
   'tour.skip':'Saltar',
   'tour.prev':'Anterior',
   'tour.next':'Siguiente',
@@ -4604,6 +4610,11 @@ $('#langSel').onchange = e => setLang(e.target.value);
    da API leva id. */
 let SERVER = null;
 let loading = false;   // aplicando estado vindo do banco: não gravar de volta
+/* A stack guardada não pôde ser lida, e a lista vazia da tela não é a do
+   banco. Gravar daqui apagaria o que está lá — o `reconcile()` do servidor
+   apaga a instância que não vier na lista de chaves —, então esta sessão não
+   grava mais nada. Só se sai disso recarregando a página. */
+let readOnly = false;
 
 const api = (path, opts) => fetch('api/' + path, Object.assign(
   {headers:{'Content-Type':'application/json'}, cache:'no-store'}, opts || {}));
@@ -4613,13 +4624,13 @@ const api = (path, opts) => fetch('api/' + path, Object.assign(
    vale para a stack inteira (Ambiente, Configuração e a ordem da lista) vai
    junto no `saveSettings()`, que roda no fim de cada `render()`. */
 function putInstance(a, old){
-  if(!SERVER || loading) return;
+  if(!SERVER || loading || readOnly) return;
   api('instance', {method:'PUT', body:JSON.stringify(
     {key:cname(a), old:old || null, ord:added.findIndex(x=>x===a), data:a})}).catch(()=>{});
 }
 
 function delInstance(key){
-  if(!SERVER || loading) return;
+  if(!SERVER || loading || readOnly) return;
   api('instance/' + encodeURIComponent(key), {method:'DELETE'}).catch(()=>{});
 }
 
@@ -4629,7 +4640,7 @@ function delInstance(key){
    tudo —, e é ela que acerta a ordem e apaga do banco o que saiu. */
 let saveT = 0;
 function saveSettings(){
-  if(!SERVER || loading) return;
+  if(!SERVER || loading || readOnly) return;
   clearTimeout(saveT);
   saveT = setTimeout(()=>{
     api('settings', {method:'PUT', body:JSON.stringify(
@@ -4665,7 +4676,17 @@ async function openStack(){
   try{
     const r = await api('state');
     if(r.status === 200) applyState(await r.json());
-  }catch(e){}
+    /* 204 é banco vazio, e aí a página começa como uma nova. Qualquer outra
+       resposta é a stack que existe e não veio: seguir daqui grava uma lista
+       vazia por cima dela no primeiro save. */
+    else if(r.status !== 204) throw new Error('HTTP ' + r.status + ': ' +
+      ((await r.json().catch(()=>({}))).error || ''));
+  }catch(e){
+    readOnly = true;
+    $('#noState').hidden = false;
+    console.error('Hubstarr: não deu para ler a stack guardada, e por isso nada ' +
+                  'será gravado nesta sessão —', e);
+  }
   loading = false;
   applyI18n(); renderCombo(); renderItems(); render();
   paintStatus(); pollStatus();
