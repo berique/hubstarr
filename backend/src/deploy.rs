@@ -28,15 +28,22 @@ pub const ENGINES: [&str; 2] = ["docker", "podman"];
 /// dos `ENGINES` que responder. Sem nenhum, fica o `docker` — é o que a
 /// mensagem do `docker_ok()` na página fala de instalar.
 pub async fn pick_engine(escolhido: Option<String>) -> String {
+    pick_from(escolhido, &ENGINES).await
+}
+
+/// O miolo do `pick_engine()`, com a lista de fora — é por ela que o teste
+/// entra, apontando para comandos de mentira em vez de depender do que está
+/// instalado na máquina.
+async fn pick_from(escolhido: Option<String>, engines: &[&str]) -> String {
     if let Some(c) = escolhido {
         return c;
     }
-    for e in ENGINES {
+    for e in engines {
         if docker_ok(e).await {
             return e.to_string();
         }
     }
-    ENGINES[0].to_string()
+    engines[0].to_string()
 }
 
 pub async fn docker_ok(docker: &str) -> bool {
@@ -287,7 +294,49 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::ok_service;
+    use super::{ok_service, pick_from};
+
+    /// Um comando de mentira que responde (ou não) ao `compose version`.
+    fn falso(nome: &str, responde: bool) -> String {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = std::env::temp_dir().join(format!("hubmotor{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let p = dir.join(nome);
+        let corpo = if responde {
+            "#!/bin/sh\n[ \"$1 $2\" = 'compose version' ] && exit 0\nexit 1\n"
+        } else {
+            "#!/bin/sh\nexit 127\n"
+        };
+        std::fs::write(&p, corpo).unwrap();
+        std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o755)).unwrap();
+        p.to_string_lossy().into_owned()
+    }
+
+    #[tokio::test]
+    async fn o_motor_escolhido_na_linha_de_comando_manda() {
+        let bom = falso("bom", true);
+        // nem se pergunta ao que veio: quem passou --docker já decidiu
+        assert_eq!(pick_from(Some("qualquer".into()), &[&bom]).await, "qualquer");
+    }
+
+    #[tokio::test]
+    async fn sem_opcao_vale_o_primeiro_que_responde() {
+        let quebrado = falso("quebrado", false);
+        let bom = falso("bom", true);
+        let e: Vec<&str> = vec![&quebrado, &bom];
+        assert_eq!(pick_from(None, &e).await, bom);
+        // e o primeiro continua sendo o primeiro quando responde
+        let e: Vec<&str> = vec![&bom, &quebrado];
+        assert_eq!(pick_from(None, &e).await, bom);
+    }
+
+    #[tokio::test]
+    async fn sem_motor_nenhum_fica_o_primeiro_da_lista() {
+        let quebrado = falso("quebrado", false);
+        // não existe nem como arquivo: o `Command` falha antes de rodar
+        let e: Vec<&str> = vec![&quebrado, "hubstarr-motor-que-nao-existe"];
+        assert_eq!(pick_from(None, &e).await, quebrado);
+    }
 
     #[test]
     fn nome_de_servico_so_aceita_o_que_o_cname_produz() {
