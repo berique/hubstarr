@@ -4,18 +4,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Projeto
 
-Hubstarr é um protótipo de página única que gera `docker-compose.yml`, `.env` e
-`nginx.conf` de uma stack de mídia (*arr + clientes de download + servidor de
-mídia). **A página é um único arquivo**: `hubstarr.html` (~3200 linhas: CSS,
-HTML e um `<script>` inline), e é ela que é o produto.
+Hubstarr é um protótipo que monta e sobe uma stack de mídia (*arr + clientes de
+download + servidor de mídia). São duas metades, e as duas são necessárias para
+o resultado que o projeto promete:
 
-A página não tem build, teste, lint nem package manager: para rodar, abra o
-arquivo no navegador. O `.mvn/` é resto de outro projeto e está no `.gitignore`.
+- **A página**, `hubstarr.html` — um arquivo só (CSS, HTML e um `<script>`
+  inline). É ela que **decide e gera**: o catálogo de serviços, o `CONFIG`, e os
+  geradores do `docker-compose.yml`, do `.env` e do `nginx.conf`. Não tem build
+  nem package manager; para vê-la, abra o endereço do servidor — ou o arquivo no
+  navegador, que é o modo de quem quer só os arquivos.
+- **O servidor**, `backend/` (Rust, desde o v0.2) — guarda a stack em SQLite,
+  grava os arquivos, sobe no Docker e **configura os apps uns nos outros** pela
+  API de cada um. Tem build e testes (`cd backend && cargo test`).
 
-Em `backend/` há um **servidor opcional** em Rust (v0.2): guarda as stacks em
-SQLite, grava os arquivos e sobe a stack no Docker. Ele tem build e testes
-(`cd backend && cargo test`), mas a página continua funcionando inteira sem
-ele — ver "Servidor" mais abaixo.
+A página abre sozinha do disco e ali gera os arquivos num `.zip`, e isso
+continua valendo — mas o que depende de app no ar (senha do qBittorrent, base
+URL do Jellyfin, clientes de download nos *arr, perfis do TRaSH Guides) é do
+servidor. Ao mexer na página, não quebre o modo `file://`; ao mexer no
+servidor, lembre que ele **nunca gera conteúdo** — ver "Servidor" mais abaixo.
+
+O `.mvn/` é resto de outro projeto e está no `.gitignore`.
 
 Licença GPL-3.0 (`LICENSE`, texto oficial da FSF). O aviso de copyright fica no
 comentário logo depois do `<!DOCTYPE html>` — não o remova ao mexer no arquivo,
@@ -482,7 +490,7 @@ servidor, e sumiria com o único lugar em que dá para acompanhar. O `runJob()` 
 libera quando o trabalho termina, tendo dado certo ou não — inclusive quando ele
 nem começa, que é o caso do servidor fora do ar.
 
-Do lado da página, a seção `/* ---------- servidor (opcional) ---------- */`:
+Do lado da página, a seção `/* ---------- servidor ---------- */`:
 `detectServer()` só faz algo em `http(s)://` e chama `openStack()`, que carrega
 o estado guardado — sem id nenhum, porque a stack é a do servidor.
 `putInstance`/`delInstance` mexem numa linha por vez, e `saveSettings()`
