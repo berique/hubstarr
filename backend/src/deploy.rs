@@ -187,7 +187,7 @@ pub async fn configarr(docker: &str, cfg: &Configarr, log: &Log) -> Result<(), S
     args.push(CONFIGARR_IMG.into());
 
     let refs: Vec<&str> = args.iter().map(String::as_str).collect();
-    run(docker, &refs, Path::new(dir), log).await.map_err(|e| {
+    run(docker, &refs, Path::new(dir), log).await.inspect_err(|_| {
         /* O erro do docker não diz qual é o problema quando ele é de posse: o
            Configarr morre num "Permission denied" do git, no meio de um rastro
            de pilha do node. O caso conhecido é o cache clonado por outro dono —
@@ -199,7 +199,6 @@ pub async fn configarr(docker: &str, cfg: &Configarr, log: &Log) -> Result<(), S
                 cfg.user
             ));
         }
-        e
     })
 }
 

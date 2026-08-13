@@ -68,9 +68,9 @@ impl Db {
         let config = self.config()?;
         // banco recém-criado: nada a restaurar, e a página fica com os padrões
         // dela em vez de receber de volta um estado vazio
-        let empty = config["apps"].as_object().map_or(true, |m| m.is_empty())
-            && config["clients"].as_object().map_or(true, |m| m.is_empty())
-            && config["mm"].as_object().map_or(true, |m| m.is_empty());
+        let empty = config["apps"].as_object().is_none_or(|m| m.is_empty())
+            && config["clients"].as_object().is_none_or(|m| m.is_empty())
+            && config["mm"].as_object().is_none_or(|m| m.is_empty());
         if added.is_empty() && defaults.is_null() && empty {
             return Ok(None);
         }
