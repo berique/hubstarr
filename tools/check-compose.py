@@ -41,6 +41,42 @@ added = [
 """
 
 
+# O que o navegador precisa para rodar sem sessão gráfica e sair sozinho. O
+# `--user-data-dir` próprio é o que evita ele travar quando já há um perfil em
+# uso, e o `--virtual-time-budget` é o que encerra a página em vez de esperar
+# um temporizador que nunca vem.
+OPCOES = [
+    '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
+    '--no-first-run', '--no-default-browser-check',
+    '--disable-extensions', '--disable-background-networking', '--disable-sync',
+    '--virtual-time-budget=8000',
+]
+
+
+def abrir(navegador, pagina, saida):
+    """O DOM da página depois de ela rodar.
+
+    Duas tentativas, com o headless novo e com o antigo: o novo é o que vale
+    daqui para a frente, mas em runner de CI ele às vezes não devolve o DOM e
+    fica pendurado até o timeout — e aí o antigo resolve. Sem a segunda
+    tentativa, a checagem falharia por causa do navegador, não da página.
+    """
+    erro = None
+    for modo in ('--headless=new', '--headless=old'):
+        try:
+            r = subprocess.run(
+                [navegador, modo, *OPCOES, f'--user-data-dir={saida}/perfil-{modo[-3:]}',
+                 '--dump-dom', f'file://{pagina}'],
+                capture_output=True, text=True, timeout=90)
+            if r.stdout.strip():
+                return r.stdout
+            erro = f'{modo}: saiu sem DOM ({r.stderr.strip()[:200]})'
+        except subprocess.TimeoutExpired:
+            erro = f'{modo}: não respondeu em 90s'
+        print(f'  {erro}, tentando de novo', file=sys.stderr)
+    sys.exit(f'o navegador não abriu a página — {erro}')
+
+
 def gerar(pagina, saida):
     """Roda a página no chromium e devolve os arquivos que ela gera."""
     injecao = """
@@ -73,11 +109,7 @@ try{
     if not navegador:
         sys.exit('sem um navegador para abrir a página (instale o chromium ou aponte $CHROME)')
 
-    dom = subprocess.run(
-        [navegador, '--headless=new', '--no-sandbox', '--disable-gpu',
-         f'--user-data-dir={saida}/perfil', '--virtual-time-budget=8000',
-         '--dump-dom', f'file://{tmp}'],
-        capture_output=True, text=True, timeout=180).stdout
+    dom = abrir(navegador, tmp, saida)
 
     titulo = html.unescape(re.search(r'<title>(.*?)</title>', dom, re.S).group(1))
     if not titulo.startswith('OK'):
