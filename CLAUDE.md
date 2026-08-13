@@ -532,6 +532,20 @@ servidor, e sumiria com o único lugar em que dá para acompanhar. O `runJob()` 
 libera quando o trabalho termina, tendo dado certo ou não — inclusive quando ele
 nem começa, que é o caso do servidor fora do ar.
 
+**Toda saída daquele laço tem de passar pelo `endLog()`.** Enquanto ele gira, o
+Fechar está desabilitado, então um caminho que não termine prende o modal para
+sempre — com a tela parada, que é o pior jeito de falhar. Foram dois buracos
+assim, um de cada lado:
+
+- na página, a busca do trabalho que falha (servidor que caiu, trabalho que ele
+  não conhece mais — eles vivem em memória) contava como "ainda correndo"; hoje
+  ela conta as falhas seguidas e desiste depois de `TENTATIVAS`, com a
+  `log.lost` no log;
+- no servidor, pânico dentro do trabalho matava a tarefa antes do `done`, e a
+  página perguntava por ele para sempre. O `jobs.rs` roda o trabalho numa
+  tarefa de dentro e espera pelo `JoinHandle`, o que transforma o pânico numa
+  falha comum.
+
 Do lado da página, a seção `/* ---------- servidor ---------- */`:
 `detectServer()` só faz algo em `http(s)://` e chama `openStack()`, que carrega
 o estado guardado — sem id nenhum, porque a stack é a do servidor.

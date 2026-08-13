@@ -58,7 +58,17 @@ impl Jobs {
         }
         let log = Log(slot.clone());
         tokio::spawn(async move {
-            let res = f(log.clone()).await;
+            /* O trabalho roda numa tarefa própria só para que o `done` seja
+               escrito **sempre**: um pânico lá dentro mataria a tarefa antes
+               desta linha, e o trabalho ficaria eternamente "correndo" — do
+               lado da página, isso é o modal do log com o Fechar desabilitado
+               e nada mais acontecendo. Esperar pelo `JoinHandle` transforma o
+               pânico numa falha comum, com uma linha no log. */
+            let dentro = log.clone();
+            let res = match tokio::spawn(async move { f(dentro).await }).await {
+                Ok(r) => r,
+                Err(e) => Err(format!("o trabalho morreu no meio ({e})")),
+            };
             if let Err(e) = &res {
                 log.line(format!("erro: {e}"));
             }
@@ -80,5 +90,46 @@ impl Jobs {
         let m = self.map.lock().ok()?;
         let slot = m.get(&id)?;
         slot.lock().ok().map(|st| st.clone())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    async fn esperar(jobs: &Jobs, id: u64) -> JobState {
+        for _ in 0..100 {
+            let st = jobs.get(id).expect("o trabalho existe");
+            if st.done {
+                return st;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        }
+        panic!("o trabalho nunca terminou");
+    }
+
+    #[tokio::test]
+    async fn trabalho_que_falha_termina_como_falha() {
+        let jobs = Jobs::new();
+        let id = jobs.spawn(|log| async move {
+            log.line("indo");
+            Err("não deu".to_string())
+        });
+        let st = esperar(&jobs, id).await;
+        assert!(!st.ok);
+        assert_eq!(st.log, vec!["indo", "erro: não deu"]);
+    }
+
+    /// Pânico dentro do trabalho é o caso que prendia o modal do log: sem o
+    /// `done`, a página fica perguntando para sempre e o Fechar nunca volta.
+    #[tokio::test]
+    async fn trabalho_que_entra_em_panico_tambem_termina() {
+        let jobs = Jobs::new();
+        let id = jobs.spawn(|_log| async move {
+            panic!("estourou");
+        });
+        let st = esperar(&jobs, id).await;
+        assert!(!st.ok);
+        assert!(st.log.iter().any(|l| l.contains("morreu no meio")), "{:?}", st.log);
     }
 }

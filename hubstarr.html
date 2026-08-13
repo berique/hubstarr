@@ -968,6 +968,7 @@ const I18N = {
   'log.done':'pronto ✓',
   'log.fail':'falhou ✗',
   'log.noServer':'o servidor não respondeu',
+  'log.lost':e=>`perdi o contato com o servidor (${e}) — o trabalho pode ter continuado lá; recarregue a página para ver como a stack ficou`,
   'st.up':s=>`No ar${s?' — '+s:''}`,
   'st.down':s=>`Parado${s?' — '+s:''}`,
   'st.unhealthy':s=>`No ar, mas sem passar no healthcheck${s?' — '+s:''}`,
@@ -1382,6 +1383,7 @@ const I18N = {
   'log.done':'done ✓',
   'log.fail':'failed ✗',
   'log.noServer':'the server did not answer',
+  'log.lost':e=>`lost contact with the server (${e}) — the job may have carried on there; reload the page to see how the stack ended up`,
   'st.up':s=>`Up${s?' — '+s:''}`,
   'st.down':s=>`Stopped${s?' — '+s:''}`,
   'st.unhealthy':s=>`Up, but failing its healthcheck${s?' — '+s:''}`,
@@ -1796,6 +1798,7 @@ const I18N = {
   'log.done':'listo ✓',
   'log.fail':'falló ✗',
   'log.noServer':'el servidor no respondió',
+  'log.lost':e=>`perdí el contacto con el servidor (${e}) — el trabajo puede haber seguido allá; recarga la página para ver cómo quedó la stack`,
   'st.up':s=>`En marcha${s?' — '+s:''}`,
   'st.down':s=>`Parado${s?' — '+s:''}`,
   'st.unhealthy':s=>`En marcha, pero sin pasar el healthcheck${s?' — '+s:''}`,
@@ -4854,11 +4857,31 @@ async function runJob(start, title){
     endLog();
     return false;
   }
-  let seen = 0;
+  /* Daqui em diante o Fechar está desabilitado, então **toda** saída deste laço
+     tem de passar por um `endLog()`: erro que o deixasse girando prenderia o
+     modal para sempre, sem nada acontecendo na tela. Por isso a busca que falha
+     não é só um `continue` — ela conta, e depois de `TENTATIVAS` seguidas
+     desiste e devolve o Fechar. Servidor que caiu no meio do trabalho é
+     justamente esse caso. */
+  const TENTATIVAS = 10;   // ~7s de tolerância, que cobre um soluço da rede
+  let seen = 0, erros = 0, ultimo = '';
   for(;;){
     await new Promise(r=>setTimeout(r, 700));
-    let j;
-    try{ j = await (await api('job/' + head.job)).json(); }catch(e){ continue; }
+    let j = null;
+    try{
+      const r = await api('job/' + head.job);
+      j = await r.json();
+      // trabalho que o servidor não conhece mais (ele os guarda em memória)
+      if(!r.ok || !Array.isArray(j.log)) throw new Error(j.error || ('HTTP ' + r.status));
+    }catch(e){
+      ultimo = String(e && e.message || e);
+      if(++erros < TENTATIVAS) continue;
+      logLine(t('log.lost', ultimo));
+      $('#logState').textContent = t('log.fail');
+      endLog();
+      return false;
+    }
+    erros = 0;
     j.log.slice(seen).forEach(logLine); seen = j.log.length;
     if(j.done){
       $('#logState').textContent = t(j.ok ? 'log.done' : 'log.fail');
