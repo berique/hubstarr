@@ -1,0 +1,80 @@
+# O que se confere a cada push: a página e o servidor.
+#
+# A página é o produto e não tem build nem package manager, então o que dá para
+# checar nela é o que quebraria em silêncio — script que não faz parse, chave de
+# tradução que existe num idioma e falta noutro, e o compose que ela gera não
+# ser aceito pelo docker. O servidor tem os testes dele.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  # para rodar à mão, sem precisar de um push
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pagina:
+    name: Página
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # `node --check` quer um arquivo de verdade: substituição de processo
+      # não serve, ele abre o caminho duas vezes
+      - name: O script da página faz parse
+        run: |
+          python3 tools/extract-script.py hubstarr.html > page.js
+          node --check page.js
+
+      - name: As três traduções têm as mesmas chaves
+        run: python3 tools/check-i18n.py hubstarr.html
+
+      # A checagem do compose abre a página num navegador: é dela que sai o
+      # arquivo, e o `textContent` dos panes só existe com a página rodando.
+      # O navegador é instalado de propósito, em vez de contar com o que vier
+      # na imagem do runner.
+      - uses: browser-actions/setup-chrome@v1
+        id: chrome
+
+      # O docker compose vem instalado no runner: o que a página gera passa
+      # pelo validador dele, que é quem vai recusar o arquivo na máquina de
+      # quem usa.
+      - name: O compose gerado é válido
+        env:
+          CHROME: ${{ steps.chrome.outputs.chrome-path }}
+        run: python3 tools/check-compose.py
+
+  servidor:
+    name: Servidor
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      # o `hubstarr.html` entra no binário por include_str!, então a página
+      # também é recompilada quando muda
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend
+
+      - name: Compila
+        run: cargo build --locked
+
+      - name: Testes
+        run: cargo test --locked
+
+      # Sem `cargo fmt`: o projeto indenta os comentários de bloco junto do
+      # código que eles explicam, e o rustfmt os desalinha na margem. O estilo
+      # é escolhido, não descuido.
+      - name: Clippy
+        run: cargo clippy --all-targets --locked -- -D warnings

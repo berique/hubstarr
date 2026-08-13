@@ -656,6 +656,35 @@ aplicada nos apps e os perfis do TRaSH Guides pelo Configarr.
 Marco é ordem, não calendário: cada um depende do anterior. Ao propor mudança
 que caia num deles, diga em qual — e não comece o de baixo antes do de cima.
 
+## CI
+
+`.github/workflows/ci.yml` roda a cada push e PR, em dois trabalhos. O do
+**servidor** é `cargo build`, `cargo test` e `cargo clippy -D warnings`, todos
+com `--locked` — por isso o `backend/Cargo.lock` é versionado. **Não** há
+`cargo fmt`: o projeto indenta os comentários de bloco junto do código que eles
+explicam, e o rustfmt os joga na margem; o estilo é escolhido.
+
+O da **página** são três checagens, em `tools/`, que rodam iguais na sua
+máquina:
+
+- `extract-script.py` tira o `<script>` da página para o `node --check` —
+  ele quer um arquivo de verdade, substituição de processo não serve.
+- `check-i18n.py` compara as chaves dos três idiomas. Chave que falta num
+  idioma aparece na interface como o próprio nome dela, e só quem troca de
+  idioma vê. Ele acha também chave repetida no mesmo bloco, onde a segunda
+  vence em silêncio.
+- `check-compose.py` abre a página num chromium sem tela, monta uma stack de
+  exemplo com um pouco de cada forma (duas instâncias da mesma família, VPN,
+  porta publicada, GPU, serviço `internal`) e passa o que ela gerou pelo
+  `docker compose config`. É a que mais paga: o texto dos arquivos sai do
+  `textContent` dos panes, e erro de indentação ou de `${...}` só aparece
+  quando o docker recusa o arquivo. A pasta temporária dele vai no `HOME`, não
+  em `/tmp` — o chromium do snap não lê `/tmp`, e a página abriria em branco.
+
+`release.yml` roda só em tag `v*`: compila o servidor para x86_64 e arm64 (o
+arm64 precisa do `gcc-aarch64-linux-gnu`, porque o rusqlite traz o SQLite
+embutido), e publica os dois com o `hubstarr.html` da mesma versão.
+
 ## Commits
 
 Mensagens em português, no imperativo/terceira pessoa do singular, uma linha

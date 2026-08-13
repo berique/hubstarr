@@ -458,6 +458,25 @@ applied to the apps and the TRaSH Guides profiles through Configarr.
 | **v0.5**  | Compatibility with the TRaSH Guides               | quality definitions, custom format scores and the rest of the guide's recommendations come ready |
 | **v0.6**  | Localized media search                            | the search language can be picked and the *arr apps find the right release          |
 
+## Checks
+
+On every push, GitHub Actions runs what can be checked without a person looking
+(`.github/workflows/ci.yml`). On the server, `cargo build`, `cargo test` and
+`cargo clippy`. On the page, three checks that also run on your machine:
+
+```sh
+python3 tools/extract-script.py hubstarr.html > page.js && node --check page.js
+python3 tools/check-i18n.py hubstarr.html     # the three languages, same keys
+python3 tools/check-compose.py                # the generated compose, by docker
+```
+
+The last one opens the page in a headless browser, builds a sample stack and
+runs the `docker-compose.yml` it generated through `docker compose config` — the
+same validator that would refuse the file on your machine.
+
+On a `v*` tag, `release.yml` builds the server for x86_64 and arm64 and
+publishes both next to that version's `hubstarr.html`.
+
 ## Status
 
 The page is an interface prototype, but the **Configuration** is no longer just

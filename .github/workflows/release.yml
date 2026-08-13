@@ -1,0 +1,103 @@
+# O binário do servidor, pronto para baixar, a cada tag `v*`.
+#
+# A página não precisa de build — é baixá-la e abrir. O que se publica aqui é o
+# servidor opcional, que compila em Rust e leva a página embutida: quem baixa o
+# binário baixa a página junto, da mesma versão.
+#
+# Nada aqui roda em push comum: `git tag v0.5.0 && git push --tags`.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write   # para criar o release e anexar os binários
+
+jobs:
+  binarios:
+    name: ${{ matrix.alvo }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - alvo: x86_64-unknown-linux-gnu
+            nome: hubstarr-linux-x86_64
+          # o arm64 é o Raspberry e os NAS, que é onde essa stack costuma morar
+          - alvo: aarch64-unknown-linux-gnu
+            nome: hubstarr-linux-arm64
+            cross: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.alvo }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend
+          key: ${{ matrix.alvo }}
+
+      # o rusqlite vem com o SQLite embutido (`bundled`), então o arm64 precisa
+      # de um compilador C para ele — o Rust sozinho não basta
+      - name: Compilador cruzado para arm64
+        if: matrix.cross
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+          echo 'CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc' >> "$GITHUB_ENV"
+          echo 'CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc' >> "$GITHUB_ENV"
+
+      - name: Compila
+        working-directory: backend
+        run: cargo build --release --locked --target ${{ matrix.alvo }}
+
+      - name: Empacota
+        run: |
+          cd backend/target/${{ matrix.alvo }}/release
+          tar -czf "$GITHUB_WORKSPACE/${{ matrix.nome }}.tar.gz" hubstarr
+          cd "$GITHUB_WORKSPACE"
+          sha256sum "${{ matrix.nome }}.tar.gz" > "${{ matrix.nome }}.tar.gz.sha256"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.nome }}
+          path: ${{ matrix.nome }}.tar.gz*
+
+  publica:
+    name: Publica o release
+    needs: binarios
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: pacotes
+          merge-multiple: true
+
+      # a página vai junto: quem não quer servidor baixa só ela e abre no
+      # navegador, que é o caminho principal do projeto
+      - name: Junta a página
+        run: cp hubstarr.html pacotes/
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: pacotes/*
+          generate_release_notes: true
+          body: |
+            Servidor opcional para Linux, com a página desta versão embutida.
+
+            Baixe, descompacte e rode — ele serve a página no endereço que você
+            passar em `--addr`:
+
+            ```sh
+            tar -xzf hubstarr-linux-x86_64.tar.gz
+            ./hubstarr --addr 127.0.0.1:7878
+            ```
+
+            Sem servidor, baixe o `hubstarr.html` e abra no navegador: ele gera
+            o `docker-compose.yml`, o `.env` e o `nginx.conf` num `.zip`.

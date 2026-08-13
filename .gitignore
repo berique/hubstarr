@@ -10,3 +10,6 @@ backend/*.log
 # arquivos que o servidor grava (--dir)
 backend/stack/
 backend/stacks/
+
+# saída das checagens do CI, quando rodadas à mão
+page.js
