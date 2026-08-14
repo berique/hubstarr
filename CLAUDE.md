@@ -777,9 +777,14 @@ chromium-browser --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
   --screenshot=$HOME/out.png "file://$HOME/tmp.html"
 ```
 
+Duas coisas que a `screenshot.png` pede além disso: **forçar o idioma** com um
+`setLang('pt-BR')` — ele fica no `localStorage` do perfil do chromium, e uma
+captura anterior em outro idioma contamina a próxima, em silêncio — e abrir a
+Wishlist pelo `open` do `<details>` dela, deixando o bloco do Docker fechado.
+
 `services.png`, `theme.png` e `credits.png` são 1480×760, a `config.png` é
 1480×900 — o modal é denso e em 760 não caberia o que ela mostra — e a
-`screenshot.png` acompanha a altura do conteúdo (hoje 1656, com a Wishlist
+`screenshot.png` acompanha a altura do conteúdo (hoje 1898, com a Wishlist
 aberta). A
 `theme.png` é a única que precisa de rede: o modal da captura busca a imagem
 em `docs.theme-park.dev`. O mesmo truque, com `--dump-dom` no lugar de `--screenshot`, é a
