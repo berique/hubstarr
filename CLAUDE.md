@@ -530,7 +530,16 @@ mesmo que não esperar.
 
 O qBittorrent é registrado pela **API key**, não pela senha da interface: ela é
 a mesma que a conf dele recebe, não expira quando a senha muda e é o que o campo
-`apiKey` do schema espera. Usuário e senha só vão para o app cujo schema não tem
+`apiKey` do schema espera — conferido nos dois lados: o schema do Sonarr traz
+mesmo um campo `apiKey` no `QBittorrent` (ao lado de `username`/`password`), e
+com só ele preenchido o teste de conexão passa. Do lado do app, o 5.2.3 lê a
+chave do cabeçalho **`Authorization: Bearer`** (`webapplication.cpp`) e só a
+considera se ela passar no `Utils::APIKey::isValid()`: prefixo `qbt_` e **32
+caracteres no total**. Uma chave fora disso é **descartada em silêncio** na
+subida — o app fica sem chave nenhuma, a autenticação por ela nunca entra, e o
+*arr leva 403 sem que nada diga por quê. É o que o `api_key_valida()` do
+`apply.rs` recusa antes de mandar, e o que o `qbitKeyFrom()` da página já
+produz. Usuário e senha só vão para o app cujo schema não tem
 esse campo — versão antiga —, e quem decide isso é o próprio schema.
 
 O corpo de cada `downloadclient` nasce do **schema que o app publica**

@@ -848,6 +848,19 @@ async fn conferir_api_key(
     if client.api_key.is_empty() {
         return 0;
     }
+    /* Chave fora do formato é pior do que chave errada, porque ela não dá erro
+       em lugar nenhum: o `isValid()` do 5.2.3 exige `qbt_` e 32 caracteres no
+       total, e o que não passa é **descartado em silêncio** na subida
+       (`if isValid(apiKey) m_apiKey = apiKey`) — o app fica sem chave, a
+       autenticação por ela nunca entra, e o *arr leva 403 no primeiro teste de
+       conexão sem nada dizer por quê. */
+    if !api_key_valida(&client.api_key) {
+        log.line(format!(
+            "{}: a API key não está no formato do qBittorrent (qbt_ + 28 caracteres) — ele a descarta calado, e os *arr não conseguem falar com ele",
+            client.name
+        ));
+        return 1;
+    }
     let url = format!("{base}/api/v2/app/preferences");
     let mut req = http.get(&url);
     if !cookie.is_empty() {
@@ -879,6 +892,13 @@ async fn conferir_api_key(
         ));
     }
     0
+}
+
+/// O que o `Utils::APIKey::isValid()` do qBittorrent 5.2.3 exige: o prefixo
+/// `qbt_` e 32 caracteres no total. O alfabeto de quem a gera é mais estreito,
+/// mas o app não o confere — então aqui também não.
+fn api_key_valida(k: &str) -> bool {
+    k.starts_with("qbt_") && k.chars().count() == 32
 }
 
 /// A sessão do qBittorrent: o `auth/login` devolve o cookie no `Set-Cookie`, e
@@ -1969,6 +1989,18 @@ mod tests {
         assert_eq!(b["implementation"], "QBittorrent");
         assert_eq!(val(&b, "host"), "gluetun");
         assert_eq!(val(&b, "username"), "admin");
+    }
+
+    /// O formato que o qBittorrent exige, conferido no fonte do 5.2.3
+    /// (`Utils::APIKey::isValid`): prefixo e 32 caracteres. O que não passa ele
+    /// descarta calado, e a autenticação por chave nunca entra.
+    #[test]
+    fn a_api_key_do_qbittorrent_tem_formato() {
+        assert!(super::api_key_valida("qbt_ABCDEFGHJKLMNPQRSTUVWXYZ2345"));
+        // 27 depois do prefixo: um a menos, e o app a ignora
+        assert!(!super::api_key_valida("qbt_ABCDEFGHJKLMNPQRSTUVWXYZ234"));
+        assert!(!super::api_key_valida("ABCDEFGHJKLMNPQRSTUVWXYZ2345"));
+        assert!(!super::api_key_valida(""));
     }
 
     #[test]
