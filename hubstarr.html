@@ -2019,7 +2019,7 @@ const SERVICES = [
   {id:'prowlarr', name:'Prowlarr',  port:9696, img:'lscr.io/linuxserver/prowlarr:latest', color:'#e5534b', solver:true, tp:true, site:'https://prowlarr.com'},
   {id:'bazarr',   name:'Bazarr',    port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr'], tp:true, site:'https://www.bazarr.media'},
   {id:'qbittorrent',name:'qBittorrent',port:8181, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true, webAuth:'qbit', stripBase:true, tp:true, conf:[{host:'qBittorrent.conf', target:'/config/qBittorrent/qBittorrent.conf', patch:'qbit'},
-          {host:'categories.json', target:'/config/qBittorrent/categories.json', patch:'qbitCats'}], site:'https://www.qbittorrent.org'},
+          {host:'categories.json', target:'/config/qBittorrent/categories.json', patch:'qbitCats', viaApi:true}], site:'https://www.qbittorrent.org'},
   {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true, cdh:true, dlKey:true, dlDirs:true, tp:true,
    conf:[{host:'sabnzbd.ini', target:'/config/sabnzbd.ini', patch:'sab'}],
    site:'https://sabnzbd.org'},
@@ -4667,6 +4667,11 @@ function outPatches(){
   const out = [];
   effective().forEach(x=> confsOf(svc(x.id)).forEach(cf=>{
     if(!cf.patch) return;
+    /* `viaApi` é o arquivo que o servidor **não** escreve: o app tem endpoint
+       para aquilo, e mexer no arquivo dele exigiria pará-lo. O arquivo continua
+       existindo para o `.zip`, que é de quem não tem servidor — e aí não há API
+       a chamar. É o caso das categorias do qBittorrent. */
+    if(cf.viaApi) return;
     const dados = PATCH_DATA[cf.patch](x);
     // nada a escrever — categoria nenhuma, por exemplo — não vira trabalho
     if(dados.json && !Object.keys(dados.json).length) return;
@@ -5155,6 +5160,14 @@ function applyPayload(){
               apiKey: c.id==='qbittorrent' ? qbitKey()
                     : c.id==='sabnzbd'     ? sabKey(c) : (c.dlKey || ''),
               cats, cdh: st.cdh || null,
+              /* As categorias com a pasta de cada uma, para o servidor criá-las
+                 pela API do app. É a mesma fonte do `categories.json` do
+                 `.zip` — o `qbitCats()` —, então o que o arquivo diria e o que
+                 a API recebe não têm como divergir. O caminho é o de dentro do
+                 container, que é o que o app enxerga. */
+              categorias: c.id==='qbittorrent'
+                ? Object.entries(qbitCats(c)).map(([nome, v])=>({name:nome, savePath:v.save_path}))
+                : [],
               prefs: qbitPrefs(c)};
     })
   };

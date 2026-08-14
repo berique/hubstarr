@@ -159,12 +159,13 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   on — without it SABnzbd builds its links at the root and breaks behind the
   proxy. The four keys are written into the `sabnzbd.ini` the app itself
   created, once the stack is up, just like qBittorrent's.
-- **qBittorrent's categories.json**: next to the conf comes a second file with
-  the categories **Configuration** gave each *arr, already created when it
-  starts. Each one gets its own subfolder inside the download path — same
-  partition, so the *arr keeps hardlinking instead of copying. Like the conf, it
-  is not mounted: **Bring up** adds those categories to the ones the app already
-  has, without dropping the ones you created in its own UI.
+- **qBittorrent categories**: the ones **Configuration** gave each *arr, each
+  with its own subfolder inside the download path — same partition, so the *arr
+  keeps hardlinking instead of copying. With a server they are created **through
+  the app's API**, with it running: one that already exists gets its folder
+  updated, and none is ever removed — a torrent may be pointed at it. With no
+  server, the same categories come in the `.zip` as `categories.json`, to copy
+  into its config folder before the first start.
 - **Optional HTTPS**, with the certificate and key coming from the host.
 - **Configuration** (button at the top): pick which instances Prowlarr will
   configure, and the category each *arr uses in each download client —
@@ -371,9 +372,10 @@ In Prowlarr, Settings → Download Clients gets **one entry per client**, all on
 the `prowlarr` category: what it grabs is loose — it did not come from an *arr —
 so it stays together, apart from what each instance downloads. And the
 categories come to exist inside the client itself — each *arr's and Prowlarr's:
-through `categories.json` in qBittorrent, and created through its own API in
-SABnzbd, each with a folder of the same name inside the completed-downloads
-directory. The apps are reached through
+through each app's own API — `torrents/createCategory` in qBittorrent (one that
+already exists has its folder updated instead of failing) and
+`set_config&section=categories` in SABnzbd —, each with a folder of the same
+name inside the completed-downloads directory. The apps are reached through
 nginx, on the port it publishes on the host. Applying again does not duplicate
 — the client is looked up by name and updated in place — and an app that is not
 up yet becomes one line in the log instead of stopping the rest. A call that

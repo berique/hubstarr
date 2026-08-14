@@ -154,12 +154,13 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   SABnzbd monta os links na raiz e quebra atrás do proxy. As quatro chaves são
   escritas no `sabnzbd.ini` que o próprio app criou, depois de a stack subir,
   como no qBittorrent.
-- **categories.json do qBittorrent**: junto da conf sai um segundo arquivo com
-  as categorias que a **Configuração** deu a cada *arr, já criadas quando ele
-  sobe. Cada uma ganha a subpasta dela dentro do caminho de download — mesma
-  partição, então o *arr continua fazendo hardlink em vez de copiar. Como a
-  conf, ele não é montado: o **Subir** põe essas categorias nas que o app já
-  tem, sem apagar as que você criou na interface dele.
+- **Categorias do qBittorrent**: as que a **Configuração** deu a cada *arr,
+  cada uma com a subpasta dela dentro do caminho de download — mesma partição,
+  então o *arr continua fazendo hardlink em vez de copiar. Com servidor, elas
+  são criadas **pela API do app**, com ele no ar: quem já existe tem a pasta
+  atualizada, e nenhuma é removida — pode haver torrent apontado para ela. Sem
+  servidor, as mesmas categorias saem no `.zip` como `categories.json`, para
+  copiar para a pasta de configuração dele antes da primeira subida.
 - **HTTPS opcional**, com o certificado e a chave vindos do host.
 - **Configuração** (botão no topo): escolher quais instâncias o Prowlarr vai
   configurar, com que categoria cada *arr usa cada cliente de download —
@@ -362,9 +363,10 @@ Prowlarr decide quando usar o resolvedor.
 No Prowlarr, o Settings → Download Clients ganha **um registro por cliente**,
 todos na categoria `prowlarr`: o que ele pega é avulso, não veio de um *arr,
 então fica junto e separado do que cada instância baixa. E as categorias passam
-a existir dentro do cliente — a de cada *arr e a do Prowlarr: no qBittorrent
-pelo `categories.json`, e no SABnzbd criadas pela API dele, cada uma com a pasta
-de mesmo nome dentro do diretório de downloads concluídos. Os apps são alcançados pelo nginx, na porta que ele
+a existir dentro do cliente — a de cada *arr e a do Prowlarr —, pela API de cada
+app: `torrents/createCategory` no qBittorrent (a que já existe tem a pasta
+atualizada em vez de falhar) e `set_config&section=categories` no SABnzbd, cada
+uma com a pasta de mesmo nome dentro do diretório de downloads concluídos. Os apps são alcançados pelo nginx, na porta que ele
 publica no host. Aplicar de novo não duplica — o cliente é procurado pelo nome
 e atualizado no lugar —, e um app que ainda não subiu vira uma linha no log em
 vez de interromper o resto. Chamada que **não chega** ao app é repetida dez

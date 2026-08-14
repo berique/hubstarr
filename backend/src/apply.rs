@@ -168,6 +168,18 @@ struct Client {
     /// página é quem decide o que vai aqui, e o servidor só entrega
     #[serde(default)]
     prefs: Option<Map<String, Value>>,
+    /// as categorias do qBittorrent com a pasta de cada uma, do jeito que a
+    /// página as monta — o caminho é o de dentro do container
+    #[serde(default)]
+    categorias: Vec<Categoria>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Categoria {
+    name: String,
+    #[serde(default)]
+    save_path: String,
 }
 
 #[derive(Deserialize)]
@@ -707,10 +719,11 @@ async fn etiqueta(
 
 /* As categorias dentro do próprio cliente de download.
 
-   No qBittorrent elas já vão no `categories.json`, que o servidor escreve na
-   pasta dele — nada a fazer aqui. No SABnzbd não existe arquivo equivalente
-   que dê para mexer com ele no ar: as categorias moram no `sabnzbd.ini`, que
-   ele reescreve, e a maneira sancionada de mexer é a API dele.
+   Nos dois casos pela **API do app**, e não escrevendo o arquivo dele: o
+   `categories.json` do qBittorrent e o `sabnzbd.ini` são de quem os criou, e
+   mexer neles exige parar o container — enquanto os dois têm endpoint para
+   isto, com o app no ar. O `categories.json` continua saindo no `.zip`, que é
+   a saída de quem não tem servidor e portanto não tem API a chamar.
 
    Cada categoria ganha uma pasta com o nome dela dentro do diretório de
    downloads concluídos — mesma partição do que os *arr enxergam, que é o que
@@ -721,6 +734,9 @@ async fn categorias_do_cliente(
     client: &Client,
     log: &Log,
 ) -> usize {
+    if client.kind == "qbittorrent" {
+        return categorias_do_qbit(http, client, log).await;
+    }
     if client.kind != "sabnzbd" {
         return 0;
     }
@@ -950,6 +966,90 @@ async fn qbit_login(
         return Err("usuário ou senha recusados".into());
     }
     Ok(cookie)
+}
+
+/* As categorias do qBittorrent, pelo `torrents/createCategory`.
+
+   O corpo é **formulário** (`category=…&savePath=…`), como o resto da API dele,
+   e a sessão é a mesma do `qbit_login()`. Categoria que já existe devolve
+   **409**, e aí o caminho é o `editCategory`, com o mesmo corpo: assim
+   reaplicar acerta a pasta de quem já estava lá em vez de falhar — é a mesma
+   regra do resto da volta, procurar e atualizar no lugar.
+
+   Categoria **não se remove**: o que está lá pode ter torrent apontado para
+   ela, e tirá-la mudaria de lugar o que já baixou. */
+async fn categorias_do_qbit(http: &reqwest::Client, client: &Client, log: &Log) -> usize {
+    if client.categorias.is_empty() || client.web_url.is_empty() {
+        return 0;
+    }
+    let base = client.web_url.trim_end_matches('/').to_string();
+    let cookie = match qbit_login(http, &base, client).await {
+        Ok(c) => c,
+        Err(e) => {
+            log.line(format!("{} → entrar para criar as categorias: {e}", client.name));
+            return 1;
+        }
+    };
+
+    let mut falhas = 0;
+    for cat in &client.categorias {
+        let corpo = format!(
+            "category={}&savePath={}",
+            enc(&cat.name),
+            enc(&cat.save_path)
+        );
+        let mut feito = false;
+        for acao in ["createCategory", "editCategory"] {
+            let alvo = format!("{base}/api/v2/torrents/{acao}");
+            let r = tentar("POST", &alvo, || {
+                let mut req = http
+                    .post(&alvo)
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body(corpo.clone());
+                if !cookie.is_empty() {
+                    req = req.header("Cookie", cookie.clone());
+                }
+                req.send()
+            })
+            .await;
+            match r {
+                Ok(r) if r.status().is_success() => {
+                    api("POST", &alvo, r.status());
+                    log.line(format!(
+                        "{} → categoria {} ({}): pronta",
+                        client.name, cat.name, cat.save_path
+                    ));
+                    feito = true;
+                    break;
+                }
+                // 409 é "já existe": a segunda volta do laço a edita no lugar
+                Ok(r) if r.status() == reqwest::StatusCode::CONFLICT
+                    && acao == "createCategory" =>
+                {
+                    api("POST", &alvo, r.status());
+                }
+                Ok(r) => {
+                    let st = r.status();
+                    let txt = r.text().await.unwrap_or_default();
+                    log.line(format!(
+                        "{} → categoria {}: {}",
+                        client.name,
+                        cat.name,
+                        erro(st, &txt)
+                    ));
+                    break;
+                }
+                Err(e) => {
+                    log.line(format!("{} → categoria {}: {e}", client.name, cat.name));
+                    break;
+                }
+            }
+        }
+        if !feito {
+            falhas += 1;
+        }
+    }
+    falhas
 }
 
 /// O Prowlarr sincronizando cada *arr marcado na Configuração. Vale a mesma
@@ -1812,6 +1912,7 @@ mod tests {
                 failed: false,
             }),
             prefs: None,
+            categorias: Vec::new(),
         }
     }
 

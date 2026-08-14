@@ -514,12 +514,21 @@ No Prowlarr, o Settings → Download Clients recebe **um registro por cliente**,
 todos na categoria `CAT_PROWLARR` (`prowlarr`): o que ele pega é avulso, não veio
 de instância nenhuma, então fica junto e separado do que cada *arr baixa. O campo
 ali é `category`, e o nome do registro é o do cliente — é por ele que o reaplicar
-acha o que já está lá. E toda categoria precisa existir *dentro* do cliente: no
-qBittorrent isso vem do `categories.json` que o `patch.rs` escreve (o
-`qbitCats()` da página inclui a do Prowlarr quando ele está na stack), e no
-SABnzbd elas são criadas pela API dele
-(`mode=set_config&section=categories`), que é a maneira sancionada — o
-`sabnzbd.ini` é reescrito por ele, como a conf do qBittorrent. Quem chama é o **Subir**, sozinho, depois de
+acha o que já está lá. E toda categoria precisa existir *dentro* do cliente, e nos
+dois casos isso é feito **pela API do app**: no qBittorrent pelo
+`torrents/createCategory` (corpo de formulário, `category=…&savePath=…`; quem
+já existe volta **409**, e aí é o `editCategory` com o mesmo corpo, para
+reaplicar acertar a pasta em vez de falhar), e no SABnzbd pelo
+`mode=set_config&section=categories`. Nenhuma é removida: pode haver torrent
+apontado para ela.
+
+O `categories.json` continua **saindo no `.zip`** — é a saída de quem não tem
+servidor, e ali não há API a chamar —, mas o servidor não o escreve mais: a
+entrada dele no `conf` traz `viaApi`, que é o que o `outPatches()` pula. Essa é
+a regra: arquivo do app que tenha endpoint equivalente vai por API, porque
+escrever o arquivo exige **parar o container**, e parar o cliente de download no
+meio do Aplicar é o que fazia os *arr testarem a conexão contra um app que
+estava reiniciando. Quem chama é o **Subir**, sozinho, depois de
 gravar as chaves dos `patch` — e antes de qualquer chamada ele espera cada app
 responder no `/ping`, porque recém-subido nenhum responde e a volta inteira
 falharia por timeout. Os clientes de download também são esperados, e por um
