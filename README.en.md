@@ -426,8 +426,12 @@ at `container-name:internal-port`. Whatever routes through the VPN answers at
 
 Both host ports live behind **Edit** on the nginx row: 80 and 443 by default,
 but you can publish on 8080 and 8443, say, if something already holds the
-privileged ones. They become `HTTP_PORT` and `HTTPS_PORT` in the `.env`; inside
-the container nginx keeps listening on 80 and 443. The copied links and the
+privileged ones. They become `HTTP_PORT` and `HTTPS_PORT` in the `.env`. **443
+is only published with "Serve HTTPS" on**: without it `nginx.conf` has no
+`server` listening there, and publishing it would take the machine's port with
+nothing behind it — and keep the stack from coming up where something else
+already uses it. With no TLS, neither the port nor `HTTPS_PORT` comes out.
+Inside the container nginx keeps listening on 80 and 443. The copied links and the
 redirect to https already carry the chosen port.
 
 The **nginx.conf** tab generates the matching configuration, routing by subpath

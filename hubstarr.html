@@ -1000,7 +1000,7 @@ const I18N = {
   'nginx.http':'Porta http no host',
   'nginx.https':'Porta https no host',
   'nginx.portsHint':'A porta em que o nginx atende no host. Dentro da stack ele continua ouvindo em 80 e 443 — isto aqui é só o lado de fora, útil quando algo já ocupa as portas privilegiadas.',
-  'nginx.hint':'As duas saem no <b>.env</b> como <b>HTTP_PORT</b> e <b>HTTPS_PORT</b>. Os links copiados e o redirecionamento para o https já levam a porta escolhida.',
+  'nginx.hint':'A primeira sai no <b>.env</b> como <b>HTTP_PORT</b>. A da 443 só entra — no <b>.env</b> como <b>HTTPS_PORT</b> e no compose como porta publicada — com o <b>Servir HTTPS</b> ligado no Ambiente: sem ele o nginx não escuta ali, e publicar seria ocupar a porta da máquina sem nada do outro lado. Os links copiados e o redirecionamento para o https já levam a porta escolhida.',
   'nginx.warnPorts':'As portas do host devem ser números de 1 a 65535, e diferentes entre si',
   'env.cfg':'Base da pasta config',
   'env.data':'Base da pasta de mídia',
@@ -1418,7 +1418,7 @@ const I18N = {
   'nginx.http':'http port on the host',
   'nginx.https':'https port on the host',
   'nginx.portsHint':'The port nginx answers on from the host. Inside the stack it keeps listening on 80 and 443 — this is only the outside, handy when something already holds the privileged ports.',
-  'nginx.hint':'Both land in <b>.env</b> as <b>HTTP_PORT</b> and <b>HTTPS_PORT</b>. The copied links and the redirect to https already carry the chosen port.',
+  'nginx.hint':'The first lands in <b>.env</b> as <b>HTTP_PORT</b>. The 443 one only shows up — in <b>.env</b> as <b>HTTPS_PORT</b> and in the compose file as a published port — with <b>Serve HTTPS</b> on in the Environment: without it nginx does not listen there, and publishing would take the machine\'s port with nothing behind it. The copied links and the redirect to https already carry the chosen port.',
   'nginx.warnPorts':'Host ports must be numbers from 1 to 65535, and different from each other',
   'env.cfg':'Config base path',
   'env.data':'Media base path',
@@ -1836,7 +1836,7 @@ const I18N = {
   'nginx.http':'Puerto http en el host',
   'nginx.https':'Puerto https en el host',
   'nginx.portsHint':'El puerto en el que nginx atiende desde el host. Dentro de la stack sigue escuchando en 80 y 443 — esto es solo el lado de afuera, útil cuando algo ya ocupa los puertos privilegiados.',
-  'nginx.hint':'Los dos salen en el <b>.env</b> como <b>HTTP_PORT</b> y <b>HTTPS_PORT</b>. Los enlaces copiados y la redirección al https ya llevan el puerto elegido.',
+  'nginx.hint':'El primero sale en el <b>.env</b> como <b>HTTP_PORT</b>. El del 443 solo entra — en el <b>.env</b> como <b>HTTPS_PORT</b> y en el compose como puerto publicado — con el <b>Servir HTTPS</b> activado en el Entorno: sin él nginx no escucha ahí, y publicarlo sería ocupar el puerto de la máquina sin nada del otro lado. Los enlaces copiados y la redirección al https ya llevan el puerto elegido.',
   'nginx.warnPorts':'Los puertos del host deben ser números de 1 a 65535, y distintos entre sí',
   'env.cfg':'Base de la carpeta config',
   'env.data':'Base de la carpeta multimedia',
@@ -3820,7 +3820,12 @@ function build(){
   L.push(`    <span class="k">container_name</span>: <span class="v">${NGINX.id}</span>`);
   L.push(`    <span class="k">ports</span>:`);
   L.push(`      - <span class="v">"\${HTTP_PORT}:${NGINX.http}"</span>`);
-  L.push(`      - <span class="v">"\${HTTPS_PORT}:${NGINX.https}"</span>`);
+  /* A 443 só existe com o TLS ligado: sem ele o `nginx.conf` não tem `server`
+     nenhum escutando ali, e a porta publicada seria uma porta ocupada na
+     máquina sem nada do outro lado — inclusive impedindo a stack de subir onde
+     algo já usa a 443. */
+  if(DEFAULTS.tls)
+    L.push(`      - <span class="v">"\${HTTPS_PORT}:${NGINX.https}"</span>`);
   L.push(`    <span class="k">volumes</span>:`);
   L.push(`      - <span class="k">type</span>: <span class="v">bind</span>`);
   /* Arquivo sobre arquivo, e não a pasta inteira: a conf é gerada ao lado do
@@ -4105,7 +4110,9 @@ function buildEnv(list){
   E.push(`<span class="c"># ${t('env.secStack')}</span>`);
   E.push(`<span class="k">RESTART</span>=<span class="v">${DEFAULTS.restart}</span>`);
   E.push(`<span class="k">HTTP_PORT</span>=<span class="v">${DEFAULTS.http}</span>`);
-  E.push(`<span class="k">HTTPS_PORT</span>=<span class="v">${DEFAULTS.https}</span>`);
+  // sem TLS o compose não publica a 443, e a variável ficaria sem quem a leia
+  if(DEFAULTS.tls)
+    E.push(`<span class="k">HTTPS_PORT</span>=<span class="v">${DEFAULTS.https}</span>`);
   // as portas de quem não passa pelo nginx moram aqui do mesmo jeito
   list.filter(publishes).forEach(a=>
     E.push(`<span class="k">${portVar(a)}</span>=<span class="v">${hostPortOf(a)}</span>`));

@@ -265,7 +265,10 @@ handler de `#mSave`.
 - **Publicar porta no host é exceção, e vem com a flag `publish`.** O nginx
   ouve em 80/443 dentro do container e publica no host as portas do modal
   próprio dele — o "Editar" da linha fixa (`DEFAULTS.http`/`https` →
-  `HTTP_PORT`/`HTTPS_PORT` no `.env`). O Seerr é o outro caso — ele não tem
+  `HTTP_PORT`/`HTTPS_PORT` no `.env`). A **443 só é publicada com o TLS
+  ligado** — sem ele o `buildNginx()` não põe `server` nenhum escutando ali, e
+  publicar seria ocupar a porta da máquina sem nada do outro lado; nesse caso
+  nem a porta nem o `HTTPS_PORT` saem. O Seerr é o outro caso — ele não tem
   base URL configurável: em vez de rota,
   ganha `ports` no compose e a variável `<CNAME>_PORT` no `.env`, e o link dele
   aponta para a porta do host — em `http://`, porque o TLS mora no nginx e ele

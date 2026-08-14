@@ -418,7 +418,11 @@ que é quem detém a rede.
 As duas portas do host ficam no **Editar** da linha do nginx: 80 e 443 por
 padrão, mas dá para publicar em 8080 e 8443, por exemplo, se algo já ocupa as
 privilegiadas. Elas viram `HTTP_PORT` e `HTTPS_PORT` no `.env`; dentro do
-container o nginx continua ouvindo em 80 e 443. Os links copiados e o
+container o nginx continua ouvindo em 80 e 443. A **443 só é publicada com o
+"Servir HTTPS" ligado**: sem ele o `nginx.conf` não tem `server` nenhum
+escutando ali, e publicá-la seria ocupar a porta da máquina sem nada do outro
+lado — e impedir a stack de subir onde algo já a usa. Sem TLS, nem a porta nem
+o `HTTPS_PORT` saem. Os links copiados e o
 redirecionamento para o https já levam a porta escolhida.
 
 A aba **nginx.conf** gera a configuração correspondente, roteando por subpath

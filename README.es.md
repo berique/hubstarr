@@ -433,8 +433,12 @@ responde en `gluetun`, que es quien tiene la red.
 
 Los dos puertos del host están en el **Editar** de la línea de nginx: 80 y 443
 por defecto, pero se puede publicar en 8080 y 8443, por ejemplo, si algo ya
-ocupa los privilegiados. Salen como `HTTP_PORT` y `HTTPS_PORT` en el `.env`;
-dentro del contenedor nginx sigue escuchando en 80 y 443. Los enlaces copiados
+ocupa los privilegiados. Salen como `HTTP_PORT` y `HTTPS_PORT` en el `.env`. El
+**443 solo se publica con el "Servir HTTPS" activado**: sin él el `nginx.conf`
+no tiene ningún `server` escuchando ahí, y publicarlo sería ocupar el puerto de
+la máquina sin nada del otro lado — e impedir que la stack levante donde algo ya
+lo usa. Sin TLS, ni el puerto ni el `HTTPS_PORT` salen. Dentro del contenedor
+nginx sigue escuchando en 80 y 443. Los enlaces copiados
 y la redirección al https ya llevan el puerto elegido.
 
 La pestaña **nginx.conf** genera la configuración correspondiente, enrutando
