@@ -493,6 +493,16 @@ o que ele lê ao **nascer**, esta é a mesma decisão aplicada a um qBittorrent 
 já existe — e o TMM a conf nem cobre. O caminho sai do `qbitDl()`, o mesmo dos
 dois lugares, para conf e API não discordarem.
 
+A **API key** vai no mesmo corpo, e o que ela faz ali é nada: medido no 5.2.3,
+o `setPreferences` aceita o `web_ui_api_key`, responde 200 e **não muda o
+valor** — a propriedade é espelho de leitura do `WebUI\APIKey` da conf, que é
+onde ela se escreve de verdade (o `patch.rs`), e endpoint para criá-la não
+existe (`apiKeys`, `generateApiKey` e afins dão 404). Por isso o servidor lê as
+preferências de volta e **confere**: chave igual à do Ambiente vira linha só no
+`-v`; diferente, ou vazia, vira aviso no log do trabalho — é por ela que os
+*arr falam com ele, e um cliente registrado com chave que não abre nada falha
+depois, longe daqui. Conferir não é falhar: quem manda na chave é a conf.
+
 Duas coisas da API dele: o `setPreferences` recebe **formulário** com um campo
 `json` (não um corpo JSON), e a sessão do `auth/login` vem num cookie cujo nome
 muda com a porta (`QBT_SID_8181`) — por isso o que se guarda é o par inteiro,

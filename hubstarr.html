@@ -4211,7 +4211,16 @@ function qbitPrefs(a){
           torrent_changed_tmm_enabled: true,
           save_path: qbitDl(a),
           web_ui_username: DEFAULTS.qbitUser,
-          web_ui_password: DEFAULTS.qbitPass};
+          web_ui_password: DEFAULTS.qbitPass,
+          /* A chave vai junto, e é preciso saber o que ela faz — e o que não
+             faz. Medido no 5.2.3: o `setPreferences` **aceita e ignora** o
+             `web_ui_api_key` (responde 200 e o valor não muda), porque a
+             propriedade é espelho de leitura do `WebUI\APIKey` da conf, que é
+             onde ela de fato se escreve — e endpoint para criá-la não existe.
+             Quem a aplica, portanto, é o `patch.rs`; o que o servidor faz
+             depois de mandar isto é **conferir** se a chave do app é esta, e
+             dizer no log quando não for. É por ela que os *arr falam com ele. */
+          web_ui_api_key: qbitKey()};
 }
 
 /* As chaves que o Hubstarr põe na conf do qBittorrent — fonte única: é daqui

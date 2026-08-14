@@ -798,7 +798,7 @@ async fn preferencias_do_cliente(http: &reqwest::Client, client: &Client, log: &
         .header("Content-Type", "application/x-www-form-urlencoded")
         .body(corpo);
     if !cookie.is_empty() {
-        req = req.header("Cookie", cookie);
+        req = req.header("Cookie", cookie.clone());
     }
     let alvo = format!("{base}/api/v2/app/setPreferences");
     match req.send().await {
@@ -807,7 +807,7 @@ async fn preferencias_do_cliente(http: &reqwest::Client, client: &Client, log: &
             // as chaves saem no log, os valores não: a senha está entre eles
             let chaves: Vec<&str> = prefs.keys().map(String::as_str).collect();
             log.line(format!("{} → preferências: {}", client.name, chaves.join(", ")));
-            0
+            conferir_api_key(http, &base, client, &cookie, log).await
         }
         Ok(r) => {
             let st = r.status();
@@ -820,6 +820,65 @@ async fn preferencias_do_cliente(http: &reqwest::Client, client: &Client, log: &
             1
         }
     }
+}
+
+/* A API key do app é a do Ambiente?
+
+   Ela **não** se escreve por aqui, e isso foi medido no 5.2.3: o
+   `setPreferences` aceita o `web_ui_api_key`, responde 200 e não muda nada —
+   a propriedade é um espelho de leitura do `WebUI\APIKey` da conf, que é onde
+   o `patch.rs` a grava. Endpoint próprio para criá-la não existe (`apiKeys`,
+   `generateApiKey` e afins respondem 404).
+
+   Então o que dá para fazer de útil é **conferir**: é por essa chave que os
+   *arr falam com ele, e vê-la diferente da nossa é o aviso de que a conf foi
+   escrita por fora — ou de que o app nasceu antes de o Hubstarr chegar. Melhor
+   uma linha no log dizendo isso do que um cliente registrado com uma chave que
+   não abre nada.
+
+   Conferir não é falhar: quem manda na chave é a conf, e o app pode estar
+   sendo usado com a dele de propósito. */
+async fn conferir_api_key(
+    http: &reqwest::Client,
+    base: &str,
+    client: &Client,
+    cookie: &str,
+    log: &Log,
+) -> usize {
+    if client.api_key.is_empty() {
+        return 0;
+    }
+    let url = format!("{base}/api/v2/app/preferences");
+    let mut req = http.get(&url);
+    if !cookie.is_empty() {
+        req = req.header("Cookie", cookie);
+    }
+    let Ok(r) = req.send().await else {
+        return 0;
+    };
+    api("GET", &url, r.status());
+    if !r.status().is_success() {
+        return 0;
+    }
+    let txt = r.text().await.unwrap_or_default();
+    let dele = serde_json::from_str::<Value>(&txt)
+        .ok()
+        .and_then(|v| v["web_ui_api_key"].as_str().map(String::from))
+        .unwrap_or_default();
+    if dele == client.api_key {
+        crate::registro::detalhe(|| format!("{}: a API key do app é a da stack", client.name));
+    } else if dele.is_empty() {
+        log.line(format!(
+            "{}: o app está sem API key — ela vem da conf dele, que o Subir escreve; o Aplicar sozinho não a cria",
+            client.name
+        ));
+    } else {
+        log.line(format!(
+            "{}: a API key do app não é a da stack — os *arr foram registrados com a nossa, então confira a conf dele",
+            client.name
+        ));
+    }
+    0
 }
 
 /// A sessão do qBittorrent: o `auth/login` devolve o cookie no `Set-Cookie`, e
