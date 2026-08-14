@@ -142,6 +142,14 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   contenedor, haciendo el cambio y volviéndolo a subir, porque él reescribe el
   archivo entero al salir. Sin servidor, sale en el `.zip`, en la ruta donde el
   app lo lee, para copiarlo de ahí.
+- **Preferencias de qBittorrent por la API**: con las apps en marcha, el
+  **Levantar** (y el **Aplicar en la stack**) además le ajusta la **gestión
+  automática de torrents** — activada, y siguiendo la categoría cuando cambia,
+  que es lo que manda el torrent a la carpeta correcta —, la **carpeta de
+  descarga** (la subcarpeta de su modal, en la ruta que ve el contenedor) y el
+  **usuario y la contraseña** de la interfaz. No es repetición de la conf:
+  aquella es lo que lee al nacer, esta es la misma decisión aplicada a un
+  qBittorrent que ya existe — y la gestión automática la conf ni la cubre.
 - **sabnzbd.ini de SABnzbd**: su **API key** es la misma de la stack — el campo
   del modal muestra la que vale, y el **Generar** crea otra por el mismo método
   (16 bytes en hexadecimal), que entonces va al `.env` —, y las carpetas de

@@ -4187,11 +4187,38 @@ function dupPaths(){
 const confsOf = s => s.conf || [];
 
 
+/* A pasta em que o qBittorrent baixa, **de dentro do container** — o compose
+   monta a subpasta dele em `/downloads`. É o mesmo caminho para a conf e para
+   a API: um lugar só, para os dois não discordarem. */
+const qbitDl = a => '/downloads' + (a.data ? '/'+a.data : '');
+
+/* O que o servidor manda para a API `app/setPreferences` depois que o app está
+   no ar. Não é repetição da conf: a conf é o que ele lê ao **nascer**, e estas
+   são as mesmas decisões aplicadas a um qBittorrent que já existe — inclusive o
+   que a conf não cobre, que é o gerenciamento automático de torrent.
+
+   `auto_tmm_enabled` liga o Automatic Torrent Management, e
+   `torrent_changed_tmm_enabled` é o que mantém o torrent seguindo a categoria
+   quando ela muda — sem ele, mudar a categoria não move nada, e é a categoria
+   que diz ao *arr onde procurar. O `save_path` é o caminho de dentro do
+   container, como no compose; usuário e senha vão em texto puro porque é assim
+   que a API os recebe — quem faz o hash é o próprio qBittorrent.
+
+   Quem não é qBittorrent devolve `null`: o servidor não tem o que aplicar. */
+function qbitPrefs(a){
+  if(a.id !== 'qbittorrent') return null;
+  return {auto_tmm_enabled: true,
+          torrent_changed_tmm_enabled: true,
+          save_path: qbitDl(a),
+          web_ui_username: DEFAULTS.qbitUser,
+          web_ui_password: DEFAULTS.qbitPass};
+}
+
 /* As chaves que o Hubstarr põe na conf do qBittorrent — fonte única: é daqui
    que sai tanto o painel quanto o que o servidor grava no arquivo do
    container. Cada seção vira `[Seção]` no INI. */
 function qbitPairs(a){
-  const dl = '/downloads' + (a.data ? '/'+a.data : '');
+  const dl = qbitDl(a);
   const pref = [
     ['Downloads\\SavePath', dl],
     ['WebUI\\Address', '*'],
@@ -5118,7 +5145,8 @@ function applyPayload(){
               // a do SABnzbd acompanha a stack quando o modal não gerou outra
               apiKey: c.id==='qbittorrent' ? qbitKey()
                     : c.id==='sabnzbd'     ? sabKey(c) : (c.dlKey || ''),
-              cats, cdh: st.cdh || null};
+              cats, cdh: st.cdh || null,
+              prefs: qbitPrefs(c)};
     })
   };
 }

@@ -138,6 +138,14 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   container, making the change and starting it again, because it rewrites the
   whole file on exit. With no server, it comes in the `.zip`, at the path the app
   reads it from, to be copied from there.
+- **qBittorrent preferences through the API**: with the apps up, **Bring up**
+  (and **Apply to the stack**) also sets its **automatic torrent management** —
+  on, and following the category when it changes, which is what sends the
+  torrent to the right folder —, the **download folder** (the subfolder from its
+  modal, at the path the container sees) and the WebUI **username and password**.
+  It is not a repeat of the conf: that is what it reads when it is born, this is
+  the same decision applied to a qBittorrent that already exists — and automatic
+  management is not in the conf at all.
 - **SABnzbd's sabnzbd.ini**: its **API key** is the stack's own — the field in
   the modal shows the one in force, and **Generate** makes another by the same
   method (16 random bytes in hex), which then goes to `.env` —, and the

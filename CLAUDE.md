@@ -464,6 +464,23 @@ que fica com quem usa. O endereço é o interno (`http://<cname>:8191`), porque 
 serviço é `internal` e não tem rota no nginx; o nome do registro é o título da
 instância, então a stack que roda o Byparr com outro nome aparece com ele.
 
+O **qBittorrent** recebe ainda as preferências dele pela API, no
+`preferencias_do_cliente()`: o `app/setPreferences` com o corpo que a página
+monta no `qbitPrefs()` — o gerenciamento automático de torrent
+(`auto_tmm_enabled` e `torrent_changed_tmm_enabled`, que é o que faz o torrent
+seguir a categoria quando ela muda), o `save_path` de dentro do container e o
+usuário e a senha da interface. Não é repetição da conf do `patch.rs`: aquela é
+o que ele lê ao **nascer**, esta é a mesma decisão aplicada a um qBittorrent que
+já existe — e o TMM a conf nem cobre. O caminho sai do `qbitDl()`, o mesmo dos
+dois lugares, para conf e API não discordarem.
+
+Duas coisas da API dele: o `setPreferences` recebe **formulário** com um campo
+`json` (não um corpo JSON), e a sessão do `auth/login` vem num cookie cujo nome
+muda com a porta (`QBT_SID_8181`) — por isso o que se guarda é o par inteiro,
+como veio. E o `tem_o_que_fazer()` passou a contar cliente com `prefs`: uma
+stack de qBittorrent sem *arr nenhum tem trabalho, e antes ela passava em
+branco.
+
 No Prowlarr, o Settings → Download Clients recebe **um registro por cliente**,
 todos na categoria `CAT_PROWLARR` (`prowlarr`): o que ele pega é avulso, não veio
 de instância nenhuma, então fica junto e separado do que cada *arr baixa. O campo

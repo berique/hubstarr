@@ -134,6 +134,14 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   escreve essas chaves na conf que o app criou — parando o container, fazendo a
   troca e subindo de novo, porque ele reescreve o arquivo inteiro ao sair. Sem
   servidor, ele sai no `.zip`, no caminho em que o app o lê, para copiar de lá.
+- **Preferências do qBittorrent pela API**: com os apps no ar, o **Subir** (e o
+  **Aplicar na stack**) ainda ajusta nele o **gerenciamento automático de
+  torrent** — ligado, e seguindo a categoria quando ela muda, que é o que faz o
+  torrent ir para a pasta certa —, a **pasta de download** (a subpasta do modal
+  dele, no caminho que o container enxerga) e o **usuário e a senha** da
+  interface. Não é repetição da conf: aquela é o que ele lê ao nascer, esta é a
+  mesma decisão aplicada a um qBittorrent que já existe — e o gerenciamento
+  automático a conf nem cobre.
 - **sabnzbd.ini do SABnzbd**: a **API key** dele é a mesma da stack — o campo no
   modal mostra a que vale, e o **Gerar** cria outra pelo mesmo método (16 bytes
   em hexadecimal), que então vai para o `.env` —, e as pastas de **download em

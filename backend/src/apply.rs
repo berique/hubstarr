@@ -164,6 +164,10 @@ struct Client {
     /// remover da fila o que concluiu e o que falhou; ausente = não mexer
     #[serde(default)]
     cdh: Option<Cdh>,
+    /// o que mandar para o `app/setPreferences` do qBittorrent, pronto: a
+    /// página é quem decide o que vai aqui, e o servidor só entrega
+    #[serde(default)]
+    prefs: Option<Map<String, Value>>,
 }
 
 #[derive(Deserialize)]
@@ -190,7 +194,15 @@ impl Req {
         // o Jellyfin vale por si: uma stack só com ele tem o assistente e as
         // bibliotecas a fazer
         let pelo_jellyfin = self.jellyfin.is_some();
-        pelos_arrs || pelo_prowlarr || pelo_jellyfin
+        /* E o cliente de download também, desde que ele tenha ajuste próprio a
+           receber: as preferências do qBittorrent não dependem de *arr nenhum,
+           e uma stack de qBittorrent sozinho ficava sem elas — sem erro e sem
+           linha no log, que é o pior jeito de não fazer nada. */
+        let pelos_clientes = self
+            .clients
+            .iter()
+            .any(|c| c.prefs.as_ref().is_some_and(|p| !p.is_empty()));
+        pelos_arrs || pelo_prowlarr || pelo_jellyfin || pelos_clientes
     }
 
     /// Rodar o Configarr depois? Independe do `tem_o_que_fazer()`: uma stack sem
@@ -457,6 +469,7 @@ pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
     // do cliente
     for client in &req.clients {
         falhas += categorias_do_cliente(&http, &req, client, &log).await;
+        falhas += preferencias_do_cliente(&http, client, &log).await;
     }
     for arr in &req.arrs {
         falhas += pastas_raiz(&http, &base, &req, arr, &log).await;
@@ -743,6 +756,107 @@ async fn categorias_do_cliente(
         }
     }
     falhas
+}
+
+/* As preferências do qBittorrent, pela API dele.
+
+   A conf que o `patch.rs` escreve é o que ele lê ao **nascer**; isto é o mesmo
+   conjunto de decisões aplicado a um qBittorrent que já existe — e, no caso do
+   gerenciamento automático de torrent, algo que a conf nem cobre. O corpo
+   inteiro vem pronto da página, no `prefs`: aqui não se decide nada, só se
+   entrega.
+
+   Duas coisas da API dele que custam uma rodada se não se souber: o
+   `setPreferences` recebe **formulário** com um campo `json`, e não um corpo
+   JSON; e a sessão sai do `auth/login` num cookie cujo nome muda com a porta
+   (`QBT_SID_8181`), então o que se guarda é o par inteiro, como veio. */
+async fn preferencias_do_cliente(http: &reqwest::Client, client: &Client, log: &Log) -> usize {
+    if client.kind != "qbittorrent" {
+        return 0;
+    }
+    let Some(prefs) = client.prefs.as_ref().filter(|p| !p.is_empty()) else {
+        return 0;
+    };
+    if client.web_url.is_empty() {
+        return 0;
+    }
+    let base = client.web_url.trim_end_matches('/').to_string();
+
+    let cookie = match qbit_login(http, &base, client).await {
+        Ok(c) => c,
+        Err(e) => {
+            log.line(format!("{} → entrar para ajustar as preferências: {e}", client.name));
+            return 1;
+        }
+    };
+
+    let corpo = format!("json={}", enc(&Value::Object(prefs.clone()).to_string()));
+    let mut req = http
+        .post(format!("{base}/api/v2/app/setPreferences"))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(corpo);
+    if !cookie.is_empty() {
+        req = req.header("Cookie", cookie);
+    }
+    match req.send().await {
+        Ok(r) if r.status().is_success() => {
+            // as chaves saem no log, os valores não: a senha está entre eles
+            let chaves: Vec<&str> = prefs.keys().map(String::as_str).collect();
+            log.line(format!("{} → preferências: {}", client.name, chaves.join(", ")));
+            0
+        }
+        Ok(r) => {
+            let st = r.status();
+            let txt = r.text().await.unwrap_or_default();
+            log.line(format!("{} → preferências: {}", client.name, erro(st, &txt)));
+            1
+        }
+        Err(e) => {
+            log.line(format!("{} → preferências: não respondeu ({e})", client.name));
+            1
+        }
+    }
+}
+
+/// A sessão do qBittorrent: o `auth/login` devolve o cookie no `Set-Cookie`, e
+/// é ele que autoriza as chamadas seguintes. Devolve vazio quando o app aceita
+/// sem sessão nenhuma (é o caso do `LocalHostAuth` desligado), porque aí não há
+/// cookie a mandar e a chamada passa mesmo assim.
+async fn qbit_login(
+    http: &reqwest::Client,
+    base: &str,
+    client: &Client,
+) -> Result<String, String> {
+    let corpo = format!(
+        "username={}&password={}",
+        enc(&client.user),
+        enc(&client.pass)
+    );
+    let r = http
+        .post(format!("{base}/api/v2/auth/login"))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(corpo)
+        .send()
+        .await
+        .map_err(|e| format!("não respondeu ({e})"))?;
+    let st = r.status();
+    let cookie = r
+        .headers()
+        .get_all(reqwest::header::SET_COOKIE)
+        .iter()
+        .filter_map(|v| v.to_str().ok())
+        .find_map(|v| v.split(';').next().map(str::to_string))
+        .unwrap_or_default();
+    if !st.is_success() {
+        let txt = r.text().await.unwrap_or_default();
+        return Err(erro(st, &txt));
+    }
+    // corpo "Fails." com 200 é como ele diz que a credencial não serve
+    let txt = r.text().await.unwrap_or_default();
+    if txt.trim().eq_ignore_ascii_case("fails.") {
+        return Err("usuário ou senha recusados".into());
+    }
+    Ok(cookie)
 }
 
 /// O Prowlarr sincronizando cada *arr marcado na Configuração. Vale a mesma
@@ -1529,6 +1643,7 @@ mod tests {
                 completed: true,
                 failed: false,
             }),
+            prefs: None,
         }
     }
 
@@ -1803,6 +1918,19 @@ mod tests {
         assert!(!req(vec![], vec![qbit()]).tem_o_que_fazer());
         assert!(!req(vec![arr("sonarr", "tvCategory")], vec![]).tem_o_que_fazer());
         assert!(req(vec![arr("sonarr", "tvCategory")], vec![qbit()]).tem_o_que_fazer());
+
+        /* Menos quando o cliente traz ajuste próprio: as preferências do
+           qBittorrent não dependem de *arr nenhum, e uma stack só com ele
+           ficava sem elas — em silêncio, que é o pior jeito de não fazer nada. */
+        let mut com_prefs = qbit();
+        com_prefs.prefs = Some(
+            serde_json::from_str(r#"{"auto_tmm_enabled":true}"#).unwrap(),
+        );
+        assert!(req(vec![], vec![com_prefs]).tem_o_que_fazer());
+        // preferências vazias não são trabalho
+        let mut vazio = qbit();
+        vazio.prefs = Some(Map::new());
+        assert!(!req(vec![], vec![vazio]).tem_o_que_fazer());
     }
 
     /// Só o Configarr na stack já é motivo para a volta acontecer: os perfis não
