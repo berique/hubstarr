@@ -44,8 +44,9 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    downloads inteira), `dlClient`, `vpn`, `hw` (Jellyfin), `library` (Jellyfin:
    monta a base e mais as pastas que ficaram fora dela), `solver` (Prowlarr;
    ver abaixo), `internal` (gluetun e FlareSolverr: sem rota no nginx e sem
-   botão de link), `publish` (Seerr e qBittorrent: fora do nginx, publicam a
-   porta deles no host; a porta escolhida fica na instância, em `hostPort`, e o
+   botão de link), `stripBase` (qBittorrent: rota com o prefixo retirado, por
+   não ter base URL configurável — ver os invariantes), `publish` (Seerr: fora do nginx, publica a
+   porta dele no host; a porta escolhida fica na instância, em `hostPort`, e o
    campo dela é do modal do serviço), `vpnCfg` (gluetun: as
    credenciais da VPN no modal dele),
    `webAuth` (usuário e senha de quem tem interface própria — o valor da flag
@@ -264,11 +265,11 @@ handler de `#mSave`.
 - **Publicar porta no host é exceção, e vem com a flag `publish`.** O nginx
   ouve em 80/443 dentro do container e publica no host as portas do modal
   próprio dele — o "Editar" da linha fixa (`DEFAULTS.http`/`https` →
-  `HTTP_PORT`/`HTTPS_PORT` no `.env`). O Seerr e o qBittorrent são os outros
-  casos — nenhum dos dois tem base URL configurável: em vez de rota,
-  ganham `ports` no compose e a variável `<CNAME>_PORT` no `.env`, e o link deles
-  aponta para a porta do host — em `http://`, porque o TLS mora no nginx e eles
-  não passam por lá. Quem roteia pela VPN publica **no gluetun**, não em si
+  `HTTP_PORT`/`HTTPS_PORT` no `.env`). O Seerr é o outro caso — ele não tem
+  base URL configurável: em vez de rota,
+  ganha `ports` no compose e a variável `<CNAME>_PORT` no `.env`, e o link dele
+  aponta para a porta do host — em `http://`, porque o TLS mora no nginx e ele
+  não passa por lá. Quem roteia pela VPN publica **no gluetun**, não em si
   mesmo: a rede é dele, e o compose recusa `ports` junto de
   `network_mode: service:`. Todo o resto só existe na rede `starrnet` e é alcançado por
   `container:porta-interna`; quem publica sai da contagem de rotas e do
@@ -289,11 +290,31 @@ handler de `#mSave`.
   o app sobe sem base URL e o subpath responde 404, sem nada no log dizer por
   quê; no SABnzbd é o `url_base` do `sabnzbd.ini`, que o servidor
   escreve depois de subir. Serviço em subpath sem esse ajuste monta os links na raiz e
-  quebra atrás do proxy — app sem base URL configurável não tem lugar num
-  subpath, e é essa a razão de o **Seerr e o qBittorrent** publicarem porta em
-  vez de virar rota — o qBittorrent respondia `500 Unacceptable file type` ao
-  receber o prefixo, porque tenta servir o caminho como arquivo
-  (houve um `subpathFix` reescrevendo redirects e HTML dele; foi removido).
+  quebra atrás do proxy — e é essa a razão de o **Seerr** publicar porta em
+  vez de virar rota.
+- **App sem base URL configurável pode virar rota se o prefixo for retirado**,
+  e é a flag `stripBase` que faz isso — hoje só o **qBittorrent**. Em vez de
+  `proxy_pass` direto, o `location ^~ /<rota>/` traz um `rewrite` que corta o
+  prefixo, e o app responde na raiz, sem saber que existe subpath; os estáticos
+  dele são relativos (`css/login.css`), então acompanham. Três detalhes que o
+  bloco tem e não são enfeite:
+
+  - o `location = /<rota>` com `absolute_redirect off` — sem a barra no fim o
+    `rewrite` não casa, e sem o `absolute_redirect off` o nginx monta o destino
+    com a **porta em que ele escuta** (80), mandando quem abriu em `:8080` para
+    um endereço que não existe;
+  - o `resolver 127.0.0.11` (o DNS do Docker), porque `proxy_pass` com variável
+    resolve o nome a cada pedido — sem ele a rota responde 502 dizendo "no
+    resolver defined";
+  - as chaves de proxy reverso na conf do app (`ReverseProxySupportEnabled`,
+    `TrustedReverseProxiesList=nginx`, `HostHeaderValidation=false`), que o
+    `qbitPairs()` já escrevia. Sem elas a interface abre e a **API** responde
+    403, que é o que o *arr consulta.
+
+  Isto substitui a porta publicada do qBittorrent (e o `subpathFix` que
+  reescrevia redirect e HTML dele, removido faz tempo). Foi conferido de ponta a
+  ponta com o app atrás do nginx: HTML, estático, login, `app/version`,
+  `app/preferences` e `torrents/info`, todos 200.
 - **Serviço `internal` não vira rota**: gluetun e FlareSolverr existem para os
   outros containers, então ficam sem `location`, sem link e fora da contagem de
   rotas — mas continuam no compose. Ao acrescentar um serviço assim, use a

@@ -445,16 +445,24 @@ Not every service becomes a route: `gluetun` and FlareSolverr only talk to the
 other containers, so they get no `location` and no link button — Prowlarr
 reaches FlareSolverr straight over the stack network.
 
-**Seerr** and **qBittorrent** stay out of the proxy for the same reason: neither
-has a configurable base URL, and an app without one cannot live in a subpath —
-qBittorrent answers `500 Unacceptable file type` when it gets the prefix,
-because it tries to serve the path as a file. Instead of a route, each
-**publishes its port on the host** — 5055 and 8181 by default, editable in their
-own modals, landing in the compose file as `ports` and in `.env` as
-`SEERR_PORT` and `QBITTORRENT_PORT`. Their links point at those ports, over
-`http://`: with no proxy in front, the stack's TLS does not cover them, and the
-port has to be free on the machine. Whatever routes through the VPN publishes on
-`gluetun`, which owns the network.
+**Seerr** stays out of the proxy: it has no configurable base URL, and an app
+without one cannot live in a subpath. Instead of a route, it **publishes its
+port on the host** — 5055 by default, editable in its own modal, landing in the
+compose file as `ports` and in `.env` as `SEERR_PORT`. Its link points at that
+port, over `http://`: with no proxy in front, the stack's TLS does not cover it,
+and the port has to be free on the machine. Whatever routes through the VPN
+publishes on `gluetun`, which owns the network.
+
+**qBittorrent** has no configurable base URL either, but it stays behind the
+proxy: its route is the one that **strips the prefix** on the way through, so it
+answers at the root, never knowing a `/qbittorrent` exists. The block carries a
+`rewrite` that cuts the prefix, a `resolver 127.0.0.11` — Docker's DNS, because
+a `proxy_pass` with a variable resolves the name on every request — and a
+`location = /qbittorrent` redirecting to the trailing slash, with
+`absolute_redirect off` so the host port is not lost on the way. Its UI assets
+are relative, so they follow the prefix; and the conf Hubstarr writes already
+carries the reverse-proxy keys its **API** requires — without them the UI opens
+and the API answers 403, which is what the *arr apps query.
 
 The Environment can turn **TLS** on: `nginx.conf` then gets a `server` on 443
 with `ssl_certificate`, TLSv1.2/1.3, and a block on 80 that only redirects to

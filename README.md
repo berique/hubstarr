@@ -435,15 +435,25 @@ Nem todo serviço vira rota: o `gluetun` e o FlareSolverr só conversam com os
 outros containers, então não ganham `location` nem botão de link — o Prowlarr
 fala com o FlareSolverr direto pela rede da stack.
 
-O **Seerr** e o **qBittorrent** ficam fora do proxy pelo mesmo motivo: nenhum
-dos dois tem base URL configurável, e app sem base URL não vive num subpath — o
-qBittorrent responde `500 Unacceptable file type` quando recebe o prefixo,
-porque tenta servir o caminho como arquivo. Em vez de rota, cada um **publica a
-sua porta no host** — 5055 e 8181 por padrão, editáveis no modal de cada um, que
-saem no compose como `ports` e no `.env` como `SEERR_PORT` e
-`QBITTORRENT_PORT`. O link deles aponta para essa porta, em `http://`: sem o
-proxy na frente, o TLS da stack não os cobre, e a porta precisa estar livre na
-máquina. Quem roteia pela VPN publica no `gluetun`, que é quem detém a rede.
+O **Seerr** fica fora do proxy: ele não tem base URL configurável, e app sem
+base URL não vive num subpath. Em vez de rota, ele **publica a sua porta no
+host** — 5055 por padrão, editável no modal dele, que sai no compose como
+`ports` e no `.env` como `SEERR_PORT`. O link dele aponta para essa porta, em
+`http://`: sem o proxy na frente, o TLS da stack não o cobre, e a porta precisa
+estar livre na máquina. Quem roteia pela VPN publica no `gluetun`, que é quem
+detém a rede.
+
+O **qBittorrent** também não tem base URL configurável, mas continua no proxy:
+a rota dele é a que **retira o prefixo** no caminho, e assim ele responde na
+raiz, sem saber que existe um `/qbittorrent`. O bloco traz um `rewrite` que
+corta o prefixo, um `resolver 127.0.0.11` — o DNS do Docker, porque o
+`proxy_pass` com variável resolve o nome a cada pedido — e um
+`location = /qbittorrent` que redireciona para a barra final, com
+`absolute_redirect off` para a porta do host não se perder no caminho. Os
+estáticos da interface dele são relativos, então acompanham o prefixo; e a conf
+que o Hubstarr escreve já traz as chaves de proxy reverso que a **API** dele
+exige — sem elas a interface abre e a API responde 403, que é o que o *arr
+consulta.
 
 No Ambiente dá para ligar o **TLS**: o `nginx.conf` passa a ter um `server` na
 443 com `ssl_certificate`, TLSv1.2/1.3 e um bloco na 80 que só redireciona para
