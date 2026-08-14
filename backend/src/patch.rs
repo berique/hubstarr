@@ -353,6 +353,13 @@ pub async fn apply_all(
                 };
                 format!("{}: {e}{dica}", path.display())
             })?;
+            crate::registro::detalhe(|| {
+                format!(
+                    "arquivo {} ({} bytes, chaves escritas na conf do app)",
+                    path.display(),
+                    novo.len()
+                )
+            });
             log.line(format!("{}: {} chaves escritas", path.display(), p.chaves()));
         }
         crate::deploy::compose(docker, &["start", servico], dir, log).await?;

@@ -114,6 +114,19 @@ impl Db {
             )
             .map_err(|e| e.to_string())?;
         }
+        /* Os nomes dos campos, nunca os valores: entre eles estão a chave da
+           stack e as senhas do qBittorrent, do Jellyfin e da VPN. */
+        crate::registro::detalhe(|| {
+            let mut campos: Vec<&str> = ENV_COLS
+                .iter()
+                .filter(|(k, _)| o.contains_key(*k))
+                .map(|(k, _)| *k)
+                .collect();
+            if o.contains_key("tls") {
+                campos.push("tls");
+            }
+            format!("banco: Ambiente, {} campo(s): {}", campos.len(), campos.join(", "))
+        });
         Ok(())
     }
 

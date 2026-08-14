@@ -307,6 +307,7 @@ button tooltip says why.
 | `--dir`    | `./stack`                 | folder the generated files are written to     |
 | `--db`     | `~/.hubstarr/hubstarr.db` | database the stack is kept in                 |
 | `--docker` | `docker`, or `podman`     | the compose command; without the option, whichever of the two answers first |
+| `-v`       | off                       | spells out each step: files, database and API calls |
 
 The server writes what it does both to its output and to a `servidor.log` next
 to the database (`~/.hubstarr/servidor.log` with the default `--db`): startup,
@@ -314,6 +315,15 @@ the container engine it picked, and every state save coming from the page — ho
 many services came in and which ones left the stack. The file appends, never
 rewrites, and it is where to look when the stack changed and you do not know
 why.
+
+With **`-v`** it spells out each step, in both places: every file written
+(including the keys written into each app's own configuration), every row
+touched in the database — instance, Environment, Configuration, the service
+list — and **every call to the apps' APIs**, with method, path and status. It is
+how you find out why a link did not go through; left on all the time it would
+drown the lines that matter, since one *Apply* round is dozens of calls.
+Passwords and API keys never reach the log: from the Environment only field
+names go in, and from URLs only the part before the `?`.
 
 The stack lives in the database with its instances, Environment and
 Configuration in tables of their own — the page state, normalized, not a JSON

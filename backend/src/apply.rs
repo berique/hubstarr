@@ -694,6 +694,7 @@ async fn etiqueta(
         .await
         .map_err(|e| format!("não respondeu ({e})"))?;
     let st = r.status();
+    api("POST", url, st);
     let txt = r.text().await.unwrap_or_default();
     if !st.is_success() {
         return Err(erro(st, &txt));
@@ -743,6 +744,7 @@ async fn categorias_do_cliente(
         );
         match http.get(&url).send().await {
             Ok(r) if r.status().is_success() => {
+                api("GET", &sem_query(&url), r.status());
                 log.line(format!("{} → categoria {cat}: pronta", client.name))
             }
             Ok(r) => {
@@ -798,8 +800,10 @@ async fn preferencias_do_cliente(http: &reqwest::Client, client: &Client, log: &
     if !cookie.is_empty() {
         req = req.header("Cookie", cookie);
     }
+    let alvo = format!("{base}/api/v2/app/setPreferences");
     match req.send().await {
         Ok(r) if r.status().is_success() => {
+            api("POST", &alvo, r.status());
             // as chaves saem no log, os valores não: a senha está entre eles
             let chaves: Vec<&str> = prefs.keys().map(String::as_str).collect();
             log.line(format!("{} → preferências: {}", client.name, chaves.join(", ")));
@@ -840,6 +844,7 @@ async fn qbit_login(
         .await
         .map_err(|e| format!("não respondeu ({e})"))?;
     let st = r.status();
+    api("POST", &format!("{base}/api/v2/auth/login"), st);
     let cookie = r
         .headers()
         .get_all(reqwest::header::SET_COOKIE)
@@ -1050,6 +1055,7 @@ async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
 
     let pronto = match http.get(format!("{base}/System/Info/Public")).send().await {
         Ok(r) => {
+            api("GET", &format!("{base}/System/Info/Public"), r.status());
             let txt = r.text().await.unwrap_or_default();
             serde_json::from_str::<Value>(&txt)
                 .ok()
@@ -1108,6 +1114,9 @@ async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
             .header("Content-Length", "0")
             .send()
             .await;
+        if let Ok(r) = &r {
+            api("POST", &format!("{base}/Startup/Complete"), r.status());
+        }
         match r {
             Ok(r) if r.status().is_success() => {
                 log.line(format!("{} → assistente concluído", jf.name))
@@ -1181,6 +1190,7 @@ async fn autenticar(http: &reqwest::Client, base: &str, jf: &Jellyfin) -> Result
         .await
         .map_err(|e| format!("não respondeu ({e})"))?;
     let st = r.status();
+    api("POST", &format!("{base}/Users/AuthenticateByName"), st);
     let txt = r.text().await.unwrap_or_default();
     if !st.is_success() {
         return Err(erro(st, &txt));
@@ -1207,8 +1217,10 @@ async fn bibliotecas(
         .send()
         .await
     {
-        Ok(r) if r.status().is_success() => serde_json::from_str(&r.text().await.unwrap_or_default())
-            .unwrap_or_default(),
+        Ok(r) if r.status().is_success() => {
+            api("GET", &url, r.status());
+            serde_json::from_str(&r.text().await.unwrap_or_default()).unwrap_or_default()
+        }
         Ok(r) => {
             log.line(format!("{} → bibliotecas: HTTP {}", jf.name, r.status().as_u16()));
             return 1;
@@ -1269,6 +1281,7 @@ async fn post_json(
     match req.send().await {
         Ok(r) => {
             let st = r.status();
+            api("POST", url, st);
             if st.is_success() {
                 (true, String::new())
             } else {
@@ -1276,7 +1289,10 @@ async fn post_json(
                 (false, erro(st, &txt))
             }
         }
-        Err(e) => (false, format!("não respondeu ({e})")),
+        Err(e) => {
+            crate::registro::detalhe(|| format!("api POST {url} → {e}"));
+            (false, format!("não respondeu ({e})"))
+        }
     }
 }
 
@@ -1436,6 +1452,7 @@ async fn put_config(
         .await
         .map_err(|e| format!("não respondeu ({e})"))?;
     let st = r.status();
+    api("GET", url, st);
     let txt = r.text().await.unwrap_or_default();
     if !st.is_success() {
         return Err(erro(st, &txt));
@@ -1453,6 +1470,7 @@ async fn put_config(
         .await
         .map_err(|e| format!("não respondeu ({e})"))?;
     let st = r.status();
+    api("PUT", url, st);
     if st.is_success() {
         return Ok(());
     }
@@ -1539,8 +1557,12 @@ async fn list(http: &reqwest::Client, url: &str, key: &str) -> Result<Vec<Value>
         .header("X-Api-Key", key)
         .send()
         .await
-        .map_err(|e| format!("não respondeu ({e})"))?;
+        .map_err(|e| {
+            crate::registro::detalhe(|| format!("api GET {url} → {e}"));
+            format!("não respondeu ({e})")
+        })?;
     let st = r.status();
+    api("GET", url, st);
     let txt = r.text().await.unwrap_or_default();
     if !st.is_success() {
         return Err(erro(st, &txt));
@@ -1571,18 +1593,37 @@ async fn send(
     } else {
         http.post(&alvo)
     };
+    let metodo = if id.is_some() { "PUT" } else { "POST" };
     let r = req
         .header("X-Api-Key", key)
         .header("Content-Type", "application/json")
         .body(body.to_string())
         .send()
         .await
-        .map_err(|e| format!("não respondeu ({e})"))?;
+        .inspect(|r| api(metodo, &alvo, r.status()))
+        .map_err(|e| {
+            crate::registro::detalhe(|| format!("api {metodo} {alvo} → {e}"));
+            format!("não respondeu ({e})")
+        })?;
     let st = r.status();
     if st.is_success() {
         return Ok(());
     }
     Err(erro(st, &r.text().await.unwrap_or_default()))
+}
+
+/* Uma chamada a um app da stack, no modo detalhado. É aqui que o `-v` paga:
+   a volta do Aplicar são dezenas delas, e saber **qual** respondeu o quê é a
+   diferença entre "não funcionou" e o motivo. Sai o caminho e o status; corpo
+   não, que é onde moram as chaves e as senhas. */
+fn api(metodo: &str, url: &str, st: reqwest::StatusCode) {
+    crate::registro::detalhe(|| format!("api {metodo} {url} → {}", st.as_u16()));
+}
+
+/// O endereço sem a query, para o log: é nela que viajam a API key do SABnzbd
+/// e, no Jellyfin, o nome e o caminho da biblioteca.
+fn sem_query(url: &str) -> String {
+    url.split('?').next().unwrap_or(url).to_string()
 }
 
 /// A mensagem do *arr, quando ele manda uma: a lista de validação dele diz

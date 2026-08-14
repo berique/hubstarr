@@ -76,6 +76,9 @@ pub async fn write_all(
         tokio::fs::write(&path, &f.text)
             .await
             .map_err(|e| format!("{}: {e}", path.display()))?;
+        crate::registro::detalhe(|| {
+            format!("arquivo {} ({} bytes)", path.display(), f.text.len())
+        });
         done.push(path.display().to_string());
     }
     Ok(done)
@@ -102,6 +105,7 @@ pub async fn ensure_dirs(dirs: &[String], log: &crate::jobs::Log) -> Result<(), 
         tokio::fs::create_dir_all(p)
             .await
             .map_err(|e| format!("{d}: {e}"))?;
+        crate::registro::detalhe(|| format!("pasta {d}"));
         log.line(format!("pasta criada: {d}"));
     }
     Ok(())

@@ -301,12 +301,22 @@ quando o docker não responde — ali; se não houver, avisa e já abre o bloco
 | `--dir`    | `./stack`                | pasta em que os arquivos gerados são gravados   |
 | `--db`     | `~/.hubstarr/hubstarr.db`| banco em que a stack é guardada                 |
 | `--docker` | `docker`, ou `podman`    | comando do compose; sem a opção, vale o primeiro dos dois que responder |
+| `-v`       | desligado                | diz o passo a passo: arquivos, banco e chamadas de API |
 
 O servidor escreve o que faz na saída e num `servidor.log`, ao lado do banco
 (`~/.hubstarr/servidor.log`, com o `--db` de fábrica): a subida, o motor de
 container escolhido e cada gravação de estado vinda da página — com quantos
 serviços vieram e quais saíram da stack. O arquivo acrescenta, nunca reescreve,
 e é onde se olha quando a stack mudou e não se sabe por quê.
+
+Com **`-v`** ele conta o passo a passo, nos dois lugares: cada arquivo gravado
+(inclusive as chaves escritas na configuração de cada app), cada linha mexida no
+banco — instância, Ambiente, Configuração, a lista de serviços — e **cada
+chamada às APIs dos apps**, com método, caminho e status. É o modo de descobrir
+por que uma ligação não passou; ligado sempre, ele afogaria as linhas que
+importam, porque uma volta do *Aplicar* são dezenas de chamadas. Senha e chave
+de API nunca saem no log: do Ambiente vão só os nomes dos campos, e das URLs
+sai a parte antes do `?`.
 
 A stack fica no banco com as instâncias, o Ambiente e a Configuração em
 tabelas próprias — o estado da página, normalizado, e não um blob de JSON. Ela

@@ -370,14 +370,33 @@ morre, o velho continua respondendo, e tudo parece só não ter mudado. A saída
 dele diz; é a primeira coisa a olhar. `cargo test` roda os testes do modelo e da gravação de arquivos;
 `cargo run` serve tudo em `127.0.0.1:7878`. Opções: `--addr`, `--dir` (padrão
 `./stack`, a pasta em que os arquivos são gravados), `--db` (padrão
-`~/.hubstarr/hubstarr.db`), `--docker`.
+`~/.hubstarr/hubstarr.db`), `--docker`, `-v`.
 
 O que ele escreve vai para a saída **e** para o `servidor.log`, ao lado do
 banco — não na pasta da stack: o log é do servidor, e o `--dir` se apaga e se
 refaz enquanto o `--db` dura. É `append`, nunca reescrita, porque o valor dele
 é justamente o histórico entre reinícios; e o arquivo que não abre vira um
-aviso na saída, não um servidor que não sobe. Quem escreve é o `registra()`, e
-`println!` no `main.rs` é sinal de linha que não vai ao arquivo.
+aviso na saída, não um servidor que não sobe. Quem cuida disso é o
+`registro.rs`, e `println!` fora dele é sinal de linha que não vai ao arquivo.
+
+Ali moram **duas alturas de log**, e a distinção é o que mantém as duas úteis:
+
+- `registra()` é o que sempre sai — a subida, o motor escolhido, cada
+  `PUT /api/settings`. Curto o bastante para se ler dias depois; responde "o que
+  mudou na minha stack?".
+- `detalhe()` só existe com o **`-v`**, e é o passo a passo: cada arquivo
+  gravado (o `files.rs` e as chaves que o `patch.rs` escreve na conf do app),
+  cada linha mexida no banco (instância, Ambiente, Configuração, a lista de
+  chaves) e **cada chamada às APIs dos apps**, com método, caminho e status.
+  Responde "por que isso não funcionou?". Ligá-lo por padrão afogaria o
+  primeiro: uma volta do Aplicar são dezenas de chamadas.
+
+Duas regras do `detalhe()`: o argumento é uma **função**, para que sem o `-v`
+nem o texto seja montado — dá para chamá-lo dentro de laço sem pensar; e **nada
+de valor sensível na linha**. O Ambiente sai como lista de *nomes* de campo (a
+chave da stack e as senhas estão entre os valores), e a URL sai pelo
+`sem_query()` onde a query leva a API key. Chamada nova de API deve passar pelo
+`api()` do `apply.rs`, que é o único lugar que formata essa linha.
 
 **A stack é uma só**, a da pasta do `--dir`: nenhum caminho da API leva id e
 nenhuma tabela tem `stack_id`. Manter duas é rodar dois servidores, cada um com

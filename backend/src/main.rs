@@ -19,6 +19,7 @@ mod deploy;
 mod files;
 mod jobs;
 mod patch;
+mod registro;
 mod shots;
 mod store;
 
@@ -63,6 +64,8 @@ Exemplos:
   hubstarr --dir /srv/stack           põe os arquivos da stack em outro lugar
   hubstarr --docker podman            força o podman (sem isso, ele já é usado
                                       quando o docker não responde)
+  hubstarr -v                         diz o passo a passo: arquivos, banco e as
+                                      chamadas às APIs dos apps
 
 Cuidado com o endereço: 127.0.0.1 é sempre a máquina em que o NAVEGADOR está
 rodando. Se você navega de outro computador, use --addr 0.0.0.0:7878 e abra o
@@ -93,6 +96,11 @@ struct Args {
     /// Comando do docker (padrão: docker, e podman quando só ele responde)
     #[arg(long, value_name = "COMANDO")]
     docker: Option<String>,
+
+    /// Diz o passo a passo: cada arquivo gravado, cada linha mexida no banco e
+    /// cada chamada às APIs dos apps da stack
+    #[arg(short = 'v', long)]
+    verbose: bool,
 
     /// Mostra esta ajuda
     #[arg(short = 'h', long, action = clap::ArgAction::Help)]
@@ -133,22 +141,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (db, migrated) = store::Db::open(&db_path)?;
     // o log mora ao lado do banco, e não na pasta da stack: ele é do servidor,
     // não da stack — o `--dir` se apaga e se refaz, o `--db` é o que dura
-    abrir_log(&db_path);
+    registro::abrir(&db_path);
+    registro::ligar_detalhe(args.verbose);
     if let Some(m) = migrated {
-        registra("Banco migrado para o modelo de uma stack só (era o de várias).");
-        registra(format!("  A stack que ficou gravava em {}", m.kept));
+        registro::registra("Banco migrado para o modelo de uma stack só (era o de várias).");
+        registro::registra(format!("  A stack que ficou gravava em {}", m.kept));
         for d in &m.dropped {
-            registra(format!(
+            registro::registra(format!(
                 "  Descartada a stack que gravava em {d} — os arquivos dela ficam onde estão"
             ));
         }
         if !m.dropped.is_empty() {
-            registra("  Para editar uma delas, rode outro servidor com --dir e --db próprios.");
+            registro::registra("  Para editar uma delas, rode outro servidor com --dir e --db próprios.");
         }
     }
     let docker = deploy::pick_engine(args.docker).await;
     if docker != deploy::ENGINES[0] {
-        registra(format!("Usando o {docker} para rodar o compose."));
+        registro::registra(format!("Usando o {docker} para rodar o compose."));
     }
     let ctx: Ctx = Arc::new(App {
         base,
@@ -177,12 +186,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_state(ctx.clone());
 
     let listener = tokio::net::TcpListener::bind(&args.addr).await?;
-    registra(format!(
+    if args.verbose {
+        registro::registra("Modo detalhado (-v): o passo a passo vai para a saída e para o log.");
+    }
+    registro::registra(format!(
         "Hubstarr em http://{}  (stack em {}, banco em {}, log em {})",
         args.addr,
         ctx.base.display(),
         db_path.display(),
-        caminho_do_log(&db_path).display()
+        registro::caminho(&db_path).display()
     ));
     axum::serve(listener, app).await?;
     Ok(())
@@ -336,45 +348,14 @@ async fn save_settings(State(ctx): State<Ctx>, Json(s): Json<Settings>) -> Respo
             } else {
                 format!(" — apagou {}", saiu.join(", "))
             };
-            registra(format!("{} PUT /api/settings: {lista}{apagou}", carimbo()));
+            registro::registra(format!("{} PUT /api/settings: {lista}{apagou}", registro::carimbo()));
             Json(json!({"ok": true})).into_response()
         }
         Err(e) => {
-            registra(format!("{} PUT /api/settings: falhou ({e})", carimbo()));
+            registro::registra(format!("{} PUT /api/settings: falhou ({e})", registro::carimbo()));
             fail(&e)
         }
     }
-}
-
-/// A hora em UTC, `2026-08-13 22:41:07Z`, sem crate a mais — o log só precisa
-/// disso, e uma dependência para formatar data sairia caro no `--locked` do CI.
-fn carimbo() -> String {
-    carimbo_de(
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs())
-            .unwrap_or(0),
-    )
-}
-
-fn carimbo_de(s: u64) -> String {
-    let (dias, hora) = (s / 86_400, s % 86_400);
-    // dias desde 1970 → data civil, o algoritmo do Howard Hinnant
-    let z = dias as i64 + 719_468;
-    let era = z.div_euclid(146_097);
-    let doe = z.rem_euclid(146_097);
-    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    let y = era * 400 + yoe + i64::from(m <= 2);
-    format!(
-        "{y:04}-{m:02}-{d:02} {:02}:{:02}:{:02}Z",
-        hora / 3600,
-        (hora % 3600) / 60,
-        hora % 60
-    )
 }
 
 /// Um serviço adicionado ou editado: uma linha só, criada ou atualizada.
@@ -540,48 +521,6 @@ async fn job_status(State(ctx): State<Ctx>, Path(id): Path<u64>) -> Response {
     }
 }
 
-/* ---------- log do servidor ---------- */
-
-/* O que o servidor escreve vai para a saída **e** para um arquivo, ao lado do
-   banco. A saída sozinha se perde: quem sobe o servidor por um `systemd`, um
-   `nohup` ou uma sessão de terminal que fechou não tem onde olhar depois — e é
-   depois que a gente vai olhar, quando a stack tiver mudado sozinha e a
-   pergunta for "quem mandou o quê, e quando".
-
-   Ele **acrescenta**, nunca reescreve: o histórico entre reinícios é o que dá
-   valor ao arquivo. E o log que falha não derruba o servidor — no máximo se
-   volta a ter só a saída, que é onde estávamos antes. */
-static LOG: std::sync::OnceLock<std::sync::Mutex<std::fs::File>> = std::sync::OnceLock::new();
-
-fn caminho_do_log(db_path: &std::path::Path) -> PathBuf {
-    db_path
-        .parent()
-        .unwrap_or(std::path::Path::new("."))
-        .join("servidor.log")
-}
-
-fn abrir_log(db_path: &std::path::Path) {
-    let p = caminho_do_log(db_path);
-    match std::fs::OpenOptions::new().create(true).append(true).open(&p) {
-        Ok(f) => {
-            let _ = LOG.set(std::sync::Mutex::new(f));
-        }
-        // sem o arquivo o servidor continua inteiro, só sem histórico
-        Err(e) => println!("(sem log em {}: {e})", p.display()),
-    }
-}
-
-fn registra(msg: impl AsRef<str>) {
-    let msg = msg.as_ref();
-    println!("{msg}");
-    if let Some(f) = LOG.get() {
-        if let Ok(mut f) = f.lock() {
-            use std::io::Write;
-            let _ = writeln!(f, "{msg}");
-        }
-    }
-}
-
 /* ---------- utilidades ---------- */
 
 /// A raiz das configurações, que vem do Ambiente guardado e nunca do que o
@@ -598,34 +537,4 @@ fn fail(msg: &str) -> Response {
         Json(json!({"ok": false, "error": msg})),
     )
         .into_response()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::carimbo_de;
-
-    /// O log é do servidor, não da stack: ele fica ao lado do banco, que é o
-    /// que dura — a pasta do `--dir` se apaga e se refaz.
-    #[test]
-    fn o_log_fica_ao_lado_do_banco() {
-        use std::path::Path;
-        assert_eq!(
-            super::caminho_do_log(Path::new("/home/x/.hubstarr/hubstarr.db")),
-            Path::new("/home/x/.hubstarr/servidor.log")
-        );
-        // banco sem pasta nenhuma no caminho: o log fica no diretório atual
-        assert_eq!(
-            super::caminho_do_log(Path::new("hubstarr.db")),
-            Path::new("servidor.log")
-        );
-    }
-
-    #[test]
-    fn o_carimbo_do_log_e_a_data_em_utc() {
-        assert_eq!(carimbo_de(0), "1970-01-01 00:00:00Z");
-        // conferido com `date -u -d @1786992067`
-        assert_eq!(carimbo_de(1_786_992_067), "2026-08-17 18:41:07Z");
-        // ano bissexto, o 29 de fevereiro que os cálculos de data costumam perder
-        assert_eq!(carimbo_de(1_709_164_800), "2024-02-29 00:00:00Z");
-    }
 }

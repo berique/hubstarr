@@ -113,14 +113,29 @@ impl Db {
             )
             .map_err(|e| e.to_string())?;
         }
-        tx.commit().map_err(|e| e.to_string())
+        tx.commit().map_err(|e| e.to_string())?;
+        crate::registro::detalhe(|| {
+            let renome = match inc.old.as_deref() {
+                Some(old) if old != inc.key => format!(" (era {old})"),
+                _ => String::new(),
+            };
+            format!(
+                "banco: instância {}{renome}, ord {}, {} pasta(s) avulsa(s)",
+                inc.key,
+                inc.ord,
+                libs.len()
+            )
+        });
+        Ok(())
     }
 
     pub fn delete_instance(&self, key: &str) -> Result<(), String> {
-        self.lock()?
+        let n = self
+            .lock()?
             .execute("DELETE FROM instance WHERE key = ?1", params![key])
-            .map(|_| ())
-            .map_err(|e| e.to_string())
+            .map_err(|e| e.to_string())?;
+        crate::registro::detalhe(|| format!("banco: instância {key} apagada ({n} linha)"));
+        Ok(())
     }
 
     /// Alinha o banco com a lista que a página tem agora: acerta a ordem e
@@ -159,6 +174,17 @@ impl Db {
             }
         }
         tx.commit().map_err(|e| e.to_string())?;
+        crate::registro::detalhe(|| {
+            format!(
+                "banco: lista com {} chave(s){}",
+                keys.len(),
+                if saiu.is_empty() {
+                    String::new()
+                } else {
+                    format!(", apagou {}", saiu.join(", "))
+                }
+            )
+        });
         Ok(saiu)
     }
 

@@ -118,7 +118,17 @@ impl Db {
                 .map_err(|e| e.to_string())?;
             }
         }
-        tx.commit().map_err(|e| e.to_string())
+        tx.commit().map_err(|e| e.to_string())?;
+        crate::registro::detalhe(|| {
+            format!(
+                "banco: Configuração — {} app(s) no Prowlarr, {} cliente(s), {} família(s) de Media Management, {} com perfis",
+                apps.len(),
+                clients.len(),
+                mm.len(),
+                profiles.len()
+            )
+        });
+        Ok(())
     }
 
     pub(crate) fn config(&self) -> Result<Value, String> {

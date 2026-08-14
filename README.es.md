@@ -314,12 +314,22 @@ ayuda de los botones.
 | `--dir`    | `./stack`                 | carpeta en la que se graban los archivos      |
 | `--db`     | `~/.hubstarr/hubstarr.db` | base en la que se guarda la stack             |
 | `--docker` | `docker`, o `podman`      | comando del compose; sin la opción, vale el primero de los dos que responda |
+| `-v`       | apagado                   | dice el paso a paso: archivos, base de datos y llamadas de API |
 
 El servidor escribe lo que hace en su salida y en un `servidor.log` junto a la
 base (`~/.hubstarr/servidor.log` con el `--db` de fábrica): el arranque, el
 motor de contenedores elegido y cada guardado de estado que llega de la página
 — cuántos servicios vinieron y cuáles salieron de la stack. El archivo añade,
 nunca reescribe, y es donde mirar cuando la stack cambió y no se sabe por qué.
+
+Con **`-v`** cuenta el paso a paso, en los dos sitios: cada archivo grabado
+(incluidas las claves escritas en la configuración de cada app), cada fila
+tocada en la base — instancia, Entorno, Configuración, la lista de servicios — y
+**cada llamada a las APIs de las apps**, con método, ruta y estado. Es el modo
+de descubrir por qué una conexión no pasó; encendido siempre, ahogaría las
+líneas que importan, porque una vuelta del *Aplicar* son decenas de llamadas.
+Contraseñas y claves de API nunca salen en el log: del Entorno van solo los
+nombres de los campos, y de las URL sale la parte antes del `?`.
 
 La stack vive en la base con sus instancias, el Entorno y la Configuración en
 tablas propias — el estado de la página, normalizado, y no un blob de JSON. Es
