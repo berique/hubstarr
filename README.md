@@ -22,6 +22,42 @@ quem quer só os arquivos.
 > ou monitoramento. Revise tudo — senhas, portas, certificados e permissões —
 > antes de expor a stack a qualquer rede que não seja a sua.
 
+## O que ele deixa pronto
+
+Gerar os arquivos é a metade fácil. A outra é a que se faz à mão depois, app por
+app, e é ela que o **Subir** faz sozinho pela API de cada um — o botão
+**Aplicar na stack** reaplica tudo isto sem subir nada:
+
+- **A configuração básica de cada app**: a base URL igual ao subpath do nginx, a
+  mesma API key na stack inteira, fuso, PUID/PGID e as pastas do compose. Nos
+  *arr, o *Media Management* completo — hardlink, renomear, permissões, lixeira,
+  espaço livre — e a nomenclatura de episódio, filme e faixa já nos formatos do
+  [TRaSH Guides](https://trash-guides.info).
+- **Clientes de download ligados**: qBittorrent e SABnzbd registrados em cada
+  Sonarr, Radarr e Lidarr **e no próprio Prowlarr**, cada um com a categoria que
+  você escolheu — e as categorias criadas dentro do cliente, cada uma com a
+  pasta dela. O Prowlarr recebe ainda cada *arr para sincronizar, com as
+  categorias por família, e o FlareSolverr como proxy de indexador.
+- **Pontos de importação prontos**: a pasta raiz de cada *arr, no caminho que o
+  container enxerga (`/data/tv`, `/data/movies`, `/data/music`). Sem ela a
+  primeira série para num *You must add a root folder* — e o caminho digitado à
+  mão costuma ser o do host, que o app aceita e depois não acha.
+- **Perfis de qualidade do TRaSH Guides**, por instância: cada preset traz o
+  trio que o guia recomenda junto — o perfil, os custom formats **com os scores
+  dele** e a definição de tamanho dos arquivos. É assim que a instância de 4K
+  deixa de ser igual à de 1080p. Quem aplica é o
+  [Configarr](https://configarr.de), com os templates do Recyclarr, e o guia
+  continua sendo dele: o Hubstarr escolhe, não reimplementa.
+- **Jellyfin pré-configurado**: o assistente inicial (idioma da interface,
+  administrador, acesso remoto) e uma biblioteca por instância de *arr, com o
+  tipo certo e o caminho **de dentro do container** — o mesmo que o *arr recebe
+  como pasta raiz, que é o que faz a biblioteca listar justamente o que ele
+  importou.
+
+Sem servidor nada disso acontece: o `.zip` leva os arquivos, e o resto é você
+quem faz nas interfaces. É a diferença entre uma stack no ar e uma stack pronta
+para usar.
+
 Rode o servidor e abra o endereço dele:
 
 ```sh

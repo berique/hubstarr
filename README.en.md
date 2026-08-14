@@ -22,6 +22,43 @@ profile. It is the mode for whoever wants just the files.
 > monitoring. Review everything — passwords, ports, certificates and
 > permissions — before exposing the stack to any network other than your own.
 
+## What it sets up for you
+
+Generating the files is the easy half. The other half is the one you do by hand
+afterwards, app by app — and that is what **Bring up** does on its own, through
+each app's API. The **Apply to the stack** button reapplies all of it without
+bringing anything up:
+
+- **The basic configuration of every app**: the base URL matching the nginx
+  subpath, the same API key across the whole stack, timezone, PUID/PGID and the
+  folders from the compose file. In the *arr apps, the full *Media Management* —
+  hardlinks, renaming, permissions, recycling bin, free space — and episode,
+  movie and track naming already in the
+  [TRaSH Guides](https://trash-guides.info) formats.
+- **Download clients wired in**: qBittorrent and SABnzbd registered in every
+  Sonarr, Radarr and Lidarr **and in Prowlarr itself**, each with the category
+  you picked — and the categories created inside the client, each with its own
+  folder. Prowlarr also gets every *arr to sync, with the categories per family,
+  and FlareSolverr as an indexer proxy.
+- **Import points ready**: each *arr's root folder, at the path the container
+  sees (`/data/tv`, `/data/movies`, `/data/music`). Without it the first series
+  stops at a *You must add a root folder* — and the path typed by hand is usually
+  the host's, which the app accepts and then finds nothing in.
+- **TRaSH Guides quality profiles**, per instance: each preset brings the trio
+  the guide recommends together — the profile, the custom formats **with its
+  scores** and the file size definition. That is what makes the 4K instance stop
+  being a copy of the 1080p one. [Configarr](https://configarr.de) is what
+  applies them, with the Recyclarr templates, and the guide stays theirs:
+  Hubstarr picks, it does not reimplement.
+- **A pre-configured Jellyfin**: the startup wizard (UI language, administrator,
+  remote access) and one library per *arr instance, with the right type and the
+  path **inside the container** — the same one the *arr gets as its root folder,
+  which is what makes the library list exactly what it imported.
+
+With no server none of this happens: the `.zip` carries the files and the rest
+is on you, in each app's UI. It is the difference between a stack that is up and
+a stack that is ready to use.
+
 Run the server and open its address:
 
 ```sh

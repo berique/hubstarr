@@ -23,6 +23,44 @@ Guides. Es el modo de quien quiere solo los archivos.
 > certificados y permisos — antes de exponer la stack a cualquier red que no
 > sea la tuya.
 
+## Lo que te deja listo
+
+Generar los archivos es la mitad fácil. La otra es la que se hace a mano
+después, app por app — y es la que el **Levantar** hace solo, por la API de cada
+una. El botón **Aplicar en la stack** vuelve a aplicar todo esto sin levantar
+nada:
+
+- **La configuración básica de cada app**: la base URL igual al subpath de
+  nginx, la misma API key en toda la stack, zona horaria, PUID/PGID y las
+  carpetas del compose. En los *arr, el *Media Management* completo — hardlink,
+  renombrar, permisos, papelera, espacio libre — y la nomenclatura de episodio,
+  película y pista ya en los formatos del
+  [TRaSH Guides](https://trash-guides.info).
+- **Clientes de descarga conectados**: qBittorrent y SABnzbd registrados en cada
+  Sonarr, Radarr y Lidarr **y en el propio Prowlarr**, cada uno con la categoría
+  que elegiste — y las categorías creadas dentro del cliente, cada una con su
+  carpeta. Prowlarr recibe además cada *arr para sincronizar, con las categorías
+  por familia, y FlareSolverr como proxy de indexadores.
+- **Puntos de importación listos**: la carpeta raíz de cada *arr, en la ruta que
+  ve el contenedor (`/data/tv`, `/data/movies`, `/data/music`). Sin ella la
+  primera serie se detiene en un *You must add a root folder* — y la ruta escrita
+  a mano suele ser la del host, que la app acepta y después no encuentra.
+- **Perfiles de calidad del TRaSH Guides**, por instancia: cada preset trae el
+  trío que la guía recomienda junto — el perfil, los custom formats **con sus
+  scores** y la definición de tamaño de los archivos. Es así como la instancia de
+  4K deja de ser igual a la de 1080p. Quien los aplica es
+  [Configarr](https://configarr.de), con las plantillas de Recyclarr, y la guía
+  sigue siendo de ellos: Hubstarr elige, no reimplementa.
+- **Jellyfin preconfigurado**: el asistente inicial (idioma de la interfaz,
+  administrador, acceso remoto) y una biblioteca por instancia de *arr, con el
+  tipo correcto y la ruta **de dentro del contenedor** — la misma que el *arr
+  recibe como carpeta raíz, que es lo que hace que la biblioteca liste justo lo
+  que importó.
+
+Sin servidor nada de esto ocurre: el `.zip` lleva los archivos y el resto lo
+haces tú, en la interfaz de cada app. Es la diferencia entre una stack en marcha
+y una stack lista para usar.
+
 Ejecuta el servidor y abre su dirección:
 
 ```sh
