@@ -376,7 +376,11 @@ SABnzbd, each with a folder of the same name inside the completed-downloads
 directory. The apps are reached through
 nginx, on the port it publishes on the host. Applying again does not duplicate
 — the client is looked up by name and updated in place — and an app that is not
-up yet becomes one line in the log instead of stopping the rest. SABnzbd needs
+up yet becomes one line in the log instead of stopping the rest. A call that
+**does not reach** the app is retried ten times, five seconds apart: that covers
+access failures — nobody listening, or nginx's 502 while the container is still
+starting — and not the app refusing the request, which would answer the same ten
+times over. With `-v`, every attempt shows up in the log. SABnzbd needs
 its API key, the one the app itself generates on first boot: copy it from
 *Config → General* and paste it into the **API key** field of its modal.
 

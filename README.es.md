@@ -383,7 +383,11 @@ en SABnzbd, cada una con la carpeta del mismo nombre dentro del directorio de
 descargas completadas. Los apps se alcanzan por el nginx, en el puerto que
 publica en el host. Aplicar de nuevo no duplica — el cliente se busca por el
 nombre y se actualiza en su sitio — y un app que todavía no arrancó es una línea
-del log en vez de interrumpir el resto. SABnzbd necesita su clave de API, la que
+del log en vez de interrumpir el resto. Una llamada que **no llega** a la app se
+repite diez veces, con cinco segundos entre ellas: vale para fallos de acceso —
+nadie escuchando, o el 502 de nginx mientras el contenedor todavía arranca — y
+no para la app rechazando el pedido, que respondería lo mismo diez veces. Con
+`-v`, cada intento aparece en el log. SABnzbd necesita su clave de API, la que
 genera el propio app en el primer arranque: cópiala de *Config → General* y
 pégala en el campo **API key** de su modal.
 

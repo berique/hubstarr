@@ -742,7 +742,7 @@ async fn categorias_do_cliente(
             "{}api?mode=set_config&section=categories&keyword={cat}&dir={cat}&output=json&apikey={}",
             client.web_url, client.api_key
         );
-        match http.get(&url).send().await {
+        match tentar("GET", &sem_query(&url), || http.get(&url).send()).await {
             Ok(r) if r.status().is_success() => {
                 api("GET", &sem_query(&url), r.status());
                 log.line(format!("{} → categoria {cat}: pronta", client.name))
@@ -752,7 +752,7 @@ async fn categorias_do_cliente(
                 falhas += 1;
             }
             Err(e) => {
-                log.line(format!("{} → categoria {cat}: não respondeu ({e})", client.name));
+                log.line(format!("{} → categoria {cat}: {e}", client.name));
                 falhas += 1;
             }
         }
@@ -793,15 +793,19 @@ async fn preferencias_do_cliente(http: &reqwest::Client, client: &Client, log: &
     };
 
     let corpo = format!("json={}", enc(&Value::Object(prefs.clone()).to_string()));
-    let mut req = http
-        .post(format!("{base}/api/v2/app/setPreferences"))
-        .header("Content-Type", "application/x-www-form-urlencoded")
-        .body(corpo);
-    if !cookie.is_empty() {
-        req = req.header("Cookie", cookie.clone());
-    }
     let alvo = format!("{base}/api/v2/app/setPreferences");
-    match req.send().await {
+    let enviado = tentar("POST", &alvo, || {
+        let mut req = http
+            .post(&alvo)
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(corpo.clone());
+        if !cookie.is_empty() {
+            req = req.header("Cookie", cookie.clone());
+        }
+        req.send()
+    })
+    .await;
+    match enviado {
         Ok(r) if r.status().is_success() => {
             api("POST", &alvo, r.status());
             // as chaves saem no log, os valores não: a senha está entre eles
@@ -816,7 +820,7 @@ async fn preferencias_do_cliente(http: &reqwest::Client, client: &Client, log: &
             1
         }
         Err(e) => {
-            log.line(format!("{} → preferências: não respondeu ({e})", client.name));
+            log.line(format!("{} → preferências: {e}", client.name));
             1
         }
     }
@@ -862,11 +866,15 @@ async fn conferir_api_key(
         return 1;
     }
     let url = format!("{base}/api/v2/app/preferences");
-    let mut req = http.get(&url);
-    if !cookie.is_empty() {
-        req = req.header("Cookie", cookie);
-    }
-    let Ok(r) = req.send().await else {
+    let Ok(r) = tentar("GET", &url, || {
+        let mut req = http.get(&url);
+        if !cookie.is_empty() {
+            req = req.header("Cookie", cookie);
+        }
+        req.send()
+    })
+    .await
+    else {
         return 0;
     };
     api("GET", &url, r.status());
@@ -915,15 +923,16 @@ async fn qbit_login(
         enc(&client.user),
         enc(&client.pass)
     );
-    let r = http
-        .post(format!("{base}/api/v2/auth/login"))
-        .header("Content-Type", "application/x-www-form-urlencoded")
-        .body(corpo)
-        .send()
-        .await
-        .map_err(|e| format!("não respondeu ({e})"))?;
+    let alvo = format!("{base}/api/v2/auth/login");
+    let r = tentar("POST", &alvo, || {
+        http.post(&alvo)
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(corpo.clone())
+            .send()
+    })
+    .await?;
     let st = r.status();
-    api("POST", &format!("{base}/api/v2/auth/login"), st);
+    api("POST", &alvo, st);
     let cookie = r
         .headers()
         .get_all(reqwest::header::SET_COOKIE)
@@ -1132,9 +1141,10 @@ async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
     let base = jf.url.trim_end_matches('/').to_string();
     esperar_url(http, &format!("{base}/System/Info/Public"), &jf.name, log).await;
 
-    let pronto = match http.get(format!("{base}/System/Info/Public")).send().await {
+    let info = format!("{base}/System/Info/Public");
+    let pronto = match tentar("GET", &info, || http.get(&info).send()).await {
         Ok(r) => {
-            api("GET", &format!("{base}/System/Info/Public"), r.status());
+            api("GET", &info, r.status());
             let txt = r.text().await.unwrap_or_default();
             serde_json::from_str::<Value>(&txt)
                 .ok()
@@ -1144,7 +1154,7 @@ async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
                 .unwrap_or(true)
         }
         Err(e) => {
-            log.line(format!("{}: não respondeu ({e})", jf.name));
+            log.line(format!("{}: {e}", jf.name));
             return 1;
         }
     };
@@ -1188,13 +1198,13 @@ async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
         ));
     }
     if !pronto && criou_admin {
-        let r = http
-            .post(format!("{base}/Startup/Complete"))
-            .header("Content-Length", "0")
-            .send()
-            .await;
+        let alvo = format!("{base}/Startup/Complete");
+        let r = tentar("POST", &alvo, || {
+            http.post(&alvo).header("Content-Length", "0").send()
+        })
+        .await;
         if let Ok(r) = &r {
-            api("POST", &format!("{base}/Startup/Complete"), r.status());
+            api("POST", &alvo, r.status());
         }
         match r {
             Ok(r) if r.status().is_success() => {
@@ -1205,7 +1215,7 @@ async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
                 falhas += 1;
             }
             Err(e) => {
-                log.line(format!("{} → assistente: não respondeu ({e})", jf.name));
+                log.line(format!("{} → assistente: {e}", jf.name));
                 falhas += 1;
             }
         }
@@ -1253,23 +1263,25 @@ async fn assistente(http: &reqwest::Client, base: &str, jf: &Jellyfin, log: &Log
 /// campos do MediaBrowser é obrigatório: sem ele a chamada é recusada antes de
 /// olhar a senha.
 async fn autenticar(http: &reqwest::Client, base: &str, jf: &Jellyfin) -> Result<String, String> {
-    let r = http
-        .post(format!("{base}/Users/AuthenticateByName"))
-        .header(
-            "Authorization",
-            format!(
-                "MediaBrowser Client=\"{JF_CLIENT}\", Device=\"{JF_CLIENT}\", \
-                 DeviceId=\"hubstarr\", Version=\"{}\"",
-                env!("CARGO_PKG_VERSION")
-            ),
-        )
-        .header("Content-Type", "application/json")
-        .body(json!({"Username": jf.user, "Pw": jf.pass}).to_string())
-        .send()
-        .await
-        .map_err(|e| format!("não respondeu ({e})"))?;
+    let alvo = format!("{base}/Users/AuthenticateByName");
+    let corpo = json!({"Username": jf.user, "Pw": jf.pass}).to_string();
+    let r = tentar("POST", &alvo, || {
+        http.post(&alvo)
+            .header(
+                "Authorization",
+                format!(
+                    "MediaBrowser Client=\"{JF_CLIENT}\", Device=\"{JF_CLIENT}\", \
+                     DeviceId=\"hubstarr\", Version=\"{}\"",
+                    env!("CARGO_PKG_VERSION")
+                ),
+            )
+            .header("Content-Type", "application/json")
+            .body(corpo.clone())
+            .send()
+    })
+    .await?;
     let st = r.status();
-    api("POST", &format!("{base}/Users/AuthenticateByName"), st);
+    api("POST", &alvo, st);
     let txt = r.text().await.unwrap_or_default();
     if !st.is_success() {
         return Err(erro(st, &txt));
@@ -1290,11 +1302,10 @@ async fn bibliotecas(
     log: &Log,
 ) -> usize {
     let url = format!("{base}/Library/VirtualFolders");
-    let atuais: Vec<Value> = match http
-        .get(&url)
-        .header("X-Emby-Token", token)
-        .send()
-        .await
+    let atuais: Vec<Value> = match tentar("GET", &url, || {
+        http.get(&url).header("X-Emby-Token", token).send()
+    })
+    .await
     {
         Ok(r) if r.status().is_success() => {
             api("GET", &url, r.status());
@@ -1305,7 +1316,7 @@ async fn bibliotecas(
             return 1;
         }
         Err(e) => {
-            log.line(format!("{} → bibliotecas: não respondeu ({e})", jf.name));
+            log.line(format!("{} → bibliotecas: {e}", jf.name));
             return 1;
         }
     };
@@ -1350,14 +1361,19 @@ async fn post_json(
     token: &str,
     corpo: Value,
 ) -> (bool, String) {
-    let mut req = http
-        .post(url)
-        .header("Content-Type", "application/json")
-        .body(corpo.to_string());
-    if !token.is_empty() {
-        req = req.header("X-Emby-Token", token);
-    }
-    match req.send().await {
+    let texto = corpo.to_string();
+    let r = tentar("POST", url, || {
+        let mut req = http
+            .post(url)
+            .header("Content-Type", "application/json")
+            .body(texto.clone());
+        if !token.is_empty() {
+            req = req.header("X-Emby-Token", token);
+        }
+        req.send()
+    })
+    .await;
+    match r {
         Ok(r) => {
             let st = r.status();
             api("POST", url, st);
@@ -1368,10 +1384,7 @@ async fn post_json(
                 (false, erro(st, &txt))
             }
         }
-        Err(e) => {
-            crate::registro::detalhe(|| format!("api POST {url} → {e}"));
-            (false, format!("não respondeu ({e})"))
-        }
+        Err(e) => (false, e),
     }
 }
 
@@ -1524,12 +1537,7 @@ async fn put_config(
     campos: &Map<String, Value>,
     mapa: &[(&str, &str)],
 ) -> Result<(), String> {
-    let r = http
-        .get(url)
-        .header("X-Api-Key", key)
-        .send()
-        .await
-        .map_err(|e| format!("não respondeu ({e})"))?;
+    let r = tentar("GET", url, || http.get(url).header("X-Api-Key", key).send()).await?;
     let st = r.status();
     api("GET", url, st);
     let txt = r.text().await.unwrap_or_default();
@@ -1538,16 +1546,24 @@ async fn put_config(
     }
     let mut atual: Value =
         serde_json::from_str(&txt).map_err(|_| "resposta não foi a configuração".to_string())?;
+    /* Recurso único é objeto. Se vier outra coisa — uma lista, um erro em JSON,
+       um app de outra versão —, o `merge` indexaria por chave e **entraria em
+       pânico**, derrubando a volta inteira em vez de reclamar de uma ligação
+       só. Melhor a linha no log. */
+    if !atual.is_object() {
+        return Err("resposta não foi a configuração (não veio um objeto)".into());
+    }
     merge(&mut atual, campos, mapa)?;
 
-    let r = http
-        .put(url)
-        .header("X-Api-Key", key)
-        .header("Content-Type", "application/json")
-        .body(atual.to_string())
-        .send()
-        .await
-        .map_err(|e| format!("não respondeu ({e})"))?;
+    let corpo = atual.to_string();
+    let r = tentar("PUT", url, || {
+        http.put(url)
+            .header("X-Api-Key", key)
+            .header("Content-Type", "application/json")
+            .body(corpo.clone())
+            .send()
+    })
+    .await?;
     let st = r.status();
     api("PUT", url, st);
     if st.is_success() {
@@ -1631,15 +1647,7 @@ fn implementacao(kind: &str) -> &'static str {
 /// Os clientes que o *arr já tem, para saber o que é registro novo e o que é
 /// atualização.
 async fn list(http: &reqwest::Client, url: &str, key: &str) -> Result<Vec<Value>, String> {
-    let r = http
-        .get(url)
-        .header("X-Api-Key", key)
-        .send()
-        .await
-        .map_err(|e| {
-            crate::registro::detalhe(|| format!("api GET {url} → {e}"));
-            format!("não respondeu ({e})")
-        })?;
+    let r = tentar("GET", url, || http.get(url).header("X-Api-Key", key).send()).await?;
     let st = r.status();
     api("GET", url, st);
     let txt = r.text().await.unwrap_or_default();
@@ -1667,23 +1675,21 @@ async fn send(
         }
         None => url.to_string(),
     };
-    let req = if id.is_some() {
-        http.put(&alvo)
-    } else {
-        http.post(&alvo)
-    };
     let metodo = if id.is_some() { "PUT" } else { "POST" };
-    let r = req
-        .header("X-Api-Key", key)
-        .header("Content-Type", "application/json")
-        .body(body.to_string())
-        .send()
-        .await
-        .inspect(|r| api(metodo, &alvo, r.status()))
-        .map_err(|e| {
-            crate::registro::detalhe(|| format!("api {metodo} {alvo} → {e}"));
-            format!("não respondeu ({e})")
-        })?;
+    let corpo = body.to_string();
+    let r = tentar(metodo, &alvo, || {
+        let req = if id.is_some() {
+            http.put(&alvo)
+        } else {
+            http.post(&alvo)
+        };
+        req.header("X-Api-Key", key)
+            .header("Content-Type", "application/json")
+            .body(corpo.clone())
+            .send()
+    })
+    .await?;
+    api(metodo, &alvo, r.status());
     let st = r.status();
     if st.is_success() {
         return Ok(());
@@ -1695,6 +1701,48 @@ async fn send(
    a volta do Aplicar são dezenas delas, e saber **qual** respondeu o quê é a
    diferença entre "não funcionou" e o motivo. Sai o caminho e o status; corpo
    não, que é onde moram as chaves e as senhas. */
+/* Insistir quando o app não atende.
+
+   Dez tentativas, cinco segundos entre elas. Vale para **não conseguir
+   acessar**: erro de transporte (ninguém escutando, conexão cortada) e resposta
+   **5xx**, que atrás do nginx é ele dizendo que o container ainda não subiu.
+   Erro do app — 400, 401, 404, a validação recusando o corpo — **não** se
+   repete: a resposta seria a mesma dez vezes, e cinquenta segundos por chamada
+   numa volta de dezenas delas transformaria um erro de configuração numa espera
+   sem fim.
+
+   Isto não substitui o `esperar_apps()`: aquele é a espera única, antes de
+   começar; esta é a rede para o que cai **no meio** da volta — o qBittorrent
+   que reinicia ao receber a conf, o *arr que fica ocupado importando.
+
+   A requisição é montada pela função a cada tentativa, e não clonada: corpo
+   consumido não se reaproveita, e `try_clone()` devolve `None` justamente
+   quando há corpo em streaming. */
+const TENTATIVAS: usize = 10;
+const ESPERA: Duration = Duration::from_secs(5);
+
+async fn tentar<F, Fut>(o_que: &str, url: &str, mut montar: F) -> Result<reqwest::Response, String>
+where
+    F: FnMut() -> Fut,
+    Fut: std::future::Future<Output = Result<reqwest::Response, reqwest::Error>>,
+{
+    let mut ultimo = String::new();
+    for n in 1..=TENTATIVAS {
+        match montar().await {
+            Ok(r) if !r.status().is_server_error() => return Ok(r),
+            Ok(r) => ultimo = format!("HTTP {}", r.status().as_u16()),
+            Err(e) => ultimo = format!("{e}"),
+        }
+        if n < TENTATIVAS {
+            crate::registro::detalhe(|| {
+                format!("api {o_que} {url} → {ultimo}, tentativa {n}/{TENTATIVAS}")
+            });
+            tokio::time::sleep(ESPERA).await;
+        }
+    }
+    Err(format!("não respondeu depois de {TENTATIVAS} tentativas ({ultimo})"))
+}
+
 fn api(metodo: &str, url: &str, st: reqwest::StatusCode) {
     crate::registro::detalhe(|| format!("api {metodo} {url} → {}", st.as_u16()));
 }

@@ -367,7 +367,11 @@ pelo `categories.json`, e no SABnzbd criadas pela API dele, cada uma com a pasta
 de mesmo nome dentro do diretório de downloads concluídos. Os apps são alcançados pelo nginx, na porta que ele
 publica no host. Aplicar de novo não duplica — o cliente é procurado pelo nome
 e atualizado no lugar —, e um app que ainda não subiu vira uma linha no log em
-vez de interromper o resto. O SABnzbd precisa da chave de API dele, que é o
+vez de interromper o resto. Chamada que **não chega** ao app é repetida dez
+vezes, com cinco segundos entre elas: vale para falha de acesso — ninguém
+escutando, ou o 502 do nginx enquanto o container ainda sobe —, e não para o app
+recusando o pedido, que daria a mesma resposta dez vezes. Com `-v`, cada
+tentativa aparece no log. O SABnzbd precisa da chave de API dele, que é o
 próprio app que gera na primeira subida: copie de *Config → General* e cole no
 campo **API key** do modal dele.
 

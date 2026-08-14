@@ -550,7 +550,24 @@ vira nula dentro do `ValidateCategories` dele, com um
 `NullReferenceException` que não diz nada sobre a causa. Os apps são alcançados
 pelo nginx, porque o servidor roda no host e a rede `starrnet` não existe para
 ele; aplicar de novo procura pelo nome e atualiza no lugar, e um app fora do ar
-vira uma linha no log em vez de derrubar a volta inteira. Três coisas para não
+vira uma linha no log em vez de derrubar a volta inteira.
+
+**Chamada que não chega se repete**, no `tentar()`: dez vezes, cinco segundos
+entre elas. E só o que é "não consegui acessar" — erro de transporte e resposta
+**5xx**, que atrás do nginx é ele dizendo que o container ainda não subiu. Erro
+do app (400, 401, 404, a validação recusando o corpo) **não** se repete: a
+resposta seria a mesma dez vezes, e cinquenta segundos por chamada numa volta de
+dezenas delas transformaria erro de configuração em espera sem fim. Isso não
+substitui o `esperar_apps()` — aquele é a espera única, antes de começar; o
+`tentar()` é a rede para o que cai **no meio**: o qBittorrent reiniciando ao
+receber a conf, o *arr ocupado importando. As tentativas saem no `-v`
+(`tentativa 3/10`), e o custo do pior caso é somável: app que nunca responde
+gasta os 90s da espera **mais** 50s por chamada.
+
+A requisição é montada pela função a cada tentativa, e não clonada: corpo
+consumido não se reaproveita, e o `try_clone()` do reqwest devolve `None`
+justamente quando há corpo. Ao acrescentar chamada nova, monte-a dentro do
+`tentar()` em vez de chamar `.send()` direto. Três coisas para não
 reaprender: o que vai *dentro* da aplicação do Prowlarr é o endereço interno, de
 container para container, e com a base URL junto — sem ela a API do *arr fica na
 raiz, onde não existe; `naming` e `mediamanagement` são recursos únicos e cheios
