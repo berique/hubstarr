@@ -1,6 +1,6 @@
 # <img src="docs/logo.svg" width="26" align="top" alt=""> Hubstarr — gerador de *arr stack
 
-*🇧🇷 Português (Brasil) · [🇺🇸 English](README.en.md) · [🇪🇸 Español](README.es.md)*
+*🇧🇷 Português (Brasil) · [🇬🇧 English](README.en.md) · [🇪🇸 Español](README.es.md)*
 
 [<img src="docs/badge-licenca.svg" alt="Licença: GPL-3.0" height="20">](LICENSE)
 
