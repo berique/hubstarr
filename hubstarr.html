@@ -4661,8 +4661,12 @@ const PATCH_DATA = {
      nessa forma que ele relê o que está lá. O qBittorrent usa o INI do Qt, sem
      espaço nenhum — daí o padrão ser `=` e só o SABnzbd trazer o seu. */
   sab:      a => ({format:'ini',  sep:' = ', sections: sabPairs(a)}),
-  // INI: seções com pares na ordem em que a página as quer
-  qbit:     a => ({format:'ini',  sections: qbitPairs(a)}),
+  /* INI: seções com pares na ordem em que a página as quer. O `keep` são as
+     chaves que o servidor **não** sobrescreve quando o app já respondeu por
+     elas — a API key: uma vez que ele tenha uma, é a que os clientes dele
+     conhecem, e trocá-la a cada Subir cortaria quem já falava com ele. Vazia
+     ou ausente ela é escrita, que é o caso da primeira subida. */
+  qbit:     a => ({format:'ini',  sections: qbitPairs(a), keep:['WebUI\\APIKey']}),
   // JSON: um objeto por categoria, que o servidor sobrepõe ao que já existe
   qbitCats: a => ({format:'json', json: qbitCats(a)}),
 };

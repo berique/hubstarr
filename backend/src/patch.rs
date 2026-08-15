@@ -45,6 +45,13 @@ pub struct Patch {
     /// página, que é a dona do formato de cada arquivo.
     #[serde(default)]
     pub sep: Option<String>,
+    /* As chaves que **não** se sobrescreve quando o arquivo já traz um valor
+       para elas. É a API key do qBittorrent: uma vez que o app tenha uma, ela
+       é a que os clientes dele conhecem, e trocá-la a cada Subir cortaria
+       quem já estava falando com ele. Chave ausente ou vazia continua sendo
+       escrita — o caso da primeira subida. */
+    #[serde(default)]
+    pub keep: Vec<String>,
     /// JSON: as chaves de primeiro nível a pôr por cima das que já estão lá
     #[serde(default)]
     pub json: Option<Value>,
@@ -64,6 +71,7 @@ impl Patch {
                 atual,
                 &self.sections,
                 self.sep.as_deref().unwrap_or("="),
+                &self.keep,
             )),
         }
     }
@@ -107,6 +115,7 @@ pub fn merge_ini(
     atual: &str,
     sections: &[(String, Vec<(String, String)>)],
     sep: &str,
+    manter: &[String],
 ) -> String {
     let mut linhas: Vec<String> = atual.lines().map(String::from).collect();
 
@@ -142,6 +151,12 @@ pub fn merge_ini(
                 .position(|l| chave_de(l).as_deref() == Some(chave.as_str()))
                 .map(|k| inicio + 1 + k);
             match achou {
+                /* Chave que o app já respondeu por si: se ela está no `manter`
+                   e tem valor, fica como está. Vazia não conta — é a linha que
+                   ele deixa pronta esperando alguém preencher. */
+                Some(k)
+                    if manter.iter().any(|m| m == chave)
+                        && valor_de(&linhas[k], sep).is_some_and(|v| !v.trim().is_empty()) => {}
                 Some(k) => linhas[k] = linha,
                 None => {
                     // no fim da seção, mas antes das linhas em branco que a
@@ -270,6 +285,19 @@ pub fn merge_json(atual: &str, nosso: &Value) -> Result<String, String> {
 }
 
 /// A chave de uma linha `chave=valor`, ignorando comentário e linha em branco.
+/// O valor de uma linha `chave=valor`, para saber se o app já respondeu por ela.
+/// O separador é o daquele arquivo, mas o `=` do INI serve de fallback: é o que
+/// divide a linha em qualquer um dos dois formatos que geramos.
+fn valor_de(linha: &str, sep: &str) -> Option<String> {
+    let l = linha.trim();
+    if l.is_empty() || l.starts_with('#') || l.starts_with(';') || l.starts_with('[') {
+        return None;
+    }
+    l.split_once(sep.trim())
+        .or_else(|| l.split_once('='))
+        .map(|(_, v)| v.trim().to_string())
+}
+
 fn chave_de(linha: &str) -> Option<String> {
     let l = linha.trim();
     if l.is_empty() || l.starts_with('#') || l.starts_with(';') || l.starts_with('[') {
@@ -384,7 +412,7 @@ mod tests {
     #[test]
     fn troca_a_chave_existente_e_nao_mexe_no_resto() {
         let atual = "[BitTorrent]\nSession\\Port=6881\n\n[Preferences]\nWebUI\\Username=velho\nWebUI\\Port=8181\n";
-        let novo = merge_ini(atual, &secoes(), "=");
+        let novo = merge_ini(atual, &secoes(), "=", &[]);
         assert!(novo.contains("WebUI\\Username=admin"));
         assert!(!novo.contains("velho"));
         // o que é do app fica onde estava
@@ -395,7 +423,7 @@ mod tests {
     #[test]
     fn chave_que_falta_entra_na_secao_dela() {
         let atual = "[Preferences]\nWebUI\\Username=velho\n\n[Network]\nProxy\\Type=0\n";
-        let novo = merge_ini(atual, &secoes(), "=");
+        let novo = merge_ini(atual, &secoes(), "=", &[]);
         let linhas: Vec<&str> = novo.lines().collect();
         let i = linhas.iter().position(|l| l.starts_with("WebUI\\APIKey")).unwrap();
         let sec = linhas.iter().position(|l| *l == "[Preferences]").unwrap();
@@ -404,16 +432,40 @@ mod tests {
         assert!(novo.contains("Proxy\\Type=0"));
     }
 
+    /* A API key que o app já tem fica como está: uma vez que ele responda por
+       ela, é a chave que os clientes dele conhecem, e trocá-la a cada Subir
+       cortaria quem já estava falando com ele. */
+    #[test]
+    fn a_chave_do_manter_nao_e_sobrescrita() {
+        let atual = "[Preferences]\nWebUI\\APIKey=qbt_do_proprio_app\nWebUI\\Port=8080\n";
+        let manter = vec!["WebUI\\APIKey".to_string()];
+        let novo = merge_ini(atual, &secoes(), "=", &manter);
+        assert!(novo.contains("WebUI\\APIKey=qbt_do_proprio_app"), "{novo}");
+        assert!(!novo.contains("qbt_novo"), "{novo}");
+        // o resto continua sendo escrito normalmente
+        assert!(novo.contains("WebUI\\Username=admin"), "{novo}");
+    }
+
+    /// Chave que existe vazia é a linha que o app deixa esperando alguém
+    /// preencher — essa nós preenchemos.
+    #[test]
+    fn a_chave_vazia_do_manter_e_preenchida() {
+        let atual = "[Preferences]\nWebUI\\APIKey=\n";
+        let manter = vec!["WebUI\\APIKey".to_string()];
+        let novo = merge_ini(atual, &secoes(), "=", &manter);
+        assert!(novo.contains("WebUI\\APIKey=qbt_novo"), "{novo}");
+    }
+
     #[test]
     fn secao_que_falta_entra_no_fim() {
-        let novo = merge_ini("[BitTorrent]\nSession\\Port=6881\n", &secoes(), "=");
+        let novo = merge_ini("[BitTorrent]\nSession\\Port=6881\n", &secoes(), "=", &[]);
         assert!(novo.contains("[Preferences]"));
         assert!(novo.trim_end().ends_with("WebUI\\APIKey=qbt_novo"));
     }
 
     #[test]
     fn arquivo_vazio_nasce_so_com_as_nossas_chaves() {
-        let novo = merge_ini("", &secoes(), "=");
+        let novo = merge_ini("", &secoes(), "=", &[]);
         assert_eq!(
             novo,
             "[Preferences]\nWebUI\\Username=admin\nWebUI\\APIKey=qbt_novo\n"
@@ -423,13 +475,13 @@ mod tests {
     #[test]
     fn aplicar_de_novo_nao_duplica_nem_reordena() {
         let atual = "[Preferences]\nWebUI\\Username=admin\nWebUI\\APIKey=qbt_novo\n";
-        assert_eq!(merge_ini(atual, &secoes(), "="), atual);
+        assert_eq!(merge_ini(atual, &secoes(), "=", &[]), atual);
     }
 
     #[test]
     fn comentario_e_linha_em_branco_atravessam() {
         let atual = "# escrito pelo app\n[Preferences]\nWebUI\\Username=velho\n";
-        let novo = merge_ini(atual, &secoes(), "=");
+        let novo = merge_ini(atual, &secoes(), "=", &[]);
         assert!(novo.starts_with("# escrito pelo app\n"));
     }
 
@@ -446,13 +498,13 @@ mod tests {
                 ("api_key".to_string(), "abc123".to_string()),
             ],
         )];
-        let novo = merge_ini(atual, &secoes, " = ");
+        let novo = merge_ini(atual, &secoes, " = ", &[]);
         assert!(novo.contains("host_whitelist = sabnzbd,localhost"));
         assert!(novo.contains("api_key = abc123"));
         // o que já estava lá, e não veio no patch, fica como estava
         assert!(novo.contains("inet_exposure = 0"));
         // e o padrão continua sendo o do Qt, sem espaço
-        let qt = merge_ini("[BitTorrent]\n", &secoes, "=");
+        let qt = merge_ini("[BitTorrent]\n", &secoes, "=", &[]);
         assert!(qt.contains("api_key=abc123"));
     }
 
@@ -481,12 +533,12 @@ mod tests {
     #[test]
     fn o_formato_escolhe_o_merge_e_o_ini_e_o_padrao() {
         let ini = Patch { service: "qbittorrent".into(), path: "x".into(), format: None,
-                          sections: secoes(), sep: None, json: None, xml: None };
+                          sections: secoes(), sep: None, json: None, xml: None, keep: vec![] };
         assert!(ini.merge("").unwrap().contains("[Preferences]"));
         assert_eq!(ini.chaves(), 2);
 
         let js = Patch { service: "qbittorrent".into(), path: "x".into(),
-                         format: Some("json".into()), sections: vec![], sep: None, xml: None,
+                         format: Some("json".into()), sections: vec![], sep: None, xml: None, keep: vec![],
                          json: Some(serde_json::json!({"tv": {"save_path": "/d"}})) };
         assert!(js.merge("{}").unwrap().contains("\"tv\""));
         assert_eq!(js.chaves(), 1);

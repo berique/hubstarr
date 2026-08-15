@@ -493,7 +493,21 @@ o que ele lê ao **nascer**, esta é a mesma decisão aplicada a um qBittorrent 
 já existe — e o TMM a conf nem cobre. O caminho sai do `qbitDl()`, o mesmo dos
 dois lugares, para conf e API não discordarem.
 
-A **API key** vai no mesmo corpo, e o que ela faz ali é nada: medido no 5.2.3,
+A **API key** é do app, não nossa: a conf só a recebe quando ele ainda não tem
+uma. Quem faz isso é o `keep` do `patch.rs` — a lista de chaves que o merge
+**não** sobrescreve quando o arquivo já traz valor —, e a página manda
+`keep:['WebUI\\APIKey']` no patch do qBittorrent. Vazia ou ausente ela é
+escrita, que é a primeira subida. A razão: uma vez que o app responda por uma
+chave, é ela que os clientes dele conhecem, e trocá-la a cada Subir cortaria
+quem já falava com ele.
+
+A consequência vem junto, no `adotar_api_key()`: antes de registrar o cliente
+em ninguém, o servidor lê a chave que o app tem e passa a usá-la na volta
+inteira. Sem isso, "não sobrescrever" viraria o *arr registrado com uma chave
+que o app não conhece — pior do que o problema que se queria evitar. App sem
+chave nenhuma mantém a nossa, que é a que o `patch.rs` acabou de escrever.
+
+A chave também vai no corpo do `setPreferences`, e o que ela faz ali é nada: medido no 5.2.3,
 o `setPreferences` aceita o `web_ui_api_key`, responde 200 e **não muda o
 valor** — a propriedade é espelho de leitura do `WebUI\APIKey` da conf, que é
 onde ela se escreve de verdade (o `patch.rs`), e endpoint para criá-la não

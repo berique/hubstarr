@@ -403,7 +403,7 @@ pub async fn esperar(req: &Req, log: &Log) -> Result<(), String> {
     Ok(())
 }
 
-pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
+pub async fn download_clients(mut req: Req, log: Log) -> Result<(), String> {
     if !req.tem_o_que_fazer() {
         return Err("nada para aplicar nesta stack".into());
     }
@@ -427,6 +427,11 @@ pub async fn download_clients(req: Req, log: Log) -> Result<(), String> {
     }
     esperar_apps(&http, &base, &esperar_por, &log).await;
     esperar_clientes(&http, &req.clients, &log).await;
+    /* Antes de registrar o cliente em ninguém: a chave que vale é a que o app
+       tem, não a que a página propôs. O `patch.rs` não sobrescreve uma API key
+       que já esteja na conf dele, então é o app quem manda aqui — e registrar o
+       *arr com a nossa deixaria os dois falando chaves diferentes. */
+    adotar_api_key(&http, &mut req, &log).await;
 
     for arr in &alvos {
         let url = format!("{base}{}/api/{}/downloadclient", arr.route, arr.api);
@@ -842,6 +847,69 @@ async fn preferencias_do_cliente(http: &reqwest::Client, client: &Client, log: &
     }
 }
 
+/* A API key que vale é a do app.
+
+   A conf dele só recebe a nossa quando ele ainda não tem uma — essa é a regra
+   do `keep` do `patch.rs`, para não cortar quem já falava com ele. A
+   consequência é esta: quem tem chave própria continua com ela, e é com ela que
+   os *arr precisam ser registrados.
+
+   Ler é barato e resolve os dois casos: chave própria vira a chave da volta
+   inteira, e app sem chave nenhuma mantém a nossa, que é a que o `patch.rs`
+   acabou de escrever. Falha de leitura não é erro — segue com a da página, que
+   é o que se fazia antes de isto existir. */
+async fn adotar_api_key(http: &reqwest::Client, req: &mut Req, log: &Log) {
+    for i in 0..req.clients.len() {
+        let (kind, web_url) = {
+            let c = &req.clients[i];
+            (c.kind.clone(), c.web_url.clone())
+        };
+        if kind != "qbittorrent" || web_url.is_empty() {
+            continue;
+        }
+        let base = web_url.trim_end_matches('/').to_string();
+        let Ok(cookie) = qbit_login(http, &base, &req.clients[i]).await else {
+            continue;
+        };
+        let Some(dele) = ler_api_key(http, &base, &cookie).await else {
+            continue;
+        };
+        let c = &mut req.clients[i];
+        if dele.is_empty() || dele == c.api_key {
+            continue;
+        }
+        log.line(format!(
+            "{}: mantendo a API key que o app já tinha — é com ela que os *arr vão falar com ele",
+            c.name
+        ));
+        c.api_key = dele;
+    }
+}
+
+/// A `web_ui_api_key` das preferências: é o espelho de leitura do `WebUI\APIKey`
+/// da conf. `None` quando não deu para ler — quem chama segue com o que tinha.
+async fn ler_api_key(http: &reqwest::Client, base: &str, cookie: &str) -> Option<String> {
+    let url = format!("{base}/api/v2/app/preferences");
+    let r = tentar("GET", &url, || {
+        let mut req = http.get(&url);
+        if !cookie.is_empty() {
+            req = req.header("Cookie", cookie);
+        }
+        req.send()
+    })
+    .await
+    .ok()?;
+    api("GET", &url, r.status());
+    if !r.status().is_success() {
+        return None;
+    }
+    serde_json::from_str::<Value>(&r.text().await.ok()?)
+        .ok()?
+        .get("web_ui_api_key")
+        .and_then(|v| v.as_str())
+        .map(String::from)
+}
+
 /* A API key do app é a do Ambiente?
 
    Ela **não** se escreve por aqui, e isso foi medido no 5.2.3: o
@@ -881,37 +949,23 @@ async fn conferir_api_key(
         ));
         return 1;
     }
-    let url = format!("{base}/api/v2/app/preferences");
-    let Ok(r) = tentar("GET", &url, || {
-        let mut req = http.get(&url);
-        if !cookie.is_empty() {
-            req = req.header("Cookie", cookie);
-        }
-        req.send()
-    })
-    .await
-    else {
+    let Some(dele) = ler_api_key(http, base, cookie).await else {
         return 0;
     };
-    api("GET", &url, r.status());
-    if !r.status().is_success() {
-        return 0;
-    }
-    let txt = r.text().await.unwrap_or_default();
-    let dele = serde_json::from_str::<Value>(&txt)
-        .ok()
-        .and_then(|v| v["web_ui_api_key"].as_str().map(String::from))
-        .unwrap_or_default();
     if dele == client.api_key {
-        crate::registro::detalhe(|| format!("{}: a API key do app é a da stack", client.name));
+        crate::registro::detalhe(|| format!("{}: a API key do app é a que os *arr receberam", client.name));
     } else if dele.is_empty() {
         log.line(format!(
             "{}: o app está sem API key — ela vem da conf dele, que o Subir escreve; o Aplicar sozinho não a cria",
             client.name
         ));
     } else {
+        /* Não deveria acontecer: o `adotar_api_key()` roda antes de tudo e já
+           teria pegado a chave do app. Se as duas divergem aqui, ela mudou no
+           meio da volta — alguém mexendo na interface dele, ou uma conf
+           reescrita —, e os *arr ficaram com a anterior. */
         log.line(format!(
-            "{}: a API key do app não é a da stack — os *arr foram registrados com a nossa, então confira a conf dele",
+            "{}: a API key do app mudou no meio da aplicação — os *arr ficaram com a anterior; reaplique",
             client.name
         ));
     }

@@ -177,11 +177,11 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   dele, no caminho que o container enxerga) e o **usuário e a senha** da
   interface. Não é repetição da conf: aquela é o que ele lê ao nascer, esta é a
   mesma decisão aplicada a um qBittorrent que já existe — e o gerenciamento
-  automático a conf nem cobre. A **API key** vai no mesmo lote, e o Hubstarr
-  ainda lê as preferências de volta para conferir se a do app é a da stack: é
-  por ela que os *arr falam com ele, então uma chave diferente vira aviso no log
-  em vez de um cliente que só falha depois. Quem de fato a grava é a conf — o
-  qBittorrent aceita a propriedade na API e a ignora.
+  automático a conf nem cobre. A **API key** dele é respeitada: se o
+  app já tem uma, o Hubstarr **não a troca** — é com ela que os clientes dele já
+  falam —, e são os *arr que passam a ser registrados com a chave do app. A
+  nossa só entra quando ele ainda não tem nenhuma, que é a primeira subida.
+  Quem a grava é a conf: o qBittorrent aceita a propriedade na API e a ignora.
 - **sabnzbd.ini do SABnzbd**: a **API key** dele é a mesma da stack — o campo no
   modal mostra a que vale, e o **Gerar** cria outra pelo mesmo método (16 bytes
   em hexadecimal), que então vai para o `.env` —, e as pastas de **download em

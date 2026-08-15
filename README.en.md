@@ -182,11 +182,11 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   modal, at the path the container sees) and the WebUI **username and password**.
   It is not a repeat of the conf: that is what it reads when it is born, this is
   the same decision applied to a qBittorrent that already exists — and automatic
-  management is not in the conf at all. The **API key** goes in the same batch,
-  and Hubstarr reads the preferences back to check the app's key is the stack's
-  own: that is what the *arr apps talk to it with, so a different key becomes a
-  warning in the log instead of a client that only fails later. What actually
-  writes it is the conf — qBittorrent accepts the property over the API and
+  management is not in the conf at all. Its **API key** is respected: if the app
+  already has one, Hubstarr **does not replace it** — that is the key its
+  clients already speak — and the *arr apps are registered with the app's key
+  instead. Ours only goes in when it has none yet, which is the first start.
+  What writes it is the conf: qBittorrent accepts the property over the API and
   ignores it.
 - **SABnzbd's sabnzbd.ini**: its **API key** is the stack's own — the field in
   the modal shows the one in force, and **Generate** makes another by the same
