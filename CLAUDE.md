@@ -458,6 +458,15 @@ host não dá erro na hora: o *arr aceita e depois não acha arquivo nenhum. O
 `pastas_raiz()` acrescenta o que falta e **não tira** o que já está lá — remover
 pasta raiz leva a biblioteca junto.
 
+O **Lidarr** pede mais do que o caminho, e isso foi medido no app: o `Name` não
+pode ser vazio e os dois perfis padrão (`defaultQualityProfileId` e
+`defaultMetadataProfileId`) têm de ser maiores que zero — com só o `path`, a
+resposta é uma lista de validação e a pasta não nasce. O nome sai do
+`LIDARR_ROOT_NAME` (**`Music`**; nome repetido ele aceita, então duas pastas de
+música não precisam de desempate) e os ids saem do `primeiro_id()`, que lê a
+lista do próprio app e cai no `1` — o de fábrica — quando não dá para ler.
+Sonarr e Radarr não têm esses campos, então o ramo é só do Lidarr.
+
 O **Jellyfin** é a única volta que não fala a API dos *arr: sem `X-Api-Key`,
 com requisições próprias, e é o `StartupWizardCompleted` do
 `/System/Info/Public` que escolhe o caminho. Assistente aberto é a janela em

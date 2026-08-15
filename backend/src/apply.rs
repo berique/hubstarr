@@ -1604,6 +1604,21 @@ async fn pastas_raiz(
         .map(|p| p.trim_end_matches('/'))
         .collect();
 
+    /* O Lidarr pede mais do que o caminho, e por isso a pasta raiz dele falhava
+       calada até agora. Medido no app: `Name` não pode ser vazio, e os dois
+       perfis padrão têm de ser maiores que zero — sem eles a resposta é uma
+       lista de validação, não a pasta criada. Os outros *arr aceitam só o
+       `path`, então isto fica onde é: no ramo do Lidarr. */
+    let extras = if arr.family == "lidarr" {
+        Some(json!({
+            "name": LIDARR_ROOT_NAME,
+            "defaultQualityProfileId": primeiro_id(http, base, req, arr, "qualityprofile").await,
+            "defaultMetadataProfileId": primeiro_id(http, base, req, arr, "metadataprofile").await,
+        }))
+    } else {
+        None
+    };
+
     let mut falhas = 0;
     for pasta in &arr.root_folders {
         let alvo = pasta.trim_end_matches('/');
@@ -1611,7 +1626,13 @@ async fn pastas_raiz(
             log.line(format!("{} → pasta raiz {pasta}: já estava lá", arr.name));
             continue;
         }
-        match send(http, &url, &req.api_key, None, json!({"path": pasta})).await {
+        let mut corpo = json!({"path": pasta});
+        if let (Some(extras), Some(o)) = (extras.as_ref(), corpo.as_object_mut()) {
+            for (k, v) in extras.as_object().into_iter().flatten() {
+                o.insert(k.clone(), v.clone());
+            }
+        }
+        match send(http, &url, &req.api_key, None, corpo).await {
             Ok(()) => log.line(format!("{} → pasta raiz {pasta}: pronta", arr.name)),
             Err(e) => {
                 log.line(format!("{} → pasta raiz {pasta}: {e}", arr.name));
@@ -1620,6 +1641,34 @@ async fn pastas_raiz(
         }
     }
     falhas
+}
+
+/* O nome da pasta raiz do Lidarr. Ele o exige e não o deriva do caminho; os
+   outros *arr sequer têm o campo. Nome repetido ele aceita (medido), então uma
+   stack com duas pastas de música não precisa de desempate. */
+const LIDARR_ROOT_NAME: &str = "Music";
+
+/// O primeiro id de um recurso de lista do app — os perfis que a pasta raiz do
+/// Lidarr exige. Cai no `1` quando não dá para ler: é o id do que vem de
+/// fábrica, e um palpite errado vira erro de validação, não estrago.
+async fn primeiro_id(
+    http: &reqwest::Client,
+    base: &str,
+    req: &Req,
+    arr: &Arr,
+    recurso: &str,
+) -> i64 {
+    let url = format!("{base}{}/api/{}/{recurso}", arr.route, arr.api);
+    list(http, &url, &req.api_key)
+        .await
+        .ok()
+        .and_then(|itens| {
+            itens
+                .iter()
+                .filter_map(|v| v.get("id").and_then(|i| i.as_i64()))
+                .min()
+        })
+        .unwrap_or(1)
 }
 
 /// O Media Management e a nomenclatura de uma instância. São dois recursos
