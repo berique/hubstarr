@@ -264,6 +264,10 @@ async fn run(docker: &str, args: &[&str], dir: &Path, log: &Log) -> Result<(), S
         .current_dir(dir)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
+        /* O Parar do modal aborta a tarefa do trabalho, e o `child` cai junto:
+           sem isto o `docker compose` continuaria rodando sozinho, sem
+           ninguém lendo a saída dele. */
+        .kill_on_drop(true)
         .spawn()
         .map_err(|e| format!("não consegui rodar o {docker}: {e}"))?;
 

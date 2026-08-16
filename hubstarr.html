@@ -477,6 +477,7 @@ sudo sh get-docker.sh</pre>
     <div class="bar">
       <span class="hint" id="logState"></span>
       <span class="sp"></span>
+      <button id="logStop" data-i18n="log.stop">Parar</button>
       <button class="primary" id="logClose" data-i18n="btn.close">Fechar</button>
     </div>
   </div>
@@ -969,6 +970,9 @@ const I18N = {
   'log.done':'pronto ✓',
   'log.fail':'falhou ✗',
   'log.noServer':'o servidor não respondeu',
+  'log.stop':'Parar',
+  'log.stopping':'parando…',
+  'log.stopped':'parado ✗ — a stack ficou como estava no meio do caminho; confira o estado dela',
   'log.lost':e=>`perdi o contato com o servidor (${e}) — o trabalho pode ter continuado lá; recarregue a página para ver como a stack ficou`,
   'st.up':s=>`No ar${s?' — '+s:''}`,
   'st.down':s=>`Parado${s?' — '+s:''}`,
@@ -1388,6 +1392,9 @@ const I18N = {
   'log.done':'done ✓',
   'log.fail':'failed ✗',
   'log.noServer':'the server did not answer',
+  'log.stop':'Stop',
+  'log.stopping':'stopping…',
+  'log.stopped':'stopped ✗ — the stack was left mid-way; check how it ended up',
   'log.lost':e=>`lost contact with the server (${e}) — the job may have carried on there; reload the page to see how the stack ended up`,
   'st.up':s=>`Up${s?' — '+s:''}`,
   'st.down':s=>`Stopped${s?' — '+s:''}`,
@@ -1807,6 +1814,9 @@ const I18N = {
   'log.done':'listo ✓',
   'log.fail':'falló ✗',
   'log.noServer':'el servidor no respondió',
+  'log.stop':'Parar',
+  'log.stopping':'parando…',
+  'log.stopped':'parado ✗ — la stack quedó a medio camino; revisa cómo terminó',
   'log.lost':e=>`perdí el contacto con el servidor (${e}) — el trabajo puede haber seguido allá; recarga la página para ver cómo quedó la stack`,
   'st.up':s=>`En marcha${s?' — '+s:''}`,
   'st.down':s=>`Parado${s?' — '+s:''}`,
@@ -4948,9 +4958,24 @@ function openLog(title){
   $('#logOut').textContent = '';
   $('#logState').textContent = t('log.running');
   $('#logClose').disabled = true;
+  $('#logStop').hidden = true;
+  $('#logStop').disabled = false;
+  jobAtual = 0; jobParado = false;
   $('#logBack').classList.add('open');
 }
-const endLog = ()=> $('#logClose').disabled = false;
+/* O Parar é a outra saída: ele mata o trabalho no servidor, que termina como
+   falha comum — e é o fim do trabalho, não o clique, que devolve o Fechar.
+   Some do modal quando não há trabalho a matar. */
+const endLog = ()=>{ $('#logClose').disabled = false; $('#logStop').hidden = true; };
+let jobAtual = 0, jobParado = false;
+$('#logStop').onclick = async ()=>{
+  if(!jobAtual) return;
+  $('#logStop').disabled = true;
+  jobParado = true;
+  $('#logState').textContent = t('log.stopping');
+  try{ await api('job/' + jobAtual + '/stop', {method:'POST'}); }
+  catch(e){ logLine(String(e)); }
+};
 $('#logClose').onclick = ()=>{ if(!$('#logClose').disabled) $('#logBack').classList.remove('open'); };
 
 /* Subir a stack baixa imagem: o servidor devolve o número do trabalho e a
@@ -4972,6 +4997,8 @@ async function runJob(start, title){
      não é só um `continue` — ela conta, e depois de `TENTATIVAS` seguidas
      desiste e devolve o Fechar. Servidor que caiu no meio do trabalho é
      justamente esse caso. */
+  jobAtual = head.job;
+  $('#logStop').hidden = false;
   const TENTATIVAS = 10;   // ~7s de tolerância, que cobre um soluço da rede
   let seen = 0, erros = 0, ultimo = '';
   for(;;){
@@ -4993,7 +5020,7 @@ async function runJob(start, title){
     erros = 0;
     j.log.slice(seen).forEach(logLine); seen = j.log.length;
     if(j.done){
-      $('#logState').textContent = t(j.ok ? 'log.done' : 'log.fail');
+      $('#logState').textContent = t(j.ok ? 'log.done' : jobParado ? 'log.stopped' : 'log.fail');
       endLog();
       return j.ok;
     }

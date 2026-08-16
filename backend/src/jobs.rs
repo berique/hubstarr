@@ -35,6 +35,11 @@ impl Log {
 pub struct Jobs {
     next: AtomicU64,
     map: Mutex<HashMap<u64, Arc<Mutex<JobState>>>>,
+    /* A ponta pela qual o Parar mata o trabalho. É da tarefa *de dentro*, a
+       que roda o `f`: abortá-la faz o `await` de fora receber um `JoinError`
+       de cancelamento, e o trabalho termina como falha comum — o `done` sai
+       escrito e o Fechar volta, pelo mesmo caminho do pânico. */
+    stop: Mutex<HashMap<u64, tokio::task::AbortHandle>>,
 }
 
 impl Jobs {
@@ -42,6 +47,7 @@ impl Jobs {
         Self {
             next: AtomicU64::new(1),
             map: Mutex::new(HashMap::new()),
+            stop: Mutex::new(HashMap::new()),
         }
     }
 
@@ -57,16 +63,22 @@ impl Jobs {
             m.insert(id, slot.clone());
         }
         let log = Log(slot.clone());
+        /* O trabalho roda numa tarefa própria só para que o `done` seja
+           escrito **sempre**: um pânico lá dentro mataria a tarefa antes
+           dessa linha, e o trabalho ficaria eternamente "correndo" — do
+           lado da página, isso é o modal do log com o Fechar desabilitado
+           e nada mais acontecendo. Esperar pelo `JoinHandle` transforma o
+           pânico numa falha comum, com uma linha no log — e é o mesmo
+           caminho do Parar, que aborta essa tarefa de dentro. */
+        let dentro = log.clone();
+        let interna = tokio::spawn(async move { f(dentro).await });
+        if let Ok(mut s) = self.stop.lock() {
+            s.insert(id, interna.abort_handle());
+        }
         tokio::spawn(async move {
-            /* O trabalho roda numa tarefa própria só para que o `done` seja
-               escrito **sempre**: um pânico lá dentro mataria a tarefa antes
-               desta linha, e o trabalho ficaria eternamente "correndo" — do
-               lado da página, isso é o modal do log com o Fechar desabilitado
-               e nada mais acontecendo. Esperar pelo `JoinHandle` transforma o
-               pânico numa falha comum, com uma linha no log. */
-            let dentro = log.clone();
-            let res = match tokio::spawn(async move { f(dentro).await }).await {
+            let res = match interna.await {
                 Ok(r) => r,
+                Err(e) if e.is_cancelled() => Err("parado a pedido".to_string()),
                 Err(e) => Err(format!("o trabalho morreu no meio ({e})")),
             };
             if let Err(e) = &res {
@@ -84,6 +96,21 @@ impl Jobs {
     #[cfg(test)]
     pub fn log_de_teste(&self) -> Log {
         Log(Arc::new(Mutex::new(JobState::default())))
+    }
+
+    /// Mata o trabalho. Devolve `false` para número que ele não conhece; para
+    /// um que já terminou não faz nada, e isso não é erro — o Parar chega
+    /// quando chega. Quem estava rodando um `docker compose` leva o processo
+    /// junto, pelo `kill_on_drop` do `deploy.rs`.
+    pub fn stop(&self, id: u64) -> bool {
+        let Ok(s) = self.stop.lock() else { return false };
+        match s.get(&id) {
+            Some(h) => {
+                h.abort();
+                true
+            }
+            None => false,
+        }
     }
 
     pub fn get(&self, id: u64) -> Option<JobState> {
@@ -131,5 +158,23 @@ mod tests {
         let st = esperar(&jobs, id).await;
         assert!(!st.ok);
         assert!(st.log.iter().any(|l| l.contains("morreu no meio")), "{:?}", st.log);
+    }
+
+    /// O Parar: o trabalho termina como falha, e é isso que devolve o Fechar
+    /// do modal do log.
+    #[tokio::test]
+    async fn trabalho_parado_termina_como_falha() {
+        let jobs = Jobs::new();
+        let id = jobs.spawn(|log| async move {
+            log.line("indo");
+            tokio::time::sleep(std::time::Duration::from_secs(60)).await;
+            Ok(())
+        });
+        tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+        assert!(jobs.stop(id));
+        let st = esperar(&jobs, id).await;
+        assert!(!st.ok);
+        assert!(st.log.iter().any(|l| l.contains("parado a pedido")), "{:?}", st.log);
+        assert!(!jobs.stop(999), "número que ele não conhece");
     }
 }

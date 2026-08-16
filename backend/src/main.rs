@@ -183,6 +183,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/shot/:app/:theme", get(shot))
         .route("/api/status", get(stack_status))
         .route("/api/job/:id", get(job_status))
+        .route("/api/job/:id/stop", post(stop_job))
         .with_state(ctx.clone());
 
     let listener = tokio::net::TcpListener::bind(&args.addr).await?;
@@ -518,6 +519,22 @@ async fn job_status(State(ctx): State<Ctx>, Path(id): Path<u64>) -> Response {
             Json(json!({"error": "trabalho desconhecido"})),
         )
             .into_response(),
+    }
+}
+
+/// O Parar do modal do log. Matar o trabalho no meio deixa a stack como ela
+/// estiver — containers meio subidos, configuração meio aplicada —, então
+/// isso fica registrado como qualquer outra mudança.
+async fn stop_job(State(ctx): State<Ctx>, Path(id): Path<u64>) -> Response {
+    if ctx.jobs.stop(id) {
+        registro::registra(format!("trabalho {id} parado a pedido"));
+        Json(json!({"ok": true})).into_response()
+    } else {
+        (
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "trabalho desconhecido"})),
+        )
+            .into_response()
     }
 }
 

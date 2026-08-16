@@ -675,6 +675,17 @@ servidor, e sumiria com o único lugar em que dá para acompanhar. O `runJob()` 
 libera quando o trabalho termina, tendo dado certo ou não — inclusive quando ele
 nem começa, que é o caso do servidor fora do ar.
 
+Quem quer sair antes do fim tem o **Parar**, ao lado do Fechar: ele chama
+`POST /api/job/:id/stop`, e ali o `jobs.rs` **aborta a tarefa de dentro** — a
+mesma que o pânico já matava —, de modo que o trabalho termina como falha
+comum, com `done` escrito e o Fechar de volta. Não é o clique que libera o
+modal, é o fim do trabalho: assim a tela nunca fica adiantada em relação ao
+servidor. O `docker compose` que estiver rodando morre junto pelo
+`kill_on_drop(true)` do `deploy.rs` — sem ele o processo continuaria sozinho,
+sem ninguém lendo a saída. Parar deixa a stack no meio do caminho (containers
+meio subidos, Configuração meio aplicada), e é isso que a `log.stopped` diz e o
+`registra()` do servidor guarda.
+
 **Toda saída daquele laço tem de passar pelo `endLog()`.** Enquanto ele gira, o
 Fechar está desabilitado, então um caminho que não termine prende o modal para
 sempre — com a tela parada, que é o pior jeito de falhar. Foram dois buracos
