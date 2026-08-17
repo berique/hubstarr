@@ -3879,14 +3879,21 @@ function build(){
     L.push(`      - <span class="v">"\${HTTPS_PORT}:${NGINX.https}"</span>`);
   L.push(`    <span class="k">volumes</span>:`);
   L.push(`      - <span class="k">type</span>: <span class="v">bind</span>`);
-  /* File over file, and not the whole folder: the conf is generated next to
-     the compose, and mounting it this way leaves the rest of the image's
-     `conf.d` in place. With a server, the path comes out spelled in full — it
-     is the one that knows where the stack lives; with no server, it stays
-     relative to the folder the compose is run from. */
+  /* File over file, and over the image's own `default.conf` — not beside it.
+     The stock file that ships in the nginx image declares
+     `server_name localhost`, and an exact name match beats `default_server`:
+     leaving it there meant that the very same stack answered `/sonarr` on
+     `http://127.0.0.1` and a bare nginx 404 on `http://localhost`, because the
+     second request never reached our block. Mounting a single file (and not the
+     whole folder) is still the rule — the folder mount was what used to hide
+     our conf altogether.
+
+     With a server, the path comes out spelled in full — it is the one that
+     knows where the stack lives; with no server, it stays relative to the
+     folder the compose is run from. */
   noteBind(`${stackDir()}/nginx.conf`, true);
   L.push(`        <span class="k">source</span>: <span class="v">${stackDir()}/nginx.conf</span>`);
-  L.push(`        <span class="k">target</span>: <span class="v">/etc/nginx/conf.d/nginx.conf</span>`);
+  L.push(`        <span class="k">target</span>: <span class="v">/etc/nginx/conf.d/default.conf</span>`);
   L.push(`        <span class="k">read_only</span>: <span class="v">true</span>`);
   if(DEFAULTS.tls){
     // certificate and key arrive from the host, each on its own fixed path
@@ -4044,10 +4051,13 @@ function buildNginx(list){
   const name = DEFAULTS.domain || '_';
   N.push(``);
 
-  /* `default_server` because the conf is mounted as a file inside `conf.d`,
-     next to the `default.conf` that comes in the image: without it, it is the
-     image's one that answers whoever arrives without matching `server_name`,
-     and the whole stack answers the nginx welcome page. */
+  /* `default_server` because this file is what the stack answers with: it is
+     mounted over the image's `default.conf`, so it has to take whoever arrives
+     without matching `server_name` — otherwise nginx falls back to the first
+     block, which is fine here but stops being obvious the moment a domain is
+     set. Mounting *over* the stock file is also what keeps `http://localhost`
+     working: that file declares `server_name localhost`, and an exact match
+     beats `default_server`. */
   if(DEFAULTS.tls){
     // port 80 only exists to send everyone to https
     N.push(`<span class="k">server</span> {`);

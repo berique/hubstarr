@@ -516,7 +516,9 @@ y la redirección al https ya llevan el puerto elegido.
 
 La pestaña **nginx.conf** genera la configuración correspondiente, enrutando
 por subpath (`/sonarr`, `/radarr`…), un `location` por servicio. El archivo se
-monta en el `/etc/nginx/conf.d/nginx.conf` del contenedor, desde el `nginx.conf`
+monta en el `/etc/nginx/conf.d/default.conf` del contenedor — encima del archivo
+que viene en la imagen, que declara `server_name localhost` y respondería
+`http://localhost` con un 404 pelado de nginx —, desde el `nginx.conf`
 de la carpeta de la stack — la conf se genera con el compose y vive junto a él,
 no en el `BASE_CONFIG`. Con servidor la ruta sale completa, porque es él quien
 sabe dónde vive la stack; sin servidor sale como `./nginx.conf`, relativa a la

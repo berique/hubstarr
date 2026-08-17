@@ -508,7 +508,9 @@ redirect to https already carry the chosen port.
 
 The **nginx.conf** tab generates the matching configuration, routing by subpath
 (`/sonarr`, `/radarr`…), one `location` per service. The file is mounted at
-the container's `/etc/nginx/conf.d/nginx.conf`, from the `nginx.conf` in the
+the container's `/etc/nginx/conf.d/default.conf` — over the image's own file,
+which declares `server_name localhost` and would otherwise answer
+`http://localhost` with a bare nginx 404 —, from the `nginx.conf` in the
 stack folder — the conf is generated along with the compose file and lives next
 to it, not in `BASE_CONFIG`. With a server the path is spelled out, since it is
 the one that knows where the stack lives; with no server it comes out as

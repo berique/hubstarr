@@ -288,11 +288,16 @@ handler de `#mSave`.
   `buildNginx()` pelo `publishes()`. Quem roteia pela VPN usa
   `network_mode: service:gluetun` e responde no endereço do gluetun.
 - **Volumes em sintaxe longa**, com `type: bind` e `bind.propagation: rslave`.
-- **O bloco do nginx é `default_server`**: a conf é montada como um arquivo
-  dentro do `conf.d`, ao lado do `default.conf` que vem na imagem — antes a
-  pasta inteira era montada e ele sumia. Sem `default_server`, é o dele que
-  atende quem chega sem casar com o `server_name`, e a stack toda responde a
-  página de boas-vindas do nginx.
+- **A conf do nginx é montada *sobre* o `default.conf` da imagem**, como
+  arquivo (nunca a pasta inteira — o mount de pasta é o que já fez a nossa conf
+  sumir). Ao lado não serve: o arquivo que vem na imagem declara
+  `server_name localhost`, e **casar o nome exato ganha do `default_server`** —
+  a mesma stack respondia `/sonarr` em `http://127.0.0.1` e um 404 pelado do
+  nginx em `http://localhost`, porque o segundo pedido nunca chegava ao nosso
+  bloco. Medido com a conf gerada e um Sonarr de verdade: `Host: localhost` →
+  404, qualquer outro Host → 200; montando por cima, 200 nos dois. O bloco
+  continua `default_server`, que é o que atende quem chega sem casar com o
+  `server_name`.
 - **Cada subpath do nginx casa com a base URL do app**: nos *arr é a variável
   `<APP>__SERVER__URLBASE`; no Jellyfin é o `BaseUrl` do `network.xml`, que o
   servidor escreve depois de subir (`patch`, formato `xml`) em
