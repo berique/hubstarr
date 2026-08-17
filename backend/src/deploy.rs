@@ -118,7 +118,7 @@ pub async fn up(docker: &str, dir: &Path, log: Log) -> Result<(), String> {
 }
 
 pub async fn down(docker: &str, dir: &Path, log: Log) -> Result<(), String> {
-    run(docker, &["compose", "down"], dir, &log).await
+    run(docker, &["compose", "down", "--remove-orphans"], dir, &log).await
 }
 
 /// A service name that may become a compose argument. The page's `cname()`
