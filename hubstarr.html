@@ -15,11 +15,11 @@
   You should have received a copy of the GNU General Public License along with
   this program. If not, see <https://www.gnu.org/licenses/>.
 -->
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hubstarr — Adicionar *arr Stack</title>
+<title>Hubstarr — Add *arr Stack</title>
 <!-- favicon: the same mark as the header. The .ico is for whoever serves the
      page; the embedded SVG comes after because it takes precedence and keeps
      the icon when the file is opened straight from disk, with no .ico beside it. -->
@@ -356,39 +356,38 @@
 
 <header>
   <div class="logo">H</div>
-  <h1 data-i18n="app.title">Hubstarr &middot; Adicionar *arr Stack</h1>
-  <button class="sm" id="credBtn" data-i18n="app.credits">♡ Créditos</button>
+  <h1 data-i18n="app.title">Hubstarr · Add *arr Stack</h1>
+  <button class="sm" id="credBtn" data-i18n="app.credits">♡ Credits</button>
   <span style="flex:1"></span>
   <!-- only shows with a server behind the page -->
-  <span id="srv" hidden data-i18n="srv.on">servidor</span>
+  <span id="srv" hidden data-i18n="srv.on">server</span>
   <select id="langSel" style="width:auto;padding:6px 8px" data-i18n-title="app.lang"></select>
   <button id="themeBtn" data-i18n-title="app.theme">🌙</button>
-  <button id="cfgBtn" data-i18n="app.cfg">⇄ Configuração</button>
-  <button id="envBtn" data-i18n="app.env">⚙ Ambiente</button>
+  <button id="cfgBtn" data-i18n="app.cfg">⇄ Configuration</button>
+  <button id="envBtn" data-i18n="app.env">⚙ Environment</button>
 </header>
 
 <div class="wrap">
   <!-- fixed warning, before everything: what comes out of here is a starting point, not production -->
-  <p class="protoWarn" data-i18n-html="proto.warn"></p>
+  <p class="protoWarn" data-i18n-html="proto.warn"><b>Prototype.</b> Hubstarr was not designed for production use: the files it generates are a starting point, with no security hardening, backups or monitoring. Review everything — passwords, ports, certificates and permissions — before exposing the stack to any network other than your own.</p>
   <!-- only shows with a server behind the page and no docker compose on it -->
-  <p class="protoWarn" id="noDocker" hidden data-i18n-html="docker.missing"></p>
+  <p class="protoWarn" id="noDocker" hidden data-i18n-html="docker.missing"><b>No Docker Compose on this server.</b> Hubstarr still generates the files and keeps the stack, but <b>Bring up</b> and <b>Tear down</b> will fail until the Compose plugin is installed — see below how to install it.</p>
   <!-- the stored stack did not come: the page stays in read-only mode, without
        writing over what is in the database -->
-  <p class="protoWarn" id="noState" hidden data-i18n-html="state.failed"></p>
+  <p class="protoWarn" id="noState" hidden data-i18n-html="state.failed"><b>The saved stack could not be read.</b> The server answered with an error, so the page is showing an empty stack that is <b>not</b> yours — and, so as not to write over what is in the database, it saves nothing while this lasts. Check the browser console for the error and reload once it is fixed.</p>
   <!-- warning above both panels, across the full width -->
   <details class="notice" id="dockerHelp">
-    <summary data-i18n="docker.h">Precisa instalar o Docker?</summary>
+    <summary data-i18n="docker.h">Need to install Docker?</summary>
     <div class="noticeBody" data-i18n-html="docker.body">
-      <p>O Hubstarr só precisa deste navegador; quem precisa do Docker com o plugin Compose são os arquivos que ele gera.</p>
-      <p><b>Linux</b> — o script oficial instala o Docker Engine e o Compose:</p>
+      <p>Hubstarr itself only needs this browser; it is the files it generates that need Docker with the Compose plugin.</p>
+      <p><b>Linux</b> — the official script installs Docker Engine and Compose:</p>
       <pre>curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh</pre>
-      <p>Depois, para usar o <code>docker</code> sem <code>sudo</code>:</p>
+      <p>Then, to use <code>docker</code> without <code>sudo</code>:</p>
       <pre>sudo usermod -aG docker $USER</pre>
-      <p>Saia e entre de novo na sessão para o grupo valer.</p>
-      <p><b>Windows e macOS</b> — ou Linux, se preferir uma instalação gerenciada com interface gráfica — instale o
-      <a href="https://docs.docker.com/desktop/" target="_blank" rel="noopener">Docker Desktop</a>, que já vem com o Compose.</p>
-      <p>Com o Docker no lugar, descompacte o <code>.zip</code> e suba a stack de dentro da pasta dos arquivos:</p>
+      <p>Log out and back in for the group to take effect.</p>
+      <p><b>Windows and macOS</b> — or Linux, if you prefer a managed install with a GUI — get <a href="https://docs.docker.com/desktop/" target="_blank" rel="noopener">Docker Desktop</a>, which ships with Compose.</p>
+      <p>With Docker in place, unzip the <code>.zip</code> and bring the stack up from inside the files folder:</p>
       <pre>docker compose up -d</pre>
     </div>
   </details>
@@ -402,7 +401,7 @@ sudo sh get-docker.sh</pre>
   <!-- left column -->
   <div>
     <div class="card overflow">
-      <h2><span data-i18n="services.h">Serviços</span> <span id="count"></span></h2>
+      <h2><span data-i18n="services.h">Services</span> <span id="count"></span></h2>
       <div class="body">
         <div class="picker">
           <div class="combo" id="combo">
@@ -413,13 +412,13 @@ sudo sh get-docker.sh</pre>
             </button>
             <div class="list" id="comboList"></div>
           </div>
-          <button class="primary" id="add" data-i18n="btn.add" disabled>Adicionar</button>
+          <button class="primary" id="add" data-i18n="btn.add" disabled>Add</button>
         </div>
 
         <div class="items" id="items"></div>
         <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
           <div id="conflicts" style="flex:1"></div>
-          <button class="sm danger" id="clear" data-i18n="btn.clear" disabled>Limpar tudo</button>
+          <button class="sm danger" id="clear" data-i18n="btn.clear" disabled>Clear all</button>
         </div>
         <div id="tagLegend" class="legend"></div>
       </div>
@@ -446,10 +445,10 @@ sudo sh get-docker.sh</pre>
     <pre id="outCfgarr" style="display:none"></pre>
     <div class="bar">
       <span class="sp"></span>
-      <button id="copy" data-i18n="btn.copy">Copiar</button>
-      <button id="dl" data-i18n="btn.zip" data-i18n-title="btn.zipHint">Baixar .zip</button>
-      <button class="primary" id="up" hidden data-i18n="btn.up" data-i18n-title="btn.upHint">Subir</button>
-      <button id="down" hidden data-i18n="btn.down" data-i18n-title="btn.downHint">Derrubar</button>
+      <button id="copy" data-i18n="btn.copy">Copy</button>
+      <button id="dl" data-i18n="btn.zip" data-i18n-title="btn.zipHint">Download .zip</button>
+      <button class="primary" id="up" hidden data-i18n="btn.up" data-i18n-title="btn.upHint">Bring up</button>
+      <button id="down" hidden data-i18n="btn.down" data-i18n-title="btn.downHint">Tear down</button>
     </div>
   </div>
 </div>
@@ -464,9 +463,9 @@ sudo sh get-docker.sh</pre>
     <div class="bar">
       <span class="hint" id="tourStep"></span>
       <span class="sp"></span>
-      <button id="tourSkip" data-i18n="tour.skip">Pular</button>
-      <button id="tourPrev" data-i18n="tour.prev">Anterior</button>
-      <button class="primary" id="tourNext" data-i18n="tour.next">Próximo</button>
+      <button id="tourSkip" data-i18n="tour.skip">Skip</button>
+      <button id="tourPrev" data-i18n="tour.prev">Back</button>
+      <button class="primary" id="tourNext" data-i18n="tour.next">Next</button>
     </div>
   </div>
 </div>
@@ -478,8 +477,8 @@ sudo sh get-docker.sh</pre>
     <div class="bar">
       <span class="hint" id="logState"></span>
       <span class="sp"></span>
-      <button id="logStop" data-i18n="log.stop">Parar</button>
-      <button class="primary" id="logClose" data-i18n="btn.close">Fechar</button>
+      <button id="logStop" data-i18n="log.stop">Stop</button>
+      <button class="primary" id="logClose" data-i18n="btn.close">Close</button>
     </div>
   </div>
 </div>
@@ -487,14 +486,14 @@ sudo sh get-docker.sh</pre>
 <!-- configuration modal: who talks to whom once the stack is up -->
 <div class="backdrop" id="cfgBack">
   <div class="modal">
-    <h3 data-i18n="cfg.h">⇄ Configuração</h3>
+    <h3 data-i18n="cfg.h">⇄ Configuration</h3>
     <div class="body" id="cfgBody"></div>
     <div class="bar">
       <span id="cfgWarn"></span>
       <span class="sp"></span>
-      <button id="cfgApply" hidden data-i18n="btn.apply">Aplicar na stack</button>
-      <button id="cfgCancel" data-i18n="btn.cancel">Cancelar</button>
-      <button class="primary" id="cfgSave" data-i18n="btn.save">Salvar</button>
+      <button id="cfgApply" hidden data-i18n="btn.apply">Apply to the stack</button>
+      <button id="cfgCancel" data-i18n="btn.cancel">Cancel</button>
+      <button class="primary" id="cfgSave" data-i18n="btn.save">Save</button>
     </div>
   </div>
 </div>
@@ -502,19 +501,19 @@ sudo sh get-docker.sh</pre>
 <!-- nginx modal: only the ports it publishes on the host -->
 <div class="backdrop" id="ngxBack">
   <div class="modal">
-    <h3 data-i18n="nginx.h">Nginx</h3>
+    <h3 data-i18n="nginx.h">Nginx · host ports</h3>
     <div class="body">
-      <div class="row" data-help="nginx.portsHint"><label for="nHttp" data-i18n="nginx.http">Porta http no host</label>
+      <div class="row" data-help="nginx.portsHint"><label for="nHttp" data-i18n="nginx.http">http port on the host</label>
         <input type="text" id="nHttp" placeholder="80"></div>
-      <div class="row" data-help="nginx.portsHint"><label for="nHttps" data-i18n="nginx.https">Porta https no host</label>
+      <div class="row" data-help="nginx.portsHint"><label for="nHttps" data-i18n="nginx.https">https port on the host</label>
         <input type="text" id="nHttps" placeholder="443"></div>
-      <p class="hint" data-i18n-html="nginx.hint"></p>
+      <p class="hint" data-i18n-html="nginx.hint">The first lands in <b>.env</b> as <b>HTTP_PORT</b>. The 443 one only shows up — in <b>.env</b> as <b>HTTPS_PORT</b> and in the compose file as a published port — with <b>Serve HTTPS</b> on in the Environment: without it nginx does not listen there, and publishing would take the machine's port with nothing behind it. The copied links and the redirect to https already carry the chosen port.</p>
     </div>
     <div class="bar">
       <span class="hint" id="nWarn"></span>
       <span class="sp"></span>
-      <button id="nCancel" data-i18n="btn.cancel">Cancelar</button>
-      <button class="primary" id="nSave" data-i18n="btn.save">Salvar</button>
+      <button id="nCancel" data-i18n="btn.cancel">Cancel</button>
+      <button class="primary" id="nSave" data-i18n="btn.save">Save</button>
     </div>
   </div>
 </div>
@@ -522,51 +521,51 @@ sudo sh get-docker.sh</pre>
 <!-- environment modal (global stack values) -->
 <div class="backdrop" id="envBack">
   <div class="modal">
-    <h3 data-i18n="env.h">⚙ Ambiente</h3>
+    <h3 data-i18n="env.h">⚙ Environment</h3>
     <div class="body">
       <div class="row" data-help="env.hIds"><label for="ePuid">PUID / PGID</label>
         <div style="display:flex;gap:8px">
           <input type="text" id="ePuid"><input type="text" id="ePgid">
         </div>
       </div>
-      <div class="row" data-help="env.hTz"><label for="eTz" data-i18n="env.tz">Time Zone</label>
+      <div class="row" data-help="env.hTz"><label for="eTz" data-i18n="env.tz">Time zone</label>
         <select id="eTz"></select>
       </div>
       <div class="row" data-help="env.hRestart"><label for="eRestart" data-i18n="env.restart">Restart policy</label>
         <select id="eRestart"><option>unless-stopped</option><option>always</option><option>no</option></select>
       </div>
-      <div class="row" data-help="env.hCfg"><label for="eCfg" data-i18n="env.cfg">Base da pasta config</label><input type="text" id="eCfg"></div>
-      <div class="row" data-help="env.hData"><label for="eData" data-i18n="env.data">Base da pasta de mídia</label><input type="text" id="eData"></div>
-      <div class="row" data-help="env.hDl"><label for="eDl" data-i18n="env.dl">Base de downloads</label><input type="text" id="eDl"></div>
+      <div class="row" data-help="env.hCfg"><label for="eCfg" data-i18n="env.cfg">Config base path</label><input type="text" id="eCfg"></div>
+      <div class="row" data-help="env.hData"><label for="eData" data-i18n="env.data">Media base path</label><input type="text" id="eData"></div>
+      <div class="row" data-help="env.hDl"><label for="eDl" data-i18n="env.dl">Downloads base path</label><input type="text" id="eDl"></div>
       <h4 style="margin:18px 0 10px;font-size:12px;text-transform:uppercase;
                  letter-spacing:.06em;color:var(--muted)" data-i18n="env.secApi">API keys</h4>
       <div class="row" data-help="env.apiHint"><label for="eApiKey">STARR_APIKEY</label>
         <div style="display:flex;gap:8px">
           <input type="text" id="eApiKey">
-          <button type="button" id="eApiGen" data-i18n="btn.gen">Gerar</button>
+          <button type="button" id="eApiGen" data-i18n="btn.gen">Generate</button>
         </div>
       </div>
 
       <h4 style="margin:18px 0 10px;font-size:12px;text-transform:uppercase;
                  letter-spacing:.06em;color:var(--muted)" data-i18n="env.secTls">TLS</h4>
-      <div class="row" data-help="env.tlsHint"><label for="eTls" data-i18n="env.tlsOn">Servir HTTPS</label>
+      <div class="row" data-help="env.tlsHint"><label for="eTls" data-i18n="env.tlsOn">Serve HTTPS</label>
         <label class="check"><input type="checkbox" id="eTls"> <span id="eTlsPort">443</span></label></div>
-      <div class="row" data-help="env.hDomain"><label for="eDomain" data-i18n="env.domain">Domínio</label>
+      <div class="row" data-help="env.hDomain"><label for="eDomain" data-i18n="env.domain">Domain</label>
         <input type="text" id="eDomain" data-i18n-ph="env.phDomain"></div>
       <div id="eTlsRows">
-        <div class="row" data-help="env.hCert"><label for="eCert" data-i18n="env.cert">Certificado (host)</label>
+        <div class="row" data-help="env.hCert"><label for="eCert" data-i18n="env.cert">Certificate (host)</label>
           <input type="text" id="eCert"></div>
-        <div class="row" data-help="env.hKey"><label for="eTlsKey" data-i18n="env.key">Chave privada (host)</label>
+        <div class="row" data-help="env.hKey"><label for="eTlsKey" data-i18n="env.key">Private key (host)</label>
           <input type="text" id="eTlsKey"></div>
       </div>
 
-      <p class="hint" data-i18n-html="env.hint"></p>
+      <p class="hint" data-i18n-html="env.hint">These apply to the whole stack. The base paths land in the compose file as <b>${BASE_CONFIG}</b>, <b>${BASE_MEDIA}</b> and <b>${DOWNLOAD_BASE}</b>, and the restart policy as <b>${RESTART}</b>. Every value above goes to <b>.env</b>.</p>
     </div>
     <div class="bar">
       <span class="hint" id="eWarn"></span>
       <span class="sp"></span>
-      <button id="eCancel" data-i18n="btn.cancel">Cancelar</button>
-      <button class="primary" id="eSave" data-i18n="btn.save">Salvar</button>
+      <button id="eCancel" data-i18n="btn.cancel">Cancel</button>
+      <button class="primary" id="eSave" data-i18n="btn.save">Save</button>
     </div>
   </div>
 </div>
@@ -574,83 +573,83 @@ sudo sh get-docker.sh</pre>
 <!-- service modal -->
 <div class="backdrop" id="backdrop">
   <div class="modal">
-    <h3><span class="ico sm" id="mIco"></span><span id="mTitle">Configuração</span>
+    <h3><span class="ico sm" id="mIco"></span><span id="mTitle">Configuration</span>
         <span class="hint" id="mMode" style="margin-left:auto"></span></h3>
     <div class="body">
-      <div class="row" id="mNameRow"><label for="mName" data-i18n="m.name">Título</label>
+      <div class="row" id="mNameRow"><label for="mName" data-i18n="m.name">Title</label>
         <input type="text" id="mName" data-i18n-ph="m.namePh"></div>
-      <div class="row"><label data-i18n="m.port">Porta</label>
-        <span class="hint"><span data-i18n="m.portInner">interna</span> <b id="mInner"></b>
-          <span data-i18n="m.portHint"></span></span>
+      <div class="row"><label data-i18n="m.port">Port</label>
+        <span class="hint"><span data-i18n="m.portInner">internal</span> <b id="mInner"></b>
+          <span data-i18n="m.portHint">(fixed) — published by nginx only</span></span>
       </div>
       <div class="row" id="mDataRow"><label for="mData" id="mDataLabel">Subpasta de mídia</label>
         <input type="text" id="mData" placeholder="/mnt/media/movies">
       </div>
-      <div class="row" id="mLibsRow" data-help="m.libsWhy"><label data-i18n="m.libs">Outras pastas</label>
+      <div class="row" id="mLibsRow" data-help="m.libsWhy"><label data-i18n="m.libs">Other folders</label>
         <div>
           <div class="libs" id="mLibs"></div>
           <button type="button" class="sm" id="mLibAdd" style="margin-top:6px"
-                  data-i18n="m.libAdd">+ pasta</button>
+                  data-i18n="m.libAdd">+ folder</button>
         </div>
       </div>
-      <div class="row" id="mHwRow"><label for="mHw" data-i18n="m.hw">Aceleração</label>
+      <div class="row" id="mHwRow"><label for="mHw" data-i18n="m.hw">Acceleration</label>
         <select id="mHw">
-          <option value="cpu" data-i18n="m.hwCpu"></option>
-          <option value="intel" data-i18n="m.hwIntel"></option>
-          <option value="nvidia" data-i18n="m.hwNvidia"></option>
+          <option value="cpu" data-i18n="m.hwCpu">CPU only (no acceleration)</option>
+          <option value="intel" data-i18n="m.hwIntel">Intel — VAAPI / QuickSync</option>
+          <option value="nvidia" data-i18n="m.hwNvidia">NVIDIA — NVENC</option>
         </select>
       </div>
-      <div class="row" id="mTpvRow" data-help="m.tpvWhy"><label for="mTpv" data-i18n="m.tpv">Variante</label>
+      <div class="row" id="mTpvRow" data-help="m.tpvWhy"><label for="mTpv" data-i18n="m.tpv">Variant</label>
         <div class="tpvPick">
           <select id="mTpv">
-            <option value="std" data-i18n="m.tpvStd"></option>
-            <option value="uhd" data-i18n="m.tpvUhd"></option>
-            <option value="anime" data-i18n="m.tpvAnime"></option>
+            <option value="std" data-i18n="m.tpvStd">Default</option>
+            <option value="uhd" data-i18n="m.tpvUhd">4K</option>
+            <option value="anime" data-i18n="m.tpvAnime">Anime</option>
           </select>
           <!-- the logo the chosen variant puts on the app -->
           <span id="mTpvIco"></span>
         </div>
       </div>
-      <div class="row" id="mTpRow" data-help="m.tpWhy"><label for="mTp" data-i18n="m.tp">Tema</label>
+      <div class="row" id="mTpRow" data-help="m.tpWhy"><label for="mTp" data-i18n="m.tp">Theme</label>
         <div>
           <select id="mTp"></select>
-          <a id="mTpShot" target="_blank" rel="noopener" data-i18n="m.tpShot"></a>
+          <a id="mTpShot" target="_blank" rel="noopener" data-i18n="m.tpShot">see screenshot</a>
         </div>
       </div>
       <div id="mWebAuth">
-        <div class="row" data-help="m.webAuthWhy"><label for="mUser" data-i18n="m.user">Usuário</label>
+        <div class="row" data-help="m.webAuthWhy"><label for="mUser" data-i18n="m.user">Username</label>
           <input type="text" id="mUser" placeholder="admin"></div>
-        <div class="row"><label for="mPass" data-i18n="m.pass">Senha</label>
+        <div class="row"><label for="mPass" data-i18n="m.pass">Password</label>
           <div style="display:flex;gap:8px">
             <input type="text" id="mPass">
-            <button type="button" id="mPassGen" data-i18n="btn.gen">Gerar</button>
+            <button type="button" id="mPassGen" data-i18n="btn.gen">Generate</button>
           </div>
         </div>
         <div class="row" id="mApiKeyRow" data-help="m.apiKeyWhy"><label for="mApiKey">API key</label>
           <div style="display:flex;gap:8px">
             <input type="text" id="mApiKey" class="fmt">
-            <button type="button" id="mKeyGen" data-i18n="btn.gen">Gerar</button>
+            <button type="button" id="mKeyGen" data-i18n="btn.gen">Generate</button>
           </div>
         </div>
       </div>
-      <div class="row" id="mPortRow" data-help="m.hostPortWhy"><label for="mPort" data-i18n="m.hostPort">Porta no host</label>
+      <div class="row" id="mPortRow" data-help="m.hostPortWhy"><label for="mPort" data-i18n="m.hostPort">Host port</label>
         <input type="text" id="mPort" placeholder="5055"></div>
-      <div class="row" id="mDlInRow" data-help="m.dlInWhy"><label for="mDlIn" data-i18n="m.dlIn">Download em progresso</label>
+      <div class="row" id="mDlInRow" data-help="m.dlInWhy"><label for="mDlIn" data-i18n="m.dlIn">Downloading</label>
         <input type="text" id="mDlIn"></div>
-      <div class="row" id="mDlDoneRow" data-help="m.dlDoneWhy"><label for="mDlDone" data-i18n="m.dlDone">Download completo</label>
+      <div class="row" id="mDlDoneRow" data-help="m.dlDoneWhy"><label for="mDlDone" data-i18n="m.dlDone">Completed download</label>
         <input type="text" id="mDlDone"></div>
       <div class="row" id="mDlKeyRow" data-help="m.dlKeyWhy"><label for="mDlKey" data-i18n="m.dlKey">API key</label>
         <div style="display:flex;gap:8px">
           <input type="text" id="mDlKey" class="fmt">
-          <button type="button" id="mDlKeyGen" data-i18n="btn.gen">Gerar</button>
+          <button type="button" id="mDlKeyGen" data-i18n="btn.gen">Generate</button>
         </div></div>
-      <div class="row" id="mSolverRow" data-help="m.solverWhy"><label data-i18n="m.indexers">Indexadores</label>
-        <label class="check"><input type="checkbox" id="mSolver"> <span data-i18n="m.solver"></span></label>
+      <div class="row" id="mSolverRow" data-help="m.solverWhy"><label data-i18n="m.indexers">Indexers</label>
+        <label class="check"><input type="checkbox" id="mSolver"> <span data-i18n="m.solver">Add FlareSolverr to the stack</span></label>
       </div>
       <div id="mVpnCfg">
-      <div class="row" data-help="vpn.hProvider"><label for="gProv" data-i18n="vpn.provider">Provedor</label>
+      <div class="row" data-help="vpn.hProvider"><label for="gProv" data-i18n="vpn.provider">Provider</label>
         <input type="text" id="gProv" placeholder="mullvad, protonvpn, nordvpn…"></div>
-      <div class="row" data-help="vpn.hType"><label for="gType" data-i18n="vpn.type">Tipo</label>
+      <div class="row" data-help="vpn.hType"><label for="gType" data-i18n="vpn.type">Type</label>
         <select id="gType"><option>wireguard</option><option>openvpn</option></select>
       </div>
       <div id="gWgRows">
@@ -665,19 +664,19 @@ sudo sh get-docker.sh</pre>
         <div class="row" data-help="vpn.hOvpnPass"><label for="gOvpnPass" data-i18n="vpn.ovpnPass">OpenVPN password</label>
           <input type="text" id="gOvpnPass"></div>
       </div>
-      <div class="row" data-help="vpn.hCountries"><label for="gCountries" data-i18n="vpn.countries">Países do servidor</label>
+      <div class="row" data-help="vpn.hCountries"><label for="gCountries" data-i18n="vpn.countries">Server countries</label>
         <input type="text" id="gCountries" placeholder="Brazil, Netherlands"></div>
       </div>
-      <div class="row" id="mVpnRow"><label data-i18n="m.network">Rede</label>
-        <label class="check"><input type="checkbox" id="mVpn"> <span data-i18n="m.vpn"></span></label>
+      <div class="row" id="mVpnRow"><label data-i18n="m.network">Network</label>
+        <label class="check"><input type="checkbox" id="mVpn"> <span data-i18n="m.vpn">Route through the VPN container (gluetun)</span></label>
       </div>
       <p class="hint" id="mHint"></p>
     </div>
     <div class="bar">
       <span class="hint" id="mWarn"></span>
       <span class="sp"></span>
-      <button id="mCancel" data-i18n="btn.cancel">Cancelar</button>
-      <button class="primary" id="mSave" data-i18n="btn.done">Concluir</button>
+      <button id="mCancel" data-i18n="btn.cancel">Cancel</button>
+      <button class="primary" id="mSave" data-i18n="btn.done">Done</button>
     </div>
   </div>
 </div>
@@ -686,11 +685,11 @@ sudo sh get-docker.sh</pre>
      built from SERVICES (the site field), the rest is I18N text -->
 <div class="backdrop" id="credBack">
   <div class="modal">
-    <h3 data-i18n="cred.h">♡ Créditos</h3>
+    <h3 data-i18n="cred.h">♡ Credits</h3>
     <div class="body" id="credBody"></div>
     <div class="bar">
       <span class="sp"></span>
-      <button class="primary" id="credClose" data-i18n="btn.close">Fechar</button>
+      <button class="primary" id="credClose" data-i18n="btn.close">Close</button>
     </div>
   </div>
 </div>
@@ -700,10 +699,10 @@ sudo sh get-docker.sh</pre>
 <div class="backdrop" id="shotBack">
   <div class="modal" id="shotModal">
     <h3><span id="shotTitle"></span><span class="sp"></span>
-      <button id="shotClose" data-i18n="btn.close">Fechar</button></h3>
+      <button id="shotClose" data-i18n="btn.close">Close</button></h3>
     <div class="body"><img id="shotImg" alt="">
-      <p class="hint" id="shotErr" data-i18n="shot.err" hidden></p>
-      <p class="hint" id="shotCredit" data-i18n-html="shot.credit"></p></div>
+      <p class="hint" id="shotErr" data-i18n="shot.err" hidden>Could not load the screenshot. It comes from the theme.park docs and needs a connection.</p>
+      <p class="hint" id="shotCredit" data-i18n-html="shot.credit">Theme and screenshot belong to <a href="https://theme-park.dev/" target="_blank" rel="noopener">theme.park</a>, under GPL-3.0.</p></div>
   </div>
 </div>
 
@@ -711,7 +710,7 @@ sudo sh get-docker.sh</pre>
 /* ---------- languages ----------
    Every visible string — the interface and the comments of the generated files
    — comes from here. Values may be functions when they depend on some data. */
-const LANGS = {'pt-BR':'Português', 'en':'English', 'es':'Español'};
+const LANGS = {'en':'English', 'pt-BR':'Português', 'es':'Español'};
 
 const I18N = {
 'pt-BR':{
@@ -1983,17 +1982,17 @@ const I18N = {
 },
 };
 
-// saved language > browser language > pt-BR
+// saved language > browser language > English
 let LANG = (()=>{
   try{ const s = localStorage.getItem('hubstarr-lang'); if(I18N[s]) return s; }catch(e){}
   const nav = (navigator.language||'').toLowerCase();
-  if(nav.startsWith('en')) return 'en';
+  if(nav.startsWith('pt')) return 'pt-BR';
   if(nav.startsWith('es')) return 'es';
-  return 'pt-BR';
+  return 'en';
 })();
 
 const t = (k, ...args)=>{
-  const v = (I18N[LANG] && I18N[LANG][k]) ?? I18N['pt-BR'][k] ?? k;
+  const v = (I18N[LANG] && I18N[LANG][k]) ?? I18N['en'][k] ?? k;
   return typeof v === 'function' ? v(...args) : v;
 };
 // a service's translated description
@@ -2021,7 +2020,7 @@ function applyI18n(){
 }
 
 function setLang(l){
-  LANG = I18N[l] ? l : 'pt-BR';
+  LANG = I18N[l] ? l : 'en';
   try{ localStorage.setItem('hubstarr-lang', LANG); }catch(e){}
   applyI18n(); renderCombo(); renderItems(); render();
 }
@@ -3061,7 +3060,7 @@ $('#nSave').onclick = ()=>{
 function libRow(path=''){
   const row = document.createElement('div');
   row.className = 'lib';
-  row.innerHTML = `<input type="text" value="${path}" placeholder="/mnt/disco2/filmes">
+  row.innerHTML = `<input type="text" value="${path}" placeholder="/mnt/disk2/movies">
                    <button type="button" class="sm" title="${t('m.libRemove')}">×</button>`;
   row.querySelector('button').onclick = ()=>{ row.remove(); hintNow(); };
   const inp = row.querySelector('input');

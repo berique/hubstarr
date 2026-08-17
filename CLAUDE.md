@@ -34,7 +34,10 @@ comentário logo depois do `<!DOCTYPE html>` — não o remova ao mexer no arqui
 O script é uma sequência de seções marcadas por comentários `/* ---------- x ---------- */`:
 
 1. **`I18N` / `LANGS`** — dicionário com uma chave por string visível, em
-   pt-BR, en e es. Valor é string ou função quando depende de dados. Acesso por
+   en, pt-BR e es — o **inglês é o padrão**: é o fallback do `t()`, o `lang` do
+   `<html>`, o texto que está escrito no HTML estático e o primeiro do seletor;
+   o idioma do navegador ainda manda quando é pt ou es. Valor é string ou
+   função quando depende de dados. Acesso por
    `t(chave, ...args)`. O HTML estático usa `data-i18n` (e `-html`, `-ph`,
    `-title`), aplicados por `applyI18n()`. As traduções cobrem também os
    comentários dos arquivos gerados. Adicionar idioma = copiar um bloco e traduzir.

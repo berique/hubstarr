@@ -553,9 +553,9 @@ keys or the OpenVPN username/password, and the server countries — and land in
 
 ## Languages
 
-The interface speaks Portuguese (Brazil), English and Spanish. The initial
+The interface speaks English, Portuguese (Brazil) and Spanish. The initial
 language comes from `localStorage`, falling back to the browser's and finally
-to Portuguese. The translation also covers the comments in the generated files
+to English, which is the page default. The translation also covers the comments in the generated files
 — the YAML, the `.env` and the `nginx.conf` come out in the chosen language.
 
 Every visible string lives in the `I18N` dictionary at the top of the

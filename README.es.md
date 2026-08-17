@@ -563,9 +563,9 @@ y salen en el `.env` como `VPN_SERVICE_PROVIDER`, `VPN_TYPE`, `WIREGUARD_*` u
 
 ## Idiomas
 
-La interfaz habla portugués (Brasil), inglés y español. El idioma inicial viene
+La interfaz habla inglés, portugués (Brasil) y español. El idioma inicial viene
 de lo que esté guardado en el `localStorage`, cayendo al del navegador y, por
-último, al portugués. La traducción cubre también los comentarios de los
+último, al inglés, que es el estándar de la página. La traducción cubre también los comentarios de los
 archivos generados — el YAML, el `.env` y el `nginx.conf` salen en el idioma
 elegido.
 
