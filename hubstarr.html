@@ -4086,8 +4086,9 @@ function buildNginx(list){
      the other side still stopped. Except that, resolving at request time, it
      needs a resolver spelled out: without this line the log says "no resolver
      defined to resolve …" and the route answers 502. `127.0.0.11` is the DNS
-     Docker puts on every network that is not the `default` one. */
-  if(items.some(a=>svc(a.id).stripBase)){
+     Docker puts on every network that is not the `default` one. Every route
+     goes through `set $upstream` for this reason, not only `stripBase`. */
+  if(items.length){
     N.push(``);
     N.push(`  <span class="c"># ${t('ngx.resolver')}</span>`);
     N.push(`  <span class="k">resolver</span> <span class="v">127.0.0.11 valid=30s</span>;`);
@@ -4136,8 +4137,9 @@ function buildNginx(list){
     }
     N.push(``);
     N.push(`  <span class="c"># ${a.title || svc(a.id).name}</span>`);
-    N.push(`  <span class="k">location</span> <span class="v">${path}</span> {`);
-    N.push(`    <span class="k">proxy_pass</span> <span class="v">http://${host}:${inner(a.id)}</span>;`);
+    N.push(`  <span class="k">location</span> <span class="v">^~ ${path}</span> {`);
+    N.push(`    <span class="k">set</span> <span class="v">\$upstream http://${host}:${inner(a.id)}</span>;`);
+    N.push(`    <span class="k">proxy_pass</span> <span class="v">\$upstream</span>;`);
     N.push(`    <span class="k">proxy_set_header</span> <span class="v">Host $host</span>;`);
     N.push(`    <span class="k">proxy_set_header</span> <span class="v">X-Real-IP $remote_addr</span>;`);
     N.push(`    <span class="k">proxy_set_header</span> <span class="v">X-Forwarded-For $proxy_add_x_forwarded_for</span>;`);
