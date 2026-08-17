@@ -1,16 +1,16 @@
-/* O Ambiente da stack.
+/* The stack Environment.
 
-   O `DEFAULTS` da página vira a linha única de `stack_env`, uma coluna por
-   chave. `ENV_COLS` é o de-para entre as duas grafias — camelCase na página,
-   snake_case na tabela — e é o único lugar em que ele aparece: acrescentar uma
-   chave ao Ambiente é acrescentar uma coluna no `schema.sql` e uma linha aqui. */
+   The page's `DEFAULTS` becomes the single `stack_env` row, one column per key.
+   `ENV_COLS` is the mapping between the two spellings — camelCase on the page,
+   snake_case in the table — and it is the only place it appears: adding a key
+   to the Environment means adding a column to `schema.sql` and a line here. */
 
 use rusqlite::{params, Connection, OptionalExtension};
 use serde_json::{Map, Value};
 
 use super::Db;
 
-/// (chave no `DEFAULTS`, coluna). O `tls` fica de fora: é o único booleano.
+/// (key in `DEFAULTS`, column). `tls` is left out: it is the only boolean.
 const ENV_COLS: [(&str, &str); 25] = [
     ("restart", "restart"),
     ("cfg", "cfg"),
@@ -25,7 +25,7 @@ const ENV_COLS: [(&str, &str); 25] = [
     ("qbitUser", "qbit_user"),
     ("qbitPass", "qbit_pass"),
     ("qbitKey", "qbit_key"),
-    // o administrador do Jellyfin, que o Subir usa no assistente dele
+    // the Jellyfin administrator, which Deploy uses in its wizard
     ("jfUser", "jf_user"),
     ("jfPass", "jf_pass"),
     ("domain", "domain"),
@@ -40,34 +40,35 @@ const ENV_COLS: [(&str, &str); 25] = [
     ("countries", "countries"),
 ];
 
-/* As colunas do `ENV_COLS` que faltam num banco de uma versão anterior.
+/* The `ENV_COLS` columns missing from a database of an earlier version.
 
-   Acrescentar uma chave ao Ambiente é acrescentar uma coluna ao `schema.sql` e
-   uma linha ali em cima — só que o `CREATE TABLE IF NOT EXISTS` não mexe em
-   tabela que já existe, então o banco de quem já tinha stack fica sem ela. E
-   uma coluna faltando não é um detalhe: o `SELECT` do `env()` nomeia todas, e
-   sem uma delas **toda** leitura do Ambiente falha — a página abre com a stack
-   vazia e, no primeiro save, o `reconcile()` apaga as instâncias que ela não
-   viu. Foi exatamente isso que o `jf_user`/`jf_pass` fez.
+   Adding a key to the Environment means adding a column to `schema.sql` and a
+   line up there — except that `CREATE TABLE IF NOT EXISTS` does not touch a
+   table that already exists, so the database of whoever already had a stack
+   ends up without it. And a missing column is no detail: the `SELECT` in
+   `env()` names them all, and without one of them **every** read of the
+   Environment fails — the page opens with an empty stack and, on the first
+   save, `reconcile()` deletes the instances it never saw. That is exactly what
+   `jf_user`/`jf_pass` did.
 
-   Por isso a lista manda em quem já existe também: coluna que falta entra como
-   TEXT vazio, que é o padrão do `schema.sql` e o que a página entende como "não
-   preenchido". O `tls` fica de fora porque não está no `ENV_COLS` — é o único
-   booleano, e nasceu com a tabela. */
+   So the list rules over existing databases too: a missing column comes in as
+   empty TEXT, which is the `schema.sql` default and what the page reads as "not
+   filled in". `tls` is left out because it is not in `ENV_COLS` — it is the only
+   boolean, and it was born with the table. */
 pub(crate) fn ensure_env_cols(conn: &Connection) -> Result<(), String> {
     let mut tem = std::collections::HashSet::new();
     {
         let mut q = conn
             .prepare("SELECT name FROM pragma_table_info('stack_env')")
             .map_err(|e| e.to_string())?;
-        let linhas = q
+        let lines = q
             .query_map([], |r| r.get::<_, String>(0))
             .map_err(|e| e.to_string())?;
-        for l in linhas {
+        for l in lines {
             tem.insert(l.map_err(|e| e.to_string())?);
         }
     }
-    // tabela que ainda não existe é assunto do schema.sql, não daqui
+    // a table that does not exist yet is schema.sql's business, not ours
     if tem.is_empty() {
         return Ok(());
     }
@@ -84,7 +85,7 @@ pub(crate) fn ensure_env_cols(conn: &Connection) -> Result<(), String> {
 }
 
 impl Db {
-    /// Grava o Ambiente. O que não vier no JSON fica como está.
+    /// Writes the Environment. Whatever does not come in the JSON stays as it is.
     pub fn put_env(&self, v: &Value) -> Result<(), String> {
         let o = v
             .as_object()
@@ -114,24 +115,24 @@ impl Db {
             )
             .map_err(|e| e.to_string())?;
         }
-        /* Os nomes dos campos, nunca os valores: entre eles estão a chave da
-           stack e as senhas do qBittorrent, do Jellyfin e da VPN. */
-        crate::registro::detalhe(|| {
-            let mut campos: Vec<&str> = ENV_COLS
+        /* The field names, never the values: among them are the stack key and the
+           qBittorrent, Jellyfin and VPN passwords. */
+        crate::journal::detail(|| {
+            let mut fields: Vec<&str> = ENV_COLS
                 .iter()
                 .filter(|(k, _)| o.contains_key(*k))
                 .map(|(k, _)| *k)
                 .collect();
             if o.contains_key("tls") {
-                campos.push("tls");
+                fields.push("tls");
             }
-            format!("banco: Ambiente, {} campo(s): {}", campos.len(), campos.join(", "))
+            format!("banco: Ambiente, {} campo(s): {}", fields.len(), fields.join(", "))
         });
         Ok(())
     }
 
-    /// O `BASE_CONFIG` do Ambiente — a raiz das configurações que os
-    /// containers montam. `None` enquanto o Ambiente não foi gravado.
+    /// The Environment's `BASE_CONFIG` — the root of the configurations the
+    /// containers mount. `None` while the Environment has not been written.
     pub fn config_base(&self) -> Result<Option<String>, String> {
         let conn = self.lock()?;
         let v: Option<String> = conn
@@ -172,7 +173,7 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn ambiente_volta_como_foi() {
+    fn the_environment_comes_back_as_it_went_in() {
         let db = Db::memory().unwrap();
         db.put_env(&json!({"tz":"America/Sao_Paulo","puid":"1000","tls":true,"domain":"casa.example"}))
             .unwrap();
@@ -183,11 +184,11 @@ mod tests {
         assert_eq!(back["cert"], json!(""));
     }
 
-    /// As credenciais do Jellyfin não vão para arquivo nenhum, então o banco é
-    /// o único lugar em que elas sobrevivem ao reload — se caírem aqui, o Subir
-    /// deixa de passar pelo assistente e ninguém entende por quê.
+    /// The Jellyfin credentials go to no file at all, so the database is the only
+    /// place where they survive a reload — if they get lost here, Deploy stops
+    /// going through the wizard and nobody understands why.
     #[test]
-    fn as_credenciais_do_jellyfin_atravessam() {
+    fn the_jellyfin_credentials_survive_the_round_trip() {
         let db = Db::memory().unwrap();
         db.put_env(&json!({"jfUser": "henrique", "jfPass": "segredo"}))
             .unwrap();
@@ -197,24 +198,24 @@ mod tests {
     }
 
     #[test]
-    fn gravar_de_novo_mantem_a_linha_unica() {
+    fn writing_again_keeps_the_row_unique() {
         let db = Db::memory().unwrap();
         db.put_env(&json!({"tz":"UTC"})).unwrap();
         db.put_env(&json!({"puid":"1000"})).unwrap();
         let back = db.env().unwrap();
-        // o segundo put não criou outra linha nem apagou o que o primeiro pôs
+        // the second put created no other row and deleted nothing the first one wrote
         assert_eq!(back["tz"], json!("UTC"));
         assert_eq!(back["puid"], json!("1000"));
     }
 
-    /// O banco de uma versão anterior não tem as colunas que o Ambiente ganhou
-    /// depois. Sem o `ensure_env_cols`, o `SELECT` que as nomeia falha inteiro
-    /// — e a página, que trata isso como "não há nada guardado", abre vazia e
-    /// manda apagar o resto.
+    /// A database from an earlier version does not have the columns the
+    /// Environment gained later. Without `ensure_env_cols`, the `SELECT` naming
+    /// them fails as a whole — and the page, which reads that as "nothing is
+    /// stored", opens empty and asks to delete the rest.
     #[test]
-    fn coluna_que_faltava_no_banco_antigo_entra_na_abertura() {
+    fn a_column_missing_from_an_old_db_is_added_on_open() {
         let conn = rusqlite::Connection::open_in_memory().unwrap();
-        // o stack_env como era antes do jf_user/jf_pass
+        // stack_env as it was before jf_user/jf_pass
         conn.execute_batch(
             "CREATE TABLE stack_env (
                id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -237,18 +238,18 @@ mod tests {
         ensure_env_cols(&conn).unwrap();
         let db = Db::from_conn(conn);
         let back = db.env().unwrap();
-        // o que já estava guardado atravessa, e o que faltava vem vazio
+        // what was already stored survives, and what was missing comes back empty
         assert_eq!(back["tz"], json!("America/Sao_Paulo"));
         assert_eq!(back["jfUser"], json!(""));
-        // e a coluna nova aceita escrita como qualquer outra
+        // and the new column takes writes like any other
         db.put_env(&json!({"jfUser": "henrique"})).unwrap();
         assert_eq!(db.env().unwrap()["jfUser"], json!("henrique"));
     }
 
-    /// Rodar de novo num banco já em dia não muda nada — é o mesmo caminho da
-    /// primeira abertura e das seguintes.
+    /// Running it again on an up-to-date database changes nothing — it is the
+    /// same path as the first open and every one after.
     #[test]
-    fn acrescentar_coluna_de_novo_nao_faz_nada() {
+    fn adding_a_column_again_does_nothing() {
         let db = Db::memory().unwrap();
         db.put_env(&json!({"jfPass": "segredo"})).unwrap();
         let conn = db.lock().unwrap();
@@ -259,7 +260,7 @@ mod tests {
     }
 
     #[test]
-    fn banco_novo_nao_tem_ambiente_para_devolver() {
+    fn a_new_db_has_no_environment_to_return() {
         let db = Db::memory().unwrap();
         assert_eq!(db.env().unwrap(), json!(null));
     }

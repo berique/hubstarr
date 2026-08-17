@@ -1,25 +1,26 @@
-/* Hubstarr — servidor opcional da página.
+/* Hubstarr — the page's optional server.
    Copyright (C) 2025 Henrique Moreno
-   Distribuído sob a GPL-3.0-or-later; veja o LICENSE na raiz do projeto.
+   Distributed under the GPL-3.0-or-later; see LICENSE at the project root.
 
-   A página continua sendo o produto: ela é que gera docker-compose.yml, .env e
-   nginx.conf, e continua funcionando aberta do disco, sem servidor nenhum. O
-   que este binário acrescenta é o que o navegador não alcança sozinho — guardar
-   a stack entre sessões, gravar os arquivos em disco e subir a stack.
+   The page is still the product: it is the one that generates
+   docker-compose.yml, .env and nginx.conf, and it goes on working opened from
+   disk, with no server at all. What this binary adds is what the browser cannot
+   reach on its own — keeping the stack between sessions, writing the files to
+   disk and bringing the stack up.
 
-   A stack é uma só: a da pasta do --dir. Nenhum caminho da API leva id, e o
-   banco não tem tabela de stacks — trocar de stack é apontar o --dir e o --db
-   para outro lugar.
+   There is a single stack: the one in the --dir folder. No API path carries an
+   id, and the database has no stacks table — switching stacks means pointing
+   --dir and --db somewhere else.
 
-   Por isso ele nunca gera conteúdo: recebe pronto o que a página montou. Assim
-   os geradores continuam existindo num lugar só. */
+   That is why it never generates content: it receives ready-made whatever the
+   page built. That way the generators go on existing in a single place. */
 
 mod apply;
 mod deploy;
 mod files;
 mod jobs;
 mod patch;
-mod registro;
+mod journal;
 mod shots;
 mod store;
 
@@ -38,7 +39,7 @@ use serde_json::{json, Value};
 
 use jobs::Jobs;
 
-/// A página, embutida no binário: uma cópia só do arquivo que está na raiz.
+/// The page, embedded in the binary: a single copy of the file at the root.
 const PAGE: &str = include_str!("../../hubstarr.html");
 const FAVICON: &[u8] = include_bytes!("../../favicon.ico");
 
@@ -81,32 +82,32 @@ Documentação: README.pt-BR.md, seção \"Servidor (opcional)\".",
     disable_version_flag = true
 )]
 struct Args {
-    /// Endereço em que o servidor atende
+    /// Address the server listens on
     #[arg(long, value_name = "IP:PORTA", default_value = "127.0.0.1:7878")]
     addr: SocketAddr,
 
-    /// Pasta em que os arquivos gerados são gravados
+    /// Folder the generated files are written to
     #[arg(long, value_name = "PASTA", default_value = "./stack")]
     dir: PathBuf,
 
-    /// Banco em que a stack é guardada
+    /// Database the stack is kept in
     #[arg(long, value_name = "ARQUIVO", default_value_os_t = default_db())]
     db: PathBuf,
 
-    /// Comando do docker (padrão: docker, e podman quando só ele responde)
+    /// Docker command (default: docker, and podman when only it answers)
     #[arg(long, value_name = "COMANDO")]
     docker: Option<String>,
 
-    /// Diz o passo a passo: cada arquivo gravado, cada linha mexida no banco e
-    /// cada chamada às APIs dos apps da stack
+    /// Tells the step by step: every file written, every row touched in the
+    /// database and every call to the stack apps' APIs
     #[arg(short = 'v', long)]
     verbose: bool,
 
-    /// Mostra esta ajuda
+    /// Shows this help
     #[arg(short = 'h', long, action = clap::ArgAction::Help)]
     help: Option<bool>,
 
-    /// Mostra a versão
+    /// Shows the version
     #[arg(short = 'V', long, action = clap::ArgAction::Version)]
     version: Option<bool>,
 }
@@ -132,32 +133,32 @@ fn default_db() -> PathBuf {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
     let base = std::fs::canonicalize(&args.dir).unwrap_or_else(|_| {
-        // ainda não existe: resolve contra o diretório atual sem exigir que exista
+        // it does not exist yet: resolve against the current directory without requiring it to exist
         std::env::current_dir().unwrap_or_default().join(&args.dir)
     });
     tokio::fs::create_dir_all(&base).await?;
 
     let db_path = args.db;
     let (db, migrated) = store::Db::open(&db_path)?;
-    // o log mora ao lado do banco, e não na pasta da stack: ele é do servidor,
-    // não da stack — o `--dir` se apaga e se refaz, o `--db` é o que dura
-    registro::abrir(&db_path);
-    registro::ligar_detalhe(args.verbose);
+    // the log lives next to the database, not in the stack folder: it belongs to
+    // the server, not to the stack — `--dir` is wiped and remade, `--db` is what lasts
+    journal::open(&db_path);
+    journal::set_detail(args.verbose);
     if let Some(m) = migrated {
-        registro::registra("Banco migrado para o modelo de uma stack só (era o de várias).");
-        registro::registra(format!("  A stack que ficou gravava em {}", m.kept));
+        journal::record("Banco migrado para o modelo de uma stack só (era o de várias).");
+        journal::record(format!("  A stack que ficou gravava em {}", m.kept));
         for d in &m.dropped {
-            registro::registra(format!(
+            journal::record(format!(
                 "  Descartada a stack que gravava em {d} — os arquivos dela ficam onde estão"
             ));
         }
         if !m.dropped.is_empty() {
-            registro::registra("  Para editar uma delas, rode outro servidor com --dir e --db próprios.");
+            journal::record("  Para editar uma delas, rode outro servidor com --dir e --db próprios.");
         }
     }
     let docker = deploy::pick_engine(args.docker).await;
     if docker != deploy::ENGINES[0] {
-        registro::registra(format!("Usando o {docker} para rodar o compose."));
+        journal::record(format!("Usando o {docker} para rodar o compose."));
     }
     let ctx: Ctx = Arc::new(App {
         base,
@@ -188,23 +189,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let listener = tokio::net::TcpListener::bind(&args.addr).await?;
     if args.verbose {
-        registro::registra("Modo detalhado (-v): o passo a passo vai para a saída e para o log.");
+        journal::record("Modo detalhado (-v): o passo a passo vai para a saída e para o log.");
     }
-    registro::registra(format!(
+    journal::record(format!(
         "Hubstarr em http://{}  (stack em {}, banco em {}, log em {})",
         args.addr,
         ctx.base.display(),
         db_path.display(),
-        registro::caminho(&db_path).display()
+        journal::path(&db_path).display()
     ));
     axum::serve(listener, app).await?;
     Ok(())
 }
 
-/* ---------- página ---------- */
+/* ---------- page ---------- */
 
-/// A página vem embutida no binário, então ela muda a cada recompilação: sem
-/// o `no-store` o navegador serve a cópia velha do cache e a mudança some.
+/// The page comes embedded in the binary, so it changes on every rebuild:
+/// without `no-store` the browser serves the old copy from cache and the change vanishes.
 async fn page() -> impl IntoResponse {
     (
         [
@@ -219,9 +220,9 @@ async fn favicon() -> impl IntoResponse {
     ([(header::CONTENT_TYPE, "image/x-icon")], FAVICON)
 }
 
-/// A captura da paleta, do cache do servidor. A página aberta do disco busca
-/// direto na documentação do theme.park; com servidor, passa por aqui — a
-/// primeira visita sai para a rede e as seguintes saem do disco.
+/// The palette screenshot, from the server cache. The page opened from disk
+/// fetches straight from the theme.park documentation; with a server, it comes
+/// through here — the first visit goes to the network and the following ones come from disk.
 async fn shot(State(ctx): State<Ctx>, Path((app, theme)): Path<(String, String)>) -> Response {
     match shots::fetch(&shots::cache_dir(&ctx.db_path), &app, &theme).await {
         Ok(png) => (
@@ -236,29 +237,30 @@ async fn shot(State(ctx): State<Ctx>, Path((app, theme)): Path<(String, String)>
     }
 }
 
-/// Aplica a Configuração nos apps que já estão no ar. Como subir a stack, é
-/// trabalho numerado: são várias chamadas de API, e cada app que responde vira
-/// uma linha do log.
+/// Applies the Configuration to the apps already up. Like bringing the stack
+/// up, it is a numbered job: it is several API calls, and each app that answers
+/// becomes a line of the log.
 async fn apply_config(State(ctx): State<Ctx>, Json(req): Json<apply::Req>) -> Response {
     let job = ctx.jobs.spawn({
         let ctx = ctx.clone();
         move |log| async move {
             let cfgarr = req.configarr();
-            let mut erro = None;
-            if req.tem_o_que_fazer() {
-                erro = apply::download_clients(req, log.clone()).await.err();
+            let mut error = None;
+            if req.has_work() {
+                error = apply::download_clients(req, log.clone()).await.err();
             } else if cfgarr.is_some() {
-                apply::esperar(&req, &log).await?;
+                apply::wait(&req, &log).await?;
             }
-            /* E os perfis de qualidade, que são arquivo — o Configarr lê o
-               `config.yml` que a página gerou e escreve nos apps. Uma ligação
-               que não passou não cancela isto: são coisas independentes, e
-               perder os perfis porque um app estava fora do ar é
-               desproporcional. O erro volta no fim, sem se perder. */
+            /* And the quality profiles, which are files — Configarr reads the
+               `config.yml` the page generated and writes into the apps. A link
+               that did not go through does not cancel this: they are
+               independent things, and losing the profiles because one app was
+               down is out of proportion. The error comes back at the end,
+               without getting lost. */
             if let Some(c) = cfgarr {
                 deploy::configarr(&ctx.docker, &c, &log).await?;
             }
-            match erro {
+            match error {
                 Some(e) => Err(e),
                 None => Ok(()),
             }
@@ -268,25 +270,25 @@ async fn apply_config(State(ctx): State<Ctx>, Json(req): Json<apply::Req>) -> Re
 }
 
 async fn health(State(ctx): State<Ctx>) -> Json<Value> {
-    let (puid, pgid) = usuario_do_servidor();
+    let (puid, pgid) = server_user();
     Json(json!({
         "ok": true,
         "version": env!("CARGO_PKG_VERSION"),
         "dir": ctx.base.display().to_string(),
         "db": ctx.db_path.display().to_string(),
         "docker": deploy::docker_ok(&ctx.docker).await,
-        // o dono das pastas que ele cria: é o PUID/PGID que os apps precisam ter
+        // the owner of the folders it creates: the PUID/PGID the apps need to have
         "puid": puid,
         "pgid": pgid,
     }))
 }
 
-/// O usuário e o grupo com que o servidor roda — o `id -u` e o `id -g` dele.
+/// The user and group the server runs as — its `id -u` and `id -g`.
 ///
-/// Sai do dono de `/proc/self`, que é o processo em si: evita a dependência de
-/// uma crate só para chamar `getuid()`. Onde esse caminho não existir, a
-/// resposta é `None` e a página fica com o padrão dela.
-fn usuario_do_servidor() -> (Option<u32>, Option<u32>) {
+/// It comes from the owner of `/proc/self`, which is the process itself: it
+/// avoids depending on a crate just to call `getuid()`. Where that path does
+/// not exist, the answer is `None` and the page keeps its own default.
+fn server_user() -> (Option<u32>, Option<u32>) {
     use std::os::unix::fs::MetadataExt;
     match std::fs::metadata("/proc/self") {
         Ok(m) => (Some(m.uid()), Some(m.gid())),
@@ -295,9 +297,9 @@ fn usuario_do_servidor() -> (Option<u32>, Option<u32>) {
 }
 
 
-/* ---------- a stack ---------- */
+/* ---------- the stack ---------- */
 
-/// Devolve o estado guardado, ou 204 quando ainda não há nada no banco.
+/// Returns the stored state, or 204 when there is nothing in the database yet.
 async fn load_state(State(ctx): State<Ctx>) -> Response {
     match ctx.db.load() {
         Ok(Some(v)) => Json(v).into_response(),
@@ -306,8 +308,8 @@ async fn load_state(State(ctx): State<Ctx>) -> Response {
     }
 }
 
-/// O que vale para a stack inteira: o Ambiente, a Configuração e a lista de
-/// chaves, que acerta a ordem e apaga o que saiu sem passar pelo modal.
+/// What holds for the whole stack: the Environment, the Configuration and the
+/// list of keys, which fixes the order and deletes what left without going through the modal.
 #[derive(Deserialize)]
 struct Settings {
     #[serde(default)]
@@ -318,12 +320,12 @@ struct Settings {
     keys: Option<Vec<String>>,
 }
 
-/* Este é o único caminho que apaga instância sem ninguém ter clicado em
-   "Excluir": a lista de chaves manda, e o que não vier nela sai. Uma página com
-   a lista errada — a que não conseguiu ler o estado, ou uma aba velha voltando
-   à vida — apaga a stack por aqui, e sem log não há como saber depois quem
-   mandou o quê. Por isso cada PUT deixa uma linha na saída do servidor, e a
-   linha diz quantas chaves vieram e **quais saíram**. */
+/* This is the only path that deletes an instance without anyone having clicked
+   "Delete": the list of keys rules, and whatever does not come in it goes away.
+   A page with the wrong list — one that could not read the state, or an old tab
+   coming back to life — wipes the stack through here, and with no log there is
+   no way of knowing afterwards who sent what. So every PUT leaves a line on the
+   server output, and the line says how many keys came and **which ones left**. */
 async fn save_settings(State(ctx): State<Ctx>, Json(s): Json<Settings>) -> Response {
     let done = (|| -> Result<Vec<String>, String> {
         if let Some(v) = &s.defaults {
@@ -337,29 +339,29 @@ async fn save_settings(State(ctx): State<Ctx>, Json(s): Json<Settings>) -> Respo
             None => Ok(vec![]),
         }
     })();
-    let quantas = s.keys.as_ref().map(|k| k.len());
+    let how_many = s.keys.as_ref().map(|k| k.len());
     match done {
-        Ok(saiu) => {
-            let lista = match quantas {
+        Ok(left) => {
+            let list = match how_many {
                 Some(n) => format!("{n} chave(s)"),
                 None => "sem lista de chaves".to_string(),
             };
-            let apagou = if saiu.is_empty() {
+            let removed = if left.is_empty() {
                 String::new()
             } else {
-                format!(" — apagou {}", saiu.join(", "))
+                format!(" — apagou {}", left.join(", "))
             };
-            registro::registra(format!("{} PUT /api/settings: {lista}{apagou}", registro::carimbo()));
+            journal::record(format!("{} PUT /api/settings: {list}{removed}", journal::stamp()));
             Json(json!({"ok": true})).into_response()
         }
         Err(e) => {
-            registro::registra(format!("{} PUT /api/settings: falhou ({e})", registro::carimbo()));
+            journal::record(format!("{} PUT /api/settings: falhou ({e})", journal::stamp()));
             fail(&e)
         }
     }
 }
 
-/// Um serviço adicionado ou editado: uma linha só, criada ou atualizada.
+/// A service added or edited: a single row, created or updated.
 async fn put_instance(State(ctx): State<Ctx>, Json(inc): Json<store::InstanceIn>) -> Response {
     match ctx.db.put_instance(&inc) {
         Ok(()) => Json(json!({"ok": true})).into_response(),
@@ -374,21 +376,21 @@ async fn del_instance(State(ctx): State<Ctx>, Path(key): Path<String>) -> Respon
     }
 }
 
-/* ---------- arquivos e deploy ---------- */
+/* ---------- files and deploy ---------- */
 
-/// O que a página manda: os arquivos já prontos. O estado não vem aqui — ele é
-/// gravado a cada adicionar, editar ou excluir, não só na hora do deploy.
+/// What the page sends: the files, already finished. The state does not come
+/// here — it is written on every add, edit or delete, not only at deploy time.
 #[derive(Deserialize)]
 pub struct Payload {
     #[serde(default)]
     pub files: Vec<files::OutFile>,
-    /// pastas dos `source` do compose, a criar antes de subir
+    /// folders for the compose `source` entries, to be created before coming up
     #[serde(default)]
     pub dirs: Vec<String>,
-    /// chaves a escrever na configuração que o próprio app cria, depois de subir
+    /// keys to write into the configuration the app itself creates, after coming up
     #[serde(default)]
     pub patches: Vec<patch::Patch>,
-    /// a Configuração, aplicada assim que os apps respondem
+    /// the Configuration, applied as soon as the apps answer
     #[serde(default)]
     pub config: Option<apply::Req>,
 }
@@ -407,8 +409,8 @@ async fn write_files(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Response
     }
 }
 
-/// Grava os arquivos e sobe a stack. Devolve na hora o número do trabalho: o
-/// `docker compose up` baixa imagem, e isso não cabe numa resposta HTTP.
+/// Writes the files and brings the stack up. Returns the job number right
+/// away: `docker compose up` pulls images, and that does not fit in an HTTP response.
 async fn start_deploy(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Response {
     let cfg = match config_base(&ctx) {
         Ok(v) => v,
@@ -420,39 +422,41 @@ async fn start_deploy(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Respons
     let job = ctx.jobs.spawn({
         let ctx = ctx.clone();
         move |log| async move {
-            /* Antes de subir: as pastas que os binds do compose esperam. Quem
-               as lista é a página, que é quem monta os caminhos; o Docker
-               criaria as que faltam, mas como root — e aí o app, rodando com o
-               PUID/PGID do Ambiente, não escreveria na própria configuração. */
+            /* Before coming up: the folders the compose binds expect. The one that
+               lists them is the page, which is the one building the paths;
+               Docker would create the missing ones, but as root — and then the
+               app, running with the Environment's PUID/PGID, would not write
+               into its own configuration. */
             files::ensure_dirs(&p.dirs, &log).await?;
             deploy::up(&ctx.docker, &ctx.base, log.clone()).await?;
-            /* Só depois de a stack subir: a configuração que vamos mexer é a
-               que o próprio app cria, e antes do primeiro `up` ela não existe. */
+            /* Only after the stack comes up: the configuration we are going to
+               touch is the one the app itself creates, and before the first
+               `up` it does not exist. */
             let cfg = config_base(&ctx)?;
             patch::apply_all(&ctx.docker, &ctx.base, cfg.as_deref(), &p.patches, &log).await?;
-            /* E, com a stack no ar, a Configuração: o Prowlarr aprende os *arr
-               e os clientes de download, e cada *arr aprende os clientes. As
-               credenciais do qBittorrent já foram escritas acima — é o que faz
-               o *arr conseguir falar com ele na hora de validar o registro. */
+            /* And, with the stack up, the Configuration: Prowlarr learns the *arr
+               apps and the download clients, and each *arr learns the clients.
+               The qBittorrent credentials were written above — that is what
+               lets the *arr talk to it when validating the registration. */
             match p.config {
                 Some(cfg) => {
                     let cfgarr = cfg.configarr();
-                    let mut erro = None;
-                    if cfg.tem_o_que_fazer() {
-                        erro = apply::download_clients(cfg, log.clone()).await.err();
+                    let mut error = None;
+                    if cfg.has_work() {
+                        error = apply::download_clients(cfg, log.clone()).await.err();
                     } else if cfgarr.is_some() {
-                        // nada a configurar pela API, mas os apps ainda
-                        // precisam estar de pé para o Configarr escrever neles
-                        apply::esperar(&cfg, &log).await?;
+                        // nothing to configure through the API, but the apps still
+                        // need to be up for Configarr to write into them
+                        apply::wait(&cfg, &log).await?;
                     }
-                    /* E, por último, os perfis de qualidade: o Configarr roda
-                       uma vez e sai, e depende dos apps de pé — é por isso que
-                       ele vem aqui, e não no `up` de cima. Ligação que não
-                       passou não o cancela: uma coisa não depende da outra. */
+                    /* And, last, the quality profiles: Configarr runs once and exits,
+                       and depends on the apps being up — which is why it comes
+                       here, and not in the `up` above. A link that did not go
+                       through does not cancel it: one does not depend on the other. */
                     if let Some(c) = cfgarr {
                         deploy::configarr(&ctx.docker, &c, &log).await?;
                     }
-                    match erro {
+                    match error {
                         Some(e) => Err(e),
                         None => Ok(()),
                     }
@@ -472,11 +476,11 @@ async fn start_down(State(ctx): State<Ctx>) -> Response {
     Json(json!({"ok": true, "job": job})).into_response()
 }
 
-/// Um container só, subido ou parado — é o clique no ponto de status da lista.
-/// Nada é gravado aqui: o `up` de um serviço usa o compose que já está na
-/// pasta, então quem ainda não subiu a stack inteira uma vez não tem o que
-/// subir. A chave é o `cname()` da página, que é o nome do serviço no compose;
-/// ela é conferida antes de virar argumento de comando.
+/// A single container, brought up or stopped — it is the click on the list's status dot.
+/// Nothing is written here: the `up` of one service uses the compose already
+/// in the folder, so whoever has never brought the whole stack up once has
+/// nothing to bring up. The key is the page's `cname()`, which is the service
+/// name in the compose; it is checked before becoming a command argument.
 async fn start_service(State(ctx): State<Ctx>, Path((key, action)): Path<(String, String)>) -> Response {
     if !deploy::ok_service(&key) {
         return fail("nome de serviço inválido");
@@ -502,8 +506,8 @@ async fn start_service(State(ctx): State<Ctx>, Path((key, action)): Path<(String
     Json(json!({"ok": true, "job": job})).into_response()
 }
 
-/// O estado de cada container da stack. A página pergunta de tempos em tempos
-/// para pintar o ponto de status de cada serviço da lista.
+/// The state of each container of the stack. The page asks every so often to
+/// paint the status dot of each service in the list.
 async fn stack_status(State(ctx): State<Ctx>) -> Response {
     match deploy::status(&ctx.docker, &ctx.base).await {
         Ok(v) => Json(json!({"ok": true, "services": v})).into_response(),
@@ -522,12 +526,12 @@ async fn job_status(State(ctx): State<Ctx>, Path(id): Path<u64>) -> Response {
     }
 }
 
-/// O Parar do modal do log. Matar o trabalho no meio deixa a stack como ela
-/// estiver — containers meio subidos, configuração meio aplicada —, então
-/// isso fica registrado como qualquer outra mudança.
+/// The log modal's Stop. Killing the job halfway leaves the stack however it
+/// happens to be — half-started containers, half-applied configuration — so
+/// that is recorded like any other change.
 async fn stop_job(State(ctx): State<Ctx>, Path(id): Path<u64>) -> Response {
     if ctx.jobs.stop(id) {
-        registro::registra(format!("trabalho {id} parado a pedido"));
+        journal::record(format!("trabalho {id} parado a pedido"));
         Json(json!({"ok": true})).into_response()
     } else {
         (
@@ -538,10 +542,10 @@ async fn stop_job(State(ctx): State<Ctx>, Path(id): Path<u64>) -> Response {
     }
 }
 
-/* ---------- utilidades ---------- */
+/* ---------- helpers ---------- */
 
-/// A raiz das configurações, que vem do Ambiente guardado e nunca do que o
-/// navegador manda: assim nada escreve fora do que a própria stack declarou.
+/// The root of the configurations, which comes from the stored Environment and
+/// never from what the browser sends: that way nothing writes outside what the stack itself declared.
 fn config_base(ctx: &Ctx) -> Result<Option<PathBuf>, String> {
     Ok(ctx.db.config_base()?.map(PathBuf::from))
 }

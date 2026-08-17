@@ -1,15 +1,15 @@
-/* A Configuração: as ligações entre as instâncias.
+/* The Configuration: the links between the instances.
 
-   O `CONFIG` da página é remontado pelo `syncConfig()` a cada abertura do modal
-   e chega aqui inteiro, então gravar é trocar o que está guardado — não há
-   edição parcial a preservar. As três partes viram cinco tabelas:
+   The page's `CONFIG` is rebuilt by `syncConfig()` every time the modal opens
+   and arrives here whole, so writing it means replacing what is stored — there
+   is no partial edit to preserve. The three parts become five tables:
 
-     apps    → cfg_app                       (o que o Prowlarr configura)
-     clients → cfg_client + cfg_client_arr   (quem recebe, com que categoria)
-     mm      → cfg_mm + cfg_naming           (por família, não por instância)
+     apps    → cfg_app                       (what Prowlarr configures)
+     clients → cfg_client + cfg_client_arr   (who receives it, with which category)
+     mm      → cfg_mm + cfg_naming           (per family, not per instance)
 
-   O valor de cada campo da nomenclatura vai em JSON porque o `NAMING_FIELDS`
-   mistura caixa de seleção com formato de texto. */
+   The value of each naming field goes as JSON because `NAMING_FIELDS` mixes
+   checkboxes with text formats. */
 
 use rusqlite::params;
 use serde_json::{json, Map, Value};
@@ -57,8 +57,8 @@ impl Db {
 
             let arrs = obj(cl.get("arrs"));
             let cats = obj(cl.get("cats"));
-            // a categoria pode existir para um arr que não está no `arrs`, e
-            // vice-versa: a linha é a união dos dois
+            // the category may exist for an arr that is not in `arrs`, and the other
+            // way round: the row is the union of the two
             let mut keys: Vec<&String> = arrs.keys().chain(cats.keys()).collect();
             keys.sort();
             keys.dedup();
@@ -119,7 +119,7 @@ impl Db {
             }
         }
         tx.commit().map_err(|e| e.to_string())?;
-        crate::registro::detalhe(|| {
+        crate::journal::detail(|| {
             format!(
                 "banco: Configuração — {} app(s) no Prowlarr, {} cliente(s), {} família(s) de Media Management, {} com perfis",
                 apps.len(),
@@ -265,8 +265,8 @@ impl Db {
                     key,
                     json!({
                         "on": on,
-                        // guardado em JSON; texto que não for lista volta vazia,
-                        // que é o mesmo que "nenhum preset escolhido"
+                        // stored as JSON; text that is not a list comes back empty,
+                        // which is the same as "no preset chosen"
                         "presets": serde_json::from_str::<Value>(&presets)
                             .unwrap_or_else(|_| json!([])),
                         "extra": extra,
@@ -313,14 +313,14 @@ mod tests {
     }
 
     #[test]
-    fn a_configuracao_volta_como_foi() {
+    fn the_config_comes_back_as_it_went_in() {
         let db = Db::memory().unwrap();
         db.put_config(&sample()).unwrap();
         assert_eq!(db.config().unwrap(), sample());
     }
 
     #[test]
-    fn gravar_de_novo_troca_em_vez_de_somar() {
+    fn writing_again_replaces_instead_of_appending() {
         let db = Db::memory().unwrap();
         db.put_config(&sample()).unwrap();
         db.put_config(&json!({"apps": {"radarr": true}, "clients": {}, "mm": {}}))
@@ -332,7 +332,7 @@ mod tests {
     }
 
     #[test]
-    fn sem_cdh_a_chave_nao_aparece() {
+    fn without_cdh_the_key_does_not_appear() {
         let db = Db::memory().unwrap();
         db.put_config(&sample()).unwrap();
         let back = db.config().unwrap();

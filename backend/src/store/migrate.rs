@@ -1,22 +1,22 @@
-/* Migração do banco de várias stacks para o de uma só.
+/* Migration from the many-stacks database to the single-stack one.
 
-   O modelo anterior tinha uma tabela `stack` na raiz e um `stack_id` em todas
-   as outras. Hoje a stack é uma — a da pasta do `--dir` —, e nenhuma tabela
-   leva id. Um banco escrito pelo modelo antigo não serve como está: as colunas
-   velhas são `NOT NULL` e o `CREATE TABLE IF NOT EXISTS` do `schema.sql` não
-   toca em tabela que já existe.
+   The previous model had a `stack` table at the root and a `stack_id` in every
+   other table. Today there is one stack — the one in the `--dir` folder — and
+   no table carries an id. A database written by the old model does not work as
+   it is: the old columns are `NOT NULL` and the `CREATE TABLE IF NOT EXISTS` in
+   `schema.sql` does not touch a table that already exists.
 
-   Então, antes do `schema.sql`: as tabelas antigas ganham o prefixo `old_`, o
-   esquema novo nasce ao lado, uma stack é copiada para dentro dele e o `old_`
-   vai embora. Copiar mais de uma não faria sentido — não há mais onde guardar a
-   segunda —, então vale a de menor id, que é a que a página abria por padrão.
-   As outras são perdidas de propósito, e o `dir` de cada uma é anunciado na
-   saída para quem quiser reaproveitar os arquivos já gravados. */
+   So, before `schema.sql`: the old tables get the `old_` prefix, the new schema
+   is born beside them, one stack is copied into it and `old_` goes away.
+   Copying more than one would make no sense — there is nowhere left to keep the
+   second — so the lowest id wins, which is the one the page opened by default.
+   The others are lost on purpose, and the `dir` of each is announced on the
+   output for whoever wants to reuse the files already written. */
 
 use rusqlite::{Connection, OptionalExtension};
 
-/// As colunas de cada tabela, sem o `stack_id`. A ordem é a mesma nos dois
-/// lados do `INSERT ... SELECT`.
+/// The columns of each table, without `stack_id`. The order is the same on
+/// both sides of the `INSERT ... SELECT`.
 const TABLES: [(&str, &str); 7] = [
     (
         "instance",
@@ -37,11 +37,11 @@ const ENV_COLS: &str = "restart, cfg, data, dl, http, https, puid, pgid, tz, api
      qbit_user, qbit_pass, qbit_key, tls, domain, cert, tls_key, vpn_prov, vpn_type, \
      wg_key, wg_addr, ovpn_user, ovpn_pass, countries";
 
-/// O que a migração encontrou, para o `main` contar a quem está olhando.
+/// What the migration found, for `main` to report to whoever is watching.
 pub struct Migrated {
-    /// a pasta da stack que ficou
+    /// the folder of the stack that survived
     pub kept: String,
-    /// as pastas das stacks que não couberam no modelo novo
+    /// the folders of the stacks that did not fit the new model
     pub dropped: Vec<String>,
 }
 
@@ -56,15 +56,15 @@ fn has_table(conn: &Connection, name: &str) -> Result<bool, String> {
     .map_err(|e| e.to_string())
 }
 
-/// Roda antes do `schema.sql`. Devolve `None` num banco que já é do modelo
-/// novo — ou vazio, que é o mesmo caminho da primeira vez.
+/// Runs before `schema.sql`. Returns `None` on a database that is already the
+/// new model — or empty, which is the same path as the first time.
 pub fn run(conn: &Connection) -> Result<Option<Migrated>, String> {
     if !has_table(conn, "stack")? {
         return Ok(None);
     }
 
-    // a de menor id é a que a página abria por padrão; as outras não têm mais
-    // onde caber, e viram só um aviso na saída
+    // the lowest id is the one the page opened by default; the others have
+    // nowhere left to fit, and become just a warning on the output
     let keep: Option<(i64, String)> = conn
         .query_row(
             "SELECT id, dir FROM stack ORDER BY id LIMIT 1",
@@ -81,8 +81,8 @@ pub fn run(conn: &Connection) -> Result<Option<Migrated>, String> {
         })
         .map_err(|e| e.to_string())?;
 
-    // o rename não pode reescrever as chaves estrangeiras das outras tabelas:
-    // é o esquema antigo que está sendo posto de lado inteiro
+    // the rename must not rewrite the foreign keys of the other tables:
+    // it is the old schema being set aside whole
     conn.execute_batch("PRAGMA foreign_keys = OFF; PRAGMA legacy_alter_table = ON;")
         .map_err(|e| e.to_string())?;
 
@@ -97,9 +97,9 @@ pub fn run(conn: &Connection) -> Result<Option<Migrated>, String> {
     conn.execute_batch("ALTER TABLE stack RENAME TO old_stack")
         .map_err(|e| e.to_string())?;
 
-    // o `schema.sql` religa o `foreign_keys`; as tabelas antigas ainda apontam
-    // para os nomes que agora são do esquema novo, e com a checagem ligada nem
-    // o SELECT delas nem o DROP passariam
+    // `schema.sql` turns `foreign_keys` back on; the old tables still point at
+    // the names that now belong to the new schema, and with the check on neither
+    // the SELECT nor the DROP on them would pass
     conn.execute_batch(include_str!("schema.sql"))
         .map_err(|e| e.to_string())?;
     conn.execute_batch("PRAGMA foreign_keys = OFF;")
@@ -145,8 +145,8 @@ mod tests {
     use super::*;
     use crate::store::Db;
 
-    /// O esquema anterior, na forma exata em que ficou no `ba54e1a`+1 — é o
-    /// banco que existe no disco de quem rodou a versão de ontem.
+    /// The previous schema, in the exact shape it had at `ba54e1a`+1 — it is the
+    /// database sitting on disk for whoever ran yesterday's version.
     const OLD: &str = "
       CREATE TABLE stack (
         id INTEGER PRIMARY KEY, slug TEXT NOT NULL UNIQUE, name TEXT NOT NULL,
@@ -210,7 +210,7 @@ mod tests {
           REFERENCES cfg_mm(stack_id, service_id) ON DELETE CASCADE);
     ";
 
-    /// Um banco antigo com duas stacks: a 1 cheia, a 2 só para ser descartada.
+    /// An old database with two stacks: number 1 full, number 2 only to be discarded.
     fn old_db() -> Connection {
         let conn = Connection::open_in_memory().unwrap();
         conn.execute_batch(OLD).unwrap();
@@ -240,7 +240,7 @@ mod tests {
     }
 
     #[test]
-    fn a_stack_de_menor_id_atravessa_inteira() {
+    fn the_lowest_id_stack_survives_whole() {
         let conn = old_db();
         let done = run(&conn).unwrap().expect("havia stack para migrar");
         assert_eq!(done.kept, "/srv/casa");
@@ -248,17 +248,17 @@ mod tests {
 
         let db = Db::from_conn(conn);
         let st = db.load().unwrap().expect("o estado migrou");
-        // as instâncias, na ordem, com o `extra` e as pastas do Jellyfin
+        // the instances, in order, with `extra` and the Jellyfin folders
         assert_eq!(st["added"][0]["title"], serde_json::json!("Sonarr"));
         assert_eq!(st["added"][0]["flagNova"], serde_json::json!(42));
         assert_eq!(
             st["added"][1]["libs"],
             serde_json::json!(["/mnt/a", "/mnt/b"])
         );
-        // o Ambiente, com o booleano de volta como booleano
+        // the Environment, with the boolean back as a boolean
         assert_eq!(st["defaults"]["tz"], serde_json::json!("America/Sao_Paulo"));
         assert_eq!(st["defaults"]["tls"], serde_json::json!(true));
-        // a Configuração inteira
+        // the whole Configuration
         assert_eq!(st["config"]["apps"]["sonarr"], serde_json::json!(true));
         assert_eq!(
             st["config"]["clients"]["sabnzbd"]["cats"]["sonarr"],
@@ -271,7 +271,7 @@ mod tests {
     }
 
     #[test]
-    fn a_segunda_stack_nao_vem_junto() {
+    fn the_second_stack_does_not_come_along() {
         let conn = old_db();
         run(&conn).unwrap();
         let db = Db::from_conn(conn);
@@ -287,36 +287,36 @@ mod tests {
     }
 
     #[test]
-    fn nao_sobra_tabela_do_modelo_antigo() {
+    fn no_table_from_the_old_model_is_left_behind() {
         let conn = old_db();
         run(&conn).unwrap();
         assert!(!has_table(&conn, "stack").unwrap());
         for t in ["stack_env", "instance", "cfg_mm"] {
             assert!(!has_table(&conn, &format!("old_{t}")).unwrap());
-            // e a tabela nova ficou no lugar
+            // and the new table is in place
             assert!(has_table(&conn, t).unwrap());
         }
     }
 
     #[test]
-    fn banco_novo_passa_direto() {
+    fn a_new_db_passes_straight_through() {
         let conn = Connection::open_in_memory().unwrap();
         conn.execute_batch(include_str!("schema.sql")).unwrap();
         assert!(run(&conn).unwrap().is_none());
     }
 
     #[test]
-    fn migrar_de_novo_nao_faz_nada() {
+    fn migrating_again_does_nothing() {
         let conn = old_db();
         run(&conn).unwrap();
-        // segunda passada: já é o modelo novo, e o estado continua onde estava
+        // second pass: it is already the new model, and the state is still where it was
         assert!(run(&conn).unwrap().is_none());
         let db = Db::from_conn(conn);
         assert_eq!(db.load().unwrap().unwrap()["added"][0]["title"], "Sonarr");
     }
 
     #[test]
-    fn banco_antigo_sem_stack_nenhuma_so_troca_de_esquema() {
+    fn an_old_db_with_no_stack_only_swaps_schema() {
         let conn = Connection::open_in_memory().unwrap();
         conn.execute_batch(OLD).unwrap();
         assert!(run(&conn).unwrap().is_none());

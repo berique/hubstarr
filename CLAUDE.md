@@ -377,25 +377,25 @@ banco — não na pasta da stack: o log é do servidor, e o `--dir` se apaga e s
 refaz enquanto o `--db` dura. É `append`, nunca reescrita, porque o valor dele
 é justamente o histórico entre reinícios; e o arquivo que não abre vira um
 aviso na saída, não um servidor que não sobe. Quem cuida disso é o
-`registro.rs`, e `println!` fora dele é sinal de linha que não vai ao arquivo.
+`journal.rs`, e `println!` fora dele é sinal de linha que não vai ao arquivo.
 
 Ali moram **duas alturas de log**, e a distinção é o que mantém as duas úteis:
 
-- `registra()` é o que sempre sai — a subida, o motor escolhido, cada
+- `record()` é o que sempre sai — a subida, o motor escolhido, cada
   `PUT /api/settings`. Curto o bastante para se ler dias depois; responde "o que
   mudou na minha stack?".
-- `detalhe()` só existe com o **`-v`**, e é o passo a passo: cada arquivo
+- `detail()` só existe com o **`-v`**, e é o passo a passo: cada arquivo
   gravado (o `files.rs` e as chaves que o `patch.rs` escreve na conf do app),
   cada linha mexida no banco (instância, Ambiente, Configuração, a lista de
   chaves) e **cada chamada às APIs dos apps**, com método, caminho e status.
   Responde "por que isso não funcionou?". Ligá-lo por padrão afogaria o
   primeiro: uma volta do Aplicar são dezenas de chamadas.
 
-Duas regras do `detalhe()`: o argumento é uma **função**, para que sem o `-v`
+Duas regras do `detail()`: o argumento é uma **função**, para que sem o `-v`
 nem o texto seja montado — dá para chamá-lo dentro de laço sem pensar; e **nada
 de valor sensível na linha**. O Ambiente sai como lista de *nomes* de campo (a
 chave da stack e as senhas estão entre os valores), e a URL sai pelo
-`sem_query()` onde a query leva a API key. Chamada nova de API deve passar pelo
+`without_query()` onde a query leva a API key. Chamada nova de API deve passar pelo
 `api()` do `apply.rs`, que é o único lugar que formata essa linha.
 
 **A stack é uma só**, a da pasta do `--dir`: nenhum caminho da API leva id e
@@ -455,7 +455,7 @@ A pasta raiz é o caminho **de dentro do container** (`/data` mais a subpasta da
 instância), e quem o monta é a página, no `rootFolders()` — é ela que escreve os
 binds do compose, então é ela que sabe o que o app enxerga. Mandar o caminho do
 host não dá erro na hora: o *arr aceita e depois não acha arquivo nenhum. O
-`pastas_raiz()` acrescenta o que falta e **não tira** o que já está lá — remover
+`ensure_root_folders()` acrescenta o que falta e **não tira** o que já está lá — remover
 pasta raiz leva a biblioteca junto.
 
 O **Lidarr** pede mais do que o caminho, e isso foi medido no app: o `Name` não
@@ -463,7 +463,7 @@ pode ser vazio e os dois perfis padrão (`defaultQualityProfileId` e
 `defaultMetadataProfileId`) têm de ser maiores que zero — com só o `path`, a
 resposta é uma lista de validação e a pasta não nasce. O nome sai do
 `LIDARR_ROOT_NAME` (**`Music`**; nome repetido ele aceita, então duas pastas de
-música não precisam de desempate) e os ids saem do `primeiro_id()`, que lê a
+música não precisam de desempate) e os ids saem do `first_id()`, que lê a
 lista do próprio app e cai no `1` — o de fábrica — quando não dá para ler.
 Sonarr e Radarr não têm esses campos, então o ramo é só do Lidarr.
 
@@ -493,7 +493,7 @@ serviço é `internal` e não tem rota no nginx; o nome do registro é o título
 instância, então a stack que roda o Byparr com outro nome aparece com ele.
 
 O **qBittorrent** recebe ainda as preferências dele pela API, no
-`preferencias_do_cliente()`: o `app/setPreferences` com o corpo que a página
+`client_preferences()`: o `app/setPreferences` com o corpo que a página
 monta no `qbitPrefs()` — o gerenciamento automático de torrent
 (`auto_tmm_enabled` e `torrent_changed_tmm_enabled`, que é o que faz o torrent
 seguir a categoria quando ela muda), o `save_path` de dentro do container e o
@@ -503,14 +503,14 @@ já existe — e o TMM a conf nem cobre. O caminho sai do `qbitDl()`, o mesmo do
 dois lugares, para conf e API não discordarem.
 
 A **API key** é do app, não nossa: a conf só a recebe quando ele ainda não tem
-uma. Quem faz isso é o `keep` do `patch.rs` — a lista de chaves que o merge
+uma. Quem faz isso é o `keep_keys` do `patch.rs` — a lista de chaves que o merge
 **não** sobrescreve quando o arquivo já traz valor —, e a página manda
 `keep:['WebUI\\APIKey']` no patch do qBittorrent. Vazia ou ausente ela é
 escrita, que é a primeira subida. A razão: uma vez que o app responda por uma
 chave, é ela que os clientes dele conhecem, e trocá-la a cada Subir cortaria
 quem já falava com ele.
 
-A consequência vem junto, no `adotar_api_key()`: antes de registrar o cliente
+A consequência vem junto, no `adopt_api_key()`: antes de registrar o cliente
 em ninguém, o servidor lê a chave que o app tem e passa a usá-la na volta
 inteira. Sem isso, "não sobrescrever" viraria o *arr registrado com uma chave
 que o app não conhece — pior do que o problema que se queria evitar. App sem
@@ -529,7 +529,7 @@ depois, longe daqui. Conferir não é falhar: quem manda na chave é a conf.
 Duas coisas da API dele: o `setPreferences` recebe **formulário** com um campo
 `json` (não um corpo JSON), e a sessão do `auth/login` vem num cookie cujo nome
 muda com a porta (`QBT_SID_8181`) — por isso o que se guarda é o par inteiro,
-como veio. E o `tem_o_que_fazer()` passou a contar cliente com `prefs`: uma
+como veio. E o `has_work()` passou a contar cliente com `prefs`: uma
 stack de qBittorrent sem *arr nenhum tem trabalho, e antes ela passava em
 branco.
 
@@ -569,7 +569,7 @@ chave do cabeçalho **`Authorization: Bearer`** (`webapplication.cpp`) e só a
 considera se ela passar no `Utils::APIKey::isValid()`: prefixo `qbt_` e **32
 caracteres no total**. Uma chave fora disso é **descartada em silêncio** na
 subida — o app fica sem chave nenhuma, a autenticação por ela nunca entra, e o
-*arr leva 403 sem que nada diga por quê. É o que o `api_key_valida()` do
+*arr leva 403 sem que nada diga por quê. É o que o `api_key_valid()` do
 `apply.rs` recusa antes de mandar, e o que o `qbitKeyFrom()` da página já
 produz. Usuário e senha só vão para o app cujo schema não tem
 esse campo — versão antiga —, e quem decide isso é o próprio schema.
@@ -584,14 +584,14 @@ pelo nginx, porque o servidor roda no host e a rede `starrnet` não existe para
 ele; aplicar de novo procura pelo nome e atualiza no lugar, e um app fora do ar
 vira uma linha no log em vez de derrubar a volta inteira.
 
-**Chamada que não chega se repete**, no `tentar()`: dez vezes, cinco segundos
+**Chamada que não chega se repete**, no `retry()`: dez vezes, cinco segundos
 entre elas. E só o que é "não consegui acessar" — erro de transporte e resposta
 **5xx**, que atrás do nginx é ele dizendo que o container ainda não subiu. Erro
 do app (400, 401, 404, a validação recusando o corpo) **não** se repete: a
 resposta seria a mesma dez vezes, e cinquenta segundos por chamada numa volta de
 dezenas delas transformaria erro de configuração em espera sem fim. Isso não
-substitui o `esperar_apps()` — aquele é a espera única, antes de começar; o
-`tentar()` é a rede para o que cai **no meio**: o qBittorrent reiniciando ao
+substitui o `wait_apps()` — aquele é a espera única, antes de começar; o
+`retry()` é a rede para o que cai **no meio**: o qBittorrent reiniciando ao
 receber a conf, o *arr ocupado importando. As tentativas saem no `-v`
 (`tentativa 3/10`), e o custo do pior caso é somável: app que nunca responde
 gasta os 90s da espera **mais** 50s por chamada.
@@ -599,7 +599,7 @@ gasta os 90s da espera **mais** 50s por chamada.
 A requisição é montada pela função a cada tentativa, e não clonada: corpo
 consumido não se reaproveita, e o `try_clone()` do reqwest devolve `None`
 justamente quando há corpo. Ao acrescentar chamada nova, monte-a dentro do
-`tentar()` em vez de chamar `.send()` direto. Três coisas para não
+`retry()` em vez de chamar `.send()` direto. Três coisas para não
 reaprender: o que vai *dentro* da aplicação do Prowlarr é o endereço interno, de
 container para container, e com a base URL junto — sem ela a API do *arr fica na
 raiz, onde não existe; `naming` e `mediamanagement` são recursos únicos e cheios
@@ -615,7 +615,7 @@ também o arquivo é lido *depois* do stop. O merge só troca as chaves que
 vieram; comentário, ordem e o que o app guardou ficam), `jobs.rs` (trabalhos numerados com log incremental, em memória
 — subir a stack baixa imagem e não cabe numa resposta HTTP), `shots.rs` (cache
 em disco das capturas de paleta do theme.park, ao lado do banco, servido em
-`api/shot/:app/:theme` — o `ok_seg()` recusa segmento que escaparia da pasta ou
+`api/shot/:app/:theme` — o `ok_segment()` recusa segmento que escaparia da pasta ou
 do domínio, e o repositório continua sem redistribuir captura de ninguém: a
 primeira visita sai para a documentação deles. Aberta do disco, a página busca
 lá direto, como sempre).
@@ -684,7 +684,7 @@ servidor. O `docker compose` que estiver rodando morre junto pelo
 `kill_on_drop(true)` do `deploy.rs` — sem ele o processo continuaria sozinho,
 sem ninguém lendo a saída. Parar deixa a stack no meio do caminho (containers
 meio subidos, Configuração meio aplicada), e é isso que a `log.stopped` diz e o
-`registra()` do servidor guarda.
+`record()` do servidor guarda.
 
 **Toda saída daquele laço tem de passar pelo `endLog()`.** Enquanto ele gira, o
 Fechar está desabilitado, então um caminho que não termine prende o modal para
@@ -693,7 +693,7 @@ assim, um de cada lado:
 
 - na página, a busca do trabalho que falha (servidor que caiu, trabalho que ele
   não conhece mais — eles vivem em memória) contava como "ainda correndo"; hoje
-  ela conta as falhas seguidas e desiste depois de `TENTATIVAS`, com a
+  ela conta as falhas seguidas e desiste depois de `ATTEMPTS`, com a
   `log.lost` no log;
 - no servidor, pânico dentro do trabalho matava a tarefa antes do `done`, e a
   página perguntava por ele para sempre. O `jobs.rs` roda o trabalho numa
@@ -756,7 +756,7 @@ stack.
 **O Configarr não é serviço da stack.** Ele não está no `SERVICES`, não entra
 no compose e não tem ponto de status: é uma ferramenta que o servidor roda com
 um `docker run --rm` avulso (`deploy::configarr`), **depois** do
-`esperar_apps()` — no fim do Subir e no "Aplicar na stack". Num `up -d` ele
+`wait_apps()` — no fim do Subir e no "Aplicar na stack". Num `up -d` ele
 subiria antes de os apps responderem, e como sai sozinho o ponto dele viveria
 vermelho. Nos Créditos ele aparece pelo `NGINX_CRED`, ao lado do nginx: crédito
 é de quem faz o trabalho, não de quem está no compose.

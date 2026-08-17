@@ -1,8 +1,8 @@
-/* Chamada ao docker compose.
+/* Calling docker compose.
 
-   O compose é rodado com a pasta dos arquivos como diretório do projeto, para
-   que os caminhos relativos do compose e o `.env` que está ali sejam achados
-   como seriam se alguém tivesse rodado o comando à mão naquela pasta. */
+   The compose is run with the files folder as the project directory, so that
+   the relative paths in the compose and the `.env` sitting there are found just
+   as they would be if someone had run the command by hand in that folder. */
 
 use std::path::Path;
 use std::process::Stdio;
@@ -13,29 +13,30 @@ use tokio::process::Command;
 
 use crate::jobs::Log;
 
-/// O `docker compose` responde? É o que a página usa para avisar antes de
-/// tentar subir. Pergunta pelo plugin, não só pelo docker: é o `compose` que
-/// sobe a stack, e ele é um pacote à parte que pode faltar num docker que
-/// está lá e funcionando. Vale igual para o `podman compose`.
-/// Os motores que sabemos rodar, na ordem em que são tentados quando ninguém
-/// passou `--docker`. O `podman` entra aqui porque o `podman compose` roda o
-/// mesmo arquivo — quem tem só ele instalado não tem `docker` nenhum a
-/// encontrar, e a página abriria o aviso de "instale o Docker" com a máquina
-/// pronta para subir a stack.
+/// Does `docker compose` answer? It is what the page uses to warn before even
+/// trying to bring the stack up. It asks for the plugin, not just for docker:
+/// it is `compose` that brings the stack up, and it is a separate package that
+/// may be missing from a docker that is there and working. The same holds for
+/// `podman compose`.
+/// The engines we know how to run, in the order they are tried when nobody
+/// passed `--docker`. `podman` is here because `podman compose` runs the same
+/// file — whoever has only that installed has no `docker` to find at all, and
+/// the page would open the "install Docker" warning on a machine that is ready
+/// to bring the stack up.
 pub const ENGINES: [&str; 2] = ["docker", "podman"];
 
-/// Qual motor usar: o que veio na linha de comando, se veio, senão o primeiro
-/// dos `ENGINES` que responder. Sem nenhum, fica o `docker` — é o que a
-/// mensagem do `docker_ok()` na página fala de instalar.
-pub async fn pick_engine(escolhido: Option<String>) -> String {
-    pick_from(escolhido, &ENGINES).await
+/// Which engine to use: the one from the command line, if it came, otherwise
+/// the first of `ENGINES` that answers. With none, `docker` stays — it is what
+/// the page's `docker_ok()` message tells people to install.
+pub async fn pick_engine(chosen: Option<String>) -> String {
+    pick_from(chosen, &ENGINES).await
 }
 
-/// O miolo do `pick_engine()`, com a lista de fora — é por ela que o teste
-/// entra, apontando para comandos de mentira em vez de depender do que está
-/// instalado na máquina.
-async fn pick_from(escolhido: Option<String>, engines: &[&str]) -> String {
-    if let Some(c) = escolhido {
+/// The core of `pick_engine()`, with the list passed in — that is how the test
+/// gets in, pointing at made-up commands instead of depending on what is
+/// installed on the machine.
+async fn pick_from(chosen: Option<String>, engines: &[&str]) -> String {
+    if let Some(c) = chosen {
         return c;
     }
     for e in engines {
@@ -57,16 +58,16 @@ pub async fn docker_ok(docker: &str) -> bool {
         .unwrap_or(false)
 }
 
-/* O estado de cada container da stack, para o ponto de status da lista.
+/* The state of each container of the stack, for the status dot in the list.
 
-   O `compose ps` é lido com `--format json`, que sai como uma linha por
-   container (nas versões mais novas) ou um array só (nas antigas) — os dois
-   casos entram aqui. `--all` é o que faz o container parado aparecer: sem ele,
-   parado e inexistente ficariam iguais, e é justamente a diferença que o ponto
-   mostra.
+   The `compose ps` output is read with `--format json`, which comes out as one
+   line per container (in newer versions) or a single array (in older ones) —
+   both cases land here. `--all` is what makes a stopped container show up:
+   without it, stopped and non-existent would look the same, and that is exactly
+   the difference the dot shows.
 
-   A chave é o `Service` do compose, que é o `cname()` da página; quem não
-   aparecer na resposta é porque nunca foi criado. */
+   The key is the compose `Service`, which is the page's `cname()`; whoever does
+   not appear in the answer was never created. */
 pub async fn status(docker: &str, dir: &Path) -> Result<Value, String> {
     let out = Command::new(docker)
         .args(["compose", "ps", "--format", "json", "--all"])
@@ -74,8 +75,8 @@ pub async fn status(docker: &str, dir: &Path) -> Result<Value, String> {
         .output()
         .await
         .map_err(|e| format!("não consegui rodar o {docker}: {e}"))?;
-    // pasta sem compose ainda, ou docker fora do ar: ninguém está no ar, e
-    // isso não é erro — a página só não pinta ponto nenhum
+    // a folder with no compose yet, or docker down: nobody is up, and that is
+    // not an error — the page simply paints no dot at all
     if !out.status.success() {
         return Ok(json!({}));
     }
@@ -120,10 +121,10 @@ pub async fn down(docker: &str, dir: &Path, log: Log) -> Result<(), String> {
     run(docker, &["compose", "down"], dir, &log).await
 }
 
-/// Nome de serviço que pode virar argumento do compose. O `cname()` da página
-/// só produz minúsculas, dígitos e hífen; o que fugir disso não veio de lá e
-/// não entra na linha de comando. Hífen no começo é recusado à parte: seria
-/// nome válido pela regra das letras, mas o compose o leria como opção.
+/// A service name that may become a compose argument. The page's `cname()`
+/// only produces lowercase letters, digits and hyphens; anything outside that
+/// did not come from there and does not go on the command line. A leading
+/// hyphen is refused separately: it would be a valid name by the letter rule,
 pub fn ok_service(key: &str) -> bool {
     !key.is_empty()
         && !key.starts_with('-')
@@ -133,52 +134,53 @@ pub fn ok_service(key: &str) -> bool {
             .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-' || c == '_')
 }
 
-/// Sobe um container só, sem tocar nos outros. `--no-deps` é o que mantém a
-/// promessa do clique: quem está parado ao lado continua parado.
+/// but the compose would read it as an option.
+/// Brings a single container up, without touching the others. `--no-deps` is
+/// what keeps the promise of the click: whoever is stopped next to it stays stopped.
 pub async fn up_one(docker: &str, dir: &Path, key: &str, log: Log) -> Result<(), String> {
     run(docker, &["compose", "up", "-d", "--no-deps", key], dir, &log).await
 }
 
-/// Para um container só. É `stop`, não `down`: o `down` derruba a stack
-/// inteira, e aqui o que se quer é o inverso — só aquele serviço sai do ar, e
-/// o container continua existindo para o ponto voltar a "parado" em vez de
-/// "não criado".
+/// Stops a single container. It is `stop`, not `down`: `down` takes the whole
+/// stack away, and what is wanted here is the opposite — only that service goes
+/// off the air, and the container keeps existing so the dot goes back to
+/// "stopped" instead of "not created".
 pub async fn stop_one(docker: &str, dir: &Path, key: &str, log: Log) -> Result<(), String> {
     run(docker, &["compose", "stop", key], dir, &log).await
 }
 
-/// O que a página manda para rodar o Configarr: caminhos, rede e usuário — as
-/// decisões continuam lá, aqui só se monta a linha de comando.
+/// What the page sends to run Configarr: paths, network and user — the
+/// decisions stay over there, here we only build the command line.
 #[derive(serde::Deserialize, Clone)]
 pub struct Configarr {
-    /// pasta dele no host, com o `config.yml`, o `secrets.yml`, os custom
-    /// formats e o cache dos repositórios
+    /// its folder on the host, with `config.yml`, `secrets.yml`, the custom
+    /// formats and the repository cache
     pub dir: String,
-    /// a rede da stack, por onde ele alcança os *arr pelo nome do container
+    /// the stack network, through which it reaches the *arr apps by container name
     pub network: String,
-    /// `PUID:PGID` do Ambiente — é quem tem de ser dono do cache
+    /// the Environment's `PUID:PGID` — whoever has to own the cache
     pub user: String,
     #[serde(default)]
     pub tz: String,
 }
 
-/// O Configarr, que aplica os perfis de qualidade e os custom formats do TRaSH
-/// Guides a partir do `config.yml` que a página escreveu.
+/// Configarr, which applies the TRaSH Guides quality profiles and custom
+/// formats from the `config.yml` the page wrote.
 ///
-/// É um `docker run --rm` avulso, não um serviço da stack: ele roda uma vez e
-/// sai, e num `up -d` subiria antes de os apps responderem. Entra na rede da
-/// stack para alcançar cada *arr pelo nome do container, com a base URL que o
-/// `config.yml` já traz. Quem chama espera os apps primeiro, como o resto do
-/// `apply`.
+/// It is a standalone `docker run --rm`, not a service of the stack: it runs
+/// once and exits, and in an `up -d` it would start before the apps answer. It
+/// joins the stack network to reach each *arr by container name, with the base
+/// URL that the `config.yml` already carries. The caller waits for the apps
+/// first, like the rest of `apply`.
 ///
-/// O `--dns` é o que faz ele resolver o github de dentro da rede da stack, que
-/// é uma bridge nossa: sem isso o clone do TRaSH e do Recyclarr falha em
-/// máquina cujo resolvedor não é alcançável de lá.
+/// `--dns` is what lets it resolve github from inside the stack network, which
+/// is a bridge of ours: without it the TRaSH and Recyclarr clone fails on a
+/// machine whose resolver is not reachable from there.
 pub async fn configarr(docker: &str, cfg: &Configarr, log: &Log) -> Result<(), String> {
     log.line("aplicando os perfis do TRaSH Guides (configarr)…");
     let dir = cfg.dir.trim_end_matches('/');
     let tz = if cfg.tz.is_empty() { "Etc/UTC" } else { &cfg.tz };
-    let montar = [
+    let build = [
         format!("{dir}/config.yml:/app/config/config.yml:ro"),
         format!("{dir}/secrets.yml:/app/config/secrets.yml:ro"),
         format!("{dir}/custom_formats:/app/cfs:ro"),
@@ -191,16 +193,16 @@ pub async fn configarr(docker: &str, cfg: &Configarr, log: &Log) -> Result<(), S
         "--network".into(), cfg.network.clone(),
         "--dns".into(), "1.1.1.1".into(),
     ];
-    for m in &montar {
+    for m in &build {
         args.push("-v".into());
         args.push(m.clone());
     }
-    /* O cache pode ter sido clonado por outro dono — pelo root, em quem vem da
-       versão em que o Configarr era serviço do compose e rodava sem `--user`.
-       O git recusa mexer em repositório de outro dono ("dubious ownership") e o
-       Configarr morre antes de ler o `config.yml`; estas três variáveis são a
-       forma sancionada de dizer que ali é de casa, sem precisar de um
-       `git config` dentro do container. */
+    /* The cache may have been cloned by another owner — by root, for whoever
+       comes from the version in which Configarr was a compose service and ran
+       without `--user`. Git refuses to touch a repository owned by someone else
+       ("dubious ownership") and Configarr dies before reading the `config.yml`;
+       these three variables are the sanctioned way of saying that this is home,
+       without needing a `git config` inside the container. */
     for e in [
         "LOG_STACKTRACE=true",
         "LOG_LEVEL=debug",
@@ -217,12 +219,12 @@ pub async fn configarr(docker: &str, cfg: &Configarr, log: &Log) -> Result<(), S
 
     let refs: Vec<&str> = args.iter().map(String::as_str).collect();
     run(docker, &refs, Path::new(dir), log).await.inspect_err(|_| {
-        /* O erro do docker não diz qual é o problema quando ele é de posse: o
-           Configarr morre num "Permission denied" do git, no meio de um rastro
-           de pilha do node. O caso conhecido é o cache clonado por outro dono —
-           quem vem da versão em que ele era serviço do compose, e rodava como
-           root. A saída é apagar o cache: ele se refaz sozinho. */
-        if !escrevivel(&format!("{dir}/repos")) {
+        /* The docker error does not say what the problem is when it is ownership:
+           Configarr dies on a git "Permission denied", in the middle of a node
+           stack trace. The known case is a cache cloned by another owner —
+           whoever comes from the version in which it was a compose service and
+           ran as root. The way out is to delete the cache: it rebuilds itself. */
+        if !writable(&format!("{dir}/repos")) {
             log.line(format!(
                 "o cache em {dir}/repos é de outro dono e o Configarr roda como {};                  apague a pasta (ela se refaz sozinha) e mande subir de novo",
                 cfg.user
@@ -231,13 +233,13 @@ pub async fn configarr(docker: &str, cfg: &Configarr, log: &Log) -> Result<(), S
     })
 }
 
-/// A pasta existe e aceita escrita de quem roda o servidor? É ele quem cria as
-/// pastas da stack, e o Configarr roda com o mesmo PUID/PGID.
-fn escrevivel(dir: &str) -> bool {
-    let sonda = Path::new(dir).join(".hubstarr-escrita");
-    match std::fs::File::create(&sonda) {
+/// Does the folder exist and take writes from whoever runs the server? It is
+/// the server that creates the stack folders, and Configarr runs with the same PUID/PGID.
+fn writable(dir: &str) -> bool {
+    let probe = Path::new(dir).join(".hubstarr-escrita");
+    match std::fs::File::create(&probe) {
         Ok(_) => {
-            let _ = std::fs::remove_file(&sonda);
+            let _ = std::fs::remove_file(&probe);
             true
         }
         Err(_) => false,
@@ -246,16 +248,16 @@ fn escrevivel(dir: &str) -> bool {
 
 pub const CONFIGARR_IMG: &str = "ghcr.io/raydak-labs/configarr:latest";
 
-/// Um `docker compose <args>` qualquer na pasta da stack — é como o `patch.rs`
-/// para e sobe um container só, em volta da edição da configuração dele.
+/// Any `docker compose <args>` in the stack folder — it is how `patch.rs`
+/// stops and starts a single container around editing its configuration.
 pub async fn compose(docker: &str, args: &[&str], dir: &Path, log: &Log) -> Result<(), String> {
-    let mut todos = vec!["compose"];
-    todos.extend_from_slice(args);
-    run(docker, &todos, dir, log).await
+    let mut all = vec!["compose"];
+    all.extend_from_slice(args);
+    run(docker, &all, dir, log).await
 }
 
-/// Roda o comando na pasta da stack copiando as duas saídas para o log,
-/// linha a linha — o compose escreve o progresso na stderr.
+/// Runs the command in the stack folder copying both outputs to the log,
+/// line by line — the compose writes its progress to stderr.
 async fn run(docker: &str, args: &[&str], dir: &Path, log: &Log) -> Result<(), String> {
     log.line(format!("$ {docker} {}", args.join(" ")));
 
@@ -264,9 +266,9 @@ async fn run(docker: &str, args: &[&str], dir: &Path, log: &Log) -> Result<(), S
         .current_dir(dir)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        /* O Parar do modal aborta a tarefa do trabalho, e o `child` cai junto:
-           sem isto o `docker compose` continuaria rodando sozinho, sem
-           ninguém lendo a saída dele. */
+        /* The modal's Stop aborts the job's task, and `child` falls with it:
+           without this the `docker compose` would go on running by itself, with
+           nobody reading its output. */
         .kill_on_drop(true)
         .spawn()
         .map_err(|e| format!("não consegui rodar o {docker}: {e}"))?;
@@ -300,53 +302,53 @@ where
 mod tests {
     use super::{ok_service, pick_from};
 
-    /// Um comando de mentira que responde (ou não) ao `compose version`.
-    fn falso(nome: &str, responde: bool) -> String {
+    /// A made-up command that answers (or not) to `compose version`.
+    fn fake(name: &str, responds: bool) -> String {
         use std::os::unix::fs::PermissionsExt;
         let dir = std::env::temp_dir().join(format!("hubmotor{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
-        let p = dir.join(nome);
-        let corpo = if responde {
+        let p = dir.join(name);
+        let body = if responds {
             "#!/bin/sh\n[ \"$1 $2\" = 'compose version' ] && exit 0\nexit 1\n"
         } else {
             "#!/bin/sh\nexit 127\n"
         };
-        std::fs::write(&p, corpo).unwrap();
+        std::fs::write(&p, body).unwrap();
         std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o755)).unwrap();
         p.to_string_lossy().into_owned()
     }
 
     #[tokio::test]
-    async fn o_motor_escolhido_na_linha_de_comando_manda() {
-        let bom = falso("bom", true);
-        // nem se pergunta ao que veio: quem passou --docker já decidiu
-        assert_eq!(pick_from(Some("qualquer".into()), &[&bom]).await, "qualquer");
+    async fn the_engine_chosen_on_the_command_line_wins() {
+        let good = fake("bom", true);
+        // the one that came is not even asked: whoever passed --docker has decided
+        assert_eq!(pick_from(Some("qualquer".into()), &[&good]).await, "qualquer");
     }
 
     #[tokio::test]
-    async fn sem_opcao_vale_o_primeiro_que_responde() {
-        let quebrado = falso("quebrado", false);
-        let bom = falso("bom", true);
-        let e: Vec<&str> = vec![&quebrado, &bom];
-        assert_eq!(pick_from(None, &e).await, bom);
-        // e o primeiro continua sendo o primeiro quando responde
-        let e: Vec<&str> = vec![&bom, &quebrado];
-        assert_eq!(pick_from(None, &e).await, bom);
+    async fn with_no_option_the_first_that_answers_wins() {
+        let broken = fake("quebrado", false);
+        let good = fake("bom", true);
+        let e: Vec<&str> = vec![&broken, &good];
+        assert_eq!(pick_from(None, &e).await, good);
+        // and the first one is still the first when it answers
+        let e: Vec<&str> = vec![&good, &broken];
+        assert_eq!(pick_from(None, &e).await, good);
     }
 
     #[tokio::test]
-    async fn sem_motor_nenhum_fica_o_primeiro_da_lista() {
-        let quebrado = falso("quebrado", false);
-        // não existe nem como arquivo: o `Command` falha antes de rodar
-        let e: Vec<&str> = vec![&quebrado, "hubstarr-motor-que-nao-existe"];
-        assert_eq!(pick_from(None, &e).await, quebrado);
+    async fn with_no_engine_the_first_of_the_list_is_used() {
+        let broken = fake("quebrado", false);
+        // it does not even exist as a file: `Command` fails before running
+        let e: Vec<&str> = vec![&broken, "hubstarr-motor-que-nao-existe"];
+        assert_eq!(pick_from(None, &e).await, broken);
     }
 
     #[test]
-    fn nome_de_servico_so_aceita_o_que_o_cname_produz() {
+    fn a_service_name_only_accepts_what_cname_produces() {
         assert!(ok_service("sonarr-4k"));
         assert!(!ok_service(""));
-        assert!(!ok_service("--rmi")); // o compose leria isso como opção
+        assert!(!ok_service("--rmi")); // the compose would read this as an option
         assert!(!ok_service("sonarr; rm -rf /"));
         assert!(!ok_service("../fora"));
         assert!(!ok_service("Sonarr"));

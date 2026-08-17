@@ -1,13 +1,13 @@
-/* As instâncias: uma linha por serviço adicionado.
+/* The instances: one row per added service.
 
-   A chave é o `cname()` da página — o `container_name`, que é também a pasta de
-   config e o nome pelo qual a Configuração se refere ao serviço. Editar o
-   título muda a chave junto: por isso o `old`, que faz do editar um renomear e
-   não uma linha nova.
+   The key is the page's `cname()` — the `container_name`, which is also the
+   config folder and the name the Configuration uses to refer to the service.
+   Editing the title changes the key along with it: hence `old`, which turns an
+   edit into a rename instead of a new row.
 
-   Cada adicionar, editar ou excluir mexe numa linha só; o `reconcile()` é a
-   rede de segurança para o que não passa pelo modal — o gluetun e o
-   flaresolverr que entram sozinhos, o "Limpar" que esvazia tudo. */
+   Every add, edit or delete touches a single row; `reconcile()` is the safety
+   net for what does not go through the modal — gluetun and flaresolverr coming
+   in on their own, the "Clear" that empties everything. */
 
 use rusqlite::params;
 use serde::Deserialize;
@@ -15,24 +15,24 @@ use serde_json::{json, Map, Value};
 
 use super::{flag, text, Db};
 
-/// Os campos do `added` que viram coluna ou tabela própria. O resto vai para
-/// `extra` e volta espalhado no objeto, como a página o mandou.
+/// The `added` fields that become a column or a table of their own. The rest
+/// goes to `extra` and comes back spread over the object, as the page sent it.
 const COLUMNS: [&str; 10] = [
     "id", "title", "data", "abs", "hw", "tpv", "tpt", "vpn", "solver", "libs",
 ];
 
-/// O que a página manda ao adicionar ou editar um serviço.
+/// What the page sends when adding or editing a service.
 #[derive(Deserialize)]
 pub struct InstanceIn {
-    /// chave da instância: o `container_name`, que é o `cname()` da página
+    /// the instance key: the `container_name`, which is the page's `cname()`
     pub key: String,
-    /// chave anterior, quando editar renomeou a instância
+    /// the previous key, when an edit renamed the instance
     #[serde(default)]
     pub old: Option<String>,
-    /// posição na lista, que é a ordem no compose
+    /// position in the list, which is the order in the compose
     #[serde(default)]
     pub ord: i64,
-    /// o objeto inteiro, como a página o guarda no `added`
+    /// the whole object, as the page keeps it in `added`
     pub data: Value,
 }
 
@@ -114,13 +114,13 @@ impl Db {
             .map_err(|e| e.to_string())?;
         }
         tx.commit().map_err(|e| e.to_string())?;
-        crate::registro::detalhe(|| {
-            let renome = match inc.old.as_deref() {
+        crate::journal::detail(|| {
+            let renamed = match inc.old.as_deref() {
                 Some(old) if old != inc.key => format!(" (era {old})"),
                 _ => String::new(),
             };
             format!(
-                "banco: instância {}{renome}, ord {}, {} pasta(s) avulsa(s)",
+                "banco: instância {}{renamed}, ord {}, {} pasta(s) avulsa(s)",
                 inc.key,
                 inc.ord,
                 libs.len()
@@ -134,21 +134,21 @@ impl Db {
             .lock()?
             .execute("DELETE FROM instance WHERE key = ?1", params![key])
             .map_err(|e| e.to_string())?;
-        crate::registro::detalhe(|| format!("banco: instância {key} apagada ({n} linha)"));
+        crate::journal::detail(|| format!("banco: instância {key} apagada ({n} linha)"));
         Ok(())
     }
 
-    /// Alinha o banco com a lista que a página tem agora: acerta a ordem e
-    /// apaga o que saiu. Devolve o que apagou — é a única operação da API que
-    /// tira instância sem ninguém ter clicado em "Excluir", então quem chama a
-    /// registra no log.
+    /// Aligns the database with the list the page has now: fixes the order and
+    /// deletes what left. Returns what it deleted — it is the only API operation
+    /// that removes an instance without anyone having clicked "Delete", so the
+    /// caller records it in the log.
     pub fn reconcile(&self, keys: &[String]) -> Result<Vec<String>, String> {
         let list = serde_json::to_string(keys).map_err(|e| e.to_string())?;
         let mut conn = self.lock()?;
         let tx = conn.transaction().map_err(|e| e.to_string())?;
-        let saiu: Vec<String>;
+        let left: Vec<String>;
         {
-            saiu = tx
+            left = tx
                 .prepare(
                     "SELECT key FROM instance
                       WHERE key NOT IN (SELECT value FROM json_each(?1))
@@ -174,22 +174,22 @@ impl Db {
             }
         }
         tx.commit().map_err(|e| e.to_string())?;
-        crate::registro::detalhe(|| {
+        crate::journal::detail(|| {
             format!(
                 "banco: lista com {} chave(s){}",
                 keys.len(),
-                if saiu.is_empty() {
+                if left.is_empty() {
                     String::new()
                 } else {
-                    format!(", apagou {}", saiu.join(", "))
+                    format!(", apagou {}", left.join(", "))
                 }
             )
         });
-        Ok(saiu)
+        Ok(left)
     }
 
-    /// Remonta o `added` da página: na ordem da lista, com as `libs` de volta
-    /// como array e o `extra` espalhado no objeto.
+    /// Rebuilds the page's `added`: in list order, with the `libs` back as an
+    /// array and `extra` spread over the object.
     pub(crate) fn instances(&self) -> Result<Vec<Value>, String> {
         let conn = self.lock()?;
         let mut st = conn
@@ -258,7 +258,7 @@ mod tests {
     }
 
     #[test]
-    fn editar_renomeando_move_a_linha_em_vez_de_duplicar() {
+    fn editing_with_a_rename_moves_the_row_instead_of_duplicating_it() {
         let db = Db::memory().unwrap();
         db.put_instance(&inc("sonarr", None, 0, json!({"id":"sonarr","title":"Sonarr"})))
             .unwrap();
@@ -270,7 +270,7 @@ mod tests {
     }
 
     #[test]
-    fn as_pastas_do_jellyfin_voltam_na_ordem() {
+    fn the_jellyfin_folders_come_back_in_order() {
         let db = Db::memory().unwrap();
         db.put_instance(&inc(
             "jellyfin",
@@ -284,19 +284,19 @@ mod tests {
     }
 
     #[test]
-    fn excluir_a_instancia_leva_as_pastas_junto() {
+    fn deleting_the_instance_takes_its_folders_along() {
         let db = Db::memory().unwrap();
         db.put_instance(&inc("jellyfin", None, 0, json!({"id":"jellyfin","libs":["/mnt/a"]})))
             .unwrap();
         db.delete_instance("jellyfin").unwrap();
         db.put_instance(&inc("jellyfin", None, 0, json!({"id":"jellyfin"})))
             .unwrap();
-        // sem o CASCADE, a pasta da instância anterior voltaria nesta
+        // without the CASCADE, the previous instance's folder would come back in this one
         assert_eq!(db.instances().unwrap()[0]["libs"], json!([]));
     }
 
     #[test]
-    fn o_que_nao_e_coluna_volta_inteiro() {
+    fn what_is_not_a_column_comes_back_whole() {
         let db = Db::memory().unwrap();
         db.put_instance(&inc("qbittorrent", None, 0, json!({"id":"qbittorrent","flagNova":42})))
             .unwrap();
@@ -305,26 +305,26 @@ mod tests {
     }
 
     #[test]
-    fn reconcile_apaga_o_que_saiu_e_acerta_a_ordem() {
+    fn reconcile_deletes_what_left_and_fixes_the_order() {
         let db = Db::memory().unwrap();
         db.put_instance(&inc("a", None, 0, json!({"id":"sonarr"}))).unwrap();
         db.put_instance(&inc("b", None, 1, json!({"id":"radarr"}))).unwrap();
-        let saiu = db.reconcile(&["b".to_string()]).unwrap();
-        // o que saiu volta para quem chamou, que é quem o escreve no log
-        assert_eq!(saiu, vec!["a".to_string()]);
+        let left = db.reconcile(&["b".to_string()]).unwrap();
+        // what left goes back to the caller, who is the one writing it to the log
+        assert_eq!(left, vec!["a".to_string()]);
         let all = db.instances().unwrap();
         assert_eq!(all.len(), 1);
         assert_eq!(all[0]["id"], json!("radarr"));
     }
 
-    /// Lista igual à que está lá não apaga nada, e é esse o caso comum — o
-    /// `saveSettings()` roda no fim de cada `render()`.
+    /// A list identical to the stored one deletes nothing, and that is the common
+    /// case — `saveSettings()` runs at the end of every `render()`.
     #[test]
-    fn reconcile_sem_novidade_nao_apaga_nada() {
+    fn reconcile_with_no_news_deletes_nothing() {
         let db = Db::memory().unwrap();
         db.put_instance(&inc("a", None, 0, json!({"id":"sonarr"}))).unwrap();
-        let saiu = db.reconcile(&["a".to_string()]).unwrap();
-        assert!(saiu.is_empty());
+        let left = db.reconcile(&["a".to_string()]).unwrap();
+        assert!(left.is_empty());
         assert_eq!(db.instances().unwrap().len(), 1);
     }
 }

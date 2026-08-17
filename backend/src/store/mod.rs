@@ -1,17 +1,18 @@
-/* Estado da página, em SQLite.
+/* The page state, in SQLite.
 
-   Uma tabela por coisa que a página tem — as instâncias, o Ambiente, a
-   Configuração. A stack é uma só, a da pasta do `--dir`, então nenhuma tabela
-   leva id de stack. O banco fica num lugar só (`~/.hubstarr/hubstarr.db`); o
-   que fica na pasta da stack são os arquivos gerados, e só eles.
+   One table per thing the page has — the instances, the Environment, the
+   Configuration. There is a single stack, the one in the `--dir` folder, so no
+   table carries a stack id. The database lives in one place
+   (`~/.hubstarr/hubstarr.db`); what lives in the stack folder are the generated
+   files, and only those.
 
-   O servidor conhece o formato do estado da página — é o preço de ter tabela em
-   vez de um blob. Os campos que a página inventar depois caem em `extra`, que é
-   o resto do objeto em JSON: assim uma flag nova no `SERVICES` não exige
-   migração para voltar inteira à página.
+   The server knows the shape of the page state — that is the price of having
+   tables instead of a blob. Fields the page invents later land in `extra`,
+   which is the rest of the object as JSON: that way a new flag in `SERVICES`
+   does not require a migration to come back whole to the page.
 
-   `load()` remonta `{added, defaults, config}` exatamente na forma em que a
-   página mandou. É esse o critério do modelo: ida e volta sem perda. */
+   `load()` rebuilds `{added, defaults, config}` exactly in the shape the page
+   sent. That is the criterion of the model: a round trip with no loss. */
 
 use std::path::Path;
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -29,10 +30,11 @@ pub use instance::InstanceIn;
 pub struct Db(Arc<Mutex<Connection>>);
 
 impl Db {
-    /// Abre o banco e cria o que faltar. Rodar de novo num banco pronto não
-    /// muda nada — é o mesmo caminho da primeira vez e das seguintes. Um banco
-    /// do modelo de várias stacks passa antes pela migração, que já monta o
-    /// esquema novo; devolve junto o que ela encontrou, para o `main` contar.
+    /// Opens the database and creates whatever is missing. Running it again on a
+    /// ready database changes nothing — it is the same path the first time and
+    /// every time after. A database from the many-stacks model goes through the
+    /// migration first, which already builds the new schema; it returns what the
+/// migration found, for `main` to report.
     pub fn open(path: &Path) -> Result<(Self, Option<migrate::Migrated>), String> {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).map_err(|e| format!("{}: {e}", parent.display()))?;
@@ -41,8 +43,8 @@ impl Db {
         let done = migrate::run(&conn)?;
         conn.execute_batch(include_str!("schema.sql"))
             .map_err(|e| e.to_string())?;
-        // o schema não acrescenta coluna a tabela que já existe, e o Ambiente é
-        // a tabela que cresce uma coluna por chave nova — ver `ensure_env_cols`
+        // the schema does not add a column to a table that already exists, and the
+        // Environment is the table that grows a column per new key — see `ensure_env_cols`
         env::ensure_env_cols(&conn)?;
         Ok((Db(Arc::new(Mutex::new(conn))), done))
     }
@@ -64,13 +66,13 @@ impl Db {
         self.0.lock().map_err(|_| "banco travado".to_string())
     }
 
-    /// O estado inteiro da stack, na forma que a página espera receber.
+    /// The whole stack state, in the shape the page expects to receive.
     pub fn load(&self) -> Result<Option<Value>, String> {
         let added = self.instances()?;
         let defaults = self.env()?;
         let config = self.config()?;
-        // banco recém-criado: nada a restaurar, e a página fica com os padrões
-        // dela em vez de receber de volta um estado vazio
+        // a freshly created database: nothing to restore, and the page keeps its own
+        // defaults instead of getting an empty state back
         let empty = config["apps"].as_object().is_none_or(|m| m.is_empty())
             && config["clients"].as_object().is_none_or(|m| m.is_empty())
             && config["mm"].as_object().is_none_or(|m| m.is_empty());
@@ -83,7 +85,7 @@ impl Db {
     }
 }
 
-/* ---------- utilidades de JSON ---------- */
+/* ---------- JSON helpers ---------- */
 
 pub(crate) fn text(o: &serde_json::Map<String, Value>, k: &str) -> String {
     o.get(k).and_then(|v| v.as_str()).unwrap_or("").to_string()
@@ -103,13 +105,13 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn banco_vazio_nao_devolve_estado() {
+    fn an_empty_db_returns_no_state() {
         let db = Db::memory().unwrap();
         assert!(db.load().unwrap().is_none());
     }
 
     #[test]
-    fn com_uma_instancia_o_estado_volta_inteiro() {
+    fn with_one_instance_the_state_comes_back_whole() {
         let db = Db::memory().unwrap();
         db.put_instance(&InstanceIn {
             key: "sonarr".into(),

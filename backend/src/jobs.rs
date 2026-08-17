@@ -1,8 +1,9 @@
-/* Trabalhos de longa duração.
+/* Long-running jobs.
 
-   Subir a stack baixa imagem e configurar os *arr espera app responder: os
-   dois passam do que cabe numa resposta HTTP. Então cada um vira um trabalho
-   com número, a página pergunta pelo número e vai mostrando o log. */
+   Bringing the stack up pulls images and configuring the *arr apps waits for
+   them to answer: both go beyond what fits in an HTTP response. So each one
+   becomes a numbered job, the page asks about the number and shows the log as
+   it grows. */
 
 use std::collections::HashMap;
 use std::future::Future;
@@ -13,14 +14,14 @@ use serde::Serialize;
 
 #[derive(Serialize, Clone, Default)]
 pub struct JobState {
-    /// já terminou?
+    /// finished already?
     pub done: bool,
-    /// terminou bem? só quer dizer alguma coisa com `done`
+    /// finished well? only means anything together with `done`
     pub ok: bool,
     pub log: Vec<String>,
 }
 
-/// A ponta que o trabalho usa para escrever no log enquanto roda.
+/// The end the job uses to write to the log while it runs.
 #[derive(Clone)]
 pub struct Log(Arc<Mutex<JobState>>);
 
@@ -35,10 +36,10 @@ impl Log {
 pub struct Jobs {
     next: AtomicU64,
     map: Mutex<HashMap<u64, Arc<Mutex<JobState>>>>,
-    /* A ponta pela qual o Parar mata o trabalho. É da tarefa *de dentro*, a
-       que roda o `f`: abortá-la faz o `await` de fora receber um `JoinError`
-       de cancelamento, e o trabalho termina como falha comum — o `done` sai
-       escrito e o Fechar volta, pelo mesmo caminho do pânico. */
+    /* The end through which Stop kills the job. It belongs to the *inner* task,
+       the one running `f`: aborting it makes the outer `await` receive a
+       cancellation `JoinError`, and the job ends as an ordinary failure — the
+       `done` gets written and Close comes back, by the same path as a panic. */
     stop: Mutex<HashMap<u64, tokio::task::AbortHandle>>,
 }
 
@@ -51,7 +52,7 @@ impl Jobs {
         }
     }
 
-    /// Põe o trabalho para rodar e devolve o número dele na hora.
+    /// Sets the job running and returns its number right away.
     pub fn spawn<F, Fut>(&self, f: F) -> u64
     where
         F: FnOnce(Log) -> Fut + Send + 'static,
@@ -63,20 +64,20 @@ impl Jobs {
             m.insert(id, slot.clone());
         }
         let log = Log(slot.clone());
-        /* O trabalho roda numa tarefa própria só para que o `done` seja
-           escrito **sempre**: um pânico lá dentro mataria a tarefa antes
-           dessa linha, e o trabalho ficaria eternamente "correndo" — do
-           lado da página, isso é o modal do log com o Fechar desabilitado
-           e nada mais acontecendo. Esperar pelo `JoinHandle` transforma o
-           pânico numa falha comum, com uma linha no log — e é o mesmo
-           caminho do Parar, que aborta essa tarefa de dentro. */
-        let dentro = log.clone();
-        let interna = tokio::spawn(async move { f(dentro).await });
+        /* The job runs in a task of its own only so that `done` is **always**
+           written: a panic in there would kill the task before that line, and
+           the job would stay forever "running" — on the page side, that is the
+           log modal with Close disabled and nothing else happening. Waiting for
+           the `JoinHandle` turns the panic into an ordinary failure, with a
+           line in the log — and it is the same path as Stop, which aborts that
+           inner task. */
+        let inside = log.clone();
+        let internal = tokio::spawn(async move { f(inside).await });
         if let Ok(mut s) = self.stop.lock() {
-            s.insert(id, interna.abort_handle());
+            s.insert(id, internal.abort_handle());
         }
         tokio::spawn(async move {
-            let res = match interna.await {
+            let res = match internal.await {
                 Ok(r) => r,
                 Err(e) if e.is_cancelled() => Err("parado a pedido".to_string()),
                 Err(e) => Err(format!("o trabalho morreu no meio ({e})")),
@@ -92,16 +93,16 @@ impl Jobs {
         id
     }
 
-    /// Uma ponta de log solta, para teste: ninguém lê o que ela escreve.
+    /// A loose log end, for tests: nobody reads what it writes.
     #[cfg(test)]
-    pub fn log_de_teste(&self) -> Log {
+    pub fn test_log(&self) -> Log {
         Log(Arc::new(Mutex::new(JobState::default())))
     }
 
-    /// Mata o trabalho. Devolve `false` para número que ele não conhece; para
-    /// um que já terminou não faz nada, e isso não é erro — o Parar chega
-    /// quando chega. Quem estava rodando um `docker compose` leva o processo
-    /// junto, pelo `kill_on_drop` do `deploy.rs`.
+    /// Kills the job. Returns `false` for a number it does not know; for one that
+    /// already finished it does nothing, and that is not an error — Stop arrives
+    /// when it arrives. Whoever was running a `docker compose` takes the process
+    /// along, through `kill_on_drop` in `deploy.rs`.
     pub fn stop(&self, id: u64) -> bool {
         let Ok(s) = self.stop.lock() else { return false };
         match s.get(&id) {
@@ -124,7 +125,7 @@ impl Jobs {
 mod tests {
     use super::*;
 
-    async fn esperar(jobs: &Jobs, id: u64) -> JobState {
+    async fn wait(jobs: &Jobs, id: u64) -> JobState {
         for _ in 0..100 {
             let st = jobs.get(id).expect("o trabalho existe");
             if st.done {
@@ -136,34 +137,34 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn trabalho_que_falha_termina_como_falha() {
+    async fn a_job_that_fails_ends_as_a_failure() {
         let jobs = Jobs::new();
         let id = jobs.spawn(|log| async move {
             log.line("indo");
             Err("não deu".to_string())
         });
-        let st = esperar(&jobs, id).await;
+        let st = wait(&jobs, id).await;
         assert!(!st.ok);
         assert_eq!(st.log, vec!["indo", "erro: não deu"]);
     }
 
-    /// Pânico dentro do trabalho é o caso que prendia o modal do log: sem o
-    /// `done`, a página fica perguntando para sempre e o Fechar nunca volta.
+    /// A panic inside the job was the case that used to trap the log modal:
+    /// without `done`, the page keeps asking forever and Close never comes back.
     #[tokio::test]
-    async fn trabalho_que_entra_em_panico_tambem_termina() {
+    async fn a_job_that_panics_also_ends() {
         let jobs = Jobs::new();
         let id = jobs.spawn(|_log| async move {
             panic!("estourou");
         });
-        let st = esperar(&jobs, id).await;
+        let st = wait(&jobs, id).await;
         assert!(!st.ok);
         assert!(st.log.iter().any(|l| l.contains("morreu no meio")), "{:?}", st.log);
     }
 
-    /// O Parar: o trabalho termina como falha, e é isso que devolve o Fechar
-    /// do modal do log.
+    /// Stop: the job ends as a failure, and that is what gives back the log
+    /// modal's Close.
     #[tokio::test]
-    async fn trabalho_parado_termina_como_falha() {
+    async fn a_stopped_job_ends_as_a_failure() {
         let jobs = Jobs::new();
         let id = jobs.spawn(|log| async move {
             log.line("indo");
@@ -172,7 +173,7 @@ mod tests {
         });
         tokio::time::sleep(std::time::Duration::from_millis(20)).await;
         assert!(jobs.stop(id));
-        let st = esperar(&jobs, id).await;
+        let st = wait(&jobs, id).await;
         assert!(!st.ok);
         assert!(st.log.iter().any(|l| l.contains("parado a pedido")), "{:?}", st.log);
         assert!(!jobs.stop(999), "número que ele não conhece");

@@ -1,23 +1,23 @@
-/* Chaves escritas na configuração que o próprio app criou.
+/* Keys written into the configuration the app itself created.
 
-   O qBittorrent guarda usuário, senha e API key num INI dentro da pasta de
-   config dele, e reescreve esse arquivo inteiro ao sair — montar o nosso por
-   cima congelaria tudo o que ele grava ali (torrents em andamento, janelas,
-   preferências mexidas na interface). Então, em vez de montar, o servidor
-   espera a stack subir e escreve só as chaves que o Hubstarr governa.
+   qBittorrent keeps user, password and API key in an INI inside its config
+   folder, and rewrites that whole file when it exits — mounting ours on top
+   would freeze everything it writes there (torrents in progress, windows,
+   preferences changed in the interface). So, instead of mounting, the server
+   waits for the stack to come up and writes only the keys Hubstarr governs.
 
-   Duas coisas que a ordem exige:
+   Two things the order demands:
 
-   - o container **para** antes da edição e volta depois. Com ele no ar, o que
-     escrevêssemos seria sobrescrito no próximo encerramento dele, que é quando
-     ele despeja a configuração em memória no disco;
-   - o arquivo pode ainda não existir no primeiro `up` — o app leva alguns
-     segundos para criá-lo —, então há uma espera curta. Se mesmo assim não
-     aparecer, o arquivo é criado com as nossas chaves e o app o completa
-     depois, que é o que ele faz com um `/config` vazio.
+   - the container **stops** before the edit and comes back after. With it up,
+     whatever we wrote would be overwritten on its next shutdown, which is when
+     it dumps the in-memory configuration to disk;
+   - the file may not exist yet on the first `up` — the app takes a few seconds
+     to create it — so there is a short wait. If it still does not show up, the
+     file is created with our keys and the app completes it later, which is what
+     it does with an empty `/config`.
 
-   O que escrever vem pronto da página, seção por seção: aqui só entra o
-   formato do INI. */
+   What to write arrives ready from the page, section by section: only the INI
+   format lives here. */
 
 use std::path::{Component, Path, PathBuf};
 use std::time::Duration;
@@ -29,46 +29,46 @@ use crate::jobs::Log;
 
 #[derive(Deserialize)]
 pub struct Patch {
-    /// serviço do compose a parar e subir de novo em volta da edição
+    /// the compose service to stop and start again around the edit
     pub service: String,
-    /// caminho relativo ao `BASE_CONFIG`, como a página o montou
+    /// path relative to `BASE_CONFIG`, as the page built it
     pub path: String,
-    /// `ini` (o padrão) ou `json`
+    /// `ini` (the default) or `json`
     #[serde(default)]
     pub format: Option<String>,
-    /// INI: `[Seção]` → lista de `chave=valor`, na ordem em que a página as quer
+    /// INI: `[Section]` → list of `key=value`, in the order the page wants them
     #[serde(default)]
     pub sections: Vec<(String, Vec<(String, String)>)>,
-    /// O que separa chave de valor no arquivo daquele app. O padrão é `=`, do
-    /// INI do Qt que o qBittorrent usa; o SABnzbd escreve `chave = valor`, com
-    /// os espaços, e é assim que ele relê o que está lá — quem sabe disso é a
-    /// página, que é a dona do formato de cada arquivo.
+    /// What separates key from value in that app's file. The default is `=`, from
+    /// the Qt INI qBittorrent uses; SABnzbd writes `key = value`, with the spaces,
+    /// and that is how it reads back what is there — the one that knows this is
+    /// the page, which owns the format of each file.
     #[serde(default)]
     pub sep: Option<String>,
-    /* As chaves que **não** se sobrescreve quando o arquivo já traz um valor
-       para elas. É a API key do qBittorrent: uma vez que o app tenha uma, ela
-       é a que os clientes dele conhecem, e trocá-la a cada Subir cortaria
-       quem já estava falando com ele. Chave ausente ou vazia continua sendo
-       escrita — o caso da primeira subida. */
+    /* The keys that are **not** overwritten when the file already carries a
+       value for them. It is qBittorrent's API key: once the app has one, that
+       is the key its clients know, and swapping it on every Deploy would cut
+       off whoever was already talking to it. A missing or empty key is still
+       written — the first-deploy case. */
     #[serde(default)]
     pub keep: Vec<String>,
-    /// JSON: as chaves de primeiro nível a pôr por cima das que já estão lá
+    /// JSON: the top-level keys to lay over the ones already there
     #[serde(default)]
     pub json: Option<Value>,
-    /// XML: elementos de primeiro nível. Valor de texto vira `<K>v</K>`; lista
-    /// vira `<K><string>a</string>…</K>`, que é como o Jellyfin guarda as dele.
+    /// XML: top-level elements. A text value becomes `<K>v</K>`; a list becomes
+    /// `<K><string>a</string>…</K>`, which is how Jellyfin stores its own.
     #[serde(default)]
     pub xml: Option<Map<String, Value>>,
 }
 
 impl Patch {
-    /// O conteúdo novo do arquivo, a partir do que já estava nele.
-    fn merge(&self, atual: &str) -> Result<String, String> {
+    /// The new content of the file, starting from what was already in it.
+    fn merge(&self, current: &str) -> Result<String, String> {
         match self.format.as_deref() {
-            Some("json") => merge_json(atual, self.json.as_ref().unwrap_or(&Value::Null)),
-            Some("xml") => merge_xml(atual, self.xml.as_ref().unwrap_or(&Map::new())),
+            Some("json") => merge_json(current, self.json.as_ref().unwrap_or(&Value::Null)),
+            Some("xml") => merge_xml(current, self.xml.as_ref().unwrap_or(&Map::new())),
             _ => Ok(merge_ini(
-                atual,
+                current,
                 &self.sections,
                 self.sep.as_deref().unwrap_or("="),
                 &self.keep,
@@ -76,8 +76,8 @@ impl Patch {
         }
     }
 
-    /// Quantas chaves este arquivo recebe — é o que vai para o log.
-    fn chaves(&self) -> usize {
+    /// How many keys this file receives — that is what goes to the log.
+    fn keys(&self) -> usize {
         match self.format.as_deref() {
             Some("json") => self
                 .json
@@ -91,8 +91,8 @@ impl Patch {
     }
 }
 
-/// Mesma regra do `files::safe_join`: o caminho vem do navegador, então nada de
-/// absoluto nem de `..`.
+/// Same rule as `files::safe_join`: the path comes from the browser, so no
+/// absolute paths and no `..`.
 fn safe_join(dir: &Path, name: &str) -> Result<PathBuf, String> {
     if name.trim().is_empty() || name.contains('\\') {
         return Err(format!("caminho inválido: {name}"));
@@ -107,149 +107,149 @@ fn safe_join(dir: &Path, name: &str) -> Result<PathBuf, String> {
     Ok(out)
 }
 
-/// Troca no INI as chaves que vieram, deixando todo o resto onde estava:
-/// as outras chaves, os comentários, as seções que não conhecemos e até a
-/// ordem das linhas. Chave que não existe entra no fim da seção dela; seção
-/// que não existe entra no fim do arquivo.
+/// Replaces in the INI the keys that came, leaving everything else where it
+/// was: the other keys, the comments, the sections we do not know about and
+/// even the order of the lines. A key that does not exist lands at the end of
+/// its section; a section that does not exist lands at the end of the file.
 pub fn merge_ini(
-    atual: &str,
+    current: &str,
     sections: &[(String, Vec<(String, String)>)],
     sep: &str,
-    manter: &[String],
+    keep_keys: &[String],
 ) -> String {
-    let mut linhas: Vec<String> = atual.lines().map(String::from).collect();
+    let mut lines: Vec<String> = current.lines().map(String::from).collect();
 
     for (secao, pares) in sections {
-        let cabecalho = format!("[{secao}]");
-        let inicio = linhas.iter().position(|l| l.trim() == cabecalho);
-        let (inicio, mut fim) = match inicio {
+        let header = format!("[{secao}]");
+        let start = lines.iter().position(|l| l.trim() == header);
+        let (start, mut end) = match start {
             Some(i) => {
-                // a seção vai até o próximo cabeçalho, ou até o fim
-                let fim = linhas
+                // the section runs to the next header, or to the end
+                let end = lines
                     .iter()
                     .enumerate()
                     .skip(i + 1)
                     .find(|(_, l)| l.trim().starts_with('[') && l.trim().ends_with(']'))
                     .map(|(j, _)| j)
-                    .unwrap_or(linhas.len());
-                (i, fim)
+                    .unwrap_or(lines.len());
+                (i, end)
             }
             None => {
-                // seção nova: entra no fim, separada por uma linha em branco
-                if linhas.last().map(|l| !l.trim().is_empty()).unwrap_or(false) {
-                    linhas.push(String::new());
+                // a new section: it lands at the end, separated by a blank line
+                if lines.last().map(|l| !l.trim().is_empty()).unwrap_or(false) {
+                    lines.push(String::new());
                 }
-                linhas.push(cabecalho);
-                (linhas.len() - 1, linhas.len())
+                lines.push(header);
+                (lines.len() - 1, lines.len())
             }
         };
 
-        for (chave, valor) in pares {
-            let linha = format!("{chave}{sep}{valor}");
-            let achou = linhas[inicio + 1..fim]
+        for (key, value) in pares {
+            let line = format!("{key}{sep}{value}");
+            let found = lines[start + 1..end]
                 .iter()
-                .position(|l| chave_de(l).as_deref() == Some(chave.as_str()))
-                .map(|k| inicio + 1 + k);
-            match achou {
-                /* Chave que o app já respondeu por si: se ela está no `manter`
-                   e tem valor, fica como está. Vazia não conta — é a linha que
-                   ele deixa pronta esperando alguém preencher. */
+                .position(|l| key_of(l).as_deref() == Some(key.as_str()))
+                .map(|k| start + 1 + k);
+            match found {
+                /* A key the app has already answered for: if it is in `keep_keys` and
+                   has a value, it stays as it is. Empty does not count — that is
+                   the line it leaves ready waiting for someone to fill in. */
                 Some(k)
-                    if manter.iter().any(|m| m == chave)
-                        && valor_de(&linhas[k], sep).is_some_and(|v| !v.trim().is_empty()) => {}
-                Some(k) => linhas[k] = linha,
+                    if keep_keys.iter().any(|m| m == key)
+                        && value_of(&lines[k], sep).is_some_and(|v| !v.trim().is_empty()) => {}
+                Some(k) => lines[k] = line,
                 None => {
-                    // no fim da seção, mas antes das linhas em branco que a
-                    // separam da próxima
-                    let mut pos = fim;
-                    while pos > inicio + 1 && linhas[pos - 1].trim().is_empty() {
+                    // at the end of the section, but before the blank lines that
+                    // separate it from the next one
+                    let mut pos = end;
+                    while pos > start + 1 && lines[pos - 1].trim().is_empty() {
                         pos -= 1;
                     }
-                    linhas.insert(pos, linha);
-                    fim += 1;
+                    lines.insert(pos, line);
+                    end += 1;
                 }
             }
         }
     }
 
-    let mut out = linhas.join("\n");
+    let mut out = lines.join("\n");
     if !out.ends_with('\n') {
         out.push('\n');
     }
     out
 }
 
-/// Põe as nossas chaves de primeiro nível por cima das que já estão no
-/// arquivo, deixando as outras onde estavam — no `categories.json`, é o que
-/// preserva a categoria que alguém criou na interface do app.
+/// Lays our top-level keys over the ones already in the file, leaving the
+/// others where they were — in `categories.json`, that is what preserves the
+/// category someone created in the app's interface.
 ///
-/// Arquivo ilegível não é motivo para parar: o app o reescreve inteiro na
-/// próxima vez, e o que interessa é o nosso chegar lá.
-/* Os elementos que o Hubstarr governa dentro de um XML de configuração — hoje
-   o `network.xml` do Jellyfin.
+/// An unreadable file is no reason to stop: the app rewrites it whole next
+/// time, and what matters is that ours gets there.
+/* The elements Hubstarr governs inside a configuration XML — today Jellyfin's
+   `network.xml`.
 
-   Não é um parser de XML: é a mesma ideia do merge do INI, linha a linha. O
-   elemento que já existe é trocado no lugar, com a indentação dele; o que falta
-   entra antes da tag de fechamento da raiz. Todo o resto do arquivo — ordem,
-   comentários, o que o app guardou — fica como estava, porque quem manda nele é
-   o app.
+   It is not an XML parser: it is the same idea as the INI merge, line by line.
+   An element that already exists is replaced in place, with its indentation;
+   what is missing lands before the root's closing tag. All the rest of the file
+   — order, comments, whatever the app stored — stays as it was, because the app
+   is the one that owns it.
 
-   Vale só para elemento de primeiro nível cujo valor cabe numa linha, que é o
-   caso do `BaseUrl`. Lista vira `<K><string>a</string>…</K>`, na forma em que o
-   Jellyfin as escreve. */
-pub fn merge_xml(atual: &str, nosso: &Map<String, Value>) -> Result<String, String> {
-    if nosso.is_empty() {
-        return Ok(atual.to_string());
+   It only holds for a top-level element whose value fits on one line, which is
+   the case of `BaseUrl`. A list becomes `<K><string>a</string>…</K>`, in the
+   shape Jellyfin writes them. */
+pub fn merge_xml(current: &str, ours: &Map<String, Value>) -> Result<String, String> {
+    if ours.is_empty() {
+        return Ok(current.to_string());
     }
-    let mut linhas: Vec<String> = atual.lines().map(String::from).collect();
+    let mut lines: Vec<String> = current.lines().map(String::from).collect();
 
-    for (chave, valor) in nosso {
-        let corpo = match valor {
-            Value::Array(itens) => itens
+    for (key, value) in ours {
+        let body = match value {
+            Value::Array(items) => items
                 .iter()
-                .map(|i| format!("<string>{}</string>", esc_xml(&texto_de(i))))
+                .map(|i| format!("<string>{}</string>", esc_xml(&text_of(i))))
                 .collect::<String>(),
-            v => esc_xml(&texto_de(v)),
+            v => esc_xml(&text_of(v)),
         };
 
-        let abre = format!("<{chave}>");
-        let vazio = format!("<{chave} />");
-        let achou = linhas.iter().position(|l| {
+        let open_tag = format!("<{key}>");
+        let empty = format!("<{key} />");
+        let found = lines.iter().position(|l| {
             let t = l.trim_start();
-            t.starts_with(&abre) || t.starts_with(&vazio)
+            t.starts_with(&open_tag) || t.starts_with(&empty)
         });
-        match achou {
+        match found {
             Some(i) => {
-                // o elemento pode estar aberto numa linha e fechado noutra:
-                // o que houver entre as duas sai junto
-                let ind: String = linhas[i].chars().take_while(|c| c.is_whitespace()).collect();
-                let fecha = format!("</{chave}>");
-                let fim = linhas[i..]
+                // the element may be opened on one line and closed on another:
+                // whatever is between the two goes along
+                let level: String = lines[i].chars().take_while(|c| c.is_whitespace()).collect();
+                let close_tag = format!("</{key}>");
+                let end = lines[i..]
                     .iter()
-                    .position(|l| l.contains(&fecha))
+                    .position(|l| l.contains(&close_tag))
                     .map(|k| i + k)
                     .unwrap_or(i);
-                linhas.splice(i..=fim, [format!("{ind}<{chave}>{corpo}</{chave}>")]);
+                lines.splice(i..=end, [format!("{level}<{key}>{body}</{key}>")]);
             }
             None => {
-                // entra antes de fechar a raiz, com a indentação de quem já está lá
-                let fim = linhas
+                // it lands before the root closes, with the indentation of whoever is already there
+                let end = lines
                     .iter()
                     .rposition(|l| l.trim_start().starts_with("</"))
-                    .unwrap_or(linhas.len());
-                linhas.insert(fim, format!("  <{chave}>{corpo}</{chave}>"));
+                    .unwrap_or(lines.len());
+                lines.insert(end, format!("  <{key}>{body}</{key}>"));
             }
         }
     }
-    let mut out = linhas.join("\n");
-    if atual.ends_with('\n') || !atual.is_empty() {
+    let mut out = lines.join("\n");
+    if current.ends_with('\n') || !current.is_empty() {
         out.push('\n');
     }
     Ok(out)
 }
 
-/// O texto de um valor JSON: string sem as aspas, o resto como veio.
-fn texto_de(v: &Value) -> String {
+/// The text of a JSON value: a string without the quotes, the rest as it came.
+fn text_of(v: &Value) -> String {
     match v {
         Value::String(s) => s.clone(),
         outro => outro.to_string(),
@@ -262,20 +262,20 @@ fn esc_xml(s: &str) -> String {
         .replace('>', "&gt;")
 }
 
-pub fn merge_json(atual: &str, nosso: &Value) -> Result<String, String> {
-    let mut obj: Map<String, Value> = serde_json::from_str(atual).unwrap_or_default();
-    let nosso = nosso
+pub fn merge_json(current: &str, ours: &Value) -> Result<String, String> {
+    let mut obj: Map<String, Value> = serde_json::from_str(current).unwrap_or_default();
+    let ours = ours
         .as_object()
         .ok_or_else(|| "o patch em JSON não veio como objeto".to_string())?;
-    for (k, v) in nosso {
+    for (k, v) in ours {
         obj.insert(k.clone(), v.clone());
     }
-    /* Quatro espaços, que é como o qBittorrent escreve este arquivo e como a
-       aba da página o mostra: seguir o estilo dele evita um diff do arquivo
-       inteiro toda vez que um dos dois grava. */
+    /* Four spaces, which is how qBittorrent writes this file and how the page's
+       tab shows it: following its style avoids a whole-file diff every time one
+       of the two writes. */
     let mut buf = Vec::new();
-    let recuo = serde_json::ser::PrettyFormatter::with_indent(b"    ");
-    let mut ser = serde_json::Serializer::with_formatter(&mut buf, recuo);
+    let indent = serde_json::ser::PrettyFormatter::with_indent(b"    ");
+    let mut ser = serde_json::Serializer::with_formatter(&mut buf, indent);
     Value::Object(obj)
         .serialize(&mut ser)
         .map_err(|e| e.to_string())?;
@@ -284,12 +284,12 @@ pub fn merge_json(atual: &str, nosso: &Value) -> Result<String, String> {
     Ok(txt)
 }
 
-/// A chave de uma linha `chave=valor`, ignorando comentário e linha em branco.
-/// O valor de uma linha `chave=valor`, para saber se o app já respondeu por ela.
-/// O separador é o daquele arquivo, mas o `=` do INI serve de fallback: é o que
-/// divide a linha em qualquer um dos dois formatos que geramos.
-fn valor_de(linha: &str, sep: &str) -> Option<String> {
-    let l = linha.trim();
+/// The key of a `key=value` line, ignoring comments and blank lines.
+/// The value of a `key=value` line, to know whether the app has answered for it.
+/// The separator is that file's own, but the INI `=` serves as a fallback: it
+/// is what splits the line in either of the two formats we generate.
+fn value_of(line: &str, sep: &str) -> Option<String> {
+    let l = line.trim();
     if l.is_empty() || l.starts_with('#') || l.starts_with(';') || l.starts_with('[') {
         return None;
     }
@@ -298,25 +298,25 @@ fn valor_de(linha: &str, sep: &str) -> Option<String> {
         .map(|(_, v)| v.trim().to_string())
 }
 
-fn chave_de(linha: &str) -> Option<String> {
-    let l = linha.trim();
+fn key_of(line: &str) -> Option<String> {
+    let l = line.trim();
     if l.is_empty() || l.starts_with('#') || l.starts_with(';') || l.starts_with('[') {
         return None;
     }
     l.split_once('=').map(|(k, _)| k.trim().to_string())
 }
 
-/// Espera o app criar a configuração dele. Quando ele não a cria a tempo, o
-/// arquivo nasce aqui mesmo, só com as nossas chaves — que é o que ele
-/// completa na próxima subida.
-async fn esperar(path: &Path, log: &Log) {
-    for tentativa in 0..30 {
+/// Waits for the app to create its configuration. When it does not create it
+/// in time, the file is born right here, with only our keys — which is what it
+/// completes on the next deploy.
+async fn wait(path: &Path, log: &Log) {
+    for attempt in 0..30 {
         if let Ok(txt) = tokio::fs::read_to_string(path).await {
             if !txt.trim().is_empty() {
                 return;
             }
         }
-        if tentativa == 0 {
+        if attempt == 0 {
             log.line(format!("esperando {} aparecer…", path.display()));
         }
         tokio::time::sleep(Duration::from_secs(1)).await;
@@ -324,9 +324,9 @@ async fn esperar(path: &Path, log: &Log) {
     log.line("o app não criou a configuração a tempo; ela nasce com estas chaves");
 }
 
-/// Escreve o que a página mandou, um serviço por vez: o container para uma
-/// vez só, todos os arquivos dele são mesclados, e ele sobe de novo. Parar por
-/// arquivo daria dois ciclos no qBittorrent, que tem dois.
+/// Writes what the page sent, one service at a time: the container stops once,
+/// all of its files are merged, and it comes back up. Stopping per file would
+/// mean two cycles for qBittorrent, which has two files.
 pub async fn apply_all(
     docker: &str,
     dir: &Path,
@@ -337,60 +337,60 @@ pub async fn apply_all(
     if patches.is_empty() {
         return Ok(());
     }
-    let raiz = cfg.ok_or_else(|| {
+    let root = cfg.ok_or_else(|| {
         "sem o BASE_CONFIG do Ambiente não dá para achar a configuração do app".to_string()
     })?;
 
-    // na ordem em que a página os mandou, agrupados por serviço
-    let mut servicos: Vec<&str> = Vec::new();
+    // in the order the page sent them, grouped by service
+    let mut services: Vec<&str> = Vec::new();
     for p in patches {
-        if !servicos.contains(&p.service.as_str()) {
-            servicos.push(&p.service);
+        if !services.contains(&p.service.as_str()) {
+            services.push(&p.service);
         }
     }
 
-    for servico in servicos {
-        let meus: Vec<&Patch> = patches.iter().filter(|p| p.service == servico).collect();
-        let caminhos: Vec<PathBuf> = meus
+    for service in services {
+        let ours: Vec<&Patch> = patches.iter().filter(|p| p.service == service).collect();
+        let paths: Vec<PathBuf> = ours
             .iter()
-            .map(|p| safe_join(raiz, &p.path))
+            .map(|p| safe_join(root, &p.path))
             .collect::<Result<_, _>>()?;
 
-        /* Esperar uma vez por serviço, pelo primeiro arquivo: é o sinal de que
-           o app subiu e criou a pasta de config dele. O segundo arquivo pode
-           legitimamente não existir — o qBittorrent só escreve o
-           `categories.json` quando tem categoria. */
-        esperar(&caminhos[0], log).await;
-        crate::deploy::compose(docker, &["stop", servico], dir, log).await?;
-        for (p, path) in meus.iter().zip(&caminhos) {
-            let atual = tokio::fs::read_to_string(path).await.unwrap_or_default();
-            let novo = p.merge(&atual)?;
+        /* Wait once per service, for the first file: it is the sign that the app
+           came up and created its config folder. The second file may legitimately
+           not exist — qBittorrent only writes `categories.json` when it has a
+           category. */
+        wait(&paths[0], log).await;
+        crate::deploy::compose(docker, &["stop", service], dir, log).await?;
+        for (p, path) in ours.iter().zip(&paths) {
+            let current = tokio::fs::read_to_string(path).await.unwrap_or_default();
+            let new_value = p.merge(&current)?;
             if let Some(parent) = path.parent() {
                 tokio::fs::create_dir_all(parent)
                     .await
                     .map_err(|e| format!("{}: {e}", parent.display()))?;
             }
-            tokio::fs::write(path, &novo).await.map_err(|e| {
-                // o arquivo é do container: se ele o criou com outro dono, o
-                // servidor não o reescreve — é o PUID/PGID do Ambiente que faz
-                // os dois baterem
-                let dica = if e.kind() == std::io::ErrorKind::PermissionDenied {
+            tokio::fs::write(path, &new_value).await.map_err(|e| {
+                // the file belongs to the container: if it created it with another owner,
+                // the server does not rewrite it — it is the Environment's PUID/PGID that
+                // makes the two match
+                let hint = if e.kind() == std::io::ErrorKind::PermissionDenied {
                     " — confira o PUID/PGID do Ambiente: o arquivo é de outro dono"
                 } else {
                     ""
                 };
-                format!("{}: {e}{dica}", path.display())
+                format!("{}: {e}{hint}", path.display())
             })?;
-            crate::registro::detalhe(|| {
+            crate::journal::detail(|| {
                 format!(
                     "arquivo {} ({} bytes, chaves escritas na conf do app)",
                     path.display(),
-                    novo.len()
+                    new_value.len()
                 )
             });
-            log.line(format!("{}: {} chaves escritas", path.display(), p.chaves()));
+            log.line(format!("{}: {} chaves escritas", path.display(), p.keys()));
         }
-        crate::deploy::compose(docker, &["start", servico], dir, log).await?;
+        crate::deploy::compose(docker, &["start", service], dir, log).await?;
     }
     Ok(())
 }
@@ -399,7 +399,7 @@ pub async fn apply_all(
 mod tests {
     use super::*;
 
-    fn secoes() -> Vec<(String, Vec<(String, String)>)> {
+    fn sections() -> Vec<(String, Vec<(String, String)>)> {
         vec![(
             "Preferences".into(),
             vec![
@@ -410,142 +410,142 @@ mod tests {
     }
 
     #[test]
-    fn troca_a_chave_existente_e_nao_mexe_no_resto() {
-        let atual = "[BitTorrent]\nSession\\Port=6881\n\n[Preferences]\nWebUI\\Username=velho\nWebUI\\Port=8181\n";
-        let novo = merge_ini(atual, &secoes(), "=", &[]);
-        assert!(novo.contains("WebUI\\Username=admin"));
-        assert!(!novo.contains("velho"));
-        // o que é do app fica onde estava
-        assert!(novo.contains("Session\\Port=6881"));
-        assert!(novo.contains("WebUI\\Port=8181"));
+    fn replaces_the_existing_key_and_leaves_the_rest_alone() {
+        let current = "[BitTorrent]\nSession\\Port=6881\n\n[Preferences]\nWebUI\\Username=velho\nWebUI\\Port=8181\n";
+        let new_value = merge_ini(current, &sections(), "=", &[]);
+        assert!(new_value.contains("WebUI\\Username=admin"));
+        assert!(!new_value.contains("velho"));
+        // what belongs to the app stays where it was
+        assert!(new_value.contains("Session\\Port=6881"));
+        assert!(new_value.contains("WebUI\\Port=8181"));
     }
 
     #[test]
-    fn chave_que_falta_entra_na_secao_dela() {
-        let atual = "[Preferences]\nWebUI\\Username=velho\n\n[Network]\nProxy\\Type=0\n";
-        let novo = merge_ini(atual, &secoes(), "=", &[]);
-        let linhas: Vec<&str> = novo.lines().collect();
-        let i = linhas.iter().position(|l| l.starts_with("WebUI\\APIKey")).unwrap();
-        let sec = linhas.iter().position(|l| *l == "[Preferences]").unwrap();
-        let prox = linhas.iter().position(|l| *l == "[Network]").unwrap();
-        assert!(i > sec && i < prox, "a chave nova caiu fora da seção: {novo}");
-        assert!(novo.contains("Proxy\\Type=0"));
+    fn a_missing_key_lands_in_its_own_section() {
+        let current = "[Preferences]\nWebUI\\Username=velho\n\n[Network]\nProxy\\Type=0\n";
+        let new_value = merge_ini(current, &sections(), "=", &[]);
+        let lines: Vec<&str> = new_value.lines().collect();
+        let i = lines.iter().position(|l| l.starts_with("WebUI\\APIKey")).unwrap();
+        let secs = lines.iter().position(|l| *l == "[Preferences]").unwrap();
+        let next = lines.iter().position(|l| *l == "[Network]").unwrap();
+        assert!(i > secs && i < next, "a chave nova caiu fora da seção: {new_value}");
+        assert!(new_value.contains("Proxy\\Type=0"));
     }
 
-    /* A API key que o app já tem fica como está: uma vez que ele responda por
-       ela, é a chave que os clientes dele conhecem, e trocá-la a cada Subir
-       cortaria quem já estava falando com ele. */
+    /* The API key the app already has stays as it is: once it answers for it,
+       that is the key its clients know, and swapping it on every Deploy would
+       cut off whoever was already talking to it. */
     #[test]
-    fn a_chave_do_manter_nao_e_sobrescrita() {
-        let atual = "[Preferences]\nWebUI\\APIKey=qbt_do_proprio_app\nWebUI\\Port=8080\n";
-        let manter = vec!["WebUI\\APIKey".to_string()];
-        let novo = merge_ini(atual, &secoes(), "=", &manter);
-        assert!(novo.contains("WebUI\\APIKey=qbt_do_proprio_app"), "{novo}");
-        assert!(!novo.contains("qbt_novo"), "{novo}");
-        // o resto continua sendo escrito normalmente
-        assert!(novo.contains("WebUI\\Username=admin"), "{novo}");
+    fn a_kept_key_is_not_overwritten() {
+        let current = "[Preferences]\nWebUI\\APIKey=qbt_do_proprio_app\nWebUI\\Port=8080\n";
+        let keep_keys = vec!["WebUI\\APIKey".to_string()];
+        let new_value = merge_ini(current, &sections(), "=", &keep_keys);
+        assert!(new_value.contains("WebUI\\APIKey=qbt_do_proprio_app"), "{new_value}");
+        assert!(!new_value.contains("qbt_novo"), "{new_value}");
+        // the rest goes on being written normally
+        assert!(new_value.contains("WebUI\\Username=admin"), "{new_value}");
     }
 
-    /// Chave que existe vazia é a linha que o app deixa esperando alguém
-    /// preencher — essa nós preenchemos.
+    /// A key that exists but is empty is the line the app leaves waiting for
+    /// someone to fill in — that one we do fill.
     #[test]
-    fn a_chave_vazia_do_manter_e_preenchida() {
-        let atual = "[Preferences]\nWebUI\\APIKey=\n";
-        let manter = vec!["WebUI\\APIKey".to_string()];
-        let novo = merge_ini(atual, &secoes(), "=", &manter);
-        assert!(novo.contains("WebUI\\APIKey=qbt_novo"), "{novo}");
-    }
-
-    #[test]
-    fn secao_que_falta_entra_no_fim() {
-        let novo = merge_ini("[BitTorrent]\nSession\\Port=6881\n", &secoes(), "=", &[]);
-        assert!(novo.contains("[Preferences]"));
-        assert!(novo.trim_end().ends_with("WebUI\\APIKey=qbt_novo"));
+    fn an_empty_kept_key_is_filled_in() {
+        let current = "[Preferences]\nWebUI\\APIKey=\n";
+        let keep_keys = vec!["WebUI\\APIKey".to_string()];
+        let new_value = merge_ini(current, &sections(), "=", &keep_keys);
+        assert!(new_value.contains("WebUI\\APIKey=qbt_novo"), "{new_value}");
     }
 
     #[test]
-    fn arquivo_vazio_nasce_so_com_as_nossas_chaves() {
-        let novo = merge_ini("", &secoes(), "=", &[]);
+    fn a_missing_section_lands_at_the_end() {
+        let new_value = merge_ini("[BitTorrent]\nSession\\Port=6881\n", &sections(), "=", &[]);
+        assert!(new_value.contains("[Preferences]"));
+        assert!(new_value.trim_end().ends_with("WebUI\\APIKey=qbt_novo"));
+    }
+
+    #[test]
+    fn an_empty_file_is_born_with_only_our_keys() {
+        let new_value = merge_ini("", &sections(), "=", &[]);
         assert_eq!(
-            novo,
+            new_value,
             "[Preferences]\nWebUI\\Username=admin\nWebUI\\APIKey=qbt_novo\n"
         );
     }
 
     #[test]
-    fn aplicar_de_novo_nao_duplica_nem_reordena() {
-        let atual = "[Preferences]\nWebUI\\Username=admin\nWebUI\\APIKey=qbt_novo\n";
-        assert_eq!(merge_ini(atual, &secoes(), "=", &[]), atual);
+    fn applying_again_neither_duplicates_nor_reorders() {
+        let current = "[Preferences]\nWebUI\\Username=admin\nWebUI\\APIKey=qbt_novo\n";
+        assert_eq!(merge_ini(current, &sections(), "=", &[]), current);
     }
 
     #[test]
-    fn comentario_e_linha_em_branco_atravessam() {
-        let atual = "# escrito pelo app\n[Preferences]\nWebUI\\Username=velho\n";
-        let novo = merge_ini(atual, &secoes(), "=", &[]);
-        assert!(novo.starts_with("# escrito pelo app\n"));
+    fn comments_and_blank_lines_survive() {
+        let current = "# escrito pelo app\n[Preferences]\nWebUI\\Username=velho\n";
+        let new_value = merge_ini(current, &sections(), "=", &[]);
+        assert!(new_value.starts_with("# escrito pelo app\n"));
     }
 
-    /// O separador não é enfeite: o SABnzbd escreve `chave = valor`, com os
-    /// espaços, e é nessa forma que ele relê o arquivo. Escrever `chave=valor`
-    /// ali deixava a chave onde o app não a encontra.
+    /// The separator is no decoration: SABnzbd writes `key = value`, with the
+    /// spaces, and that is the shape in which it reads the file back. Writing
+    /// `key=value` there left the key where the app cannot find it.
     #[test]
-    fn o_sabnzbd_leva_espaco_dos_dois_lados_do_igual() {
-        let atual = "[misc]\nhost_whitelist = velho,\ninet_exposure = 0\n";
-        let secoes = vec![(
+    fn sabnzbd_keeps_a_space_on_both_sides_of_the_equals() {
+        let current = "[misc]\nhost_whitelist = velho,\ninet_exposure = 0\n";
+        let sections = vec![(
             "misc".to_string(),
             vec![
                 ("host_whitelist".to_string(), "sabnzbd,localhost".to_string()),
                 ("api_key".to_string(), "abc123".to_string()),
             ],
         )];
-        let novo = merge_ini(atual, &secoes, " = ", &[]);
-        assert!(novo.contains("host_whitelist = sabnzbd,localhost"));
-        assert!(novo.contains("api_key = abc123"));
-        // o que já estava lá, e não veio no patch, fica como estava
-        assert!(novo.contains("inet_exposure = 0"));
-        // e o padrão continua sendo o do Qt, sem espaço
-        let qt = merge_ini("[BitTorrent]\n", &secoes, "=", &[]);
+        let new_value = merge_ini(current, &sections, " = ", &[]);
+        assert!(new_value.contains("host_whitelist = sabnzbd,localhost"));
+        assert!(new_value.contains("api_key = abc123"));
+        // what was already there, and did not come in the patch, stays as it was
+        assert!(new_value.contains("inet_exposure = 0"));
+        // and the default is still the Qt one, with no spaces
+        let qt = merge_ini("[BitTorrent]\n", &sections, "=", &[]);
         assert!(qt.contains("api_key=abc123"));
     }
 
     #[test]
-    fn o_json_poe_as_nossas_categorias_e_deixa_as_de_fora() {
-        let atual = r#"{"minha":{"save_path":"/downloads/minha"},"tv-sonarr":{"save_path":"/velho"}}"#;
-        let nosso = serde_json::json!({"tv-sonarr": {"save_path": "/downloads/torrents/tv-sonarr"}});
-        let novo: Value = serde_json::from_str(&merge_json(atual, &nosso).unwrap()).unwrap();
-        // a categoria criada na interface do app fica
-        assert_eq!(novo["minha"]["save_path"], "/downloads/minha");
-        // a nossa manda na que tem o mesmo nome
-        assert_eq!(novo["tv-sonarr"]["save_path"], "/downloads/torrents/tv-sonarr");
-        // e o recuo é o do app, não o do serde
-        assert!(merge_json(atual, &nosso).unwrap().contains("\n    \"minha\""));
+    fn the_json_writes_our_categories_and_leaves_the_others_alone() {
+        let current = r#"{"minha":{"save_path":"/downloads/minha"},"tv-sonarr":{"save_path":"/velho"}}"#;
+        let ours = serde_json::json!({"tv-sonarr": {"save_path": "/downloads/torrents/tv-sonarr"}});
+        let new_value: Value = serde_json::from_str(&merge_json(current, &ours).unwrap()).unwrap();
+        // the category created in the app's interface stays
+        assert_eq!(new_value["minha"]["save_path"], "/downloads/minha");
+        // ours wins for the one with the same name
+        assert_eq!(new_value["tv-sonarr"]["save_path"], "/downloads/torrents/tv-sonarr");
+        // and the indentation is the app's, not serde's
+        assert!(merge_json(current, &ours).unwrap().contains("\n    \"minha\""));
     }
 
     #[test]
-    fn json_ilegivel_ou_vazio_nao_derruba_a_gravacao() {
-        let nosso = serde_json::json!({"tv": {"save_path": "/downloads/tv"}});
-        for atual in ["", "nem json é", "[]"] {
-            let novo: Value = serde_json::from_str(&merge_json(atual, &nosso).unwrap()).unwrap();
-            assert_eq!(novo["tv"]["save_path"], "/downloads/tv", "veio de {atual:?}");
+    fn unreadable_or_empty_json_does_not_break_the_write() {
+        let ours = serde_json::json!({"tv": {"save_path": "/downloads/tv"}});
+        for current in ["", "nem json é", "[]"] {
+            let new_value: Value = serde_json::from_str(&merge_json(current, &ours).unwrap()).unwrap();
+            assert_eq!(new_value["tv"]["save_path"], "/downloads/tv", "veio de {current:?}");
         }
     }
 
     #[test]
-    fn o_formato_escolhe_o_merge_e_o_ini_e_o_padrao() {
+    fn the_format_picks_the_merge_and_ini_is_the_default() {
         let ini = Patch { service: "qbittorrent".into(), path: "x".into(), format: None,
-                          sections: secoes(), sep: None, json: None, xml: None, keep: vec![] };
+                          sections: sections(), sep: None, json: None, xml: None, keep: vec![] };
         assert!(ini.merge("").unwrap().contains("[Preferences]"));
-        assert_eq!(ini.chaves(), 2);
+        assert_eq!(ini.keys(), 2);
 
         let js = Patch { service: "qbittorrent".into(), path: "x".into(),
                          format: Some("json".into()), sections: vec![], sep: None, xml: None, keep: vec![],
                          json: Some(serde_json::json!({"tv": {"save_path": "/d"}})) };
         assert!(js.merge("{}").unwrap().contains("\"tv\""));
-        assert_eq!(js.chaves(), 1);
+        assert_eq!(js.keys(), 1);
     }
 
     #[test]
-    fn caminho_que_escapa_da_pasta_e_recusado() {
+    fn a_path_escaping_the_folder_is_refused() {
         let dir = Path::new("/tmp/x");
         assert!(safe_join(dir, "qbittorrent/qBittorrent/qBittorrent.conf").is_ok());
         assert!(safe_join(dir, "../fora.conf").is_err());
@@ -553,43 +553,43 @@ mod tests {
         assert!(safe_join(dir, "").is_err());
     }
 
-    /// O `network.xml` do Jellyfin: o que já está lá é trocado no lugar, o que
-    /// falta entra antes de fechar a raiz, e o resto do arquivo não se mexe.
+    /// Jellyfin's `network.xml`: what is already there is replaced in place, what
+    /// is missing lands before the root closes, and the rest of the file is untouched.
     #[test]
-    fn o_xml_troca_o_que_existe_e_acrescenta_o_que_falta() {
-        let atual = "<?xml version=\"1.0\"?>\n<NetworkConfiguration>\n  \
+    fn the_xml_replaces_what_exists_and_adds_what_is_missing() {
+        let current = "<?xml version=\"1.0\"?>\n<NetworkConfiguration>\n  \
                      <EnableIPv6>true</EnableIPv6>\n  <BaseUrl></BaseUrl>\n\
                      </NetworkConfiguration>\n";
-        let mut nosso = Map::new();
-        nosso.insert("BaseUrl".into(), Value::String("/jellyfin".into()));
-        nosso.insert(
+        let mut ours = Map::new();
+        ours.insert("BaseUrl".into(), Value::String("/jellyfin".into()));
+        ours.insert(
             "KnownProxies".into(),
             Value::Array(vec![Value::String("nginx".into())]),
         );
-        let novo = merge_xml(atual, &nosso).unwrap();
-        assert!(novo.contains("<BaseUrl>/jellyfin</BaseUrl>"));
-        assert!(novo.contains("<KnownProxies><string>nginx</string></KnownProxies>"));
-        // o que o app guardou fica
-        assert!(novo.contains("<EnableIPv6>true</EnableIPv6>"));
-        // e não duplica: aplicar de novo dá o mesmo arquivo
-        assert_eq!(merge_xml(&novo, &nosso).unwrap(), novo);
-        assert_eq!(novo.matches("<BaseUrl>").count(), 1);
+        let new_value = merge_xml(current, &ours).unwrap();
+        assert!(new_value.contains("<BaseUrl>/jellyfin</BaseUrl>"));
+        assert!(new_value.contains("<KnownProxies><string>nginx</string></KnownProxies>"));
+        // what the app stored stays
+        assert!(new_value.contains("<EnableIPv6>true</EnableIPv6>"));
+        // and it does not duplicate: applying again gives the same file
+        assert_eq!(merge_xml(&new_value, &ours).unwrap(), new_value);
+        assert_eq!(new_value.matches("<BaseUrl>").count(), 1);
     }
 
-    /// Elemento que ocupa várias linhas — como o Jellyfin escreve as listas —
-    /// é trocado inteiro, sem deixar metade para trás.
+    /// An element spanning several lines — as Jellyfin writes lists — is replaced
+    /// whole, without leaving half of it behind.
     #[test]
-    fn o_xml_troca_o_elemento_de_varias_linhas_inteiro() {
-        let atual = "<Config>\n  <KnownProxies>\n    <string>velho</string>\n  \
+    fn the_xml_replaces_a_multiline_element_whole() {
+        let current = "<Config>\n  <KnownProxies>\n    <string>velho</string>\n  \
                      </KnownProxies>\n</Config>\n";
-        let mut nosso = Map::new();
-        nosso.insert(
+        let mut ours = Map::new();
+        ours.insert(
             "KnownProxies".into(),
             Value::Array(vec![Value::String("nginx".into())]),
         );
-        let novo = merge_xml(atual, &nosso).unwrap();
-        assert!(novo.contains("<KnownProxies><string>nginx</string></KnownProxies>"));
-        assert!(!novo.contains("velho"));
-        assert_eq!(novo.matches("KnownProxies").count(), 2);   // abre e fecha, uma vez
+        let new_value = merge_xml(current, &ours).unwrap();
+        assert!(new_value.contains("<KnownProxies><string>nginx</string></KnownProxies>"));
+        assert!(!new_value.contains("velho"));
+        assert_eq!(new_value.matches("KnownProxies").count(), 2);   // opens and closes, once
     }
 }
