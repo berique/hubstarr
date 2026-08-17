@@ -535,12 +535,23 @@ preferências de volta e **confere**: chave igual à do Ambiente vira linha só 
 *arr falam com ele, e um cliente registrado com chave que não abre nada falha
 depois, longe daqui. Conferir não é falhar: quem manda na chave é a conf.
 
-Duas coisas da API dele: o `setPreferences` recebe **formulário** com um campo
-`json` (não um corpo JSON), e a sessão do `auth/login` vem num cookie cujo nome
-muda com a porta (`QBT_SID_8181`) — por isso o que se guarda é o par inteiro,
-como veio. E o `has_work()` passou a contar cliente com `prefs`: uma
-stack de qBittorrent sem *arr nenhum tem trabalho, e antes ela passava em
-branco.
+**Quem autentica é a API key**, não a senha, e quem decide isso é o
+`qbit_auth()`: com uma chave no formato dele, ela é sondada no `app/version` e,
+passando, vale para a volta inteira, no cabeçalho `Authorization: Bearer`. A
+razão não é elegância — o mesmo `setPreferences` **troca a senha da interface**
+(o `web_ui_username`/`web_ui_password` que o `qbitPrefs()` manda), e entrar com
+a senha que se está prestes a substituir é uma volta que funciona uma vez e
+falha na seguinte. O `auth/login` fica como reserva, para o app que não conhece
+a chave — versão anterior à 5.2, ou conf que nunca recebeu uma —, e é por isso
+que o `adopt_api_key()` só lê a chave do app nesse ramo: se a nossa abriu o app,
+ela já é a dele.
+
+Duas coisas da API: o `setPreferences` recebe **formulário** com um campo
+`json` (não um corpo JSON), e a sessão do `auth/login`, quando é ela que vale,
+vem num cookie cujo nome muda com a porta (`QBT_SID_8181`) — por isso o que se
+guarda é o par inteiro, como veio. E o `has_work()` passou a contar cliente com
+`prefs`: uma stack de qBittorrent sem *arr nenhum tem trabalho, e antes ela
+passava em branco.
 
 No Prowlarr, o Settings → Download Clients recebe **um registro por cliente**,
 todos na categoria `CAT_PROWLARR` (`prowlarr`): o que ele pega é avulso, não veio

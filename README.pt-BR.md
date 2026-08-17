@@ -183,6 +183,10 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   falam —, e são os *arr que passam a ser registrados com a chave do app. A
   nossa só entra quando ele ainda não tem nenhuma, que é a primeira subida.
   Quem a grava é a conf: o qBittorrent aceita a propriedade na API e a ignora.
+  Essas chamadas entram pela **API key**, e não pela senha: é a mesma volta que
+  troca a senha, e entrar com a que está prestes a ser substituída funcionaria
+  uma vez e falharia na seguinte. A sessão do `auth/login` fica como reserva,
+  para o app que não conhece a chave.
 - **sabnzbd.ini do SABnzbd**: a **API key** dele é a mesma da stack — o campo no
   modal mostra a que vale, e o **Gerar** cria outra pelo mesmo método (16 bytes
   em hexadecimal), que então vai para o `.env` —, e as pastas de **download em

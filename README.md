@@ -187,7 +187,11 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   clients already speak — and the *arr apps are registered with the app's key
   instead. Ours only goes in when it has none yet, which is the first start.
   What writes it is the conf: qBittorrent accepts the property over the API and
-  ignores it.
+  ignores it. Those calls authenticate with that **API key**, not with the
+  password: it is the same round that changes the password, and logging in with
+  the one about to be replaced would work once and fail the next time. The
+  `auth/login` session stays as the fallback, for an app that does not take the
+  key.
 - **SABnzbd's sabnzbd.ini**: its **API key** is the stack's own — the field in
   the modal shows the one in force, and **Generate** makes another by the same
   method (16 random bytes in hex), which then goes to `.env` —, and the

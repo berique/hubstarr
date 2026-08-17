@@ -192,7 +192,10 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   la que sus clientes ya hablan — y los *arr pasan a registrarse con la clave del
   app. La nuestra solo entra cuando él todavía no tiene ninguna, que es el primer
   arranque. Quien la graba es la conf: qBittorrent acepta la propiedad por la API
-  y la ignora.
+  y la ignora. Esas llamadas entran por la **API key**, y no por la contraseña:
+  es la misma vuelta que cambia la contraseña, y entrar con la que está por ser
+  sustituida funcionaría una vez y fallaría en la siguiente. La sesión del
+  `auth/login` queda como reserva, para el app que no conoce la clave.
 - **sabnzbd.ini de SABnzbd**: su **API key** es la misma de la stack — el campo
   del modal muestra la que vale, y el **Generar** crea otra por el mismo método
   (16 bytes en hexadecimal), que entonces va al `.env` —, y las carpetas de

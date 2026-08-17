@@ -795,8 +795,9 @@ async fn client_categories(
 
    Two things about its API that cost a round if you do not know them:
    `setPreferences` takes a **form** with a `json` field, not a JSON body; and
-   the session comes out of `auth/login` in a cookie whose name changes with the
-   port (`QBT_SID_8181`), so what is kept is the whole pair, as it came. */
+   the authentication is the API key when the app takes it (see `qbit_auth`) —
+   which is what lets this round change the interface password without locking
+   itself out of the next one. */
 async fn client_preferences(http: &reqwest::Client, client: &Client, log: &Log) -> usize {
     if client.kind != "qbittorrent" {
         return 0;
@@ -809,25 +810,24 @@ async fn client_preferences(http: &reqwest::Client, client: &Client, log: &Log) 
     }
     let base = client.web_url.trim_end_matches('/').to_string();
 
-    let cookie = match qbit_login(http, &base, client).await {
-        Ok(c) => c,
+    let auth = match qbit_auth(http, &base, client).await {
+        Ok(a) => a,
         Err(e) => {
             log.line(format!("{} → entrar para ajustar as preferências: {e}", client.name));
             return 1;
         }
     };
+    crate::journal::detail(|| format!("{}: preferências pela {}", client.name, auth.kind()));
 
     let body = format!("json={}", enc(&Value::Object(prefs.clone()).to_string()));
     let target = format!("{base}/api/v2/app/setPreferences");
     let sent = retry("POST", &target, || {
-        let mut req = http
-            .post(&target)
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body(body.clone());
-        if !cookie.is_empty() {
-            req = req.header("Cookie", cookie.clone());
-        }
-        req.send()
+        auth.apply(
+            http.post(&target)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body(body.clone()),
+        )
+        .send()
     })
     .await;
     match sent {
@@ -836,7 +836,7 @@ async fn client_preferences(http: &reqwest::Client, client: &Client, log: &Log) 
             // the keys go to the log, the values do not: the password is among them
             let keys: Vec<&str> = prefs.keys().map(String::as_str).collect();
             log.line(format!("{} → preferências: {}", client.name, keys.join(", ")));
-            check_api_key(http, &base, client, &cookie, log).await
+            check_api_key(http, &base, client, &auth, log).await
         }
         Ok(r) => {
             let st = r.status();
@@ -872,10 +872,16 @@ async fn adopt_api_key(http: &reqwest::Client, req: &mut Req, log: &Log) {
             continue;
         }
         let base = web_url.trim_end_matches('/').to_string();
-        let Ok(cookie) = qbit_login(http, &base, &req.clients[i]).await else {
+        let Ok(auth) = qbit_auth(http, &base, &req.clients[i]).await else {
             continue;
         };
-        let Some(dele) = read_api_key(http, &base, &cookie).await else {
+        /* The key opened the app: it is ours, and there is nothing to adopt.
+           The read below only makes sense on the other branch, where we got in
+           with the password precisely because our key did not work. */
+        if matches!(auth, QbitAuth::Key(_)) {
+            continue;
+        }
+        let Some(dele) = read_api_key(http, &base, &auth).await else {
             continue;
         };
         let c = &mut req.clients[i];
@@ -892,17 +898,11 @@ async fn adopt_api_key(http: &reqwest::Client, req: &mut Req, log: &Log) {
 
 /// The preferences' `web_ui_api_key`: it is the read-only mirror of the conf's
 /// `WebUI\APIKey`. `None` when it could not be read — the caller goes on with what it had.
-async fn read_api_key(http: &reqwest::Client, base: &str, cookie: &str) -> Option<String> {
+async fn read_api_key(http: &reqwest::Client, base: &str, auth: &QbitAuth) -> Option<String> {
     let url = format!("{base}/api/v2/app/preferences");
-    let r = retry("GET", &url, || {
-        let mut req = http.get(&url);
-        if !cookie.is_empty() {
-            req = req.header("Cookie", cookie);
-        }
-        req.send()
-    })
-    .await
-    .ok()?;
+    let r = retry("GET", &url, || auth.apply(http.get(&url)).send())
+        .await
+        .ok()?;
     api("GET", &url, r.status());
     if !r.status().is_success() {
         return None;
@@ -934,7 +934,7 @@ async fn check_api_key(
     http: &reqwest::Client,
     base: &str,
     client: &Client,
-    cookie: &str,
+    auth: &QbitAuth,
     log: &Log,
 ) -> usize {
     if client.api_key.is_empty() {
@@ -953,7 +953,7 @@ async fn check_api_key(
         ));
         return 1;
     }
-    let Some(dele) = read_api_key(http, base, cookie).await else {
+    let Some(dele) = read_api_key(http, base, auth).await else {
         return 0;
     };
     if dele == client.api_key {
@@ -981,6 +981,72 @@ async fn check_api_key(
 /// narrower, but the app does not check that — so neither do we.
 fn api_key_valid(k: &str) -> bool {
     k.starts_with("qbt_") && k.chars().count() == 32
+}
+
+/* How the server authenticates with qBittorrent.
+
+   The **API key** comes first: it is the same one the *arr apps are registered
+   with, it does not expire when the interface password changes and it needs no
+   session. That last part is what matters here — the round also *changes* the
+   interface password (`web_ui_password` goes in the preferences), and a login
+   with the password we are about to replace is a round that stops working the
+   second time it runs.
+
+   The session from `auth/login` stays as the fallback, for the app that does
+   not take the key: one from before 5.2, or one whose conf never received a
+   key. Both ends are checked against the app itself, not guessed — the key is
+   probed on `app/version` before anything is changed with it. */
+enum QbitAuth {
+    Key(String),
+    Cookie(String),
+}
+
+impl QbitAuth {
+    fn apply(&self, req: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
+        match self {
+            QbitAuth::Key(k) => req.header("Authorization", format!("Bearer {k}")),
+            QbitAuth::Cookie(c) if !c.is_empty() => req.header("Cookie", c.clone()),
+            QbitAuth::Cookie(_) => req,
+        }
+    }
+
+    fn kind(&self) -> &'static str {
+        match self {
+            QbitAuth::Key(_) => "API key",
+            QbitAuth::Cookie(_) => "usuário e senha",
+        }
+    }
+}
+
+/// The key when the app answers to it, the session when it does not. The probe
+/// is `app/version`, which changes nothing and needs no body: a 200 means the
+/// key authenticates, and a 401/403 means this app only knows the password.
+async fn qbit_auth(
+    http: &reqwest::Client,
+    base: &str,
+    client: &Client,
+) -> Result<QbitAuth, String> {
+    if api_key_valid(&client.api_key) {
+        let url = format!("{base}/api/v2/app/version");
+        let key = client.api_key.clone();
+        if let Ok(r) = retry("GET", &url, || {
+            http.get(&url).header("Authorization", format!("Bearer {key}")).send()
+        })
+        .await
+        {
+            api("GET", &url, r.status());
+            if r.status().is_success() {
+                return Ok(QbitAuth::Key(client.api_key.clone()));
+            }
+        }
+        crate::journal::detail(|| {
+            format!(
+                "{}: a API key não abriu o app ({}) — vou entrar com usuário e senha",
+                client.name, base
+            )
+        });
+    }
+    qbit_login(http, base, client).await.map(QbitAuth::Cookie)
 }
 
 /// The qBittorrent session: `auth/login` returns the cookie in `Set-Cookie`,
@@ -1029,7 +1095,7 @@ async fn qbit_login(
 /* qBittorrent's categories, through `torrents/createCategory`.
 
    The body is a **form** (`category=…&savePath=…`), like the rest of its API,
-   and the session is the one from `qbit_login()`. A category that already
+   and the authentication is the one from `qbit_auth()`. A category that already
    exists returns **409**, and then the way is `editCategory`, with the same
    body: that way reapplying fixes the folder of whoever was already there
    instead of failing — it is the same rule as the rest of the round, look up
@@ -1042,13 +1108,14 @@ async fn qbit_categories(http: &reqwest::Client, client: &Client, log: &Log) -> 
         return 0;
     }
     let base = client.web_url.trim_end_matches('/').to_string();
-    let cookie = match qbit_login(http, &base, client).await {
-        Ok(c) => c,
+    let auth = match qbit_auth(http, &base, client).await {
+        Ok(a) => a,
         Err(e) => {
             log.line(format!("{} → entrar para criar as categorias: {e}", client.name));
             return 1;
         }
     };
+    crate::journal::detail(|| format!("{}: categorias pela {}", client.name, auth.kind()));
 
     let mut failures = 0;
     for cat in &client.categories {
@@ -1061,14 +1128,12 @@ async fn qbit_categories(http: &reqwest::Client, client: &Client, log: &Log) -> 
         for action in ["createCategory", "editCategory"] {
             let target = format!("{base}/api/v2/torrents/{action}");
             let r = retry("POST", &target, || {
-                let mut req = http
-                    .post(&target)
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .body(body.clone());
-                if !cookie.is_empty() {
-                    req = req.header("Cookie", cookie.clone());
-                }
-                req.send()
+                auth.apply(
+                    http.post(&target)
+                        .header("Content-Type", "application/x-www-form-urlencoded")
+                        .body(body.clone()),
+                )
+                .send()
             })
             .await;
             match r {
@@ -2260,6 +2325,36 @@ mod tests {
         assert!(!super::api_key_valid("qbt_ABCDEFGHJKLMNPQRSTUVWXYZ234"));
         assert!(!super::api_key_valid("ABCDEFGHJKLMNPQRSTUVWXYZ2345"));
         assert!(!super::api_key_valid(""));
+    }
+
+    /// The key travels in `Authorization: Bearer`, which is where qBittorrent
+    /// 5.2.3 reads it from, and the session in `Cookie`. An empty session — the
+    /// app that accepts with no login — sends neither, and the call goes through
+    /// all the same.
+    #[test]
+    fn the_key_goes_in_the_bearer_header_and_the_session_in_the_cookie() {
+        let http = reqwest::Client::new();
+        let head = |a: super::QbitAuth| {
+            a.apply(http.get("http://x/api/v2/app/version"))
+                .build()
+                .unwrap()
+                .headers()
+                .clone()
+        };
+
+        let h = head(super::QbitAuth::Key("qbt_ABCDEFGHJKLMNPQRSTUVWXYZ2345".into()));
+        assert_eq!(
+            h.get("authorization").unwrap(),
+            "Bearer qbt_ABCDEFGHJKLMNPQRSTUVWXYZ2345"
+        );
+        assert!(h.get("cookie").is_none());
+
+        let h = head(super::QbitAuth::Cookie("QBT_SID_8181=abc".into()));
+        assert_eq!(h.get("cookie").unwrap(), "QBT_SID_8181=abc");
+        assert!(h.get("authorization").is_none());
+
+        let h = head(super::QbitAuth::Cookie(String::new()));
+        assert!(h.get("cookie").is_none() && h.get("authorization").is_none());
     }
 
     #[test]
