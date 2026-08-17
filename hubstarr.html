@@ -3918,6 +3918,12 @@ function build(){
     });
   }
   L.push(`    <span class="k">networks</span>: [<span class="v">${NETWORK}</span>]`);
+  /* It is the proxy: whoever it routes to comes up first. The order in the
+     compose says nothing about that — `depends_on` is what says it. */
+  if(list.length){
+    L.push(`    <span class="k">depends_on</span>:`);
+    list.forEach(a=> L.push(`      - <span class="v">${cname(a)}</span>`));
+  }
   L.push(`    <span class="k">restart</span>: <span class="v">${restart}</span>`);
 
   list.forEach(a=>{
