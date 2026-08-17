@@ -319,10 +319,13 @@
     box-shadow:0 12px 32px rgba(0,0,0,.45)}
   #tourCard h4{margin:0 0 6px;font-size:15px}
   #tourCard p{margin:0 0 12px;font-size:13px;line-height:1.55;color:var(--muted)}
-  #tourCard .bar{margin:0;padding:0;border:0;background:none}
-  /* a volta é a primeira coisa que alguém vê: o idioma se troca aqui mesmo,
-     sem ter de sair dela para achar o seletor do cabeçalho */
+  #tourCard .bar{margin:0;padding:0;border:0;background:none;flex-wrap:wrap}
+  /* the tour is the first thing anyone sees: the language is switched right
+     here, without leaving it to find the header selector. It takes a line of
+     its own — beside the step count and the three buttons the card would run
+     out of width and the buttons would look cramped. */
   #tourCard select{width:auto;padding:4px 6px;font-size:12px}
+  #tourCard #tourLang{flex-basis:100%;margin-bottom:8px}
   .log{margin:0 0 12px;padding:10px 12px;height:340px;overflow:auto;
     background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
