@@ -129,7 +129,10 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
 5. **Derivações** — `slug()` → `cname()` (container_name = chave do serviço =
    pasta de config), `route()`, `url()` (o endereço sai do domínio do Ambiente
    e, sem ele, do `location.hostname` — quem abriu a página pelo IP da LAN quer
-   os links no mesmo IP; aberta do disco, sobra o `localhost`), `cfgPath`/`dataPath` (com variáveis
+   os links no mesmo IP; aberta do disco, sobra o `127.0.0.1`. **`localhost`
+   nunca entra**, nem como padrão nem vindo do `location.hostname`: hoje ele
+   costuma resolver para `::1`, e a porta que o Docker publicou só em IPv4 não
+   tem ninguém do outro lado — é o `LOOPBACK` que o troca pelo endereço), `cfgPath`/`dataPath` (com variáveis
    `${...}` do `.env`) e `cfgReal`/`dataReal` (caminhos resolvidos, para o hint
    do modal). Alterar `cname` afeta compose, nginx e `.env` ao mesmo tempo.
    `dupPaths()` compara os caminhos já resolvidos e avisa, no rodapé da lista,

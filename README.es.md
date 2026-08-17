@@ -97,8 +97,10 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
 - **Copiar el enlace** de cada servicio, ya con el esquema, la dirección y el
   subpath por los que nginx lo va a atender. La dirección es el dominio del
   Entorno cuando lo hay; sin él, es la misma por la que abriste la página —
-  quien llega por la IP de la LAN recibe los enlaces en esa IP, no en
-  `localhost`.
+  quien llega por la IP de la LAN recibe los enlaces en esa IP. La única
+  dirección que nunca se usa es `localhost`: hoy suele resolver a `::1`, y el
+  puerto que Docker publicó solo en IPv4 no tiene a nadie del otro lado, así que
+  los enlaces llevan `127.0.0.1`.
 - **Ordenar la lista arrastrando**: tome la fila del servicio en cualquier
   punto y muévala; el orden que usted deje es el orden en que los servicios
   salen en el `docker-compose.yml` y en el `.env` — con servidor, queda

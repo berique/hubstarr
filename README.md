@@ -94,7 +94,9 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
 - **Copy each service's link**, with the scheme, address and subpath nginx will
   serve it on. The address is the Environment's domain when there is one; with
   none, it is the same one you opened the page on — reach it by the LAN IP and
-  the links come out on that IP, not on `localhost`.
+  the links come out on that IP. `localhost` is the one address never used:
+  today it usually resolves to `::1`, and a port Docker published on IPv4 only
+  has nobody listening there, so the links carry `127.0.0.1` instead.
 - **Reorder the list by dragging**: grab a service row anywhere and move it;
   the order you leave is the order the services come out in
   `docker-compose.yml` and `.env` — with a server, it is kept. Starting the

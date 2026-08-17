@@ -2310,11 +2310,20 @@ const hostPort = ()=> DEFAULTS.tls ? DEFAULTS.https : DEFAULTS.http;
 /* The address at which the stack is reached. The Environment's domain rules,
    when there is one; without it, the address this page was opened from counts —
    whoever got here through the LAN IP wants the links on that same IP, and not
-   on `localhost`, which on their machine is not the same thing. Opened from
-   disk there is no address at all, and the usual `localhost` is what is left. */
+   on some other name for this machine. Opened from disk there is no address at
+   all, and `127.0.0.1` is what is left.
+
+   `localhost` is deliberately **not** what is left: on a machine whose resolver
+   answers `::1` for it — the common case today — the name lands on IPv6, and a
+   port Docker published on IPv4 only has nobody listening there. The literal
+   address is the one that always answers, so that is the one the links carry,
+   including when the page itself was opened as `localhost`. */
+const LOOPBACK = ['localhost', '::1', '[::1]'];
 const host = () => DEFAULTS.domain
-  || (/^https?:$/.test(location.protocol) && location.hostname)
-  || 'localhost';
+  || (/^https?:$/.test(location.protocol)
+      && !LOOPBACK.includes(location.hostname)
+      && location.hostname)
+  || '127.0.0.1';
 const url = a => publishes(a)
   // a published port: nginx is not involved, so neither is its TLS
   ? 'http://' + host() + ':' + hostPortOf(a) + '/'
