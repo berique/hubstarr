@@ -27,7 +27,7 @@ profile. It is the mode for whoever wants just the files.
 Generating the files is the easy half. The other half is the one you do by hand
 afterwards, app by app — and that is what **Bring up** does on its own, through
 each app's API. The **Apply to the stack** button reapplies all of it without
-bringing anything up:
+bringing anything up, and only shows with the stack running:
 
 - **The basic configuration of every app**: the base URL matching the nginx
   subpath, the same API key across the whole stack, timezone, PUID/PGID and the

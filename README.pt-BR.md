@@ -26,7 +26,8 @@ quem quer só os arquivos.
 
 Gerar os arquivos é a metade fácil. A outra é a que se faz à mão depois, app por
 app, e é ela que o **Subir** faz sozinho pela API de cada um — o botão
-**Aplicar na stack** reaplica tudo isto sem subir nada:
+**Aplicar na stack** reaplica tudo isto sem subir nada, e só aparece com a
+stack no ar:
 
 - **A configuração básica de cada app**: a base URL igual ao subpath do nginx, a
   mesma API key na stack inteira, fuso, PUID/PGID e as pastas do compose. Nos

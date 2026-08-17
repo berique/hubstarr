@@ -668,6 +668,13 @@ e devolve `None` quando o banco ainda não tem nada guardado — assim a página
 fica com os próprios padrões em vez de recebê-los em branco de volta. Esse ida e
 volta sem perda é o critério do modelo; ao mexer nele, é o que os testes cobrem.
 
+O botão **Aplicar na stack** só aparece com a stack **no ar**: ele fala com os
+apps pelo nginx, e com tudo parado a volta seria dezenas de chamadas para
+ninguém. Quem responde por isso é o `stackOnline()` da página, sobre o mesmo
+`STATUS` do ponto da lista — daí o `paintApply()` ser chamado no
+`paintStatus()`, e não só no `openCfg()`: stack que sobe (ou cai) com o modal
+aberto muda o botão junto com os pontos.
+
 O modal do log — o **Subindo a stack**, o **Derrubando a stack** e o **Aplicando
 a Configuração** — trava o Fechar enquanto o trabalho corre: fechá-lo não
 cancelaria nada, porque quem roda o `docker compose` e as chamadas de API é o
@@ -803,8 +810,8 @@ projeto (o chromium do snap não lê `/tmp` nem `/srv`), injete no fim do
 estão no tema escuro), o `added` da stack de exemplo,
 `$('#combo').classList.add('open')`, `openModal('sonarr',null)` mais
 `openShot()` na da paleta, `openCred()` na dos créditos, `openCfg()` mais o `scrollTop` do `#cfgBody` na
-da Configuração (e um `SERVER` de mentira, senão o "Aplicar na stack" não
-aparece) — e rode:
+da Configuração (e um `SERVER` de mentira mais um `STATUS` com algum
+container `running`, senão o "Aplicar na stack" não aparece) — e rode:
 
 ```sh
 chromium-browser --headless=new --no-sandbox --disable-gpu --hide-scrollbars \

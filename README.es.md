@@ -28,7 +28,7 @@ Guides. Es el modo de quien quiere solo los archivos.
 Generar los archivos es la mitad fácil. La otra es la que se hace a mano
 después, app por app — y es la que el **Levantar** hace solo, por la API de cada
 una. El botón **Aplicar en la stack** vuelve a aplicar todo esto sin levantar
-nada:
+nada, y solo aparece con la stack en marcha:
 
 - **La configuración básica de cada app**: la base URL igual al subpath de
   nginx, la misma API key en toda la stack, zona horaria, PUID/PGID y las

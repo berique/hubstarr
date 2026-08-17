@@ -2498,6 +2498,12 @@ const dotHtml = key =>{
    enabled as always, which is the case of the page opened from disk. */
 const linkOn = key => !SERVER || dotOf(key).st === 'running';
 
+/* Is the stack up? Applying the Configuration talks to the apps through nginx,
+   so with everything stopped the round would be dozens of calls into nothing.
+   One container running is enough to call it up — the wait in the server covers
+   whoever is still starting. */
+const stackOnline = () => Object.values(STATUS).some(s => s && s.state === 'running');
+
 /* An anchor with no `href` is neither clickable nor focusable — that is how
    "Link" turns itself off, since `disabled` belongs to <button>. */
 function paintLink(el){
@@ -2517,6 +2523,16 @@ function paintStatus(){
     el.title = dotTip(el.dataset.dot);
   });
   document.querySelectorAll('a.btn[data-link]').forEach(paintLink);
+  paintApply();
+}
+
+/* The button follows the stack: it only shows with a server, with an *arr to
+   configure and with the stack up. It is repainted on every `pollStatus()`,
+   so a stack that comes up (or goes down) with the modal open changes the
+   button along with the dots. */
+function paintApply(){
+  const btn = $('#cfgApply');
+  if(btn) btn.hidden = !SERVER || !arrList().length || !stackOnline();
 }
 
 /* The list's tag kinds, in reading order. The key is the CSS `data-kind` — it
@@ -3703,7 +3719,7 @@ function openCfg(){
   cfgBackup = JSON.parse(JSON.stringify(CONFIG));
   // applying is for whoever has a server and a stack up; without that the
   // Configuration is still the same old prototype
-  $('#cfgApply').hidden = !SERVER || !arrList().length;
+  paintApply();
   $('#cfgBack').classList.add('open');
 }
 const closeCfg = ()=> $('#cfgBack').classList.remove('open');
