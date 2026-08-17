@@ -388,7 +388,9 @@ esperam — as de configuração, as de mídia e as de download. Sem isso quem a
 cria é o Docker, como `root`, e o app não consegue escrever nelas. Caminho que
 já existe e não é pasta faz o Subir parar ali, com o nome dele no log.
 
-O **Subir** já deixa a stack configurada: assim que os apps respondem, o
+O **Subir** já deixa a stack configurada: assim que cada app **termina de
+iniciar** — o servidor espera o `system/status` responder, e não só a porta
+atender —, o
 servidor registra cada cliente de download em cada *arr **e no próprio
 Prowlarr** — que tem o Settings → Download Clients dele —, cada *arr marcado em
 Settings → Apps do Prowlarr, e o *Media Management* com a nomenclatura de cada

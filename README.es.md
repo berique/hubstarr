@@ -404,7 +404,9 @@ Sin eso las crea Docker, como `root`, y el app no consigue escribir en ellas. Un
 ruta que ya existe y no es carpeta detiene el Levantar ahí mismo, con su nombre
 en el log.
 
-El **Levantar** ya deja la stack configurada: en cuanto los apps responden, el
+El **Levantar** ya deja la stack configurada: en cuanto cada app **termina de
+iniciar** — el servidor espera a que responda `system/status`, y no solo a que
+el puerto atienda —, el
 servidor registra cada cliente de descarga en cada *arr **y en el propio
 Prowlarr** — que tiene su Settings → Download Clients —, cada *arr marcado en
 Settings → Apps de Prowlarr, y el *Media Management* con la nomenclatura de cada

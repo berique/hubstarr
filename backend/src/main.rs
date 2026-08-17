@@ -247,9 +247,11 @@ async fn apply_config(State(ctx): State<Ctx>, Json(req): Json<apply::Req>) -> Re
             let cfgarr = req.configarr();
             let mut error = None;
             if req.has_work() {
-                error = apply::download_clients(req, log.clone()).await.err();
+                let up = deploy::running(&ctx.docker, &ctx.base).await;
+                error = apply::download_clients(req, up, log.clone()).await.err();
             } else if cfgarr.is_some() {
-                apply::wait(&req, &log).await?;
+                let up = deploy::running(&ctx.docker, &ctx.base).await;
+                apply::wait(&req, &up, &log).await?;
             }
             /* And the quality profiles, which are files — Configarr reads the
                `config.yml` the page generated and writes into the apps. A link
@@ -443,11 +445,13 @@ async fn start_deploy(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Respons
                     let cfgarr = cfg.configarr();
                     let mut error = None;
                     if cfg.has_work() {
-                        error = apply::download_clients(cfg, log.clone()).await.err();
+                        let up = deploy::running(&ctx.docker, &ctx.base).await;
+                        error = apply::download_clients(cfg, up, log.clone()).await.err();
                     } else if cfgarr.is_some() {
                         // nothing to configure through the API, but the apps still
                         // need to be up for Configarr to write into them
-                        apply::wait(&cfg, &log).await?;
+                        let up = deploy::running(&ctx.docker, &ctx.base).await;
+                        apply::wait(&cfg, &up, &log).await?;
                     }
                     /* And, last, the quality profiles: Configarr runs once and exits,
                        and depends on the apps being up — which is why it comes

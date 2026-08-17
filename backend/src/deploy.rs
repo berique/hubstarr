@@ -113,8 +113,28 @@ pub async fn status(docker: &str, dir: &Path) -> Result<Value, String> {
     Ok(Value::Object(map))
 }
 
+/// The services of the stack that are up right now, by compose service name —
+/// which is the page's `cname()`, and the container name too. It is the same
+/// `compose ps` the status dot uses; here it answers a different question:
+/// **is there anything to configure?** A container that did not come up (a name
+/// taken by another stack, a port already bound) answers nothing over HTTP, and
+/// waiting ninety seconds for it to say so is ninety seconds of nothing.
+pub async fn running(docker: &str, dir: &Path) -> Vec<String> {
+    let Ok(Value::Object(map)) = status(docker, dir).await else {
+        return Vec::new();
+    };
+    map.into_iter()
+        .filter(|(_, v)| v.get("state").and_then(Value::as_str) == Some("running"))
+        .map(|(k, _)| k)
+        .collect()
+}
+
 pub async fn up(docker: &str, dir: &Path, log: Log) -> Result<(), String> {
-    run(docker, &["compose", "up", "-d", "--remove-orphans"], dir, &log).await
+    run(docker, &["compose", "up", "-d", "--remove-orphans"], dir, &log).await?;
+    // whatever just got (re)created may have a new IP; nginx needs to forget
+    // the old one before wait_apps() starts polling through it
+    reload_nginx(docker, dir, &log).await;
+    Ok(())
 }
 
 pub async fn down(docker: &str, dir: &Path, log: Log) -> Result<(), String> {
@@ -138,7 +158,13 @@ pub fn ok_service(key: &str) -> bool {
 /// Brings a single container up, without touching the others. `--no-deps` is
 /// what keeps the promise of the click: whoever is stopped next to it stays stopped.
 pub async fn up_one(docker: &str, dir: &Path, key: &str, log: Log) -> Result<(), String> {
-    run(docker, &["compose", "up", "-d", "--no-deps", key], dir, &log).await
+    run(docker, &["compose", "up", "-d", "--no-deps", key], dir, &log).await?;
+    // recreated with --no-deps still gets a fresh IP; skip when the service
+    // brought up *is* nginx — it just started with nothing cached yet
+    if key != NGINX_SERVICE {
+        reload_nginx(docker, dir, &log).await;
+    }
+    Ok(())
 }
 
 /// Stops a single container. It is `stop`, not `down`: `down` takes the whole
@@ -247,6 +273,38 @@ fn writable(dir: &str) -> bool {
 }
 
 pub const CONFIGARR_IMG: &str = "ghcr.io/raydak-labs/configarr:latest";
+
+/// The reverse proxy's container name — the page's fixed line (`NGINX.id` in
+/// the script), always in the compose regardless of what is in `added`.
+const NGINX_SERVICE: &str = "nginx";
+
+/// Makes nginx forget whatever IP it had cached for each upstream.
+///
+/// Every route but the qBittorrent one is a plain `proxy_pass
+/// http://cname:port;`, with no variable and no `resolver` — see the
+/// `stripBase` invariant in CLAUDE.md for why that one is different. A plain
+/// `proxy_pass` is resolved once, at nginx's own startup or last reload, and
+/// kept for as long as the worker lives. If some other container gets
+/// recreated in the meantime — `up_one` of a single service, a plain `up`
+/// that only touches what changed — Docker hands it a new IP on the stack
+/// network, and nginx goes on forwarding to the address nobody listens on
+/// anymore: a 502 that looks exactly like the app still starting, and
+/// `wait_apps()` waits out its whole budget for an app that has been up for
+/// a while.
+///
+/// Called after every `up`/`up_one` that could have handed out a new IP, and
+/// before anything starts polling the apps through nginx. Failing this is
+/// not fatal — nginx not existing yet (nothing has ever come up) is not an
+/// error, and a message in the job log is enough for anyone wondering why a
+/// route stayed dead a moment longer than it should have.
+async fn reload_nginx(docker: &str, dir: &Path, log: &Log) {
+    if let Err(e) = compose(docker, &["exec", "-T", NGINX_SERVICE, "nginx", "-s", "reload"], dir, log).await
+    {
+        log.line(format!(
+            "não consegui recarregar o nginx ({e}); se algum container foi recriado, a rota dele pode ficar respondendo 502 até o próximo Subir"
+        ));
+    }
+}
 
 /// Any `docker compose <args>` in the stack folder — it is how `patch.rs`
 /// stops and starts a single container around editing its configuration.

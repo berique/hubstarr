@@ -572,13 +572,36 @@ a regra: arquivo do app que tenha endpoint equivalente vai por API, porque
 escrever o arquivo exige **parar o container**, e parar o cliente de download no
 meio do Aplicar é o que fazia os *arr testarem a conexão contra um app que
 estava reiniciando. Quem chama é o **Subir**, sozinho, depois de
-gravar as chaves dos `patch` — e antes de qualquer chamada ele espera cada app
-responder no `/ping`, porque recém-subido nenhum responde e a volta inteira
-falharia por timeout. Os clientes de download também são esperados, e por um
-motivo próprio: escrever a conf do qBittorrent **reinicia** o container dele,
-logo antes de os *arr o testarem. Em ambos os casos, 5xx conta como "ainda
-não" — é o nginx dizendo que o de trás não subiu, e tomar isso por pronto é o
-mesmo que não esperar.
+gravar as chaves dos `patch` — e **nada é configurado antes de a inicialização
+de cada app terminar**, que não é a mesma coisa que ele atender na porta.
+
+Antes de esperar por HTTP, porém, vem uma pergunta mais barata: **o container
+está no ar?** O `deploy::running()` devolve o que o `compose ps` diz, e serviço
+que não está lá não é esperado — vira uma linha dizendo isso e a volta segue.
+Sem isso, um container que não subiu (nome tomado por outra stack, porta já
+ocupada) custava 90s de "inicializando ainda" sobre algo que nunca começou. A
+lista vazia significa "não sei" — `compose ps` que falhou —, e aí a espera é a
+de sempre.
+
+A espera do `wait_apps()` tem dois passos, e a diferença entre eles é o que
+fazia o primeiro Subir falhar onde o segundo passava. O `/ping` não pede chave e
+é o primeiro caminho que o app serve: diz que o processo está escutando. O
+`system/status`, com a chave, é o que diz que a **inicialização acabou** — banco
+migrado, configuração lida, API key no lugar. Entre um e outro o *arr responde
+503, ou responde 401 porque ainda não leu a própria chave, e cliente registrado
+nessa janela volta como erro de validação sobre um app que só estava subindo.
+Só o 200 conta como pronto; estourar as tentativas (45 × 2s) não é falha — a
+volta segue, e o que ainda estiver subindo aparece no log linha a linha.
+
+Os clientes de download também são esperados, e por um motivo próprio: escrever
+a conf do qBittorrent **reinicia** o container dele, logo antes de os *arr o
+testarem. Neles a pergunta é outra — a raiz do qBittorrent devolve a tela de
+login enquanto ele ainda lê a conf, então quem responde por "pronto" é a API
+dele (`app/version`; no SABnzbd, `api?mode=version`), e ali qualquer resposta
+própria vale, 401 e 403 inclusive: o que se pergunta é se ele inicializou, não
+se podemos entrar. Em todos os casos, 5xx conta como "ainda não" — é o nginx
+dizendo que o de trás não subiu, e tomar isso por pronto é o mesmo que não
+esperar.
 
 O qBittorrent é registrado pela **API key**, não pela senha da interface: ela é
 a mesma que a conf dele recebe, não expira quando a senha muda e é o que o campo

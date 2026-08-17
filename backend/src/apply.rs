@@ -393,7 +393,7 @@ impl Client {
 /// Only waits for the apps to answer, applying nothing. It is the case of the
 /// stack that has Configarr and nothing else to configure: the profiles need
 /// the apps up as much as the download clients do, and without this nobody would have waited.
-pub async fn wait(req: &Req, log: &Log) -> Result<(), String> {
+pub async fn wait(req: &Req, running: &[String], log: &Log) -> Result<(), String> {
     let http = reqwest::Client::builder()
         .timeout(Duration::from_secs(20))
         .danger_accept_invalid_certs(true)
@@ -401,11 +401,11 @@ pub async fn wait(req: &Req, log: &Log) -> Result<(), String> {
         .map_err(|e| e.to_string())?;
     let base = req.base.trim_end_matches('/').to_string();
     let targets: Vec<Arr> = req.arrs.iter().map(Arr::clone_target).collect();
-    wait_apps(&http, &base, &targets, log).await;
+    wait_apps(&http, &base, &req.api_key, &targets, running, log).await;
     Ok(())
 }
 
-pub async fn download_clients(mut req: Req, log: Log) -> Result<(), String> {
+pub async fn download_clients(mut req: Req, running: Vec<String>, log: Log) -> Result<(), String> {
     if !req.has_work() {
         return Err("nada para aplicar nesta stack".into());
     }
@@ -427,7 +427,7 @@ pub async fn download_clients(mut req: Req, log: Log) -> Result<(), String> {
     if let Some(p) = &req.prowlarr {
         to_wait_for.push(prowlarr_target(p));
     }
-    wait_apps(&http, &base, &to_wait_for, &log).await;
+    wait_apps(&http, &base, &req.api_key, &to_wait_for, &running, &log).await;
     wait_clients(&http, &req.clients, &log).await;
     /* Before registering the client anywhere: the key that counts is the one the
        app has, not the one the page proposed. `patch.rs` does not overwrite an
@@ -1848,15 +1848,77 @@ async fn put_config(
 }
 
 /* Applied right after the `up`, no app has answered yet: they take from a few
-   seconds to a minute to open the API. `/ping` asks for no key and is the first
-   path they serve, so it is the one we ask.
+   seconds to a minute to open the API. So we wait — but *answering* is not the
+   same as *ready*, and the difference is what used to make the first Deploy fail
+   in ways the second one did not.
 
-   Whoever does not answer in time interrupts nothing — it goes on as it was,
+   Two steps, then. `/ping` asks for no key and is the first path they serve: it
+   says the process is listening. `system/status`, with the key, is the one that
+   says the **initialization finished** — the database migrated, the config
+   loaded, the API key in place. Between the two an *arr answers 503, or answers
+   401 because it has not read its own key yet, and a client registered in that
+   window comes back as a validation error about an app that was merely still
+   starting.
+
+   Whoever does not get ready in time interrupts nothing — it goes on as it was,
    and its error shows up line by line in the record of each link. */
-async fn wait_apps(http: &reqwest::Client, base: &str, targets: &[Arr], log: &Log) {
+async fn wait_apps(
+    http: &reqwest::Client,
+    base: &str,
+    key: &str,
+    targets: &[Arr],
+    running: &[String],
+    log: &Log,
+) {
     for target in targets {
+        /* A container that is not up answers nothing, and the ninety seconds
+           spent asking are ninety seconds of a log that says "still starting"
+           about something that never started. The `compose ps` knows better —
+           when it is the one that answered, its word is final. */
+        if !running.is_empty() && !running.iter().any(|k| k == &target.key) {
+            log.line(format!(
+                "{}: o container não está no ar — nada a configurar nele; veja o log do Subir",
+                target.name
+            ));
+            continue;
+        }
         wait_url(http, &format!("{base}{}/ping", target.route), &target.name, log).await;
+        let url = format!("{base}{}/api/{}/system/status", target.route, target.api);
+        wait_ready(http, &url, key, &target.name, log).await;
     }
+}
+
+/// The second half of the wait: the app is initialized when the resource that
+/// needs its configuration answers **200**. Anything else is "not yet" — the
+/// 503 of an app still coming up, the 401 of one that has not loaded its key.
+/// Running out of tries is not a failure: the round goes on and whatever is
+/// still starting shows up as an error on its own line.
+async fn wait_ready(http: &reqwest::Client, url: &str, key: &str, name: &str, log: &Log) {
+    let mut warned = false;
+    for _ in 0..45 {
+        match http.get(url).header("X-Api-Key", key).send().await {
+            Ok(r) if r.status().is_success() => return,
+            Ok(r) if r.status().is_server_error() => crate::journal::detail(|| {
+                format!(
+                    "{name}: o nginx ainda não alcança o container — {} em {}",
+                    r.status(),
+                    without_query(url)
+                )
+            }),
+            Ok(r) => crate::journal::detail(|| {
+                format!("{name}: inicializando ainda — {} em {}", r.status(), without_query(url))
+            }),
+            Err(e) => crate::journal::detail(|| format!("{name}: {e}")),
+        }
+        if !warned {
+            log.line(format!("esperando o {name} terminar de iniciar…"));
+            warned = true;
+        }
+        tokio::time::sleep(Duration::from_secs(2)).await;
+    }
+    log.line(format!(
+        "{name}: ainda iniciando depois de 90s — sigo assim mesmo, e o que falhar sai no log"
+    ));
 }
 
 /* The same for the download clients. It matters less for the first `up` and
@@ -1874,6 +1936,17 @@ async fn wait_clients(http: &reqwest::Client, clients: &[Client], log: &Log) {
             continue;
         }
         wait_url(http, &c.web_url, &c.name, log).await;
+        /* And the app's own API, not just the address: the root of qBittorrent
+           answers the login page while it is still reading the conf we have
+           just written, and `app/version` only answers once the WebUI is up.
+           Any answer of its own counts, 401 and 403 included — what is being
+           asked is whether it is initialized, not whether we may come in. */
+        let api_url = match c.kind.as_str() {
+            "qbittorrent" => format!("{}/api/v2/app/version", c.web_url.trim_end_matches('/')),
+            "sabnzbd" => format!("{}/api?mode=version", c.web_url.trim_end_matches('/')),
+            _ => continue,
+        };
+        wait_url(http, &api_url, &c.name, log).await;
     }
 }
 

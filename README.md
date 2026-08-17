@@ -395,7 +395,9 @@ that creates them, as `root`, and the app cannot write in them. A path that
 already exists and is not a folder stops Bring up right there, naming it in the
 log.
 
-**Bring up** leaves the stack configured: as soon as the apps answer, the
+**Bring up** leaves the stack configured: as soon as each app **finishes
+starting** — the server waits for `system/status` to answer, not merely for the
+port to accept —, the
 server registers every download client in every *arr **and in Prowlarr
 itself** — which has its own Settings → Download Clients —, every *arr ticked
 under Prowlarr's Settings → Apps, and each family's *Media Management* and
