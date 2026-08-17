@@ -1,4 +1,4 @@
-# <img src="docs/logo.svg" width="26" align="top" alt=""> Hubstarr — generador de *arr stack
+# <img src="docs/logo.svg" width="26" align="top" alt=""> HUBSTARR - Generador y configurador de *arr stack
 
 *[🇧🇷 Português (Brasil)](README.md) · [🇬🇧 English](README.en.md) · 🇪🇸 Español*
 
