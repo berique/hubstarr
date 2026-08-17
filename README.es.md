@@ -1,6 +1,6 @@
 # <img src="docs/logo.svg" width="26" align="top" alt=""> HUBSTARR - Generador y configurador de *arr stack
 
-*[🇧🇷 Português (Brasil)](README.md) · [🇬🇧 English](README.en.md) · 🇪🇸 Español*
+*[🇧🇷 Português (Brasil)](README.pt-BR.md) · [🇬🇧 English](README.md) · 🇪🇸 Español*
 
 [<img src="docs/badge-licencia.svg" alt="Licencia: GPL-3.0" height="20">](LICENSE)
 

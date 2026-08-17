@@ -76,7 +76,7 @@ endereço de rede desta máquina, ou faça um túnel:
 Abrir na rede dá a quem alcançar a porta o direito de rodar docker compose e
 escrever arquivos aqui: não há autenticação nenhuma. O túnel não tem esse custo.
 
-Documentação: README.md, seção \"Servidor (opcional)\".",
+Documentação: README.pt-BR.md, seção \"Servidor (opcional)\".",
     disable_help_flag = true,
     disable_version_flag = true
 )]

@@ -788,7 +788,8 @@ Configarr ter rodado.
 
 ## READMEs
 
-`README.md` (pt-BR) é a fonte; `README.en.md` e `README.es.md` são traduções.
+`README.pt-BR.md` é a fonte; o `README.md` (inglês, o padrão do repositório) e
+o `README.es.md` são traduções.
 Mudança de comportamento documentada precisa ir aos três. As capturas em
 `docs/` (`screenshot.png`, `services.png`, `theme.png`, `credits.png`,
 `config.png`) refletem a interface atual, e há uma seção **Docker** explicando como instalar
@@ -857,7 +858,7 @@ Duas armadilhas do `added` injetado, as duas já custaram uma rodada:
 ## Wishlist
 
 O roadmap fica nos três READMEs, numa tabela por marco de versão; o texto
-autoritativo é o do `README.md`, e mexer nele é mexer nos três. Hoje o
+autoritativo é o do `README.pt-BR.md`, e mexer nele é mexer nos três. Hoje o
 repositório é o **v0.5** — a página, o servidor de `backend/`, a Configuração
 aplicada nos apps e o TRaSH Guides inteiro pelo Configarr.
 

@@ -1,299 +1,305 @@
-# <img src="docs/logo.svg" width="26" align="top" alt=""> HUBSTARR - Gerador e configurador de *arr stack
+# <img src="docs/logo.svg" width="26" align="top" alt=""> HUBSTARR - *arr stack generator and configurator
 
-*🇧🇷 Português (Brasil) · [🇬🇧 English](README.en.md) · [🇪🇸 Español](README.es.md)*
+*[🇧🇷 Português (Brasil)](README.pt-BR.md) · 🇬🇧 English · [🇪🇸 Español](README.es.md)*
 
-[<img src="docs/badge-licenca.svg" alt="Licença: GPL-3.0" height="20">](LICENSE)
+[<img src="docs/badge-license.svg" alt="License: GPL-3.0" height="20">](LICENSE)
 
-Protótipo que monta e sobe uma stack de mídia (*arr + clientes de download +
-servidor de mídia): o `docker-compose.yml`, o `.env` e o `nginx.conf`, e depois
-os apps configurados uns nos outros. O [servidor](#servidor) é o Hubstarr —
-ele guarda a stack em SQLite, grava os arquivos, sobe no Docker e configura os
-apps pela API de cada um.
+Prototype that builds and brings up a media stack (*arr apps + download clients
++ media server): the `docker-compose.yml`, the `.env` and the `nginx.conf`, and
+then the apps configured into one another. The [server](#server) is Hubstarr —
+it keeps the stack in SQLite, writes the files, brings it up in Docker and
+configures the apps through each one's API.
 
-A interface é uma **página única sem dependência externa**, que o servidor traz
-embutida. Ela também abre sozinha, direto do disco, e ali gera os arquivos num
-`.zip` — mas só isso: sem servidor não há stack no ar, nem senha do
-qBittorrent, nem base URL do Jellyfin, nem perfil do TRaSH Guides. É o modo de
-quem quer só os arquivos.
+The interface is a **single page with no external dependency**, which the server
+carries embedded. It also opens on its own, straight from disk, and there it
+generates the files into a `.zip` — but only that: with no server there is no
+stack running, no qBittorrent password, no Jellyfin base URL, no TRaSH Guides
+profile. It is the mode for whoever wants just the files.
 
 > [!WARNING]
-> **Protótipo.** O Hubstarr não foi projetado para uso em produção: os arquivos
-> que ele gera são um ponto de partida, sem endurecimento de segurança, backup
-> ou monitoramento. Revise tudo — senhas, portas, certificados e permissões —
-> antes de expor a stack a qualquer rede que não seja a sua.
+> **Prototype.** Hubstarr was not designed for production use: the files it
+> generates are a starting point, with no security hardening, backups or
+> monitoring. Review everything — passwords, ports, certificates and
+> permissions — before exposing the stack to any network other than your own.
 
-## O que ele deixa pronto
+## What it sets up for you
 
-Gerar os arquivos é a metade fácil. A outra é a que se faz à mão depois, app por
-app, e é ela que o **Subir** faz sozinho pela API de cada um — o botão
-**Aplicar na stack** reaplica tudo isto sem subir nada:
+Generating the files is the easy half. The other half is the one you do by hand
+afterwards, app by app — and that is what **Bring up** does on its own, through
+each app's API. The **Apply to the stack** button reapplies all of it without
+bringing anything up:
 
-- **A configuração básica de cada app**: a base URL igual ao subpath do nginx, a
-  mesma API key na stack inteira, fuso, PUID/PGID e as pastas do compose. Nos
-  *arr, o *Media Management* completo — hardlink, renomear, permissões, lixeira,
-  espaço livre — e a nomenclatura de episódio, filme e faixa já nos formatos do
-  [TRaSH Guides](https://trash-guides.info).
-- **Clientes de download ligados**: qBittorrent e SABnzbd registrados em cada
-  Sonarr, Radarr e Lidarr **e no próprio Prowlarr**, cada um com a categoria que
-  você escolheu — e as categorias criadas dentro do cliente, cada uma com a
-  pasta dela. O Prowlarr recebe ainda cada *arr para sincronizar, com as
-  categorias por família, e o FlareSolverr como proxy de indexador.
-- **Pontos de importação prontos**: a pasta raiz de cada *arr, no caminho que o
-  container enxerga (`/data/tv`, `/data/movies`, `/data/music`). Sem ela a
-  primeira série para num *You must add a root folder* — e o caminho digitado à
-  mão costuma ser o do host, que o app aceita e depois não acha.
-- **Perfis de qualidade do TRaSH Guides**, por instância: cada preset traz o
-  trio que o guia recomenda junto — o perfil, os custom formats **com os scores
-  dele** e a definição de tamanho dos arquivos. É assim que a instância de 4K
-  deixa de ser igual à de 1080p. Quem aplica é o
-  [Configarr](https://configarr.de), com os templates do Recyclarr, e o guia
-  continua sendo dele: o Hubstarr escolhe, não reimplementa.
-- **Jellyfin pré-configurado**: o assistente inicial (idioma da interface,
-  administrador, acesso remoto) e uma biblioteca por instância de *arr, com o
-  tipo certo e o caminho **de dentro do container** — o mesmo que o *arr recebe
-  como pasta raiz, que é o que faz a biblioteca listar justamente o que ele
-  importou.
+- **The basic configuration of every app**: the base URL matching the nginx
+  subpath, the same API key across the whole stack, timezone, PUID/PGID and the
+  folders from the compose file. In the *arr apps, the full *Media Management* —
+  hardlinks, renaming, permissions, recycling bin, free space — and episode,
+  movie and track naming already in the
+  [TRaSH Guides](https://trash-guides.info) formats.
+- **Download clients wired in**: qBittorrent and SABnzbd registered in every
+  Sonarr, Radarr and Lidarr **and in Prowlarr itself**, each with the category
+  you picked — and the categories created inside the client, each with its own
+  folder. Prowlarr also gets every *arr to sync, with the categories per family,
+  and FlareSolverr as an indexer proxy.
+- **Import points ready**: each *arr's root folder, at the path the container
+  sees (`/data/tv`, `/data/movies`, `/data/music`). Without it the first series
+  stops at a *You must add a root folder* — and the path typed by hand is usually
+  the host's, which the app accepts and then finds nothing in.
+- **TRaSH Guides quality profiles**, per instance: each preset brings the trio
+  the guide recommends together — the profile, the custom formats **with its
+  scores** and the file size definition. That is what makes the 4K instance stop
+  being a copy of the 1080p one. [Configarr](https://configarr.de) is what
+  applies them, with the Recyclarr templates, and the guide stays theirs:
+  Hubstarr picks, it does not reimplement.
+- **A pre-configured Jellyfin**: the startup wizard (UI language, administrator,
+  remote access) and one library per *arr instance, with the right type and the
+  path **inside the container** — the same one the *arr gets as its root folder,
+  which is what makes the library list exactly what it imported.
 
-Sem servidor nada disso acontece: o `.zip` leva os arquivos, e o resto é você
-quem faz nas interfaces. É a diferença entre uma stack no ar e uma stack pronta
-para usar.
+With no server none of this happens: the `.zip` carries the files and the rest
+is on you, in each app's UI. It is the difference between a stack that is up and
+a stack that is ready to use.
 
-Rode o servidor e abra o endereço dele:
+Run the server and open its address:
 
 ```sh
 cd backend
 cargo run --release      # http://127.0.0.1:7878
 ```
 
-O **Ambiente** abre junto: é dali que saem as bases de caminho que todo o resto
-usa. Fechou, ele continua no botão do topo. Só os arquivos, sem subir nada?
-Abra o `hubstarr.html` direto no navegador — ele é autocontido, com os
-logotipos embutidos como data URI.
+The **Environment** opens with it: that is where the base paths everything else
+uses come from. Once closed, it is still behind the button at the top. Just the
+files, without bringing anything up? Open `hubstarr.html` straight in a
+browser — it is self-contained, with the logos embedded as data URIs.
 
-![A interface: lista de serviços à esquerda, arquivos gerados à direita](docs/screenshot.png)
+![The interface: service list on the left, generated files on the right](docs/screenshot.png)
 
-O combobox lista os serviços disponíveis com seus logotipos e portas padrão:
+The combobox lists the available services with their logos and default ports:
 
-![O combobox aberto, mostrando os onze serviços disponíveis](docs/services.png)
+![The open combobox, showing the eleven available services](docs/services.png)
 
-E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
+And the **Theme** field shows the chosen palette's screenshot without leaving the page:
 
-![O modal com a captura do tema hotline do Sonarr, por cima do modal do serviço](docs/theme.png)
+![The modal with Sonarr's hotline theme screenshot, over the service modal](docs/theme.png)
 
-## O que dá para fazer
+## What you can do
 
-- **Escolher serviços** num combobox com logotipos e adicioná-los à stack.
-- **Créditos**, no botão ao lado do título: um modal com todos os projetos que
-  a stack usa — cada app com link para o site dele —, mais a LinuxServer.io das
-  imagens, o theme.park dos temas e a origem dos ícones.
+- **Pick services** from a combobox with logos and add them to the stack.
+- **Credits**, in the button next to the title: a modal with every project the
+  stack uses — each app linking to its own site —, plus LinuxServer.io for the
+  images, theme.park for the themes and where the icons come from.
 
-  ![O modal de Créditos, com os projetos da stack e a origem de imagens, temas e ícones](docs/credits.png)
-- **Configurar cada instância** num modal: título, subpasta de mídia/downloads
-  e roteamento pela VPN.
-- **Copiar o link** de cada serviço, já com o esquema, o endereço e o subpath
-  pelos quais o nginx vai atendê-lo. O endereço é o domínio do Ambiente quando
-  há um; sem ele, é o mesmo por onde você abriu a página — quem chega pelo IP da
-  LAN recebe os links nesse IP, e não em `localhost`.
-- **Ordenar a lista arrastando**: pegue a linha do serviço em qualquer ponto e
-  mova-a; a ordem que você deixar é a ordem em que os serviços saem no
-  `docker-compose.yml` e no `.env` — com servidor, ela fica guardada. Começar o
-  gesto no Link, no Editar, no Excluir ou no ponto de status continua clicando
-  neles. As setas ↑ ↓ fazem o mesmo com a alça (`⁙`) em foco, para quem não usa
-  o mouse. O nginx é linha fixa e não se move. Ordem não é ordem de subida:
-  quem manda nisso no compose é o `depends_on`.
-- **Aviso de conflito**: duas instâncias apontadas para a mesma pasta se
-  atropelam na importação, então a lista avisa em vermelho, com os nomes e o
-  caminho. O Jellyfin, que monta a biblioteca inteira, e o Bazarr, que segue as
-  outras, ficam de fora da checagem.
-- **Etiquetas na linha do serviço**, uma cor por tipo: a variante do logotipo,
-  o tema da interface, a saída pela VPN, a aceleração por GPU, o endereço na
-  stack e as pastas de configuração e de mídia, por extenso. Abaixo da lista,
-  ao lado do **Limpar tudo**, uma legenda diz o que cada cor marca — ela some
-  com a lista vazia.
-- **Múltiplas instâncias** de Sonarr, Radarr, Lidarr, Bazarr e Prowlarr —
-  basta o título ser diferente. Sonarr e Radarr recebem também
+  ![The Credits modal, with the stack's projects and where images, themes and icons come from](docs/credits.png)
+- **Configure each instance** in a modal: title, media/downloads subfolder and
+  VPN routing.
+- **Copy each service's link**, with the scheme, address and subpath nginx will
+  serve it on. The address is the Environment's domain when there is one; with
+  none, it is the same one you opened the page on — reach it by the LAN IP and
+  the links come out on that IP, not on `localhost`.
+- **Reorder the list by dragging**: grab a service row anywhere and move it;
+  the order you leave is the order the services come out in
+  `docker-compose.yml` and `.env` — with a server, it is kept. Starting the
+  gesture on Link, Edit, Delete or the status dot still clicks them. The ↑ ↓
+  arrows do the same with the grip (`⁙`) focused, for those not using a mouse.
+  nginx is a fixed row and does not move. Order is not startup order: in
+  compose that is what `depends_on` is for.
+- **Conflict warning**: two instances pointed at the same folder step on each
+  other when importing, so the list says so in red, with the names and the
+  path. Jellyfin, which mounts the whole library, and Bazarr, which follows the
+  others, are left out of the check.
+- **Tags on the service row**, one colour per kind: the logo variant, the
+  interface theme, going out through the VPN, GPU acceleration, the address in
+  the stack, and the config and media folders in full. Below the list, next to
+  **Clear all**, a legend says what each colour marks — it goes away with an
+  empty list.
+- **Multiple instances** of Sonarr, Radarr, Lidarr, Bazarr and Prowlarr — they
+  only need different titles. Sonarr and Radarr also get
   `SONARR__APP__INSTANCENAME` / `RADARR__APP__INSTANCENAME`.
-- **Base URL automática**: Sonarr, Radarr, Lidarr e Prowlarr recebem
-  `<APP>__SERVER__URLBASE=/<container_name>`, já casando com o subpath do
-  nginx. O Bazarr não expõe essa variável — a base fica na interface dele.
-- **API key** no Ambiente: uma só para toda a stack. Sonarr, Radarr, Lidarr e
-  Prowlarr saem no compose com `<APP>__AUTH__APIKEY=${STARR_APIKEY}`, e o
-  SABnzbd com `SAB_API_KEY=${STARR_APIKEY}`; o valor fica no `.env`. A chave já
-  nasce sorteada — 16 bytes em hexadecimal, o mesmo que `openssl rand -hex 16`
-  — e o botão "Gerar" sorteia outra.
-- **Aceleração de hardware do Jellyfin**: CPU, Intel ou NVIDIA. Intel ganha
-  `devices: /dev/dri:/dev/dri`; NVIDIA, a reserva de GPU em `deploy` e as
-  variáveis `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES`.
-- **Tema do theme.park**: os serviços de imagem do linuxserver — Sonarr,
-  Radarr, Lidarr, Prowlarr, Bazarr, qBittorrent, SABnzbd e Jellyfin —
-  saem com `DOCKER_MODS=ghcr.io/themepark-dev/theme.park:<app>`, o mod que
-  aplica o tema na interface deles. No Sonarr e no Radarr o modal ainda traz um
-  campo **Variante**, que vira `TP_ADDON`: *Padrão* usa o addon escuro
-  (`sonarr-darker`), *4K* troca logotipo e favicon pelos do addon de 4K
-  (`sonarr-4k-logo|sonarr-4k-favicon`) e *Animes* troca os dois pelos de anime
-  (`sonarr-anime-logo|sonarr-anime-favicon`) — útil para distinguir as
-  instâncias de uma stack com mais de um Sonarr ou Radarr. Os dois têm também
-  um campo **Tema**, a paleta em `TP_THEME`: `aquamarine`, `hotline`, `hotpink`,
-  `dracula`, `dark`, `organizr` (o padrão), `space-gray`, `overseerr` e `nord`.
-  Abaixo do campo, um link mostra a captura da paleta escolhida num modal
-  sobre o do serviço; a imagem vem da documentação do
-  [theme.park](https://docs.theme-park.dev/), uma por app. Na lista, a linha
-  de quem tem tema traz uma etiqueta com o escolhido, ao lado da variante.
-- **FlareSolverr junto do Prowlarr**: no modal do Prowlarr, um checkbox
-  marcado por padrão traz o FlareSolverr para a stack — é ele que resolve o
-  desafio anti-bot da Cloudflare nos indexadores protegidos. Configure-o no
-  Prowlarr em *Settings → Indexers → FlareSolverr*, com a URL
-  `http://flaresolverr:8191`. A imagem por trás dele é a do
-  [Byparr](https://github.com/ThePhaseless/Byparr), substituto direto e mais
-  atual, com a mesma API e a mesma porta.
-- **Ajuda por campo** no Ambiente e na Configuração: cada linha tem um `?` que
-  abre uma explicação do que aquele valor faz — e, no Ambiente, de como ele sai
-  nos arquivos gerados.
-- **network.xml do Jellyfin**: com ele na stack, o `BaseUrl` no subpath do
-  nginx e o `nginx` em `KnownProxies` — sem o primeiro a interface monta os
-  links na raiz e o subpath responde 404, sem o segundo ele registra o IP do
-  proxy no lugar do IP de quem pediu. O arquivo **não é montado**: ele é do
-  Jellyfin, que migra a configuração de rede ao subir, e montá-lo congelaria o
-  que ele guarda ali. Com servidor, o **Subir** espera o app criar o arquivo,
-  confere se a base URL está lá, escreve a que falta e reinicia só ele — as
-  demais chaves ficam como estavam. Sem servidor, ele sai no `.zip`, no caminho
-  em que o app o lê (`/config/network.xml`, ao lado do `system.xml`).
-- **qBittorrent.conf pronta**: quando ele está na stack, o Hubstarr monta a
-  configuração inicial dele — pastas iguais às do compose, ajustes de proxy
-  reverso e as credenciais no formato do próprio qBittorrent 5.2: a senha em
-  PBKDF2-SHA512 e a API key `qbt_` + 28 caracteres, derivada da
-  `${STARR_APIKEY}` da stack — a conf é lida por ele, não pelo compose, então a
-  variável não seria expandida ali. Usuário, senha e chave se editam no modal
-  dele — e é a **API key** que os *arr usam para falar com ele, não a senha:
-  ela não expira quando a senha da interface muda. O arquivo **não é montado**: quem manda nele é o próprio qBittorrent, e
-  montá-lo congelaria tudo o que ele guarda ali. Com servidor, o **Subir**
-  escreve essas chaves na conf que o app criou — parando o container, fazendo a
-  troca e subindo de novo, porque ele reescreve o arquivo inteiro ao sair. Sem
-  servidor, ele sai no `.zip`, no caminho em que o app o lê, para copiar de lá.
-- **Preferências do qBittorrent pela API**: com os apps no ar, o **Subir** (e o
-  **Aplicar na stack**) ainda ajusta nele o **gerenciamento automático de
-  torrent** — ligado, e seguindo a categoria quando ela muda, que é o que faz o
-  torrent ir para a pasta certa —, a **pasta de download** (a subpasta do modal
-  dele, no caminho que o container enxerga) e o **usuário e a senha** da
-  interface. Não é repetição da conf: aquela é o que ele lê ao nascer, esta é a
-  mesma decisão aplicada a um qBittorrent que já existe — e o gerenciamento
-  automático a conf nem cobre. A **API key** dele é respeitada: se o
-  app já tem uma, o Hubstarr **não a troca** — é com ela que os clientes dele já
-  falam —, e são os *arr que passam a ser registrados com a chave do app. A
-  nossa só entra quando ele ainda não tem nenhuma, que é a primeira subida.
-  Quem a grava é a conf: o qBittorrent aceita a propriedade na API e a ignora.
-- **sabnzbd.ini do SABnzbd**: a **API key** dele é a mesma da stack — o campo no
-  modal mostra a que vale, e o **Gerar** cria outra pelo mesmo método (16 bytes
-  em hexadecimal), que então vai para o `.env` —, e as pastas de **download em
-  progresso** e **download completo** viram o `download_dir` e o `complete_dir`.
-  Vai junto o `url_base` com o subpath em que o nginx o serve — sem ele o
-  SABnzbd monta os links na raiz e quebra atrás do proxy. As quatro chaves são
-  escritas no `sabnzbd.ini` que o próprio app criou, depois de a stack subir,
-  como no qBittorrent.
-- **Categorias do qBittorrent**: as que a **Configuração** deu a cada *arr,
-  cada uma com a subpasta dela dentro do caminho de download — mesma partição,
-  então o *arr continua fazendo hardlink em vez de copiar. Com servidor, elas
-  são criadas **pela API do app**, com ele no ar: quem já existe tem a pasta
-  atualizada, e nenhuma é removida — pode haver torrent apontado para ela. Sem
-  servidor, as mesmas categorias saem no `.zip` como `categories.json`, para
-  copiar para a pasta de configuração dele antes da primeira subida.
-- **HTTPS opcional**, com o certificado e a chave vindos do host.
-- **Configuração** (botão no topo): escolher quais instâncias o Prowlarr vai
-  configurar, com que categoria cada *arr usa cada cliente de download —
-  `tv-sonarr`, `radarr`, `lidarr` no qBittorrent, e as categorias de fábrica do
-  SABnzbd (`tv`, `movies`, `music`), todas editáveis —,
-  mais o gerenciamento de downloads concluídos no SABnzbd, e as opções de
-  *Media Management* — hardlink, renomear, permissões,
-  pastas vazias, o bloco **avançado** (reexaminar a pasta, data do arquivo,
-  lixeira e limpeza dela, importar arquivos extras, checagem de espaço livre) e a nomenclatura
-  completa de cada app (*Episode Naming*,
-  *Nomenclatura de filme*, *Nomeação da faixa*: caracteres ilegais,
-  dois-pontos, vários episódios e todos os formatos de arquivo e de pasta) —,
-  separadas por família: Sonarr, Radarr e Lidarr. Os formatos de episódio e de
-  filme já vêm com os do [TRaSH Guides](https://trash-guides.info), na variante
-  do Jellyfin com o id do TMDb. As permissões abrem os campos
-  de `chmod` e `chown`, e no Lidarr a caixa de nome existente é quem traz os
-  formatos de faixa e a pasta do álbum.
+- **Automatic base URL**: Sonarr, Radarr, Lidarr and Prowlarr get
+  `<APP>__SERVER__URLBASE=/<container_name>`, already matching the nginx
+  subpath. Bazarr exposes no such variable — set its base in its own UI.
+- **API key** in the Environment: a single one for the whole stack. Sonarr,
+  Radarr, Lidarr and Prowlarr land in the compose file with
+  `<APP>__AUTH__APIKEY=${STARR_APIKEY}`, and SABnzbd with
+  `SAB_API_KEY=${STARR_APIKEY}`; the value stays in `.env`. The key
+  is generated up front — 16 random bytes in hex, the same as
+  `openssl rand -hex 16` — and the "Generate" button rolls a new one.
+- **Jellyfin hardware acceleration**: CPU, Intel or NVIDIA. Intel gets
+  `devices: /dev/dri:/dev/dri`; NVIDIA gets the GPU reservation under `deploy`
+  plus the `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES` variables.
+- **theme.park theme**: services on linuxserver images — Sonarr, Radarr,
+  Lidarr, Prowlarr, Bazarr, qBittorrent, SABnzbd and Jellyfin — come
+  out with `DOCKER_MODS=ghcr.io/themepark-dev/theme.park:<app>`, the mod that
+  themes their interface. Sonarr and Radarr also get a **Variant** field in the
+  modal, which becomes `TP_ADDON`: *Default* uses the darker addon
+  (`sonarr-darker`), *4K* swaps logo and favicon for the 4K addon ones
+  (`sonarr-4k-logo|sonarr-4k-favicon`) and *Anime* swaps both for the anime ones
+  (`sonarr-anime-logo|sonarr-anime-favicon`) — handy to tell instances apart in
+  a stack with more than one Sonarr or Radarr. Both also have a **Theme**
+  field, the palette in `TP_THEME`: `aquamarine`, `hotline`, `hotpink`,
+  `dracula`, `dark`, `organizr` (the default), `space-gray`, `overseerr` and
+  `nord`. Below the field, a link shows the chosen palette's screenshot in a
+  modal over the service's own; the image comes from the
+  [theme.park](https://docs.theme-park.dev/) docs, one per app. In the list, the
+  row of whoever has a theme carries a tag with the chosen one, next to the
+  variant.
+- **FlareSolverr alongside Prowlarr**: in the Prowlarr modal, a checkbox that
+  is on by default brings FlareSolverr into the stack — it is what solves
+  Cloudflare's anti-bot challenge on protected indexers. Set it up in Prowlarr
+  under *Settings → Indexers → FlareSolverr*, with the URL
+  `http://flaresolverr:8191`. The image behind it is
+  [Byparr](https://github.com/ThePhaseless/Byparr), a drop-in, better-maintained
+  replacement with the same API and the same port.
+- **Per-field help** in the Environment and in the Configuration: every row has
+  a `?` that opens an explanation of what the value does — and, in the
+  Environment, of how it lands in the generated files.
+- **Jellyfin's network.xml**: with it in the stack, `BaseUrl` set to the nginx
+  subpath and `nginx` in `KnownProxies` — without the first the UI builds its
+  links at the root and the subpath answers 404, without the second it logs the
+  proxy's IP instead of the caller's. The file is **not mounted**: it belongs to
+  Jellyfin, which migrates its network configuration on startup, and mounting
+  ours would freeze what it keeps in there. With a server, **Bring up** waits for
+  the app to create the file, checks whether the base URL is there, writes what
+  is missing and restarts just that container — every other key stays as it was.
+  With no server, it comes in the `.zip`, at the path the app reads it from
+  (`/config/network.xml`, next to `system.xml`).
+- **A ready qBittorrent.conf**: when it is in the stack, Hubstarr builds its
+  initial configuration — paths matching the compose file, reverse-proxy
+  settings and the credentials in qBittorrent 5.2's own format: the password as
+  PBKDF2-SHA512 and the API key as `qbt_` plus 28 characters, derived from the
+  stack's `${STARR_APIKEY}` — the conf is read by qBittorrent, not by compose,
+  so the variable would not be expanded there. Username, password and key are
+  edited in its modal — and it is the **API key** the *arr apps use to talk to
+  it, not the password: it does not expire when the web UI password changes. The file is **not mounted**: qBittorrent owns it, and
+  mounting ours would freeze everything it keeps in there. With a server,
+  **Bring up** writes those keys into the conf the app created — stopping the
+  container, making the change and starting it again, because it rewrites the
+  whole file on exit. With no server, it comes in the `.zip`, at the path the app
+  reads it from, to be copied from there.
+- **qBittorrent preferences through the API**: with the apps up, **Bring up**
+  (and **Apply to the stack**) also sets its **automatic torrent management** —
+  on, and following the category when it changes, which is what sends the
+  torrent to the right folder —, the **download folder** (the subfolder from its
+  modal, at the path the container sees) and the WebUI **username and password**.
+  It is not a repeat of the conf: that is what it reads when it is born, this is
+  the same decision applied to a qBittorrent that already exists — and automatic
+  management is not in the conf at all. Its **API key** is respected: if the app
+  already has one, Hubstarr **does not replace it** — that is the key its
+  clients already speak — and the *arr apps are registered with the app's key
+  instead. Ours only goes in when it has none yet, which is the first start.
+  What writes it is the conf: qBittorrent accepts the property over the API and
+  ignores it.
+- **SABnzbd's sabnzbd.ini**: its **API key** is the stack's own — the field in
+  the modal shows the one in force, and **Generate** makes another by the same
+  method (16 random bytes in hex), which then goes to `.env` —, and the
+  **downloading** and **completed download** folders become `download_dir` and
+  `complete_dir`. Along with them goes `url_base`, the subpath nginx serves it
+  on — without it SABnzbd builds its links at the root and breaks behind the
+  proxy. The four keys are written into the `sabnzbd.ini` the app itself
+  created, once the stack is up, just like qBittorrent's.
+- **qBittorrent categories**: the ones **Configuration** gave each *arr, each
+  with its own subfolder inside the download path — same partition, so the *arr
+  keeps hardlinking instead of copying. With a server they are created **through
+  the app's API**, with it running: one that already exists gets its folder
+  updated, and none is ever removed — a torrent may be pointed at it. With no
+  server, the same categories come in the `.zip` as `categories.json`, to copy
+  into its config folder before the first start.
+- **Optional HTTPS**, with the certificate and key coming from the host.
+- **Configuration** (button at the top): pick which instances Prowlarr will
+  configure, and the category each *arr uses in each download client —
+  `tv-sonarr`, `radarr`, `lidarr` on qBittorrent, and SABnzbd's stock
+  categories (`tv`, `movies`, `music`), all editable —,
+  plus completed download handling on SABnzbd, and the *Media Management*
+  options — hardlinks, renaming, permissions, empty
+  folders, the **advanced** block (rescan folder, file date, recycling bin and
+  its cleanup, import extra files, free space check) and each app's full naming section
+  (*Episode*, *Movie*, *Track
+  Naming*: illegal characters, colon replacement, multi-episode style and every
+  file and folder format) — split per family: Sonarr, Radarr and Lidarr. The
+  episode and movie formats ship with the [TRaSH
+  Guides](https://trash-guides.info) ones, in the Jellyfin variant with the TMDb
+  id. Permissions reveal the `chmod` and `chown` fields, and in Lidarr the existing
+  name box is what brings up the track formats and the album folder.
 
-  ![O modal da Configuração, na nomenclatura de episódio do Sonarr](docs/config.png)
+  ![The Configuration modal, on Sonarr's episode naming](docs/config.png)
 
-  Com mais de um Sonarr na stack, cada formato dele — os três de episódio
-  (**padrão**, **diário** e **anime**) e as três pastas (**série**,
-  **temporada** e **especiais**) — traz a lista das instâncias que o recebem:
-  dá para mandar o formato de anime só para o *Sonarr [Anime]*, por exemplo. De fábrica todas as instâncias recebem todos os
-  formatos; pelo menos uma é obrigatória no formato padrão, porque o campo é
-  obrigatório no app, e a que você desmarcar mantém o formato que já tem, em vez
-  de perdê-lo. As três partes da Configuração chegam aos apps pelo **Subir** e
-  pelo **Aplicar na stack**.
-- **Pastas raiz prontas**: cada Sonarr, Radarr e Lidarr recebe a pasta que o
-  compose monta nele — `/data/tv`, `/data/movies`, `/data/music` —, no caminho
-  que o container enxerga. Sem isso a primeira série ou filme para num *You must
-  add a root folder*, e o caminho digitado à mão costuma ser o do host, que o
-  app aceita e depois não acha. O que já estiver lá fica: pasta raiz se remove
-  com a biblioteca junto.
-- **Jellyfin pronto para usar**: com ele na stack, o **Subir** passa pelo
-  assistente inicial — a interface no idioma da página, o administrador do modal
-  dele e o acesso remoto — e cria uma biblioteca por instância de Sonarr, Radarr
-  e Lidarr, com o tipo certo (séries, filmes, música) e o caminho **de dentro do
-  container**, o mesmo que o *arr recebe como pasta raiz: é essa igualdade que
-  faz a biblioteca listar justamente o que o *arr importou. As pastas avulsas do
-  modal dele entram como bibliotecas mistas. Usuário e senha em branco significam
-  "não mexa no assistente": as bibliotecas entram do mesmo jeito, mas ele fica
-  aberto para você terminar no navegador — concluí-lo sem administrador deixaria
-  o Jellyfin sem conta nenhuma em que entrar. Num Jellyfin cujo assistente já foi
-  concluído, é o usuário e a senha do modal que dão ao Hubstarr o token para
-  criar as bibliotecas. Biblioteca que já existe não é tocada, e nenhuma é
-  removida.
-- **Perfis de qualidade e custom formats** do [TRaSH Guides](https://trash-guides.info),
-  por instância: cada Sonarr e cada Radarr da stack escolhe os perfis do guia
-  que quer — **HD (1080p)**, **4K (2160p)**, **Remux 4K**, **Anime** —, e é assim
-  que a instância de 4K deixa de ser igual à de 1080p. Cada um traz o trio que o
-  guia recomenda junto: o perfil, os custom formats que o pontuam e a definição
-  de tamanho dos arquivos. Há ainda um campo para escrever outros templates do
-  Recyclarr à mão.
+  With more
+  than one Sonarr in the stack, each of its formats — the three episode ones
+  (**standard**, **daily** and **anime**) and the three folders (**series**,
+  **season** and **specials**) — carries the list of instances that get it: you
+  can send the anime format to *Sonarr [Anime]* only, say. Out of the box every instance gets
+  every format; at least one is mandatory on the default format, because the
+  field is mandatory in the app, and whichever you untick keeps the format it
+  already has instead of losing it. All three parts of the Configuration reach
+  the apps, through **Bring up** and **Apply to the stack**.
+- **Root folders ready**: every Sonarr, Radarr and Lidarr gets the folder the
+  compose mounts into it — `/data/tv`, `/data/movies`, `/data/music` — at the
+  path the container sees. Without it the first series or movie stops at a *You
+  must add a root folder*, and the path typed by hand is usually the host's,
+  which the app accepts and then finds nothing in. Whatever is already there
+  stays: removing a root folder takes the library with it.
+- **Jellyfin ready to use**: with it in the stack, **Bring up** walks the startup
+  wizard — the UI in the page's language, the administrator from its modal and
+  remote access — and creates one library per Sonarr, Radarr and Lidarr instance,
+  with the right type (shows, movies, music) and the path **inside the
+  container**, the same one the *arr gets as its root folder: that sameness is
+  what makes the library list exactly what the *arr imported. The loose folders
+  from its modal come in as mixed libraries. A blank username and password mean
+  "leave the wizard alone": the libraries still go in, but it stays open for you
+  to finish in the browser — completing it with no administrator would leave
+  Jellyfin with no account to log in with. On a Jellyfin whose wizard is already
+  done, the username and password from the modal are what give Hubstarr the token
+  to create the libraries. A library that already exists is left alone, and none
+  is ever removed.
+- **Quality profiles and custom formats** from the [TRaSH Guides](https://trash-guides.info),
+  per instance: every Sonarr and Radarr in the stack picks the profiles it wants
+  — **HD (1080p)**, **4K (2160p)**, **Remux 4K**, **Anime** — and that is how the
+  4K instance stops being the same as the 1080p one. Each one brings the trio the
+  guide recommends together: the profile, the custom formats that score it and
+  the file size definition. There is also a field for typing other Recyclarr
+  templates by hand.
 
-  Quem aplica é o [Configarr](https://configarr.de), e ele **não é um serviço
-  da stack**: a página gera o `config.yml` e o `secrets.yml` dele, e o servidor
-  o roda com um `docker run --rm` avulso depois que os apps respondem, no
-  **Subir** e no **Aplicar na stack**. Ele roda uma vez e sai — num `up -d`
-  subiria antes de os apps estarem de pé. Entra na rede da stack para alcançar
-  cada *arr pelo nome do container, com o PUID/PGID do Ambiente, e guarda o
-  cache do TRaSH e do Recyclarr em `<config>/configarr/repos`. A seção existe
-  mesmo sem ele em lugar nenhum: o que ela descreve é a stack, não um container.
-  O Lidarr fica de fora: não há template para ele.
-- **Ambiente global** (botão no topo): bases de caminho, PUID/PGID — que, com
-  servidor, já vêm com o usuário e o grupo em que ele roda, o mesmo que cria as
-  pastas da stack —, time zone,
-  restart policy, API key e TLS. A
-  lista de fusos é a IANA inteira, vinda do próprio navegador, e o valor
-  inicial é o fuso da máquina.
-- **Baixar** `docker-compose.yml`, `.env` e `nginx.conf` juntos
-  num `.zip` — o botão fica na barra enquanto não há servidor; com ele, quem
-  grava os arquivos é o **Subir**.
-- **Passo a passo na primeira visita**: uma volta pela interface acendendo cada
-  área e dizendo o que ela faz, com **Pular** a qualquer momento. Concluída ou
-  pulada, não aparece de novo — a marca fica no navegador.
-- **Trocar o idioma** no seletor do topo: português (Brasil), inglês e
-  espanhol.
+  The one applying them is [Configarr](https://configarr.de), and it is **not a
+  service of the stack**: the page generates its `config.yml` and `secrets.yml`,
+  and the server runs it as a standalone `docker run --rm` once the apps answer,
+  on **Bring up** and on **Apply to the stack**. It runs once and exits — in an
+  `up -d` it would start before the apps were up. It joins the stack's network to
+  reach each *arr by container name, with the Environment's PUID/PGID, and keeps
+  the TRaSH and Recyclarr cache in `<config>/configarr/repos`. The section is
+  there even with it nowhere in sight: what it describes is the stack, not a
+  container. Lidarr is left out: there is no template for it.
+- **Global environment** (button at the top): base paths, PUID/PGID — which,
+  with a server, already come from the user and group it runs as, the same one
+  that creates the stack folders —, time zone,
+  restart policy, API key and TLS. The
+  time zone list is the whole IANA database, straight from the browser, and it
+  starts on the machine's own zone.
+- **Download** `docker-compose.yml`, `.env` and `nginx.conf`
+  together in a `.zip` — the button stays in the bar while there is no server;
+  with one, **Bring up** is what writes the files.
+- **A walkthrough on the first visit**: a tour of the interface lighting up each
+  area and saying what it does, with **Skip** at any point. Finished or skipped,
+  it does not come back — the mark stays in the browser.
+- **Switch languages** in the selector at the top: Portuguese (Brazil), English
+  and Spanish.
 
 ## Docker
 
-O resumo desta seção também está na própria página, num aviso colapsável acima
-dos painéis.
+This section is also summarised on the page itself, in a collapsible notice
+above the panels.
 
-O Hubstarr em si só precisa de um navegador; os arquivos que ele gera é que
-precisam do Docker com o plugin Compose. No Linux, o script oficial resolve:
+Hubstarr itself only needs a browser; it's the files it generates that need
+Docker with the Compose plugin. On Linux, the official script does it:
 
 ```sh
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 ```
 
-No macOS e no Windows — ou no Linux, se preferir uma instalação gerenciada com
-interface gráfica — instale o [Docker Desktop][dd], que já vem com o Compose.
+On macOS and Windows — or on Linux, if you'd rather have a managed install with
+a GUI — install [Docker Desktop][dd], which ships with Compose.
 
-Para usar o `docker` sem `sudo`, ponha o usuário no grupo — a mudança vale na
-sessão seguinte:
+To use `docker` without `sudo`, add your user to the group — it takes effect on
+the next session:
 
 ```sh
 sudo usermod -aG docker $USER
@@ -301,161 +307,165 @@ sudo usermod -aG docker $USER
 
 [dd]: https://docs.docker.com/desktop/
 
-Com o Docker no lugar, descompacte o `.zip` e suba a stack de dentro da pasta
-dos arquivos:
+With Docker in place, unzip the `.zip` and bring the stack up from the folder
+holding the files:
 
 ```sh
 docker compose up -d
 ```
 
-## Servidor
+## Server
 
-O servidor em `backend/` é o que faz a stack existir: ele **guarda as stacks
-entre sessões**, grava os arquivos em disco, sobe tudo no Docker e configura os
-apps uns nos outros — os clientes de download em cada *arr, os *arr no
-Prowlarr, o Media Management, a nomenclatura e os perfis do TRaSH Guides. Com
-ele no ar, o botão do `.zip` sai da barra, porque o **Subir** grava os mesmos
-arquivos.
+The server in `backend/` is what makes the stack exist: it **keeps the stacks
+between sessions**, writes the files to disk, brings everything up in Docker and
+configures the apps into one another — the download clients in each *arr, the
+*arr apps in Prowlarr, Media Management, naming and the TRaSH Guides profiles.
+With it up, the `.zip` button leaves the bar, because **Bring up** writes the
+same files.
 
-O que ele **não** faz é gerar conteúdo: recebe pronto o que os geradores da
-página montaram. É essa divisão que mantém os geradores num lugar só, e é ela
-que deixa a página abrir sozinha do disco quando alguém quer só os arquivos.
+What it does **not** do is generate content: it receives ready-made whatever the
+page's generators built. That division is what keeps the generators in a single
+place, and it is what lets the page open on its own from disk when someone wants
+just the files.
 
-Compilar e rodar precisa do [Rust](https://rustup.rs):
+Building and running it needs [Rust](https://rustup.rs):
 
 ```sh
 cd backend
 cargo run --release
 ```
 
-Abra `http://127.0.0.1:7878`. A página é a mesma — servida pelo binário, que a
-traz embutida —, com duas coisas a mais: o selo **servidor** no topo e, nos
-arquivos gerados, os botões **Subir** e **Derrubar**. Ao abrir, ela pergunta ao
-servidor se há `docker compose` — ou `podman compose`, que ele procura sozinho
-quando o docker não responde — ali; se não houver, avisa e já abre o bloco
-**Precisa instalar o Docker?**. Sem `docker compose` ali, **Subir** e
-**Derrubar** ficam desabilitados, com a explicação na dica dos botões.
+Open `http://127.0.0.1:7878`. The page is the same one — served by the binary,
+which carries it embedded — with two extras: the **server** badge at the top
+and, in the generated files, the **Bring up** and **Tear down** buttons. On
+load it asks the server whether `docker compose` — or `podman compose`, which
+it looks for on its own when docker does not answer — is there; if it is not, it
+warns and opens the **Need to install Docker?** block for you. With no
+`docker compose` there, **Bring up** and **Tear down** are disabled, and the
+button tooltip says why.
 
-| Opção      | Padrão                   | O que é                                        |
-| ---------- | ------------------------ | ---------------------------------------------- |
-| `--addr`   | `127.0.0.1:7878`         | endereço em que o servidor atende               |
-| `--dir`    | `./stack`                | pasta em que os arquivos gerados são gravados   |
-| `--db`     | `~/.hubstarr/hubstarr.db`| banco em que a stack é guardada                 |
-| `--docker` | `docker`, ou `podman`    | comando do compose; sem a opção, vale o primeiro dos dois que responder |
-| `-v`       | desligado                | diz o passo a passo: arquivos, banco e chamadas de API |
+| Option     | Default                   | What it is                                   |
+| ---------- | ------------------------- | -------------------------------------------- |
+| `--addr`   | `127.0.0.1:7878`          | address the server listens on                 |
+| `--dir`    | `./stack`                 | folder the generated files are written to     |
+| `--db`     | `~/.hubstarr/hubstarr.db` | database the stack is kept in                 |
+| `--docker` | `docker`, or `podman`     | the compose command; without the option, whichever of the two answers first |
+| `-v`       | off                       | spells out each step: files, database and API calls |
 
-O servidor escreve o que faz na saída e num `servidor.log`, ao lado do banco
-(`~/.hubstarr/servidor.log`, com o `--db` de fábrica): a subida, o motor de
-container escolhido e cada gravação de estado vinda da página — com quantos
-serviços vieram e quais saíram da stack. O arquivo acrescenta, nunca reescreve,
-e é onde se olha quando a stack mudou e não se sabe por quê.
+The server writes what it does both to its output and to a `servidor.log` next
+to the database (`~/.hubstarr/servidor.log` with the default `--db`): startup,
+the container engine it picked, and every state save coming from the page — how
+many services came in and which ones left the stack. The file appends, never
+rewrites, and it is where to look when the stack changed and you do not know
+why.
 
-Com **`-v`** ele conta o passo a passo, nos dois lugares: cada arquivo gravado
-(inclusive as chaves escritas na configuração de cada app), cada linha mexida no
-banco — instância, Ambiente, Configuração, a lista de serviços — e **cada
-chamada às APIs dos apps**, com método, caminho e status. É o modo de descobrir
-por que uma ligação não passou; ligado sempre, ele afogaria as linhas que
-importam, porque uma volta do *Aplicar* são dezenas de chamadas. Senha e chave
-de API nunca saem no log: do Ambiente vão só os nomes dos campos, e das URLs
-sai a parte antes do `?`.
+With **`-v`** it spells out each step, in both places: every file written
+(including the keys written into each app's own configuration), every row
+touched in the database — instance, Environment, Configuration, the service
+list — and **every call to the apps' APIs**, with method, path and status. It is
+how you find out why a link did not go through; left on all the time it would
+drown the lines that matter, since one *Apply* round is dozens of calls.
+Passwords and API keys never reach the log: from the Environment only field
+names go in, and from URLs only the part before the `?`.
 
-A stack fica no banco com as instâncias, o Ambiente e a Configuração em
-tabelas próprias — o estado da página, normalizado, e não um blob de JSON. Ela
-é uma só, a da pasta do `--dir`: para manter outra, aponte o `--dir` e o
-`--db` para outro lugar.
+The stack lives in the database with its instances, Environment and
+Configuration in tables of their own — the page state, normalized, not a JSON
+blob. There is only one, the one in the `--dir` folder: to keep a second one,
+point `--dir` and `--db` somewhere else.
 
-Um banco de uma versão anterior, que guardava várias stacks, é convertido na
-primeira abertura; a stack mais antiga é a que fica, e o servidor diz na saída
-em que pasta cada uma das outras gravava, para você não perder os arquivos
-delas de vista.
+A database from an earlier version, which held several stacks, is converted on
+first open; the oldest stack is the one that stays, and the server prints the
+folder each of the others wrote to, so you do not lose track of their files.
 
-Com servidor, as capturas das paletas do campo **Tema** também passam por ele:
-a primeira visita a cada uma sai para a documentação do theme.park e as
-seguintes saem do disco, de uma pasta `shots/` ao lado do banco. O repositório
-não redistribui captura de ninguém — o cache guarda o que você mesmo abriu, e
-se apaga sozinho quando passa de 64 MB, das mais antigas para as mais novas.
-Apagar a pasta na mão não quebra nada: custa uma busca a mais. Aberta do disco,
-sem servidor, a página continua buscando cada captura direto na documentação
-deles.
+With a server, the screenshots behind the **Theme** field go through it too:
+the first visit to each one reaches out to the theme.park docs and the ones
+after it come off the disk, from a `shots/` folder next to the database. The
+repository redistributes nobody's screenshots — the cache holds what you opened
+yourself, and trims itself past 64 MB, oldest first. Deleting the folder by
+hand breaks nothing: it costs one extra fetch. Opened from disk, with no
+server, the page still fetches every screenshot straight from their docs.
 
-Antes de subir, o servidor **cria as pastas** que os volumes do compose
-esperam — as de configuração, as de mídia e as de download. Sem isso quem as
-cria é o Docker, como `root`, e o app não consegue escrever nelas. Caminho que
-já existe e não é pasta faz o Subir parar ali, com o nome dele no log.
+Before bringing anything up, the server **creates the folders** the compose
+volumes expect — configuration, media and downloads. Without that it is Docker
+that creates them, as `root`, and the app cannot write in them. A path that
+already exists and is not a folder stops Bring up right there, naming it in the
+log.
 
-O **Subir** já deixa a stack configurada: assim que os apps respondem, o
-servidor registra cada cliente de download em cada *arr **e no próprio
-Prowlarr** — que tem o Settings → Download Clients dele —, cada *arr marcado em
-Settings → Apps do Prowlarr, e o *Media Management* com a nomenclatura de cada
-família, tudo pela API deles, mostrando o que passou. O botão **Aplicar na
-stack**, no modal da Configuração, faz o mesmo sem subir nada — é o caminho
-para reaplicar depois de mexer nas escolhas.
+**Bring up** leaves the stack configured: as soon as the apps answer, the
+server registers every download client in every *arr **and in Prowlarr
+itself** — which has its own Settings → Download Clients —, every *arr ticked
+under Prowlarr's Settings → Apps, and each family's *Media Management* and
+naming, all through their APIs, reporting what went through as it goes. The
+**Apply to the stack** button, in the Configuration modal, does the same
+without bringing anything up — it is the way to reapply after changing the
+choices.
 
-Com o **FlareSolverr** na stack, o Prowlarr também recebe o proxy dele em
-*Settings → Indexers → Indexer Proxies*, com a etiqueta **flaresolverr**. Falta
-só marcar essa etiqueta nos indexadores que precisam dele — é assim que o
-Prowlarr decide quando usar o resolvedor.
+With **FlareSolverr** in the stack, Prowlarr also gets its proxy under
+*Settings → Indexers → Indexer Proxies*, tagged **flaresolverr**. All that is
+left is putting that tag on the indexers that need it — that is how Prowlarr
+decides when to use the solver.
 
-No Prowlarr, o Settings → Download Clients ganha **um registro por cliente**,
-todos na categoria `prowlarr`: o que ele pega é avulso, não veio de um *arr,
-então fica junto e separado do que cada instância baixa. E as categorias passam
-a existir dentro do cliente — a de cada *arr e a do Prowlarr —, pela API de cada
-app: `torrents/createCategory` no qBittorrent (a que já existe tem a pasta
-atualizada em vez de falhar) e `set_config&section=categories` no SABnzbd, cada
-uma com a pasta de mesmo nome dentro do diretório de downloads concluídos. Os apps são alcançados pelo nginx, na porta que ele
-publica no host. Aplicar de novo não duplica — o cliente é procurado pelo nome
-e atualizado no lugar —, e um app que ainda não subiu vira uma linha no log em
-vez de interromper o resto. Chamada que **não chega** ao app é repetida dez
-vezes, com cinco segundos entre elas: vale para falha de acesso — ninguém
-escutando, ou o 502 do nginx enquanto o container ainda sobe —, e não para o app
-recusando o pedido, que daria a mesma resposta dez vezes. Com `-v`, cada
-tentativa aparece no log. O SABnzbd precisa da chave de API dele, que é o
-próprio app que gera na primeira subida: copie de *Config → General* e cole no
-campo **API key** do modal dele.
+In Prowlarr, Settings → Download Clients gets **one entry per client**, all on
+the `prowlarr` category: what it grabs is loose — it did not come from an *arr —
+so it stays together, apart from what each instance downloads. And the
+categories come to exist inside the client itself — each *arr's and Prowlarr's:
+through each app's own API — `torrents/createCategory` in qBittorrent (one that
+already exists has its folder updated instead of failing) and
+`set_config&section=categories` in SABnzbd —, each with a folder of the same
+name inside the completed-downloads directory. The apps are reached through
+nginx, on the port it publishes on the host. Applying again does not duplicate
+— the client is looked up by name and updated in place — and an app that is not
+up yet becomes one line in the log instead of stopping the rest. A call that
+**does not reach** the app is retried ten times, five seconds apart: that covers
+access failures — nobody listening, or nginx's 502 while the container is still
+starting — and not the app refusing the request, which would answer the same ten
+times over. With `-v`, every attempt shows up in the log. SABnzbd needs
+its API key, the one the app itself generates on first boot: copy it from
+*Config → General* and paste it into the **API key** field of its modal.
 
 > [!WARNING]
-> O servidor roda `docker compose` e escreve em disco: não o exponha a uma
-> rede em que você não confie. O padrão é atender só em `127.0.0.1`.
+> The server runs `docker compose` and writes to disk: do not expose it to a
+> network you do not trust. It listens on `127.0.0.1` only by default.
 
-## Convenções geradas
+## Generated conventions
 
-O nome da stack e o da rede são fixos: `starrnet`. O título de cada instância
-vira um slug (minúsculas, sem acentos, espaços como hífen) usado como
-`container_name`, chave do serviço e pasta de config:
+The stack and network names are fixed: `starrnet`. Each instance title becomes
+a slug (lowercase, no accents, spaces turned into hyphens) used as the
+`container_name`, the service key and the config folder:
 
-| Título          | container_name | config                       |
+| Title           | container_name | config                       |
 | --------------- | -------------- | ---------------------------- |
 | `Radarr`        | `radarr`       | `${BASE_CONFIG}/radarr`      |
 | `Radarr [UHD]`  | `radarr-uhd`   | `${BASE_CONFIG}/radarr-uhd`  |
 
-Os caminhos saem como variáveis resolvidas pelo `.env`:
+Paths come out as variables resolved by `.env`:
 
-- `BASE_CONFIG` — raiz das pastas de config, uma por container.
-- `BASE_MEDIA` — biblioteca. Cada *arr monta a própria subpasta, que nasce com
-  o tipo de conteúdo dele mais o que distingue a instância no título (`Sonarr` →
-  `tv`, `Sonarr 4K` → `tv-4k`, `Radarr [UHD]` → `movies-uhd`) e é editável no
-  modal; o Jellyfin monta a base inteira e o Bazarr acompanha as subpastas das
-  instâncias de Radarr/Sonarr presentes na stack.
-- `DOWNLOAD_BASE` — área de download. qBittorrent e SABnzbd montam uma
-  subpasta própria (`torrents`, `usenet`); os *arr montam a base inteira em
-  `/downloads`, para conseguirem importar.
+- `BASE_CONFIG` — root of the config folders, one per container.
+- `BASE_MEDIA` — the library. Each *arr mounts its own subfolder, which starts
+  out as its content type plus whatever tells the instance apart in the title
+  (`Sonarr` → `tv`, `Sonarr 4K` → `tv-4k`, `Radarr [UHD]` → `movies-uhd`) and
+  can be edited in the modal; Jellyfin mounts the whole base, and Bazarr
+  follows the subfolders of the Radarr/Sonarr instances present in the stack.
+- `DOWNLOAD_BASE` — the download area. qBittorrent and SABnzbd mount their own
+  subfolder (`torrents`, `usenet`); the *arr apps mount the whole base at
+  `/downloads`, so they can import.
 
-No modal, o campo da subpasta mostra o caminho já resolvido e aceita as
-variáveis: digitar `${BASE_MEDIA}` troca pelo valor dela na hora. Apontar para
-fora das bases — `/mnt/disco2/filmes-4k`, por exemplo — é permitido, e aí o
-compose sai com esse caminho literal, sem variável nenhuma. O Bazarr acompanha:
-monta o caminho de cada instância como ela ficou. O Jellyfin também: além da
-base inteira, ganha um volume para cada pasta que ficou fora dela, senão a
-biblioteca não apareceria para ele. E o modal dele tem um **+ pasta** para
-apontar diretórios que nenhum outro serviço usa — um disco antigo, um
-compartilhamento de rede. Cada um vira um volume em `/data/<nome da pasta>`.
+In the modal, the subfolder field shows the resolved path and takes the
+variables: typing `${BASE_MEDIA}` swaps in its value right away. Pointing
+outside the bases — `/mnt/disk2/movies-4k`, say — is allowed, and then the
+compose file carries that literal path, with no variable at all. Bazarr
+follows: it mounts each instance's path as it ended up. So does Jellyfin: on
+top of the whole base it gets one volume per folder left outside it, otherwise
+that library would be invisible to it. Its modal also has a **+ folder** button
+for directories no other service uses — an old disk, a network share. Each one
+becomes a volume at `/data/<folder name>`.
 
-Todos os volumes usam a sintaxe longa, com `type: bind` e
-`bind.propagation: rslave`. A porta é sempre a original do serviço, dentro do
-container: fora o nginx, não há porta de host para escolher, nem conflito
-possível.
+Every volume uses the long syntax, with `type: bind` and
+`bind.propagation: rslave`. The port is always the service's own, inside the
+container: apart from nginx there is no host port to choose, and no conflict
+to worry about.
 
-| Serviço      | Porta interna | Serviço      | Porta interna |
+| Service      | Internal port | Service      | Internal port |
 | ------------ | ------------- | ------------ | ------------- |
 | Sonarr       | `8989`        | Jellyfin     | `8096`        |
 | Radarr       | `7878`        | Seerr        | `5055`        |
@@ -465,154 +475,156 @@ possível.
 | qBittorrent  | `8181`        |              |               |
 | SABnzbd      | `8080`        |              |               |
 
-É essa porta que aparece na lista, ao lado do subpath, e que o `proxy_pass` do
-nginx usa. A do qBittorrent é a exceção que não vem de fábrica: ele ouviria na
-8080, a mesma do SABnzbd, então sai com `WEBUI_PORT=8181` no compose e o
-`WebUI\Port` correspondente na conf gerada. O nginx é o único com duas, e são
-as de dentro do container — as publicadas no host saem do modal dele.
+This is the port shown in the list next to the subpath, and the one nginx
+`proxy_pass`es to. qBittorrent's is the one exception to the stock value: it
+would listen on 8080, the same as SABnzbd, so it comes out with
+`WEBUI_PORT=8181` in the compose and the matching `WebUI\Port` in the generated
+conf. Nginx is the only one with two, and those are the ports inside the
+container — the ones published on the host come from its own modal.
 
 ## Reverse proxy
 
-O nginx é fixo e obrigatório: entra sempre na stack, não aparece no combobox e
-não pode ser removido. Fora ele, só o **Seerr** publica porta no host; todos
-os outros ficam só na rede `starrnet`, alcançados pelo nginx por
-`nome-do-container:porta-interna`. Quem roteia pela VPN responde no `gluetun`,
-que é quem detém a rede.
+nginx is fixed and mandatory: it is always in the stack, never shows up in the
+combobox and cannot be removed. Apart from it, only **Seerr** publishes a port
+on the host; everything else stays on the `starrnet` network, reached by nginx
+at `container-name:internal-port`. Whatever routes through the VPN answers at
+`gluetun`, which owns the network.
 
-As duas portas do host ficam no **Editar** da linha do nginx: 80 e 443 por
-padrão, mas dá para publicar em 8080 e 8443, por exemplo, se algo já ocupa as
-privilegiadas. Elas viram `HTTP_PORT` e `HTTPS_PORT` no `.env`; dentro do
-container o nginx continua ouvindo em 80 e 443. A **443 só é publicada com o
-"Servir HTTPS" ligado**: sem ele o `nginx.conf` não tem `server` nenhum
-escutando ali, e publicá-la seria ocupar a porta da máquina sem nada do outro
-lado — e impedir a stack de subir onde algo já a usa. Sem TLS, nem a porta nem
-o `HTTPS_PORT` saem. Os links copiados e o
-redirecionamento para o https já levam a porta escolhida.
+Both host ports live behind **Edit** on the nginx row: 80 and 443 by default,
+but you can publish on 8080 and 8443, say, if something already holds the
+privileged ones. They become `HTTP_PORT` and `HTTPS_PORT` in the `.env`. **443
+is only published with "Serve HTTPS" on**: without it `nginx.conf` has no
+`server` listening there, and publishing it would take the machine's port with
+nothing behind it — and keep the stack from coming up where something else
+already uses it. With no TLS, neither the port nor `HTTPS_PORT` comes out.
+Inside the container nginx keeps listening on 80 and 443. The copied links and the
+redirect to https already carry the chosen port.
 
-A aba **nginx.conf** gera a configuração correspondente, roteando por subpath
-(`/sonarr`, `/radarr`…), um `location` por serviço. O arquivo é montado em
-`/etc/nginx/conf.d/nginx.conf` do container, a partir do `nginx.conf` da pasta
-da stack — a conf é gerada junto com o compose e mora ao lado dele, não no
-`BASE_CONFIG`. Com servidor, o caminho sai por extenso, porque é ele quem sabe
-onde a stack mora; sem servidor, sai como `./nginx.conf`, relativo à pasta de
-onde o compose for rodado. Cada app precisa da sua *base URL* igual ao
-subpath. Nenhum serviço fica na raiz: a `/` da stack não tem `location`, então
-é pelo subpath de cada app que se entra.
+The **nginx.conf** tab generates the matching configuration, routing by subpath
+(`/sonarr`, `/radarr`…), one `location` per service. The file is mounted at
+the container's `/etc/nginx/conf.d/nginx.conf`, from the `nginx.conf` in the
+stack folder — the conf is generated along with the compose file and lives next
+to it, not in `BASE_CONFIG`. With a server the path is spelled out, since it is
+the one that knows where the stack lives; with no server it comes out as
+`./nginx.conf`, relative to wherever the compose file is run from. Each app
+needs its *base URL* to match its
+subpath. No service sits at the root: the stack's `/` has no `location`, so it
+is through each app's subpath that you get in.
 
-Nem todo serviço vira rota: o `gluetun` e o FlareSolverr só conversam com os
-outros containers, então não ganham `location` nem botão de link — o Prowlarr
-fala com o FlareSolverr direto pela rede da stack.
+Not every service becomes a route: `gluetun` and FlareSolverr only talk to the
+other containers, so they get no `location` and no link button — Prowlarr
+reaches FlareSolverr straight over the stack network.
 
-O **Seerr** fica fora do proxy: ele não tem base URL configurável, e app sem
-base URL não vive num subpath. Em vez de rota, ele **publica a sua porta no
-host** — 5055 por padrão, editável no modal dele, que sai no compose como
-`ports` e no `.env` como `SEERR_PORT`. O link dele aponta para essa porta, em
-`http://`: sem o proxy na frente, o TLS da stack não o cobre, e a porta precisa
-estar livre na máquina. Quem roteia pela VPN publica no `gluetun`, que é quem
-detém a rede.
+**Seerr** stays out of the proxy: it has no configurable base URL, and an app
+without one cannot live in a subpath. Instead of a route, it **publishes its
+port on the host** — 5055 by default, editable in its own modal, landing in the
+compose file as `ports` and in `.env` as `SEERR_PORT`. Its link points at that
+port, over `http://`: with no proxy in front, the stack's TLS does not cover it,
+and the port has to be free on the machine. Whatever routes through the VPN
+publishes on `gluetun`, which owns the network.
 
-O **qBittorrent** também não tem base URL configurável, mas continua no proxy:
-a rota dele é a que **retira o prefixo** no caminho, e assim ele responde na
-raiz, sem saber que existe um `/qbittorrent`. O bloco traz um `rewrite` que
-corta o prefixo, um `resolver 127.0.0.11` — o DNS do Docker, porque o
-`proxy_pass` com variável resolve o nome a cada pedido — e um
-`location = /qbittorrent` que redireciona para a barra final, com
-`absolute_redirect off` para a porta do host não se perder no caminho. Os
-estáticos da interface dele são relativos, então acompanham o prefixo; e a conf
-que o Hubstarr escreve já traz as chaves de proxy reverso que a **API** dele
-exige — sem elas a interface abre e a API responde 403, que é o que o *arr
-consulta.
+**qBittorrent** has no configurable base URL either, but it stays behind the
+proxy: its route is the one that **strips the prefix** on the way through, so it
+answers at the root, never knowing a `/qbittorrent` exists. The block carries a
+`rewrite` that cuts the prefix, a `resolver 127.0.0.11` — Docker's DNS, because
+a `proxy_pass` with a variable resolves the name on every request — and a
+`location = /qbittorrent` redirecting to the trailing slash, with
+`absolute_redirect off` so the host port is not lost on the way. Its UI assets
+are relative, so they follow the prefix; and the conf Hubstarr writes already
+carries the reverse-proxy keys its **API** requires — without them the UI opens
+and the API answers 403, which is what the *arr apps query.
 
-No Ambiente dá para ligar o **TLS**: o `nginx.conf` passa a ter um `server` na
-443 com `ssl_certificate`, TLSv1.2/1.3 e um bloco na 80 que só redireciona para
-o https. O certificado e a chave são caminhos do host, informados no mesmo
-lugar, e entram no compose como `${TLS_CERT}` e `${TLS_KEY}`, montados
-só-leitura em `/etc/nginx/certs`. Sem TLS, a stack fica só na 80. O domínio
-informado vira o `server_name` (na falta dele, `_`).
+The Environment can turn **TLS** on: `nginx.conf` then gets a `server` on 443
+with `ssl_certificate`, TLSv1.2/1.3, and a block on 80 that only redirects to
+https. The certificate and the key are host paths, entered in the same place,
+and land in the compose file as `${TLS_CERT}` and `${TLS_KEY}`, mounted
+read-only at `/etc/nginx/certs`. Without TLS the stack stays on port 80 only.
+The domain becomes the `server_name` (`_` when left empty).
 
 ## VPN
 
-Marcar um cliente como "rotear pelo gluetun" faz o serviço usar
-`network_mode: service:gluetun`, e o gluetun entra na lista de serviços na
-hora, se ainda não estiver lá. Ele passa a ser o endereço desse serviço no
-nginx. As credenciais ficam no **Editar do gluetun** — provedor, tipo de túnel,
-chaves do WireGuard ou usuário/senha do OpenVPN e os países do servidor — e
-saem no `.env` como `VPN_SERVICE_PROVIDER`, `VPN_TYPE`, `WIREGUARD_*` ou
-`OPENVPN_*` e `SERVER_COUNTRIES`.
+Marking a client as "route through gluetun" makes the service use
+`network_mode: service:gluetun`, and gluetun joins the service list right
+there, if it isn't in it yet. It becomes that service's address in nginx. The
+credentials live behind **Edit on gluetun** — provider, tunnel type, WireGuard
+keys or the OpenVPN username/password, and the server countries — and land in
+`.env` as `VPN_SERVICE_PROVIDER`, `VPN_TYPE`, `WIREGUARD_*` or `OPENVPN_*` and
+`SERVER_COUNTRIES`.
 
-## Idiomas
+## Languages
 
-A interface fala português (Brasil), inglês e espanhol. O idioma inicial vem do
-que estiver salvo no `localStorage`, caindo para o do navegador e, por fim,
-para o português. A tradução cobre também os comentários dos arquivos gerados —
-o YAML, o `.env` e o `nginx.conf` saem no idioma escolhido.
+The interface speaks Portuguese (Brazil), English and Spanish. The initial
+language comes from `localStorage`, falling back to the browser's and finally
+to Portuguese. The translation also covers the comments in the generated files
+— the YAML, the `.env` and the `nginx.conf` come out in the chosen language.
 
-Toda string visível está no dicionário `I18N`, no topo do `<script>`: uma chave
-por texto, com valor em string ou função quando depende de algum dado. No HTML,
-os textos estáticos são marcados com `data-i18n` (ou `data-i18n-html`,
-`data-i18n-ph`, `data-i18n-title`). Adicionar um idioma é copiar um dos blocos
-e traduzir os valores.
+Every visible string lives in the `I18N` dictionary at the top of the
+`<script>`: one key per text, holding a string, or a function when it depends
+on some data. In the HTML, static texts are marked with `data-i18n` (or
+`data-i18n-html`, `data-i18n-ph`, `data-i18n-title`). Adding a language means
+copying one of the blocks and translating the values.
 
 ## Wishlist
 
-O que ainda não existe, na ordem em que faria sentido acontecer. Os marcos são
-versões, não datas: cada um só começa depois do anterior, porque depende dele.
-Hoje o repositório está no **v0.5** — a página, o servidor que guarda a stack e
-a sobe no Docker, a Configuração aplicada nos apps e o TRaSH Guides inteiro pelo
-Configarr: perfis, custom formats com os scores do guia e as quality
-definitions.
+What is not there yet, in the order it would make sense to happen. The
+milestones are versions, not dates: each one only starts after the previous, because
+it depends on it. The repository is at **v0.5** today — the page, the server
+that keeps the stack and brings it up in Docker, the Configuration applied to
+the apps and the whole TRaSH Guides through Configarr: profiles, custom formats
+with the guide's scores, and the quality definitions.
 
-| Marco    | Entrega                                              | Fecha quando                                                                            |
-| -------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| ~~**v0.2**~~ | ~~Backend ligando o `hubstarr.html` ao Docker~~   | ✅ a página grava os arquivos e sobe a stack sem passar pelo `.zip`                       |
-| ~~**v0.3**~~ | ~~Configuração automática das stacks pelo backend~~ | ✅ Prowlarr, clientes de download e Media Management saem da interface e viram chamada de API |
-| ~~**v0.4**~~ | ~~Custom formats e profiles próprios de cada stack~~ | ✅ os perfis do TRaSH Guides, por instância, aplicados pelo Configarr |
-| ~~**v0.5**~~ | ~~Compatibilidade com o TRaSH Guides~~            | ✅ quality definitions e scores de custom format vêm nos templates que o Configarr aplica |
-| **v0.6** | Nome de projeto e de container configurável           | o Hubstarr convive com uma stack que já use esses nomes na mesma máquina — e volta a caber mais de uma |
-| **v0.7** | Busca localizada de mídia                             | dá para escolher o idioma da busca e os *arr acham o lançamento certo                      |
+| Milestone | Delivers                                          | Done when                                                                          |
+| --------- | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| ~~**v0.2**~~ | ~~A backend wiring `hubstarr.html` to Docker~~ | ✅ the page writes the files and brings the stack up without going through the `.zip` |
+| ~~**v0.3**~~ | ~~Automatic stack configuration from the backend~~ | ✅ Prowlarr, download clients and Media Management leave the interface and become API calls |
+| ~~**v0.4**~~ | ~~Custom formats and profiles per stack~~ | ✅ the TRaSH Guides profiles, per instance, applied by Configarr |
+| ~~**v0.5**~~ | ~~Compatibility with the TRaSH Guides~~        | ✅ quality definitions and custom format scores come in the templates Configarr applies |
+| **v0.6**  | Configurable project and container names          | Hubstarr lives alongside a stack already using those names on the same machine — and more than one stack fits again |
+| **v0.7**  | Localized media search                            | the search language can be picked and the *arr apps find the right release          |
 
-## Verificações
+## Checks
 
-A cada push, o GitHub Actions roda o que dá para conferir sem uma pessoa olhando
-(`.github/workflows/ci.yml`). No servidor, `cargo build`, `cargo test` e
-`cargo clippy`. Na página, três checagens que também rodam na sua máquina:
+On every push, GitHub Actions runs what can be checked without a person looking
+(`.github/workflows/ci.yml`). On the server, `cargo build`, `cargo test` and
+`cargo clippy`. On the page, three checks that also run on your machine:
 
 ```sh
 python3 tools/extract-script.py hubstarr.html > page.js && node --check page.js
-python3 tools/check-i18n.py hubstarr.html     # os três idiomas, mesmas chaves
-python3 tools/check-compose.py                # o compose gerado, pelo docker
+python3 tools/check-i18n.py hubstarr.html     # the three languages, same keys
+python3 tools/check-compose.py                # the generated compose, by docker
 ```
 
-A última abre a página num navegador sem tela, monta uma stack de exemplo e
-passa o `docker-compose.yml` que ela gerou pelo `docker compose config` — é o
-mesmo validador que recusaria o arquivo na sua máquina.
+The last one opens the page in a headless browser, builds a sample stack and
+runs the `docker-compose.yml` it generated through `docker compose config` — the
+same validator that would refuse the file on your machine.
 
-Em tag `v*`, o `release.yml` compila o servidor para x86_64 e arm64 e publica
-os dois junto do `hubstarr.html` daquela versão.
+On a `v*` tag, `release.yml` builds the server for x86_64 and arm64 and
+publishes both next to that version's `hubstarr.html`.
 
 ## Status
 
-A interface é um protótipo, mas o que ela produz não é: os arquivos são de
-verdade, e a **Configuração** vira chamada de API em cada app pelo **Subir** e
-pelo **Aplicar na stack**. Rodando o servidor, uma stack sai do nada e chega
-configurada. Abrindo só a página, saem os arquivos num `.zip`, para rodar
-`docker compose up -d` na mão — e o que depende de API fica para você fazer nos
-apps.
+The interface is a prototype, but what it produces is not: the files are the
+real thing, and the **Configuration** turns into API calls on each app through
+**Bring up** and **Apply to the stack**. Running the server, a stack goes from
+nothing to configured. Opening just the page, you get the files in a `.zip`, to
+run `docker compose up -d` by hand — and whatever depends on an API is left for
+you to do in the apps.
 
-## Licença
+## License
 
-[GNU General Public License v3.0](LICENSE) ou posterior. Use, estude, modifique
-e redistribua à vontade; se distribuir uma versão modificada, ela precisa vir
-com o código e sob a mesma licença. Sem garantia — veja as seções 15 e 16 do
-texto.
+[GNU General Public License v3.0](LICENSE) or later. Use, study, modify and
+redistribute it freely; if you distribute a modified version, it has to ship
+with the source and under the same license. No warranty — see sections 15 and
+16 of the text.
 
-Os logotipos dos serviços são de seus respectivos projetos e vêm do
-[dashboardicons.com](https://dashboardicons.com); o do nginx é
-[Nginx](https://iconscout.com/icons/nginx), de
-[Icon 54](https://iconscout.com/contributors/icon-54), no IconScout. A GPL
-cobre o Hubstarr, não eles.
+The service logos belong to their own projects and come from
+[dashboardicons.com](https://dashboardicons.com); the nginx one is
+[Nginx](https://iconscout.com/icons/nginx) by
+[Icon 54](https://iconscout.com/contributors/icon-54), on IconScout. The GPL
+covers Hubstarr, not them.
 
-Os temas dos apps são do [theme.park](https://theme-park.dev/), projeto à parte,
-também sob GPL-3.0: dele vêm a imagem que o compose usa em `TP_THEME`/`TP_ADDON`,
-as paletas listadas no campo **Tema**, as capturas que o Hubstarr mostra e os
-logotipos das variantes 4K e Animes do Sonarr e do Radarr.
+The app themes come from [theme.park](https://theme-park.dev/), a separate
+project also under GPL-3.0: the image the compose file uses in
+`TP_THEME`/`TP_ADDON`, the palettes listed in the **Theme** field, the
+screenshots Hubstarr shows and the 4K and Anime variant logos for Sonarr and
+Radarr are all theirs.
