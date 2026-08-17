@@ -320,6 +320,9 @@
   #tourCard h4{margin:0 0 6px;font-size:15px}
   #tourCard p{margin:0 0 12px;font-size:13px;line-height:1.55;color:var(--muted)}
   #tourCard .bar{margin:0;padding:0;border:0;background:none}
+  /* a volta é a primeira coisa que alguém vê: o idioma se troca aqui mesmo,
+     sem ter de sair dela para achar o seletor do cabeçalho */
+  #tourCard select{width:auto;padding:4px 6px;font-size:12px}
   .log{margin:0 0 12px;padding:10px 12px;height:340px;overflow:auto;
     background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
@@ -461,6 +464,7 @@ sudo sh get-docker.sh</pre>
     <h4 id="tourTitle"></h4>
     <p id="tourText"></p>
     <div class="bar">
+      <select id="tourLang" data-i18n-title="app.lang"></select>
       <span class="hint" id="tourStep"></span>
       <span class="sp"></span>
       <button id="tourSkip" data-i18n="tour.skip">Skip</button>
@@ -1982,12 +1986,13 @@ const I18N = {
 },
 };
 
-// saved language > browser language > English
+/* The page opens in English, and whoever wants another one picks it in the
+   header combo — the choice is what gets saved. The browser language does not
+   come into it: the stack is documented in English, and a machine set to
+   another locale opening in a language its owner did not ask for was one
+   surprise too many. */
 let LANG = (()=>{
   try{ const s = localStorage.getItem('hubstarr-lang'); if(I18N[s]) return s; }catch(e){}
-  const nav = (navigator.language||'').toLowerCase();
-  if(nav.startsWith('pt')) return 'pt-BR';
-  if(nav.startsWith('es')) return 'es';
   return 'en';
 })();
 
@@ -2001,6 +2006,7 @@ const sdesc = id => t('d.'+id);
 function applyI18n(){
   document.documentElement.lang = LANG;
   $('#langSel').value = LANG;
+  if($('#tourLang')) $('#tourLang').value = LANG;
   document.title = t('doc.title');
   document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent = t(el.dataset.i18n));
   document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML = t(el.dataset.i18nHtml));
@@ -4985,6 +4991,14 @@ function endTour(){
   tourAt = -1;
   markTour();
 }
+
+/* The same selector as the header's, inside the tour: whoever is on the first
+   visit is exactly the person who has not found the header one yet. Changing it
+   redraws the page and the step that is open, so the card follows the language
+   without leaving the tour. */
+$('#tourLang').innerHTML = $('#langSel').innerHTML;
+$('#tourLang').value = LANG;
+$('#tourLang').onchange = e => setLang(e.target.value);   // applyI18n redraws the open step
 
 $('#tourSkip').onclick = endTour;
 $('#tourPrev').onclick = ()=> showTourStep(Math.max(0, tourAt - 1));

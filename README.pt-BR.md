@@ -543,9 +543,10 @@ saem no `.env` como `VPN_SERVICE_PROVIDER`, `VPN_TYPE`, `WIREGUARD_*` ou
 
 ## Idiomas
 
-A interface fala inglês, português (Brasil) e espanhol. O idioma inicial vem do
-que estiver salvo no `localStorage`, caindo para o do navegador e, por fim,
-para o inglês, que é o padrão da página. A tradução cobre também os comentários dos arquivos gerados —
+A interface fala inglês, português (Brasil) e espanhol, e o idioma se escolhe
+no seletor do cabeçalho — ou no passo a passo da primeira visita, que traz o
+mesmo seletor. Ela abre em **inglês**; o que a pessoa escolher fica
+salvo no `localStorage` e passa a valer nas próximas visitas. A tradução cobre também os comentários dos arquivos gerados —
 o YAML, o `.env` e o `nginx.conf` saem no idioma escolhido.
 
 Toda string visível está no dicionário `I18N`, no topo do `<script>`: uma chave

@@ -35,9 +35,10 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
 
 1. **`I18N` / `LANGS`** — dicionário com uma chave por string visível, em
    en, pt-BR e es — o **inglês é o padrão**: é o fallback do `t()`, o `lang` do
-   `<html>`, o texto que está escrito no HTML estático e o primeiro do seletor;
-   o idioma do navegador ainda manda quando é pt ou es. Valor é string ou
-   função quando depende de dados. Acesso por
+   `<html>`, o texto que está escrito no HTML estático, o primeiro do seletor e
+   o idioma em que a página abre. O do navegador **não** entra na conta: quem
+   quer outro escolhe no seletor do cabeçalho, e é essa escolha que fica no
+   `localStorage`. Valor é string ou função quando depende de dados. Acesso por
    `t(chave, ...args)`. O HTML estático usa `data-i18n` (e `-html`, `-ph`,
    `-title`), aplicados por `applyI18n()`. As traduções cobrem também os
    comentários dos arquivos gerados. Adicionar idioma = copiar um bloco e traduzir.
@@ -212,6 +213,11 @@ servidor, e a volta encurta sozinha —, acende cada um com um recorte
 (`#tourHole`, um `box-shadow` gigante) e põe o cartão acima ou abaixo, conforme
 o espaço. Acrescentar um passo é acrescentar uma linha no `TOUR` e as duas
 strings nos três idiomas.
+
+O cartão traz o **seletor de idioma** (`#tourLang`), o mesmo do cabeçalho: quem
+está na primeira visita é justamente quem ainda não achou aquele. As opções são
+copiadas do `#langSel` e o `onchange` chama o `setLang()` — o `applyI18n()` já
+redesenha o passo aberto, então o cartão muda de idioma sem sair da volta.
 
 Ele não volta depois de concluído ou pulado, e a marca fica no `localStorage`
 (`hubstarr.tour`), não no banco: quem viu a volta foi aquele navegador, não a
