@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Abre a página num navegador sem tela, monta uma stack e passa o que ela
-gerou pelo `docker compose config`.
+gerou pelo `docker compose config` e o `nginx.conf` pelo `nginx -t`.
 
 É a checagem que mais paga: os geradores emitem HTML com spans de realce, e o
 texto que vai para o arquivo sai do `textContent` dos panes. Um `${...}` mal
@@ -151,6 +151,29 @@ def conferir_bibliotecas(compose, jf):
     print(f"{len(jf['libs'])} bibliotecas do Jellyfin batem com os binds")
 
 
+def conferir_nginx(stack):
+    """`nginx -t` contra o `nginx.conf` que a página gerou.
+
+    O texto sai do `textContent` do pane, sem nunca passar por um nginx de
+    verdade — um `location` mal fechado ou um `$upstream` sem `resolver` só
+    apareciam depois, na máquina de quem sobe a stack. Roda com a mesma
+    imagem do compose (`nginx:alpine`) e o mesmo alvo do bind
+    (`/etc/nginx/conf.d/nginx.conf`), para testar exatamente o arquivo que o
+    container vai ler — `default.conf`, que vem na imagem, entra na mesma
+    checagem.
+    """
+    alvo = os.path.join(stack, 'nginx.conf')
+    r = subprocess.run(
+        ['docker', 'run', '--rm',
+         '-v', f'{alvo}:/etc/nginx/conf.d/nginx.conf:ro',
+         'nginx:alpine', 'nginx', '-t'],
+        capture_output=True, text=True)
+    if r.returncode != 0:
+        print(r.stderr, file=sys.stderr)
+        sys.exit('o nginx recusou o nginx.conf gerado')
+    print('nginx.conf válido')
+
+
 def conferir_raizes(compose, arrs):
     """A pasta raiz de cada *arr é o caminho que o container enxerga.
 
@@ -191,7 +214,7 @@ def main():
         stack = os.path.join(saida, 'stack')
         os.makedirs(stack)
         for f in arquivos:
-            if f['name'] in ('docker-compose.yml', '.env'):
+            if f['name'] in ('docker-compose.yml', '.env', 'nginx.conf'):
                 open(os.path.join(stack, f['name']), 'w', encoding='utf-8').write(f['text'])
 
         r = subprocess.run(['docker', 'compose', 'config'],
@@ -208,6 +231,8 @@ def main():
             if esperado not in servicos:
                 sys.exit(f'o compose saiu sem o {esperado}')
         print('compose válido')
+
+        conferir_nginx(stack)
 
         compose = [f for f in arquivos if f['name'] == 'docker-compose.yml'][0]['text']
         conferir_raizes(compose, saiu['arrs'])

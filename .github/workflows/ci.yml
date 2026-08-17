@@ -41,7 +41,8 @@ jobs:
       #
       # O docker compose também já vem instalado: o que a página gera passa
       # pelo validador dele, que é quem vai recusar o arquivo na máquina de
-      # quem usa.
+      # quem usa. O `nginx.conf` passa pelo `nginx -t` da própria imagem
+      # (`docker run nginx:alpine`), o mesmo alvo de bind que o compose usa.
       # o `yaml` é do próprio verificador, para reler o compose que a página
       # gerou e conferir as pastas raiz contra os binds
       - name: O compose gerado é válido
