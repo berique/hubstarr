@@ -1,6 +1,6 @@
 [package]
 name    = "hubstarr"
-version = "0.4.3"
+version = "0.4.4"
 edition = "2021"
 license = "GPL-3.0-or-later"
 description = "Servidor do Hubstarr: serve a página, guarda as stacks em SQLite, grava os arquivos gerados e sobe a stack"
