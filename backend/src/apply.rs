@@ -435,6 +435,15 @@ pub async fn download_clients(mut req: Req, running: Vec<String>, log: Log) -> R
        *arr with ours would leave the two speaking different keys. */
     adopt_api_key(&http, &mut req, &log).await;
 
+    // the categories the *arr apps and Prowlarr are going to ask for have to
+    // exist inside the client *before* anyone registers it — the *arr's
+    // connection test validates the category against the client and fails
+    // with "category does not exist" otherwise
+    for client in &req.clients {
+        failures += client_categories(&http, &req, client, &log).await;
+        failures += client_preferences(&http, client, &log).await;
+    }
+
     for arr in &targets {
         let url = format!("{base}{}/api/{}/downloadclient", arr.route, arr.api);
         let current = match list(&http, &url, &req.api_key).await {
@@ -483,12 +492,6 @@ pub async fn download_clients(mut req: Req, running: Vec<String>, log: Log) -> R
         if let Some(sv) = &req.solver {
             failures += indexer_proxy(&http, &base, &req, p, sv, &log).await;
         }
-    }
-    // the categories the *arr apps and Prowlarr are going to ask for have to
-    // exist inside the client
-    for client in &req.clients {
-        failures += client_categories(&http, &req, client, &log).await;
-        failures += client_preferences(&http, client, &log).await;
     }
     for arr in &req.arrs {
         failures += ensure_root_folders(&http, &base, &req, arr, &log).await;
