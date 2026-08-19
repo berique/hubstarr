@@ -11,8 +11,10 @@ use serde_json::{Map, Value};
 use super::Db;
 
 /// (key in `DEFAULTS`, column). `tls` is left out: it is the only boolean.
-const ENV_COLS: [(&str, &str); 25] = [
+const ENV_COLS: [(&str, &str); 26] = [
     ("restart", "restart"),
+    // what tells this stack from another on the machine (v0.6)
+    ("project", "project"),
     ("cfg", "cfg"),
     ("data", "data"),
     ("dl", "dl"),

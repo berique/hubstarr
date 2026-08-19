@@ -541,6 +541,7 @@ sudo sh get-docker.sh</pre>
       <div class="row" data-help="env.hRestart"><label for="eRestart" data-i18n="env.restart">Restart policy</label>
         <select id="eRestart"><option>unless-stopped</option><option>always</option><option>no</option></select>
       </div>
+      <div class="row" data-help="env.hProject"><label for="eProject" data-i18n="env.project">Project name</label><input type="text" id="eProject"></div>
       <div class="row" data-help="env.hCfg"><label for="eCfg" data-i18n="env.cfg">Config base path</label><input type="text" id="eCfg"></div>
       <div class="row" data-help="env.hData"><label for="eData" data-i18n="env.data">Media base path</label><input type="text" id="eData"></div>
       <div class="row" data-help="env.hDl"><label for="eDl" data-i18n="env.dl">Downloads base path</label><input type="text" id="eDl"></div>
@@ -747,12 +748,12 @@ const I18N = {
     '<p>Com o Docker no lugar, descompacte o <code>.zip</code> e suba a stack de dentro da pasta dos arquivos:</p>'+
     '<pre>docker compose up -d</pre>',
   'wish.h':'Wishlist',
-  'wish.body':'<p>O que ainda não existe, na ordem em que faria sentido acontecer. Os marcos são versões, não datas: cada um só começa depois do anterior, porque depende dele. Hoje o repositório está no <b>v0.5</b> — a página, o servidor que guarda a stack e a sobe no Docker, a Configuração aplicada nos apps e o TRaSH Guides inteiro pelo Configarr.</p>'+
+  'wish.body':'<p>O que ainda não existe, na ordem em que faria sentido acontecer. Os marcos são versões, não datas: cada um só começa depois do anterior, porque depende dele. Hoje o repositório está no <b>v0.6</b> — a página, o servidor que guarda a stack e a sobe no Docker, a Configuração aplicada nos apps, o TRaSH Guides inteiro pelo Configarr e o nome do projeto que separa esta stack das outras da máquina.</p>'+
     '<p><s><b>v0.2</b> · Backend ligando o Hubstarr ao Docker</s> — feito: a página grava os arquivos e sobe a stack sem passar pelo <code>.zip</code>.</p>'+
     '<p><s><b>v0.3</b> · Configuração automática da stack pelo backend</s> — feito: as três partes da Configuração viram chamada de API pelo <b>Aplicar na stack</b>.</p>'+
     '<p><s><b>v0.4</b> · Custom formats e profiles por instância</s> — feito: a de 4K, a de anime e as demais nascem com o perfil de qualidade delas, aplicado pelo Configarr.</p>'+
     '<p><s><b>v0.5</b> · Compatibilidade com o TRaSH Guides</s> — feito junto do v0.4: cada preset traz o perfil, os custom formats com os scores do guia e a quality definition.</p>'+
-    '<p><b>v0.6</b> · Nome de projeto e de container configurável — a stack convive com um <code>sonarr</code> que já exista na máquina, e volta a caber mais de uma.</p>'+
+    '<p><s><b>v0.6</b> · Nome de projeto e de container configurável</s> — feito: o <b>Nome do projeto</b>, no Ambiente, entra no projeto do compose, no nome de cada container e no da rede.</p>'+
     '<p><b>v0.7</b> · Busca localizada de mídia — dá para escolher o idioma da busca e os *arr acham o lançamento certo.</p>',
   'cfg.h':'⇄ Configuração',
   'cfg.apps':'Aplicações no Prowlarr',
@@ -1085,6 +1086,7 @@ const I18N = {
   'env.hIds':'Usuário e grupo do host que os containers assumem para escrever nos volumes. Saem no <b>.env</b> como <b>PUID</b>/<b>PGID</b>; no seu usuário, veja com <b>id -u</b> e <b>id -g</b>.',
   'env.hTz':'Fuso dos containers, em <b>TZ</b> — mexe nos horários de log, agendamento e renomeio. A lista é a IANA inteira; o valor inicial é o desta máquina.',
   'env.hRestart':'O que o Docker faz quando um container morre ou a máquina reinicia. Sai como <b>${RESTART}</b> em todos os serviços: <b>unless-stopped</b> volta sozinho, menos se você tiver parado o container na mão.',
+  'env.hProject':'O que separa esta stack das outras na mesma máquina. Ele nomeia o projeto do compose e entra no nome de cada container (<b>hubstarr-sonarr</b>) e no da rede — os três nomes que o docker enxerga de fora e que, fixos, faziam uma stack tomar a outra. Rota do nginx, pasta de configuração e o que está guardado não mudam com ele. Mexer nele recria os containers na próxima subida; a configuração dos apps fica onde está.',
   'env.hCfg':'Pasta do host onde fica a configuração de cada container, uma subpasta por serviço. Sai como <b>${BASE_CONFIG}</b>.',
   'env.hData':'Raiz da biblioteca no host. Cada *arr monta a própria subpasta, batizada com o tipo de conteúdo dele e o que distingue a instância (<b>tv</b>, <b>tv-4k</b>, <b>movies</b>), e o Jellyfin monta a base inteira. Sai como <b>${BASE_MEDIA}</b>.',
   'env.hDl':'Pasta do host onde os clientes baixam. Os *arr montam a base inteira em <b>/downloads</b>, para importar sem copiar de um disco para outro. Sai como <b>${DOWNLOAD_BASE}</b>.',
@@ -1108,6 +1110,7 @@ const I18N = {
   'nginx.portsHint':'A porta em que o nginx atende no host. Dentro da stack ele continua ouvindo em 80 e 443 — isto aqui é só o lado de fora, útil quando algo já ocupa as portas privilegiadas.',
   'nginx.hint':'A primeira sai no <b>.env</b> como <b>HTTP_PORT</b>. A da 443 só entra — no <b>.env</b> como <b>HTTPS_PORT</b> e no compose como porta publicada — com o <b>Servir HTTPS</b> ligado no Ambiente: sem ele o nginx não escuta ali, e publicar seria ocupar a porta da máquina sem nada do outro lado. Os links copiados e o redirecionamento para o https já levam a porta escolhida.',
   'nginx.warnPorts':'As portas do host devem ser números de 1 a 65535, e diferentes entre si',
+  'env.project':'Nome do projeto',
   'env.cfg':'Base da pasta config',
   'env.data':'Base da pasta de mídia',
   'env.dl':'Base de downloads',
@@ -1265,12 +1268,12 @@ const I18N = {
     '<p>With Docker in place, unzip the <code>.zip</code> and bring the stack up from inside the files folder:</p>'+
     '<pre>docker compose up -d</pre>',
   'wish.h':'Wishlist',
-  'wish.body':'<p>What is not there yet, in the order it would make sense to happen. The milestones are versions, not dates: each one only starts after the previous, because it depends on it. The repository is at <b>v0.5</b> today — the page, the server that keeps the stack and brings it up on Docker, the Configuration applied to the apps and the whole TRaSH Guides through Configarr.</p>'+
+  'wish.body':'<p>What is not there yet, in the order it would make sense to happen. The milestones are versions, not dates: each one only starts after the previous, because it depends on it. The repository is at <b>v0.6</b> today — the page, the server that keeps the stack and brings it up on Docker, the Configuration applied to the apps, the whole TRaSH Guides through Configarr and the project name that separates this stack from the others on the machine.</p>'+
     '<p><s><b>v0.2</b> · A backend wiring Hubstarr to Docker</s> — done: the page writes the files and brings the stack up without going through the <code>.zip</code>.</p>'+
     '<p><s><b>v0.3</b> · Automatic stack configuration from the backend</s> — done: all three parts of the Configuration become API calls through <b>Apply to the stack</b>.</p>'+
     '<p><s><b>v0.4</b> · Custom formats and profiles per instance</s> — done: the 4K one, the anime one and the rest are born with their own quality profile, applied by Configarr.</p>'+
     '<p><s><b>v0.5</b> · Compatibility with the TRaSH Guides</s> — done alongside v0.4: each preset brings the profile, the custom formats with the guide\'s scores and the quality definition.</p>'+
-    '<p><b>v0.6</b> · Configurable project and container names — the stack lives next to a <code>sonarr</code> that is already on the machine, and more than one fits again.</p>'+
+    '<p><s><b>v0.6</b> · Configurable project and container names</s> — done: the <b>Project name</b>, in the Environment, goes into the compose project, into every container name and into the network.</p>'+
     '<p><b>v0.7</b> · Localized media search — the search language can be picked and the *arr apps find the right release.</p>',
   'cfg.h':'⇄ Configuration',
   'cfg.apps':'Applications in Prowlarr',
@@ -1601,6 +1604,7 @@ const I18N = {
   'env.hIds':'Host user and group the containers take on to write in the volumes. They land in <b>.env</b> as <b>PUID</b>/<b>PGID</b>; for your own user, check <b>id -u</b> and <b>id -g</b>.',
   'env.hTz':'Container time zone, as <b>TZ</b> — it drives log timestamps, scheduling and renaming. The list is the whole IANA database; the initial value is this machine\'s.',
   'env.hRestart':'What Docker does when a container dies or the machine reboots. Lands as <b>${RESTART}</b> on every service: <b>unless-stopped</b> comes back on its own, unless you stopped the container yourself.',
+  'env.hProject':'What separates this stack from the others on the same machine. It names the compose project and goes into every container name (<b>hubstarr-sonarr</b>) and into the network — the three names docker sees from outside, and the ones that, being fixed, let one stack take over another. The nginx route, the configuration folder and what is stored do not change with it. Changing it recreates the containers on the next deploy; the apps\' configuration stays where it is.',
   'env.hCfg':'Host folder holding each container\'s configuration, one subfolder per service. Lands as <b>${BASE_CONFIG}</b>.',
   'env.hData':'Root of the library on the host. Each *arr mounts its own subfolder, named after its content type plus whatever tells the instance apart (<b>tv</b>, <b>tv-4k</b>, <b>movies</b>), and Jellyfin mounts the whole base. Lands as <b>${BASE_MEDIA}</b>.',
   'env.hDl':'Host folder the clients download into. The *arr apps mount the whole base at <b>/downloads</b>, so they can import without copying across disks. Lands as <b>${DOWNLOAD_BASE}</b>.',
@@ -1624,6 +1628,7 @@ const I18N = {
   'nginx.portsHint':'The port nginx answers on from the host. Inside the stack it keeps listening on 80 and 443 — this is only the outside, handy when something already holds the privileged ports.',
   'nginx.hint':'The first lands in <b>.env</b> as <b>HTTP_PORT</b>. The 443 one only shows up — in <b>.env</b> as <b>HTTPS_PORT</b> and in the compose file as a published port — with <b>Serve HTTPS</b> on in the Environment: without it nginx does not listen there, and publishing would take the machine\'s port with nothing behind it. The copied links and the redirect to https already carry the chosen port.',
   'nginx.warnPorts':'Host ports must be numbers from 1 to 65535, and different from each other',
+  'env.project':'Project name',
   'env.cfg':'Config base path',
   'env.data':'Media base path',
   'env.dl':'Downloads base path',
@@ -1781,12 +1786,12 @@ const I18N = {
     '<p>Con Docker en su sitio, descomprime el <code>.zip</code> y levanta la stack desde dentro de la carpeta de los archivos:</p>'+
     '<pre>docker compose up -d</pre>',
   'wish.h':'Wishlist',
-  'wish.body':'<p>Lo que todavía no existe, en el orden en que tendría sentido que ocurra. Los hitos son versiones, no fechas: cada uno solo empieza después del anterior, porque depende de él. Hoy el repositorio está en <b>v0.5</b> — la página, el servidor que guarda la stack y la levanta en Docker, la Configuración aplicada en las apps y el TRaSH Guides entero por Configarr.</p>'+
+  'wish.body':'<p>Lo que todavía no existe, en el orden en que tendría sentido que ocurra. Los hitos son versiones, no fechas: cada uno solo empieza después del anterior, porque depende de él. Hoy el repositorio está en <b>v0.6</b> — la página, el servidor que guarda la stack y la levanta en Docker, la Configuración aplicada en las apps, el TRaSH Guides entero por Configarr y el nombre del proyecto que separa esta stack de las otras de la máquina.</p>'+
     '<p><s><b>v0.2</b> · Un backend que conecte Hubstarr con Docker</s> — hecho: la página graba los archivos y levanta la stack sin pasar por el <code>.zip</code>.</p>'+
     '<p><s><b>v0.3</b> · Configuración automática de la stack desde el backend</s> — hecho: las tres partes de la Configuración son llamadas de API por el <b>Aplicar en la stack</b>.</p>'+
     '<p><s><b>v0.4</b> · Custom formats y profiles por instancia</s> — hecho: la de 4K, la de anime y las demás nacen con su perfil de calidad, aplicado por Configarr.</p>'+
     '<p><s><b>v0.5</b> · Compatibilidad con TRaSH Guides</s> — hecho junto con el v0.4: cada preset trae el perfil, los custom formats con los scores de la guía y la quality definition.</p>'+
-    '<p><b>v0.6</b> · Nombre de proyecto y de contenedor configurable — la stack convive con un <code>sonarr</code> que ya exista en la máquina, y vuelve a caber más de una.</p>'+
+    '<p><s><b>v0.6</b> · Nombre de proyecto y de contenedor configurable</s> — hecho: el <b>Nombre del proyecto</b>, en el Entorno, entra en el proyecto de compose, en el nombre de cada contenedor y en el de la red.</p>'+
     '<p><b>v0.7</b> · Búsqueda localizada de medios — se puede elegir el idioma de la búsqueda y los *arr encuentran el lanzamiento correcto.</p>',
   'cfg.h':'⇄ Configuración',
   'cfg.apps':'Aplicaciones en Prowlarr',
@@ -2117,6 +2122,7 @@ const I18N = {
   'env.hIds':'Usuario y grupo del host que los contenedores asumen para escribir en los volúmenes. Salen en el <b>.env</b> como <b>PUID</b>/<b>PGID</b>; para tu usuario, mira <b>id -u</b> e <b>id -g</b>.',
   'env.hTz':'Zona horaria de los contenedores, como <b>TZ</b> — afecta a los horarios de log, la programación y el renombrado. La lista es la IANA entera; el valor inicial es el de esta máquina.',
   'env.hRestart':'Qué hace Docker cuando un contenedor muere o la máquina reinicia. Sale como <b>${RESTART}</b> en todos los servicios: <b>unless-stopped</b> vuelve solo, salvo que hayas parado el contenedor a mano.',
+  'env.hProject':'Lo que separa esta stack de las otras en la misma máquina. Nombra el proyecto de compose y entra en el nombre de cada contenedor (<b>hubstarr-sonarr</b>) y en el de la red — los tres nombres que docker ve desde fuera y que, fijos, hacían que una stack tomara la otra. La ruta de nginx, la carpeta de configuración y lo guardado no cambian con él. Cambiarlo recrea los contenedores en el próximo despliegue; la configuración de las apps queda donde está.',
   'env.hCfg':'Carpeta del host donde queda la configuración de cada contenedor, una subcarpeta por servicio. Sale como <b>${BASE_CONFIG}</b>.',
   'env.hData':'Raíz de la biblioteca en el host. Cada *arr monta su propia subcarpeta, nombrada con su tipo de contenido y lo que distingue la instancia (<b>tv</b>, <b>tv-4k</b>, <b>movies</b>), y Jellyfin monta la base entera. Sale como <b>${BASE_MEDIA}</b>.',
   'env.hDl':'Carpeta del host donde descargan los clientes. Los *arr montan la base entera en <b>/downloads</b>, para importar sin copiar de un disco a otro. Sale como <b>${DOWNLOAD_BASE}</b>.',
@@ -2140,6 +2146,7 @@ const I18N = {
   'nginx.portsHint':'El puerto en el que nginx atiende desde el host. Dentro de la stack sigue escuchando en 80 y 443 — esto es solo el lado de afuera, útil cuando algo ya ocupa los puertos privilegiados.',
   'nginx.hint':'El primero sale en el <b>.env</b> como <b>HTTP_PORT</b>. El del 443 solo entra — en el <b>.env</b> como <b>HTTPS_PORT</b> y en el compose como puerto publicado — con el <b>Servir HTTPS</b> activado en el Entorno: sin él nginx no escucha ahí, y publicarlo sería ocupar el puerto de la máquina sin nada del otro lado. Los enlaces copiados y la redirección al https ya llevan el puerto elegido.',
   'nginx.warnPorts':'Los puertos del host deben ser números de 1 a 65535, y distintos entre sí',
+  'env.project':'Nombre del proyecto',
   'env.cfg':'Base de la carpeta config',
   'env.data':'Base de la carpeta multimedia',
   'env.dl':'Base de descargas',
@@ -2539,6 +2546,10 @@ const WEB_AUTH = {
 };
 
 const DEFAULTS = {restart:'unless-stopped',
+                  /* what tells this stack apart from any other on the machine:
+                     the compose project, the container names and the network all
+                     carry it. See `projSlug()`. */
+                  project:'hubstarr',
                   cfg:'/opt/hubstarr', data:'/mnt/media', dl:'/mnt/downloads',
                   // ports nginx publishes on the host
                   http:'80', https:'443',
@@ -2581,7 +2592,32 @@ const slug = t => (t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
   .toLowerCase().trim()
   .replace(/[^a-z0-9]+/g,'-')
   .replace(/^-+|-+$/g,'');
-const cname = a => slug(a.title) || a.id;   // container_name / service key / folder
+const cname = a => slug(a.title) || a.id;   // compose service / db key / config folder
+
+/* What tells one stack from another **on the machine**, and only that.
+
+   Three names are global to the docker daemon and were fixed until now, which
+   is what made a second stack take over the first: the `container_name`, the
+   network, and the compose project — which compose derives from the folder
+   name, so a `docker compose down` run in a folder called `stack` took away
+   what another folder of the same name had created. All three carry the
+   project name now.
+
+   What does **not** carry it is everything already scoped to the stack: the
+   compose service key, the nginx route, the config folder and the database key
+   all stay on `cname()`. That is not timidity — it is what keeps the change
+   free of migration (the folders on disk and the rows in the database keep the
+   names they always had), and it is safe because compose gives every container
+   a network alias for its *service* name as well as for its `container_name`:
+   inside the network `http://sonarr:8989` keeps resolving whatever the
+   container is called outside. Measured: both aliases answer. That is why the
+   nginx upstream, Prowlarr's `internalUrl()` and Configarr's `base_url` stay on
+   `cname()`.
+
+   So: `dname()` is for docker, `cname()` for everything else. */
+const projSlug = () => slug(DEFAULTS.project) || 'hubstarr';
+const dname = a => `${projSlug()}-${cname(a)}`;   // container_name, unique on the machine
+const netName = () => `${projSlug()}-${NETWORK}`;
 // path in nginx: a subpath of its own, or the root for the shortcut panel
 /* Whoever publishes a port on the host has no route in nginx: its subpath does
    not exist, and the link is the machine's address on the chosen port. */
@@ -4062,6 +4098,7 @@ function openEnv(){
   $('#eCert').value = DEFAULTS.cert; $('#eTlsKey').value = DEFAULTS.tlsKey;
   tlsRows();
   $('#ePuid').value=DEFAULTS.puid; $('#ePgid').value=DEFAULTS.pgid;
+  $('#eProject').value=DEFAULTS.project;
   $('#eTz').value=DEFAULTS.tz; $('#eCfg').value=DEFAULTS.cfg; $('#eData').value=DEFAULTS.data;
   $('#eDl').value=DEFAULTS.dl;
   $('#eWarn').textContent='';
@@ -4143,7 +4180,11 @@ $('#eSave').onclick = ()=>{
   if(!/^\d+$/.test(puid) || !/^\d+$/.test(pgid)){
     $('#eWarn').innerHTML=`<span class="warn">${t('env.warnIds')}</span>`; return;
   }
+  /* An empty project name would make the containers `-sonarr` and the network
+     `-starrnet`, which docker refuses; falling back keeps the field from being
+     a way to write a compose that does not come up. */
   Object.assign(DEFAULTS, {restart:$('#eRestart').value, puid, pgid,
+    project:slug($('#eProject').value) || 'hubstarr',
     tz:$('#eTz').value, cfg:$('#eCfg').value.trim(), data:$('#eData').value.trim(),
     dl:$('#eDl').value.trim(),
     });
@@ -4176,7 +4217,12 @@ function build(){
   const L=[];
   L.push(`<span class="c"># ${STACK} — ${t('yml.head')}</span>`);
   L.push(`<span class="c"># ${t('yml.env')}</span>`);
-  L.push(`<span class="c"># ${t('yml.ports', NETWORK)}</span>`);
+  L.push(`<span class="c"># ${t('yml.ports', netName())}</span>`);
+  L.push(``);
+  /* Spelled out, never derived: with no `name:` compose takes the project from
+     the folder the file sits in, and two folders that happen to share a name
+     share a project — a `down` in one takes away the other's containers. */
+  L.push(`<span class="k">name</span>: <span class="v">${projSlug()}</span>`);
   L.push(``);
   L.push(`<span class="k">services</span>:`);
 
@@ -4184,7 +4230,7 @@ function build(){
   L.push(``);
   L.push(`  <span class="k">${NGINX.id}</span>:`);
   L.push(`    <span class="k">image</span>: <span class="v">${NGINX.img}</span>`);
-  L.push(`    <span class="k">container_name</span>: <span class="v">${NGINX.id}</span>`);
+  L.push(`    <span class="k">container_name</span>: <span class="v">${projSlug()}-${NGINX.id}</span>`);
   L.push(`    <span class="k">ports</span>:`);
   L.push(`      - <span class="v">"\${HTTP_PORT}:${NGINX.http}"</span>`);
   /* 443 only exists with TLS turned on: without it the `nginx.conf` has no
@@ -4235,7 +4281,7 @@ function build(){
     L.push(``);
     L.push(`  <span class="k">${cname(a)}</span>:`);
     L.push(`    <span class="k">image</span>: <span class="v">${s.img}</span>`);
-    L.push(`    <span class="k">container_name</span>: <span class="v">${cname(a)}</span>`);
+    L.push(`    <span class="k">container_name</span>: <span class="v">${dname(a)}</span>`);
     /* Whoever does not go through nginx needs the port published on the host —
        except whoever routes through the VPN: in that case the network is
        gluetun's, and it is the one that publishes (the compose refuses `ports`
@@ -4362,7 +4408,7 @@ function build(){
      becomes `<folder>_starrnet`: whoever arrives from outside the compose, like
      Configarr in its `docker run`, cannot find it by the name the page
      announces. */
-  L.push(`    <span class="k">name</span>: <span class="v">${NETWORK}</span>`);
+  L.push(`    <span class="k">name</span>: <span class="v">${netName()}</span>`);
   L.push(`    <span class="k">driver</span>: <span class="v">bridge</span>`);
   return {html:L.join('\n'), list};
 }
@@ -5161,8 +5207,10 @@ function putInstance(a, old){
 function delInstance(key, a){
   if(!SERVER || loading || readOnly) return;
   const dir = a && !svc(a.id).noVol ? cfgReal(a) : null;
+  /* The container answers to `dname()`, not to the key — that is the whole
+     point of the project name. */
   api('instance/' + encodeURIComponent(key), {method:'DELETE',
-      body:JSON.stringify({dir})}).catch(()=>{});
+      body:JSON.stringify({dir, container: a ? dname(a) : null})}).catch(()=>{});
 }
 
 /* Stores on the server without getting in the way of typing: a PUT once it
@@ -5603,7 +5651,7 @@ function applyPayload(){
        paths, the network and the user come from here, like everything else. */
     configarr: plainCfgarr() ? {
       dir:     CFGARR_DIR(),
-      network: NETWORK,
+      network: netName(),
       user:    `${DEFAULTS.puid}:${DEFAULTS.pgid}`,
       tz:      DEFAULTS.tz,
     } : null,

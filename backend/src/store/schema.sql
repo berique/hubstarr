@@ -12,6 +12,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS stack_env (
   id        INTEGER PRIMARY KEY CHECK (id = 1),
   restart   TEXT NOT NULL DEFAULT '',
+  project   TEXT NOT NULL DEFAULT '',
   cfg       TEXT NOT NULL DEFAULT '',
   data      TEXT NOT NULL DEFAULT '',
   dl        TEXT NOT NULL DEFAULT '',

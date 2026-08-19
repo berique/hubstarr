@@ -108,8 +108,8 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
 - **Excluir apaga a configuração**: tirar um serviço da lista leva junto o
   container dele e a pasta de configuração — o banco do app, o histórico, os
   indexadores —, então o botão pede confirmação: o primeiro clique arma, o
-  segundo apaga. Só ele faz isso; o "Limpar tudo" e a lista que o servidor
-  reconcilia tiram a linha e deixam container e pasta onde estão. Container de
+  segundo apaga. Só ele faz isso; a lista que o servidor
+  reconcilia tira a linha e deixa container e pasta onde estão. Container de
   outra stack que tenha o mesmo nome não é tocado — e, como ele é de outro dono,
   a pasta também fica: o serviço sai da lista e nada no disco se perde. Sem servidor não há o que
   apagar: a página aberta do disco não alcança o seu sistema de arquivos.
@@ -120,7 +120,7 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
 - **Etiquetas na linha do serviço**, uma cor por tipo: a variante do logotipo,
   o tema da interface, a saída pela VPN, a aceleração por GPU, o endereço na
   stack e as pastas de configuração e de mídia, por extenso. Abaixo da lista,
-  ao lado do **Limpar tudo**, uma legenda diz o que cada cor marca — ela some
+  uma legenda diz o que cada cor marca — ela some
   com a lista vazia.
 - **Múltiplas instâncias** de Sonarr, Radarr, Lidarr, Bazarr e Prowlarr —
   basta o título ser diferente. Sonarr e Radarr recebem também
@@ -128,6 +128,15 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
 - **Base URL automática**: Sonarr, Radarr, Lidarr e Prowlarr recebem
   `<APP>__SERVER__URLBASE=/<container_name>`, já casando com o subpath do
   nginx. O Bazarr não expõe essa variável — a base fica na interface dele.
+- **Nome do projeto** no Ambiente: é o que separa esta stack das outras da
+  mesma máquina. Ele nomeia o projeto do compose e entra no nome de cada
+  container (`hubstarr-sonarr`) e no da rede — os três nomes que o docker vê de
+  fora. Com eles fixos, subir numa máquina que já tivesse um `sonarr` tomava o
+  container que estava rodando, e um `docker compose down` numa pasta chamada
+  `stack` levava junto o que outra pasta de mesmo nome criou. A rota do nginx
+  (`/sonarr`), a pasta de configuração e o que está guardado não mudam com ele.
+  Trocá-lo recria os containers na próxima subida; a configuração dos apps fica
+  onde está.
 - **API key** no Ambiente: uma só para toda a stack. Sonarr, Radarr, Lidarr e
   Prowlarr saem no compose com `<APP>__AUTH__APIKEY=${STARR_APIKEY}`, e o
   SABnzbd com `SAB_API_KEY=${STARR_APIKEY}`; o valor fica no `.env`. A chave já
@@ -578,7 +587,7 @@ e traduzir os valores.
 
 O que ainda não existe, na ordem em que faria sentido acontecer. Os marcos são
 versões, não datas: cada um só começa depois do anterior, porque depende dele.
-Hoje o repositório está no **v0.5** — a página, o servidor que guarda a stack e
+Hoje o repositório está no **v0.6** — a página, o servidor que guarda a stack e
 a sobe no Docker, a Configuração aplicada nos apps e o TRaSH Guides inteiro pelo
 Configarr: perfis, custom formats com os scores do guia e as quality
 definitions.
@@ -589,7 +598,7 @@ definitions.
 | ~~**v0.3**~~ | ~~Configuração automática das stacks pelo backend~~ | ✅ Prowlarr, clientes de download e Media Management saem da interface e viram chamada de API |
 | ~~**v0.4**~~ | ~~Custom formats e profiles próprios de cada stack~~ | ✅ os perfis do TRaSH Guides, por instância, aplicados pelo Configarr |
 | ~~**v0.5**~~ | ~~Compatibilidade com o TRaSH Guides~~            | ✅ quality definitions e scores de custom format vêm nos templates que o Configarr aplica |
-| **v0.6** | Nome de projeto e de container configurável           | o Hubstarr convive com uma stack que já use esses nomes na mesma máquina — e volta a caber mais de uma |
+| ~~**v0.6**~~ | ~~Nome de projeto e de container configurável~~   | ✅ o nome do projeto, no Ambiente, entra no projeto do compose, nos containers e na rede |
 | **v0.7** | Busca localizada de mídia                             | dá para escolher o idioma da busca e os *arr acham o lançamento certo                      |
 
 ## Verificações

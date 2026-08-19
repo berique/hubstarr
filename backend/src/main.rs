@@ -391,6 +391,10 @@ async fn put_instance(State(ctx): State<Ctx>, Json(inc): Json<store::InstanceIn>
 struct DelBody {
     /// absent for a `noVol` service, or for a page that predates this
     dir: Option<String>,
+    /// the `container_name`, which since v0.6 carries the project name and is
+    /// therefore *not* the key. Absent from an older page: the key is the
+    /// fallback, which is what that page's containers are really called.
+    container: Option<String>,
 }
 
 async fn del_instance(
@@ -405,7 +409,14 @@ async fn del_instance(
        be deleted, and removing the folder from under a running app leaves it
        recreating half of it on the way out. It is also the gate — refusing it
        calls the whole deletion off, folder included. */
-    let container = match deploy::remove_container(&ctx.docker, &key, &ctx.base).await {
+    let Json(body) = body.unwrap_or_default();
+    let name = body
+        .container
+        .as_deref()
+        .map(str::trim)
+        .filter(|c| !c.is_empty())
+        .unwrap_or(&key);
+    let container = match deploy::remove_container(&ctx.docker, name, &ctx.base).await {
         Ok(gone) => gone,
         Err(e) => {
             journal::record(format!(
@@ -416,7 +427,7 @@ async fn del_instance(
                 .into_response();
         }
     };
-    let Some(dir) = body.and_then(|Json(b)| b.dir).filter(|d| !d.trim().is_empty()) else {
+    let Some(dir) = body.dir.filter(|d| !d.trim().is_empty()) else {
         journal::record(format!("{} DELETE /api/instance/{key}", journal::stamp()));
         return Json(json!({"ok": true, "container": container})).into_response();
     };

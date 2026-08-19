@@ -145,7 +145,7 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
 6. **UI** — as etiquetas da linha do serviço saem todas do `tagHtml(kind,
    texto)`, e o `kind` é o que dá a cor no CSS (`.tag[data-kind=…]`) e o rótulo
    no `I18N` (`tag.<kind>`). O `TAG_KINDS` é a lista deles, na ordem de leitura,
-   e é dele que o `renderLegend()` monta a legenda ao lado do "Limpar tudo" —
+   e é dele que o `renderLegend()` monta a legenda abaixo da lista —
    cor sem legenda é adivinhação. Etiqueta nova é uma linha no `TAG_KINDS`, a
    cor nas duas tabelas do CSS (a da etiqueta e a do ponto da legenda) e as
    strings nos três idiomas; não monte `<span class="tag">` à mão.
@@ -714,10 +714,9 @@ linha só — o `CHECK (id = 1)` é o que a mantém única), `instance` +
   pasta de pé — com um aviso no log e no corpo da resposta, nunca uma remoção
   em outro lugar. Pasta que não existe é `Ok(None)`: a instância pode nunca ter
   subido. O `reconcile()` **não** apaga pasta nenhuma, de propósito: ele tira
-  linha que ninguém clicou (o "Limpar tudo", uma aba velha voltando à vida), e
-  linha volta com um save enquanto o banco do Sonarr não volta. Na página o
-  botão arma no primeiro clique, como o "Limpar tudo" — o rótulo do segundo diz
-  o que vai junto.
+  linha que ninguém clicou (uma aba velha voltando à vida), e linha volta com
+  um save enquanto o banco do Sonarr não volta. Na página o botão arma no
+  primeiro clique — o rótulo do segundo diz o que vai junto.
 
   O container sai pelo `remove_container()` do `deploy.rs`, e **não** é
   `compose rm`: quando isso roda, o serviço já pode ter saído do
@@ -975,12 +974,54 @@ Duas armadilhas do `added` injetado, as duas já custaram uma rodada:
   do serviço, sem o da paleta. A `theme.png` também escolhe a paleta na mão
   (`$('#mTp').value` + `tpShot(id)`) antes de abrir.
 
+## Nome do projeto (v0.6)
+
+`DEFAULTS.project` (padrão `hubstarr`) é o que separa esta stack das outras **na
+máquina**. Antes dele o `container_name` era o `cname()`, fixo: subir numa
+máquina que já tivesse um `sonarr` tomava o nome do que estava rodando, e o
+`docker compose down` de uma pasta chamada `stack` levava junto o que outra
+pasta de mesmo nome criou — o Compose tira o nome do projeto do nome da pasta.
+
+São **três** nomes globais ao daemon, e só esses três o carregam:
+
+- o **projeto**, escrito no topo do compose (`name: <project>`) em vez de
+  deduzido da pasta — é o que impede um `down` de levar a stack do vizinho;
+- o **`container_name`**, que vira `<project>-<cname>` pelo `dname()`;
+- a **rede**, cujo `name:` vira `<project>-starrnet` pelo `netName()`.
+
+O que **não** o carrega é tudo o que já é do escopo da stack: a chave do
+serviço no compose, a rota do nginx, a pasta de configuração e a chave no
+banco continuam sendo o `cname()`. Não é timidez — é o que deixa a mudança sem
+migração nenhuma (as pastas no disco e as linhas no banco ficam com o nome que
+sempre tiveram) e funciona porque **o compose dá a cada container um alias de
+rede para o nome do *serviço* além do `container_name`**: dentro da rede,
+`http://sonarr:8989` continua resolvendo, chame-se o container como se chamar
+por fora. Foi medido — os dois aliases respondem. Por isso o upstream do nginx,
+o `internalUrl()` do Prowlarr e o `base_url` do Configarr seguem no `cname()`.
+
+Duas consequências a lembrar:
+
+- **`dname()` é para o docker, `cname()` para todo o resto.** Quem precisa
+  falar com o daemon por nome — hoje o `remove_container()` do Excluir — recebe
+  o `dname()` no corpo da requisição; o `up_one`/`stop_one` e o `compose ps` do
+  ponto de status usam nome de *serviço* e não mudaram.
+- **Trocar o nome do projeto recria os containers** na subida seguinte, porque
+  o projeto do compose passa a ser outro. A configuração dos apps não se move:
+  ela está nos binds, e os binds não carregam o prefixo. O mesmo vale para quem
+  vem de uma versão anterior: a coluna `project` nasce vazia, o `projSlug()`
+  cai no `hubstarr`, e a primeira subida recria os containers com o novo nome.
+
+O campo mora no **Ambiente** porque é da stack inteira, não de um serviço.
+Vazio ele volta a `hubstarr`: `-sonarr` e `-starrnet` são nomes que o docker
+recusa, e o campo não pode ser um jeito de escrever um compose que não sobe.
+
 ## Wishlist
 
 O roadmap fica nos três READMEs, numa tabela por marco de versão; o texto
 autoritativo é o do `README.pt-BR.md`, e mexer nele é mexer nos três. Hoje o
-repositório é o **v0.5** — a página, o servidor de `backend/`, a Configuração
-aplicada nos apps e o TRaSH Guides inteiro pelo Configarr.
+repositório é o **v0.6** — a página, o servidor de `backend/`, a Configuração
+aplicada nos apps, o TRaSH Guides inteiro pelo Configarr e o nome do projeto
+que separa esta stack das outras da máquina.
 
 - ~~**v0.2**~~ — feito: o backend liga o `hubstarr.html` ao Docker e guarda a
   stack. Uma primeira versão dele existiu e foi removida no `ba54e1a`; a de
@@ -1003,14 +1044,8 @@ aplicada nos apps e o TRaSH Guides inteiro pelo Configarr.
   do guia — o perfil, os custom formats **com os scores dele** e a quality
   definition. Era isto que o marco pedia, e veio dos templates do Recyclarr em
   vez do JSON do TRaSH lido na mão.
-- **v0.6** — nome de projeto e de container configurável. Hoje o
-  `container_name` é o `cname()`, fixo: subir uma stack numa máquina que já
-  tenha um `sonarr` ou um `nginx` **toma o nome do que está rodando**, e o
-  `docker compose down` de uma pasta chamada `stack` leva junto o que outra
-  pasta de mesmo nome criou — o Compose tira o nome do projeto do nome da
-  pasta. Aconteceu duas vezes numa sessão só. Resolve com um prefixo no
-  Ambiente, e de quebra reabre o caminho para mais de uma stack, que foi
-  removido no passado.
+- ~~**v0.6**~~ — feito: o **nome do projeto**, no Ambiente, entra nos três nomes
+  que o docker enxerga de fora — ver "Nome do projeto" acima.
 - **v0.7** — busca localizada de mídia, com o idioma da busca escolhível.
 
 Marco é ordem, não calendário: cada um depende do anterior. Ao propor mudança

@@ -107,8 +107,8 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
 - **Delete removes the configuration**: taking a service off the list takes its
   container and its configuration folder along — the app's database, its
   history, its indexers — so the button asks first: the first click arms it, the
-  second deletes. Only that button does it; "Clear all" and the list the server
-  reconciles drop the row and leave container and folder where they are. A
+  second deletes. Only that button does it; the list the server
+  reconciles drops the row and leaves container and folder where they are. A
   container from another stack that happens to share the name is left alone —
   and, since it belongs to somebody else, so is the folder: the service leaves
   the list and nothing on disk is lost.
@@ -120,8 +120,8 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   others, are left out of the check.
 - **Tags on the service row**, one colour per kind: the logo variant, the
   interface theme, going out through the VPN, GPU acceleration, the address in
-  the stack, and the config and media folders in full. Below the list, next to
-  **Clear all**, a legend says what each colour marks — it goes away with an
+  the stack, and the config and media folders in full. Below the list,
+  a legend says what each colour marks — it goes away with an
   empty list.
 - **Multiple instances** of Sonarr, Radarr, Lidarr, Bazarr and Prowlarr — they
   only need different titles. Sonarr and Radarr also get
@@ -129,6 +129,15 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
 - **Automatic base URL**: Sonarr, Radarr, Lidarr and Prowlarr get
   `<APP>__SERVER__URLBASE=/<container_name>`, already matching the nginx
   subpath. Bazarr exposes no such variable — set its base in its own UI.
+- **Project name** in the Environment: it is what separates this stack from the
+  others on the same machine. It names the compose project and goes into every
+  container name (`hubstarr-sonarr`) and into the network — the three names
+  docker sees from outside. With those fixed, deploying on a machine that
+  already had a `sonarr` took over the running container, and a `docker compose
+  down` in a folder called `stack` took away what another folder of the same
+  name had created. The nginx route (`/sonarr`), the configuration folder and
+  what is stored do not change with it. Changing it recreates the containers on
+  the next deploy; the apps' configuration stays where it is.
 - **API key** in the Environment: a single one for the whole stack. Sonarr,
   Radarr, Lidarr and Prowlarr land in the compose file with
   `<APP>__AUTH__APIKEY=${STARR_APIKEY}`, and SABnzbd with
@@ -589,7 +598,7 @@ copying one of the blocks and translating the values.
 
 What is not there yet, in the order it would make sense to happen. The
 milestones are versions, not dates: each one only starts after the previous, because
-it depends on it. The repository is at **v0.5** today — the page, the server
+it depends on it. The repository is at **v0.6** today — the page, the server
 that keeps the stack and brings it up in Docker, the Configuration applied to
 the apps and the whole TRaSH Guides through Configarr: profiles, custom formats
 with the guide's scores, and the quality definitions.
@@ -600,7 +609,7 @@ with the guide's scores, and the quality definitions.
 | ~~**v0.3**~~ | ~~Automatic stack configuration from the backend~~ | ✅ Prowlarr, download clients and Media Management leave the interface and become API calls |
 | ~~**v0.4**~~ | ~~Custom formats and profiles per stack~~ | ✅ the TRaSH Guides profiles, per instance, applied by Configarr |
 | ~~**v0.5**~~ | ~~Compatibility with the TRaSH Guides~~        | ✅ quality definitions and custom format scores come in the templates Configarr applies |
-| **v0.6**  | Configurable project and container names          | Hubstarr lives alongside a stack already using those names on the same machine — and more than one stack fits again |
+| ~~**v0.6**~~ | ~~Configurable project and container names~~   | ✅ the project name, in the Environment, goes into the compose project, the containers and the network |
 | **v0.7**  | Localized media search                            | the search language can be picked and the *arr apps find the right release          |
 
 ## Checks

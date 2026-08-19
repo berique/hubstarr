@@ -112,8 +112,8 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
 - **Excluir borra la configuración**: sacar un servicio de la lista se lleva su
   contenedor y su carpeta de configuración — la base de la app, el historial,
   los indexadores —, así que el botón pide confirmación: el primer clic la arma,
-  el segundo borra. Solo él lo hace; el "Limpiar todo" y la lista que el
-  servidor reconcilia quitan la fila y dejan contenedor y carpeta donde están.
+  el segundo borra. Solo él lo hace; la lista que el
+  servidor reconcilia quita la fila y deja contenedor y carpeta donde están.
   Un contenedor de otra stack que tenga el mismo nombre no se toca — y, como es
   de otro dueño, la carpeta también queda: el servicio sale de la lista y nada
   en el disco se pierde. Sin servidor
@@ -126,7 +126,7 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
 - **Etiquetas en la fila del servicio**, un color por tipo: la variante del
   logotipo, el tema de la interfaz, la salida por la VPN, la aceleración por
   GPU, la dirección en la stack y las carpetas de configuración y multimedia,
-  completas. Debajo de la lista, al lado del **Limpiar todo**, una leyenda dice
+  completas. Debajo de la lista, una leyenda dice
   qué marca cada color — desaparece con la lista vacía.
 - **Múltiples instancias** de Sonarr, Radarr, Lidarr, Bazarr y Prowlarr — basta
   con que el título sea distinto. Sonarr y Radarr reciben además
@@ -135,6 +135,16 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   `<APP>__SERVER__URLBASE=/<container_name>`, que ya coincide con el subpath
   del nginx. Bazarr no expone esa variable — su base se configura en su propia
   interfaz.
+- **Nombre del proyecto** en el Entorno: es lo que separa esta stack de las
+  otras de la misma máquina. Nombra el proyecto de compose y entra en el nombre
+  de cada contenedor (`hubstarr-sonarr`) y en el de la red — los tres nombres
+  que docker ve desde fuera. Con ellos fijos, desplegar en una máquina que ya
+  tuviera un `sonarr` tomaba el contenedor en ejecución, y un `docker compose
+  down` en una carpeta llamada `stack` se llevaba lo que otra carpeta del mismo
+  nombre había creado. La ruta de nginx (`/sonarr`), la carpeta de
+  configuración y lo guardado no cambian con él. Cambiarlo recrea los
+  contenedores en el próximo despliegue; la configuración de las apps queda
+  donde está.
 - **API key** en el Entorno: una sola para toda la stack. Sonarr, Radarr,
   Lidarr y Prowlarr salen en el compose con
   `<APP>__AUTH__APIKEY=${STARR_APIKEY}`, y SABnzbd con
@@ -599,7 +609,7 @@ bloques y traducir los valores.
 
 Lo que todavía no existe, en el orden en que tendría sentido que ocurra. Los
 hitos son versiones, no fechas: cada uno solo empieza después del anterior, porque
-depende de él. Hoy el repositorio está en **v0.5** — la página, el servidor que
+depende de él. Hoy el repositorio está en **v0.6** — la página, el servidor que
 guarda la stack y la levanta en Docker, la Configuración aplicada en las apps y
 el TRaSH Guides entero por Configarr: perfiles, custom formats con los scores de
 la guía y las quality definitions.
@@ -610,7 +620,7 @@ la guía y las quality definitions.
 | ~~**v0.3**~~ | ~~Configuración automática de las stacks desde el backend~~ | ✅ Prowlarr, clientes de descarga y Media Management salen de la interfaz y son llamadas de API |
 | ~~**v0.4**~~ | ~~Custom formats y profiles propios de cada stack~~ | ✅ los perfiles del TRaSH Guides, por instancia, aplicados por Configarr |
 | ~~**v0.5**~~ | ~~Compatibilidad con TRaSH Guides~~               | ✅ quality definitions y scores de custom format vienen en los templates que aplica Configarr |
-| **v0.6** | Nombre de proyecto y de contenedor configurable       | Hubstarr convive con una stack que ya use esos nombres en la misma máquina — y vuelve a caber más de una |
+| ~~**v0.6**~~ | ~~Nombre de proyecto y de contenedor configurable~~ | ✅ el nombre del proyecto, en el Entorno, entra en el proyecto de compose, los contenedores y la red |
 | **v0.7** | Búsqueda localizada de medios                         | se puede elegir el idioma de la búsqueda y los *arr encuentran el lanzamiento correcto     |
 
 ## Comprobaciones
