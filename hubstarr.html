@@ -153,7 +153,7 @@
        color:var(--muted);margin-left:6px;vertical-align:1px}
   /* One color per tag kind. All grey, the route got confused with the GPU and
      the theme with the variant; the color says what is being talked about before
-     you read. It is the same color as the legend dot, next to "Clear all" —
+     you read. It is the same color as the legend dot below the list —
      without it the colors would be guesswork. The background tone is a
      `color-mix` over the color, which keeps the contrast in both themes without
      a palette per theme. */
@@ -424,7 +424,6 @@ sudo sh get-docker.sh</pre>
         <div class="items" id="items"></div>
         <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
           <div id="conflicts" style="flex:1"></div>
-          <button class="sm danger" id="clear" data-i18n="btn.clear" disabled>Clear all</button>
         </div>
         <div id="tagLegend" class="legend"></div>
       </div>
@@ -895,8 +894,6 @@ const I18N = {
   'combo.added':'já adicionado',
   'combo.newInstance':n=>`${n}× · nova instância`,
   'btn.add':'Adicionar',
-  'btn.clear':'Limpar tudo',
-  'btn.clearConfirm':'Confirmar?',
   'btn.delConfirm':'Apagar a config?',
   'btn.edit':'Editar',
   'btn.del':'Excluir',
@@ -948,8 +945,6 @@ const I18N = {
   'tour.add':'Abre o modal do serviço escolhido: título, subpasta de mídia, VPN e o que mais for dele. O título vira o <b>container_name</b>, a pasta de configuração e o subpath do nginx.',
   'tour.items.h':'A stack montada',
   'tour.items':'Cada linha é um container. As etiquetas mostram o subpath e a porta interna, a variante do tema e se ele passa pela VPN; os botões <b>Link</b>, <b>Editar</b> e <b>Excluir</b> abrem o app, mudam a instância ou a tiram. O <b>nginx</b> é fixo e entra sozinho.',
-  'tour.clear.h':'Limpar tudo',
-  'tour.clear':'Esvazia a lista. Ele pede confirmação: o primeiro clique arma, o segundo apaga.',
   'tour.tabs.h':'Os arquivos gerados',
   'tour.tabs':'Cada aba é um arquivo que sai daqui — <b>docker-compose.yml</b>, <b>.env</b>, <b>nginx.conf</b> e as configurações próprias de quem tem uma. Eles se refazem a cada mudança na lista.',
   'tour.copy.h':'Copiar',
@@ -1413,8 +1408,6 @@ const I18N = {
   'combo.added':'already added',
   'combo.newInstance':n=>`${n}× · new instance`,
   'btn.add':'Add',
-  'btn.clear':'Clear all',
-  'btn.clearConfirm':'Confirm?',
   'btn.delConfirm':'Delete the config?',
   'btn.edit':'Edit',
   'btn.del':'Remove',
@@ -1466,8 +1459,6 @@ const I18N = {
   'tour.add':'Opens the chosen service\'s modal: title, media subfolder, VPN and whatever else is its own. The title becomes the <b>container_name</b>, the configuration folder and the nginx subpath.',
   'tour.items.h':'The stack you built',
   'tour.items':'Each row is a container. The tags show the subpath and internal port, the theme variant and whether it routes through the VPN; <b>Link</b>, <b>Edit</b> and <b>Delete</b> open the app, change the instance or drop it. <b>nginx</b> is fixed and comes in on its own.',
-  'tour.clear.h':'Clear all',
-  'tour.clear':'Empties the list. It asks for confirmation: the first click arms it, the second wipes.',
   'tour.tabs.h':'The generated files',
   'tour.tabs':'Each tab is a file that comes out of here — <b>docker-compose.yml</b>, <b>.env</b>, <b>nginx.conf</b> and the own configuration of whoever has one. They are rebuilt on every change to the list.',
   'tour.copy.h':'Copy',
@@ -1931,8 +1922,6 @@ const I18N = {
   'combo.added':'ya añadido',
   'combo.newInstance':n=>`${n}× · nueva instancia`,
   'btn.add':'Añadir',
-  'btn.clear':'Limpiar todo',
-  'btn.clearConfirm':'¿Confirmar?',
   'btn.delConfirm':'¿Borrar la config?',
   'btn.edit':'Editar',
   'btn.del':'Eliminar',
@@ -1984,8 +1973,6 @@ const I18N = {
   'tour.add':'Abre el modal del servicio elegido: título, subcarpeta multimedia, VPN y lo que más sea suyo. El título se vuelve el <b>container_name</b>, la carpeta de configuración y el subpath del nginx.',
   'tour.items.h':'La stack armada',
   'tour.items':'Cada línea es un contenedor. Las etiquetas muestran el subpath y el puerto interno, la variante del tema y si pasa por la VPN; los botones <b>Enlace</b>, <b>Editar</b> y <b>Eliminar</b> abren la app, cambian la instancia o la quitan. El <b>nginx</b> es fijo y entra solo.',
-  'tour.clear.h':'Limpiar todo',
-  'tour.clear':'Vacía la lista. Pide confirmación: el primer clic arma, el segundo borra.',
   'tour.tabs.h':'Los archivos generados',
   'tour.tabs':'Cada pestaña es un archivo que sale de aquí — <b>docker-compose.yml</b>, <b>.env</b>, <b>nginx.conf</b> y la configuración propia de quien tiene una. Se rehacen con cada cambio en la lista.',
   'tour.copy.h':'Copiar',
@@ -2877,8 +2864,8 @@ function paintApply(){
 }
 
 /* The list's tag kinds, in reading order. The key is the CSS `data-kind` — it
-   is what gives the color — and the legend label is what the dot explains next
-   to "Clear all". A new tag is one line here, the color in the CSS and the
+   is what gives the color — and the legend label is what the dot explains
+   below the list. A new tag is one line here, the color in the CSS and the
    strings in the `I18N`. */
 const TAG_KINDS = ['tpv','tp','vpn','hw','route','cfg','data'];
 const tagHtml = (kind, texto) =>
@@ -2956,8 +2943,6 @@ function renderItems(){
   }).join('') : `<div class="empty">${t('items.empty')}</div>`);
   renderLegend();
   $('#count').textContent = t('services.count', added.length);
-  $('#clear').disabled = !added.length;
-  $('#clear').textContent = t('btn.clear');
 }
 
 $('#items').onclick = e=>{
@@ -2970,10 +2955,9 @@ $('#items').onclick = e=>{
   // "Link" is an anchor: the one that navigates is the browser, not this handler
   if(btn.dataset.act==='del'){
     /* Removing the row used to be one click and nothing else; now it takes the
-       app's configuration folder along — its whole database, history and
-       indexers — so it arms first, the same way "Clear all" does. The second
-       click is the one that deletes, and the label says what it is about to
-       take. */
+       app's container and configuration folder along — its whole database,
+       history and indexers — so it arms first: the second click is the one
+       that deletes, and the label says what it is about to take. */
     if(delArmed !== key){
       delArmed = key;
       btn.textContent = t('btn.delConfirm');
@@ -3088,20 +3072,6 @@ $('#items').addEventListener('keydown', e=>{
 
 // the row whose Delete is armed: it survives the `renderItems()` in between
 let delArmed = null;
-
-// removes everything, asking for confirmation on the first click
-let clearArmed = false;
-$('#clear').onclick = e=>{
-  if(!clearArmed){
-    clearArmed = true;
-    e.target.textContent = t('btn.clearConfirm');
-    setTimeout(()=>{ if(clearArmed){ clearArmed=false; e.target.textContent=t('btn.clear'); } }, 3000);
-    return;
-  }
-  clearArmed = false;
-  added = []; picked = null;
-  renderItems(); renderCombo(); render();
-};
 
 /* ---------- service modal ---------- */
 function updateHint(s){
@@ -5342,7 +5312,6 @@ const TOUR = [
   {sel:'#combo',   k:'combo'},
   {sel:'#add',     k:'add'},
   {sel:'#items',   k:'items'},
-  {sel:'#clear',   k:'clear'},
   {sel:'.tabs',    k:'tabs'},
   {sel:'#copy',    k:'copy'},
   {sel:'#dl',      k:'dl'},
