@@ -415,6 +415,23 @@ chave da stack e as senhas estão entre os valores), e a URL sai pelo
 `without_query()` onde a query leva a API key. Chamada nova de API deve passar pelo
 `api()` do `apply.rs`, que é o único lugar que formata essa linha.
 
+E há **dois destinos**, que é o que decide o idioma de cada linha. O log do
+servidor — o `record()`, o `detail()`, o `--help` e as strings de erro internas
+— é **inglês**, o idioma do código: quem o lê está lendo o `servidor.log` ao
+lado do banco. Já o que vai para o **modal do log** é lido por quem está na
+página, no idioma dela, e por isso não é texto: é o `Msg` do `msg.rs`, um par
+`{key, args}` que viaja em JSON e só vira frase na página, no `I18N`
+(`job.*`) — o `msgText()` a resolve, e um argumento pode ser outro `Msg`, o que
+faz "Sonarr → SABnzbd: <o motivo>" sair de dois templates sem o Rust segurar
+prosa traduzida de nenhuma das metades. **A frase mora num lugar só**, e é a
+página; escrever texto para o usuário no Rust é o erro que isso previne.
+
+A saída de emergência é o `Msg::raw`, para texto que não tem template próprio
+— a mensagem de validação de outro app, um erro do sistema operacional —,
+mostrado como veio. `grep -rn 'Msg::raw' src/` devolvendo pouca coisa é o
+sinal de que está sendo usado assim; chave nova pede a linha nos **três**
+idiomas, e o `check-i18n.py` cobra.
+
 **A stack é uma só**, a da pasta do `--dir`: nenhum caminho da API leva id e
 nenhuma tabela tem `stack_id`. Manter duas é rodar dois servidores, cada um com
 o seu `--dir` e o seu `--db`. Já houve seletor de stack no cabeçalho, com

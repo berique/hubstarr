@@ -247,9 +247,9 @@ pub async fn configarr(docker: &str, cfg: &Configarr, log: &Log) -> Result<(), M
     for e in [
         "LOG_STACKTRACE=true",
         "LOG_LEVEL=debug",
-        //"GIT_CONFIG_COUNT=1",
-        //"GIT_CONFIG_KEY_0=safe.directory",
-        //"GIT_CONFIG_VALUE_0=*",
+        "GIT_CONFIG_COUNT=1",
+        "GIT_CONFIG_KEY_0=safe.directory",
+        "GIT_CONFIG_VALUE_0=*",
     ] {
         args.push("-e".into());
         args.push(e.into());
