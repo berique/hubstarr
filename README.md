@@ -109,7 +109,9 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   history, its indexers — so the button asks first: the first click arms it, the
   second deletes. Only that button does it; "Clear all" and the list the server
   reconciles drop the row and leave container and folder where they are. A
-  container from another stack that happens to share the name is left alone.
+  container from another stack that happens to share the name is left alone —
+  and, since it belongs to somebody else, so is the folder: the service leaves
+  the list and nothing on disk is lost.
   With no server there is nothing to delete: the page opened from disk does not
   reach your filesystem.
 - **Conflict warning**: two instances pointed at the same folder step on each

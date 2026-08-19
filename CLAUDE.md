@@ -732,10 +732,14 @@ linha só — o `CHECK (id = 1)` é o que a mantém única), `instance` +
   de comparar — o `--dir` pode ter chegado relativo ou por link simbólico, e
   comparar as strings como vieram deixaria o container para trás calado.
 
-  O container vem **antes** da pasta: é ele que escreve nela, e apagar a
-  configuração debaixo de um app no ar o faz recriar metade dela na saída. As
-  duas metades são independentes — recusa numa não impede a outra —, e cada uma
-  confere o próprio dono.
+  O container vem **antes** da pasta por duas razões. É ele que escreve nela, e
+  apagar a configuração debaixo de um app no ar o faz recriar metade dela na
+  saída; e ele é a **porteira**: recusa ali cancela a remoção inteira, pasta
+  inclusive. A razão é que recusar significa "este container não é nosso", e as
+  duas metades descrevem um app só — se aquele é o `sonarr` de outra stack, a
+  pasta para onde o nosso Ambiente aponta é um palpite em que não se deve
+  mexer. Container que simplesmente não existe **não** é recusa: a instância
+  pode nunca ter subido, e aí a pasta vai do mesmo jeito.
 - **`cfg_mm` é por `service_id`**, não por instância: Media Management é por
   família, como na página.
 - **`instance.extra`** guarda o que não virou coluna e volta espalhado no

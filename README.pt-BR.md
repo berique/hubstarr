@@ -110,7 +110,8 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   indexadores —, então o botão pede confirmação: o primeiro clique arma, o
   segundo apaga. Só ele faz isso; o "Limpar tudo" e a lista que o servidor
   reconcilia tiram a linha e deixam container e pasta onde estão. Container de
-  outra stack que tenha o mesmo nome não é tocado. Sem servidor não há o que
+  outra stack que tenha o mesmo nome não é tocado — e, como ele é de outro dono,
+  a pasta também fica: o serviço sai da lista e nada no disco se perde. Sem servidor não há o que
   apagar: a página aberta do disco não alcança o seu sistema de arquivos.
 - **Aviso de conflito**: duas instâncias apontadas para a mesma pasta se
   atropelam na importação, então a lista avisa em vermelho, com os nomes e o

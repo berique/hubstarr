@@ -114,7 +114,9 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   los indexadores —, así que el botón pide confirmación: el primer clic la arma,
   el segundo borra. Solo él lo hace; el "Limpiar todo" y la lista que el
   servidor reconcilia quitan la fila y dejan contenedor y carpeta donde están.
-  Un contenedor de otra stack que tenga el mismo nombre no se toca. Sin servidor
+  Un contenedor de otra stack que tenga el mismo nombre no se toca — y, como es
+  de otro dueño, la carpeta también queda: el servicio sale de la lista y nada
+  en el disco se pierde. Sin servidor
   no hay nada que borrar: la página abierta del disco no alcanza tu sistema de
   archivos.
 - **Aviso de conflicto**: dos instancias apuntadas a la misma carpeta se pisan

@@ -379,9 +379,14 @@ async fn put_instance(State(ctx): State<Ctx>, Json(inc): Json<store::InstanceIn>
 /// the container, and the folder the compose mounts at `/config` — an app's
 /// whole database. Each half checks its own ownership before touching anything
 /// (`deploy::remove_container` reads compose's label, `files::remove_config_dir`
-/// compares against `BASE_CONFIG`), and a refusal on either one leaves that half
-/// standing without stopping the other. It is recorded in the short log, not
-/// only under `-v`: it is the most destructive thing a single click does here.
+/// compares against `BASE_CONFIG`), and the container is the gate: a refusal
+/// there **stops the folder from being deleted**. The reason is that a refusal
+/// means the container is not ours, and the two halves describe one app — if
+/// that container is somebody else's `sonarr`, the folder our Environment
+/// points at is a guess we should not act on. A container that simply is not
+/// there is not a refusal: the instance may never have been deployed, and the
+/// folder still goes. It is recorded in the short log, not only under `-v`: it
+/// is the most destructive thing a single click does here.
 #[derive(serde::Deserialize, Default)]
 struct DelBody {
     /// absent for a `noVol` service, or for a page that predates this
@@ -398,15 +403,17 @@ async fn del_instance(
     }
     /* The container goes first: it is the one writing into the folder about to
        be deleted, and removing the folder from under a running app leaves it
-       recreating half of it on the way out. */
+       recreating half of it on the way out. It is also the gate — refusing it
+       calls the whole deletion off, folder included. */
     let container = match deploy::remove_container(&ctx.docker, &key, &ctx.base).await {
         Ok(gone) => gone,
         Err(e) => {
             journal::record(format!(
-                "{} DELETE /api/instance/{key} — container kept: {e}",
+                "{} DELETE /api/instance/{key} — container and folder kept: {e}",
                 journal::stamp()
             ));
-            None
+            return Json(json!({"ok": true, "deleted": null, "container": null, "warning": e}))
+                .into_response();
         }
     };
     let Some(dir) = body.and_then(|Json(b)| b.dir).filter(|d| !d.trim().is_empty()) else {
