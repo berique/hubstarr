@@ -705,6 +705,19 @@ linha só — o `CHECK (id = 1)` é o que a mantém única), `instance` +
   saíram**: quando isso acontecer de novo, o log diz quem mandou o quê em vez de
   sobrar especulação. O `reconcile()` devolve o que apagou justamente para essa
   linha.
+- **O "Excluir" apaga a pasta de configuração da instância**, e é o **único**
+  caminho que faz isso. O `DELETE /api/instance/:key` leva no corpo o `dir` que
+  a página montou (o `cfgReal()`, o mesmo que a etiqueta da linha mostra), e o
+  `remove_config_dir()` do `files.rs` **não confia nele**: exige caminho
+  absoluto sem `..`, pai igual ao `BASE_CONFIG` do Ambiente e nome igual à
+  chave. Qualquer uma falhando é recusa, e a recusa deixa a linha apagada e a
+  pasta de pé — com um aviso no log e no corpo da resposta, nunca uma remoção
+  em outro lugar. Pasta que não existe é `Ok(None)`: a instância pode nunca ter
+  subido. O `reconcile()` **não** apaga pasta nenhuma, de propósito: ele tira
+  linha que ninguém clicou (o "Limpar tudo", uma aba velha voltando à vida), e
+  linha volta com um save enquanto o banco do Sonarr não volta. Na página o
+  botão arma no primeiro clique, como o "Limpar tudo" — o rótulo do segundo diz
+  o que vai junto.
 - **`cfg_mm` é por `service_id`**, não por instância: Media Management é por
   família, como na página.
 - **`instance.extra`** guarda o que não virou coluna e volta espalhado no

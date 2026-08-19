@@ -375,10 +375,54 @@ async fn put_instance(State(ctx): State<Ctx>, Json(inc): Json<store::InstanceIn>
     }
 }
 
-async fn del_instance(State(ctx): State<Ctx>, Path(key): Path<String>) -> Response {
-    match ctx.db.delete_instance(&key) {
-        Ok(()) => Json(json!({"ok": true})).into_response(),
-        Err(e) => fail(&e),
+/// Deleting one instance, and with it the folder the compose mounts at
+/// `/config` — an app's whole database. The page sends the path; `files.rs`
+/// refuses it unless it sits directly under the Environment's `BASE_CONFIG` and
+/// is named after the key. It is recorded in the short log, not only under
+/// `-v`: it is the most destructive thing a single click does here.
+#[derive(serde::Deserialize, Default)]
+struct DelBody {
+    /// absent for a `noVol` service, or for a page that predates this
+    dir: Option<String>,
+}
+
+async fn del_instance(
+    State(ctx): State<Ctx>,
+    Path(key): Path<String>,
+    body: Option<Json<DelBody>>,
+) -> Response {
+    if let Err(e) = ctx.db.delete_instance(&key) {
+        return fail(&e);
+    }
+    let Some(dir) = body.and_then(|Json(b)| b.dir).filter(|d| !d.trim().is_empty()) else {
+        journal::record(format!("{} DELETE /api/instance/{key}", journal::stamp()));
+        return Json(json!({"ok": true})).into_response();
+    };
+    let cfg = ctx
+        .db
+        .env()
+        .ok()
+        .and_then(|e| e.get("cfg").and_then(Value::as_str).map(str::to_string));
+    match files::remove_config_dir(&dir, &key, cfg.as_deref()) {
+        Ok(gone) => {
+            journal::record(format!(
+                "{} DELETE /api/instance/{key} — {}",
+                journal::stamp(),
+                match &gone {
+                    Some(d) => format!("configuration folder {d} deleted"),
+                    None => format!("no configuration folder at {dir}"),
+                }
+            ));
+            Json(json!({"ok": true, "deleted": gone})).into_response()
+        }
+        // the row is gone either way: the refusal is about the folder alone
+        Err(e) => {
+            journal::record(format!(
+                "{} DELETE /api/instance/{key} — folder kept: {e}",
+                journal::stamp()
+            ));
+            Json(json!({"ok": true, "deleted": null, "warning": e})).into_response()
+        }
     }
 }
 

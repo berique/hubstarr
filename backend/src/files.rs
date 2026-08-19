@@ -116,6 +116,47 @@ pub async fn ensure_dirs(dirs: &[String], log: &crate::jobs::Log) -> Result<(), 
     Ok(())
 }
 
+/* Deleting an instance's configuration folder — the one the compose binds at
+   `/config`, and the whole of what the app knows: its database, its history,
+   its indexers. It goes with the row when somebody clicks Delete, and never on
+   any other path: `reconcile()` removes rows nobody clicked, and a row is a
+   save away from coming back while a Sonarr database is not.
+
+   The page sends the path because the page is what builds paths — the same
+   `cfgReal()` the row already shows. It is not taken on trust, though: three
+   things have to hold, and any of them failing is a refusal rather than a
+   deletion somewhere else.
+
+   - it is absolute, and has no `..` to walk back out of wherever it points;
+   - its parent is exactly the Environment's `BASE_CONFIG`, so `/`, `$HOME` and
+     the stack folder are all out of reach however wrong the page is;
+   - it is named after the instance key, which is the `container_name` and the
+     folder the compose mounts — a path that passed the first two but points at
+     a neighbouring app's folder is still the wrong folder.
+
+   A folder that is not there is not a failure: the instance may never have been
+   deployed. It comes back as `Ok(None)`, and nothing is recorded. */
+pub fn remove_config_dir(dir: &str, key: &str, cfg: Option<&str>) -> Result<Option<String>, String> {
+    let Some(cfg) = cfg.filter(|c| !c.trim().is_empty()) else {
+        return Err("without BASE_CONFIG from the Environment there is no folder to delete".into());
+    };
+    let p = Path::new(dir);
+    if !p.is_absolute() || p.components().any(|c| c == Component::ParentDir) {
+        return Err(format!("refused: {dir} is not an absolute path without `..`"));
+    }
+    if p.parent() != Some(Path::new(cfg)) {
+        return Err(format!("refused: {dir} is not inside BASE_CONFIG ({cfg})"));
+    }
+    if p.file_name() != Some(std::ffi::OsStr::new(key)) {
+        return Err(format!("refused: {dir} is not the folder of {key}"));
+    }
+    if !p.is_dir() {
+        return Ok(None);
+    }
+    std::fs::remove_dir_all(p).map_err(|e| format!("{dir}: {e}"))?;
+    Ok(Some(dir.to_string()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -181,5 +222,43 @@ mod tests {
         assert!(safe_join(d, "/etc/passwd").is_err());
         assert!(safe_join(d, "qbit\\conf").is_err());
         assert!(safe_join(d, "  ").is_err());
+    }
+
+    /// The three refusals matter more than the deletion: the path comes from
+    /// the browser, and a page with the wrong idea of the layout must not be
+    /// able to point this at anything but the instance's own folder.
+    #[test]
+    fn removing_a_config_folder_refuses_what_is_not_the_instance_folder() {
+        let tmp = std::env::temp_dir().join(format!("hubstarr-rm-{}", std::process::id()));
+        let cfg = tmp.join("config");
+        let mine = cfg.join("sonarr");
+        std::fs::create_dir_all(&mine).unwrap();
+        let c = cfg.display().to_string();
+
+        // no BASE_CONFIG: nothing to check the path against, so nothing is deleted
+        assert!(remove_config_dir(&mine.display().to_string(), "sonarr", None).is_err());
+        // a neighbour's folder, right base and all
+        assert!(remove_config_dir(&cfg.join("radarr").display().to_string(), "sonarr", Some(&c)).is_err());
+        // outside BASE_CONFIG
+        assert!(remove_config_dir("/tmp/sonarr", "sonarr", Some(&c)).is_err());
+        // relative, and the `..` that would walk back out
+        assert!(remove_config_dir("sonarr", "sonarr", Some(&c)).is_err());
+        assert!(remove_config_dir(&cfg.join("..").join("sonarr").display().to_string(), "sonarr", Some(&c)).is_err());
+        // deeper than one level: the parent is no longer BASE_CONFIG
+        assert!(remove_config_dir(&mine.join("sub").display().to_string(), "sub", Some(&c)).is_err());
+        assert!(mine.is_dir(), "not one of those may have deleted anything");
+
+        // never deployed: not there is not a failure
+        assert_eq!(
+            remove_config_dir(&cfg.join("lidarr").display().to_string(), "lidarr", Some(&c)).unwrap(),
+            None
+        );
+        // and the one that does hold
+        assert_eq!(
+            remove_config_dir(&mine.display().to_string(), "sonarr", Some(&c)).unwrap(),
+            Some(mine.display().to_string())
+        );
+        assert!(!mine.exists());
+        let _ = std::fs::remove_dir_all(&tmp);
     }
 }

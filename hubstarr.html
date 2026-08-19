@@ -896,6 +896,7 @@ const I18N = {
   'btn.add':'Adicionar',
   'btn.clear':'Limpar tudo',
   'btn.clearConfirm':'Confirmar?',
+  'btn.delConfirm':'Apagar a config?',
   'btn.edit':'Editar',
   'btn.del':'Excluir',
   'btn.link':'Link',
@@ -1411,6 +1412,7 @@ const I18N = {
   'btn.add':'Add',
   'btn.clear':'Clear all',
   'btn.clearConfirm':'Confirm?',
+  'btn.delConfirm':'Delete the config?',
   'btn.edit':'Edit',
   'btn.del':'Remove',
   'btn.link':'Link',
@@ -1926,6 +1928,7 @@ const I18N = {
   'btn.add':'Añadir',
   'btn.clear':'Limpiar todo',
   'btn.clearConfirm':'¿Confirmar?',
+  'btn.delConfirm':'¿Borrar la config?',
   'btn.edit':'Editar',
   'btn.del':'Eliminar',
   'btn.link':'Link',
@@ -2930,9 +2933,22 @@ $('#items').onclick = e=>{
   const key = btn.closest('.item').dataset.key;
   // "Link" is an anchor: the one that navigates is the browser, not this handler
   if(btn.dataset.act==='del'){
-    added = added.filter(a=>cname(a)!==key);
+    /* Removing the row used to be one click and nothing else; now it takes the
+       app's configuration folder along — its whole database, history and
+       indexers — so it arms first, the same way "Clear all" does. The second
+       click is the one that deletes, and the label says what it is about to
+       take. */
+    if(delArmed !== key){
+      delArmed = key;
+      btn.textContent = t('btn.delConfirm');
+      setTimeout(()=>{ if(delArmed === key){ delArmed = null; renderItems(); } }, 3000);
+      return;
+    }
+    delArmed = null;
+    const a = byKey(key);
+    added = added.filter(x=>cname(x)!==key);
     renderItems(); renderCombo(); render();
-    delInstance(key);
+    delInstance(key, a);
   } else {
     const a = byKey(key);
     if(a) openModal(a.id, key);
@@ -3033,6 +3049,9 @@ $('#items').addEventListener('keydown', e=>{
   const gripEl = document.querySelector(`.item[data-key="${CSS.escape(key)}"] .grip`);
   if(gripEl) gripEl.focus();
 });
+
+// the row whose Delete is armed: it survives the `renderItems()` in between
+let delArmed = null;
 
 // removes everything, asking for confirmation on the first click
 let clearArmed = false;
@@ -5126,9 +5145,24 @@ function putInstance(a, old){
     {key:cname(a), old:old || null, ord:added.findIndex(x=>x===a), data:a})}).catch(()=>{});
 }
 
-function delInstance(key){
+/* Deleting an instance takes its configuration folder with it — the one the
+   compose binds at `/config`, which is where the app keeps everything it knows.
+   The path travels from here because it is the page that builds the paths (the
+   same `cfgReal()` the row's tag shows), but the server does not take it on
+   trust: it checks the folder is a child of the Environment's BASE_CONFIG and
+   is named after the key, and refuses anything else — a page with the wrong
+   idea of where things live must not be able to point it at `/`.
+
+   `noVol` services have no configuration of their own, so nothing to delete.
+   And this is the **explicit** Delete only: the folder is never taken by
+   `reconcile()`, which is the path that removes rows nobody clicked — "Clear
+   all", an old tab coming back to life. Losing a row there is a save away from
+   being undone; losing Sonarr's database is not. */
+function delInstance(key, a){
   if(!SERVER || loading || readOnly) return;
-  api('instance/' + encodeURIComponent(key), {method:'DELETE'}).catch(()=>{});
+  const dir = a && !svc(a.id).noVol ? cfgReal(a) : null;
+  api('instance/' + encodeURIComponent(key), {method:'DELETE',
+      body:JSON.stringify({dir})}).catch(()=>{});
 }
 
 /* Stores on the server without getting in the way of typing: a PUT once it
