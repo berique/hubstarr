@@ -19,6 +19,7 @@ mod apply;
 mod deploy;
 mod files;
 mod jobs;
+mod msg;
 mod patch;
 mod journal;
 mod shots;
@@ -47,55 +48,57 @@ const FAVICON: &[u8] = include_bytes!("../../favicon.ico");
 #[command(
     name = "hubstarr",
     version,
-    about = "Servidor do Hubstarr: serve a página, guarda a stack e a sobe no Docker",
+    about = "Hubstarr's server: serves the page, keeps the stack and brings it up in Docker",
     long_about = "\
-Servidor opcional do Hubstarr.
+Hubstarr's optional server.
 
-A página continua sendo o produto: é ela que gera o docker-compose.yml, o .env e
-o nginx.conf, e aberta do disco funciona inteira, com o .zip e mais nada. Este
-binário acrescenta o que o navegador não alcança sozinho — guardar a stack
-entre sessões (em SQLite), gravar os arquivos em disco e rodar o docker compose.
-Ele nunca gera conteúdo: recebe pronto o que os geradores da página montaram.
+The page is still the product: it is the one that generates the docker-compose.yml,
+the .env and the nginx.conf, and opened from disk it works whole, with the .zip and
+nothing else. This binary adds what the browser cannot reach on its own — keeping
+the stack between sessions (in SQLite), writing the files to disk and running
+docker compose. It never generates content: it receives ready-made what the page's
+generators put together.
 
-A página vem embutida no binário; abra o endereço de --addr no navegador.",
+The page comes embedded in the binary; open the --addr address in the browser.",
     after_help = "\
-Exemplos:
-  hubstarr                            atende só nesta máquina, em 127.0.0.1:7878
-  hubstarr --addr 0.0.0.0:7878        atende também na rede local
-  hubstarr --dir /srv/stack           põe os arquivos da stack em outro lugar
-  hubstarr --docker podman            força o podman (sem isso, ele já é usado
-                                      quando o docker não responde)
-  hubstarr -v                         diz o passo a passo: arquivos, banco e as
-                                      chamadas às APIs dos apps
+Examples:
+  hubstarr                            answers on this machine only, at 127.0.0.1:7878
+  hubstarr --addr 0.0.0.0:7878        answers on the local network too
+  hubstarr --dir /srv/stack           puts the stack files somewhere else
+  hubstarr --docker podman            forces podman (without this, it is already
+                                      used when docker does not answer)
+  hubstarr -v                         tells the step by step: files, database and
+                                      the calls to the apps' APIs
 
-Cuidado com o endereço: 127.0.0.1 é sempre a máquina em que o NAVEGADOR está
-rodando. Se você navega de outro computador, use --addr 0.0.0.0:7878 e abra o
-endereço de rede desta máquina, ou faça um túnel:
+Mind the address: 127.0.0.1 is always the machine the BROWSER is running on. If
+you browse from another computer, use --addr 0.0.0.0:7878 and open this machine's
+network address, or make a tunnel:
 
-  ssh -N -L 7878:127.0.0.1:7878 usuario@esta-maquina
+  ssh -N -L 7878:127.0.0.1:7878 user@this-machine
 
-Abrir na rede dá a quem alcançar a porta o direito de rodar docker compose e
-escrever arquivos aqui: não há autenticação nenhuma. O túnel não tem esse custo.
+Opening it on the network gives whoever reaches the port the right to run docker
+compose and write files here: there is no authentication at all. The tunnel does
+not have that cost.
 
-Documentação: README.pt-BR.md, seção \"Servidor (opcional)\".",
+Documentation: README.md, \"Server (optional)\" section.",
     disable_help_flag = true,
     disable_version_flag = true
 )]
 struct Args {
     /// Address the server listens on
-    #[arg(long, value_name = "IP:PORTA", default_value = "127.0.0.1:7878")]
+    #[arg(long, value_name = "IP:PORT", default_value = "127.0.0.1:7878")]
     addr: SocketAddr,
 
     /// Folder the generated files are written to
-    #[arg(long, value_name = "PASTA", default_value = "./stack")]
+    #[arg(long, value_name = "FOLDER", default_value = "./stack")]
     dir: PathBuf,
 
     /// Database the stack is kept in
-    #[arg(long, value_name = "ARQUIVO", default_value_os_t = default_db())]
+    #[arg(long, value_name = "FILE", default_value_os_t = default_db())]
     db: PathBuf,
 
     /// Docker command (default: docker, and podman when only it answers)
-    #[arg(long, value_name = "COMANDO")]
+    #[arg(long, value_name = "COMMAND")]
     docker: Option<String>,
 
     /// Tells the step by step: every file written, every row touched in the
@@ -145,20 +148,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     journal::open(&db_path);
     journal::set_detail(args.verbose);
     if let Some(m) = migrated {
-        journal::record("Banco migrado para o modelo de uma stack só (era o de várias).");
-        journal::record(format!("  A stack que ficou gravava em {}", m.kept));
+        journal::record("Database migrated to the single-stack model (it was the multi-stack one).");
+        journal::record(format!("  The stack that stayed wrote to {}", m.kept));
         for d in &m.dropped {
             journal::record(format!(
-                "  Descartada a stack que gravava em {d} — os arquivos dela ficam onde estão"
+                "  Dropped the stack that wrote to {d} — its files stay where they are"
             ));
         }
         if !m.dropped.is_empty() {
-            journal::record("  Para editar uma delas, rode outro servidor com --dir e --db próprios.");
+            journal::record("  To edit one of them, run another server with its own --dir and --db.");
         }
     }
     let docker = deploy::pick_engine(args.docker).await;
     if docker != deploy::ENGINES[0] {
-        journal::record(format!("Usando o {docker} para rodar o compose."));
+        journal::record(format!("Using {docker} to run compose."));
     }
     let ctx: Ctx = Arc::new(App {
         base,
@@ -189,10 +192,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let listener = tokio::net::TcpListener::bind(&args.addr).await?;
     if args.verbose {
-        journal::record("Modo detalhado (-v): o passo a passo vai para a saída e para o log.");
+        journal::record("Verbose mode (-v): the step by step goes to the output and to the log.");
     }
     journal::record(format!(
-        "Hubstarr em http://{}  (stack em {}, banco em {}, log em {})",
+        "Hubstarr on http://{}  (stack in {}, database in {}, log in {})",
         args.addr,
         ctx.base.display(),
         db_path.display(),
@@ -345,19 +348,19 @@ async fn save_settings(State(ctx): State<Ctx>, Json(s): Json<Settings>) -> Respo
     match done {
         Ok(left) => {
             let list = match how_many {
-                Some(n) => format!("{n} chave(s)"),
-                None => "sem lista de chaves".to_string(),
+                Some(n) => format!("{n} key(s)"),
+                None => "no key list".to_string(),
             };
             let removed = if left.is_empty() {
                 String::new()
             } else {
-                format!(" — apagou {}", left.join(", "))
+                format!(" — deleted {}", left.join(", "))
             };
             journal::record(format!("{} PUT /api/settings: {list}{removed}", journal::stamp()));
             Json(json!({"ok": true})).into_response()
         }
         Err(e) => {
-            journal::record(format!("{} PUT /api/settings: falhou ({e})", journal::stamp()));
+            journal::record(format!("{} PUT /api/settings: failed ({e})", journal::stamp()));
             fail(&e)
         }
     }
@@ -400,14 +403,14 @@ pub struct Payload {
 async fn write_files(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Response {
     let cfg = match config_base(&ctx) {
         Ok(v) => v,
-        Err(e) => return fail(&e),
+        Err(e) => return fail(e),
     };
     match files::write_all(&ctx.base, cfg.as_deref(), &p.files).await {
         Ok(names) => {
             Json(json!({"ok": true, "dir": ctx.base.display().to_string(), "files": names}))
                 .into_response()
         }
-        Err(e) => fail(&e),
+        Err(e) => fail(e),
     }
 }
 
@@ -416,10 +419,10 @@ async fn write_files(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Response
 async fn start_deploy(State(ctx): State<Ctx>, Json(p): Json<Payload>) -> Response {
     let cfg = match config_base(&ctx) {
         Ok(v) => v,
-        Err(e) => return fail(&e),
+        Err(e) => return fail(e),
     };
     if let Err(e) = files::write_all(&ctx.base, cfg.as_deref(), &p.files).await {
-        return fail(&e);
+        return fail(e);
     }
     let job = ctx.jobs.spawn({
         let ctx = ctx.clone();
@@ -487,15 +490,15 @@ async fn start_down(State(ctx): State<Ctx>) -> Response {
 /// name in the compose; it is checked before becoming a command argument.
 async fn start_service(State(ctx): State<Ctx>, Path((key, action)): Path<(String, String)>) -> Response {
     if !deploy::ok_service(&key) {
-        return fail("nome de serviço inválido");
+        return fail(msg::Msg::k("job.badServiceName"));
     }
     let up = match action.as_str() {
         "up" => true,
         "down" => false,
-        _ => return fail("ação desconhecida"),
+        _ => return fail(msg::Msg::k("job.unknownAction")),
     };
     if !ctx.base.join("docker-compose.yml").exists() {
-        return fail("a stack ainda não foi gravada nesta pasta");
+        return fail(msg::Msg::k("job.stackNeverWritten"));
     }
     let job = ctx.jobs.spawn({
         let ctx = ctx.clone();
@@ -524,7 +527,7 @@ async fn job_status(State(ctx): State<Ctx>, Path(id): Path<u64>) -> Response {
         Some(j) => Json(j).into_response(),
         None => (
             StatusCode::NOT_FOUND,
-            Json(json!({"error": "trabalho desconhecido"})),
+            Json(json!({"error": msg::Msg::k("job.unknownJob")})),
         )
             .into_response(),
     }
@@ -535,12 +538,12 @@ async fn job_status(State(ctx): State<Ctx>, Path(id): Path<u64>) -> Response {
 /// that is recorded like any other change.
 async fn stop_job(State(ctx): State<Ctx>, Path(id): Path<u64>) -> Response {
     if ctx.jobs.stop(id) {
-        journal::record(format!("trabalho {id} parado a pedido"));
+        journal::record(format!("job {id} stopped on request"));
         Json(json!({"ok": true})).into_response()
     } else {
         (
             StatusCode::NOT_FOUND,
-            Json(json!({"error": "trabalho desconhecido"})),
+            Json(json!({"error": msg::Msg::k("job.unknownJob")})),
         )
             .into_response()
     }
@@ -556,10 +559,10 @@ fn config_base(ctx: &Ctx) -> Result<Option<PathBuf>, String> {
 
 type Response = axum::response::Response;
 
-fn fail(msg: &str) -> Response {
+fn fail(msg: impl Into<msg::Msg>) -> Response {
     (
         StatusCode::BAD_REQUEST,
-        Json(json!({"ok": false, "error": msg})),
+        Json(json!({"ok": false, "error": msg.into()})),
     )
         .into_response()
 }

@@ -63,7 +63,7 @@ impl Db {
     }
 
     fn lock(&self) -> Result<MutexGuard<'_, Connection>, String> {
-        self.0.lock().map_err(|_| "banco travado".to_string())
+        self.0.lock().map_err(|_| "database locked".to_string())
     }
 
     /// The whole stack state, in the shape the page expects to receive.

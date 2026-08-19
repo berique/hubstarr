@@ -12,13 +12,15 @@ use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
 
+use crate::msg::Msg;
+
 #[derive(Serialize, Clone, Default)]
 pub struct JobState {
     /// finished already?
     pub done: bool,
     /// finished well? only means anything together with `done`
     pub ok: bool,
-    pub log: Vec<String>,
+    pub log: Vec<Msg>,
 }
 
 /// The end the job uses to write to the log while it runs.
@@ -26,9 +28,9 @@ pub struct JobState {
 pub struct Log(Arc<Mutex<JobState>>);
 
 impl Log {
-    pub fn line(&self, s: impl Into<String>) {
+    pub fn line(&self, m: impl Into<Msg>) {
         if let Ok(mut st) = self.0.lock() {
-            st.log.push(s.into());
+            st.log.push(m.into());
         }
     }
 }
@@ -56,7 +58,7 @@ impl Jobs {
     pub fn spawn<F, Fut>(&self, f: F) -> u64
     where
         F: FnOnce(Log) -> Fut + Send + 'static,
-        Fut: Future<Output = Result<(), String>> + Send + 'static,
+        Fut: Future<Output = Result<(), Msg>> + Send + 'static,
     {
         let id = self.next.fetch_add(1, Ordering::Relaxed);
         let slot = Arc::new(Mutex::new(JobState::default()));
@@ -79,11 +81,18 @@ impl Jobs {
         tokio::spawn(async move {
             let res = match internal.await {
                 Ok(r) => r,
-                Err(e) if e.is_cancelled() => Err("parado a pedido".to_string()),
-                Err(e) => Err(format!("o trabalho morreu no meio ({e})")),
+                Err(e) if e.is_cancelled() => Err(Msg::k("job.stoppedMidway")),
+                Err(e) => Err(crate::msg!("job.diedMidway", e.to_string())),
             };
+            /* The failure already reads as a complete line on its own — "6
+               ligação(ões) não passaram", "parado a pedido" — and the modal's
+               status label already shows "falhou ✗" alongside it, so there is
+               no extra wrapping line here the way there used to be a plain
+               `"erro: {e}"` one: that wrapping only made sense when `e` was
+               already-rendered text, and here it is a `Msg` the page still has
+               to translate. */
             if let Err(e) = &res {
-                log.line(format!("erro: {e}"));
+                log.line(e.clone());
             }
             if let Ok(mut st) = slot.lock() {
                 st.ok = res.is_ok();
@@ -133,19 +142,19 @@ mod tests {
             }
             tokio::time::sleep(std::time::Duration::from_millis(10)).await;
         }
-        panic!("o trabalho nunca terminou");
+        panic!("the job never finished");
     }
 
     #[tokio::test]
     async fn a_job_that_fails_ends_as_a_failure() {
         let jobs = Jobs::new();
         let id = jobs.spawn(|log| async move {
-            log.line("indo");
-            Err("não deu".to_string())
+            log.line(Msg::raw("going"));
+            Err(Msg::raw("no luck"))
         });
         let st = wait(&jobs, id).await;
         assert!(!st.ok);
-        assert_eq!(st.log, vec!["indo", "erro: não deu"]);
+        assert_eq!(st.log, vec![Msg::raw("going"), Msg::raw("no luck")]);
     }
 
     /// A panic inside the job was the case that used to trap the log modal:
@@ -154,11 +163,11 @@ mod tests {
     async fn a_job_that_panics_also_ends() {
         let jobs = Jobs::new();
         let id = jobs.spawn(|_log| async move {
-            panic!("estourou");
+            panic!("blew up");
         });
         let st = wait(&jobs, id).await;
         assert!(!st.ok);
-        assert!(st.log.iter().any(|l| l.contains("morreu no meio")), "{:?}", st.log);
+        assert!(st.log.iter().any(|l| l.key == "job.diedMidway"), "{:?}", st.log);
     }
 
     /// Stop: the job ends as a failure, and that is what gives back the log
@@ -167,7 +176,7 @@ mod tests {
     async fn a_stopped_job_ends_as_a_failure() {
         let jobs = Jobs::new();
         let id = jobs.spawn(|log| async move {
-            log.line("indo");
+            log.line(Msg::raw("going"));
             tokio::time::sleep(std::time::Duration::from_secs(60)).await;
             Ok(())
         });
@@ -175,7 +184,7 @@ mod tests {
         assert!(jobs.stop(id));
         let st = wait(&jobs, id).await;
         assert!(!st.ok);
-        assert!(st.log.iter().any(|l| l.contains("parado a pedido")), "{:?}", st.log);
+        assert!(st.log.iter().any(|l| l.key == "job.stoppedMidway"), "{:?}", st.log);
         assert!(!jobs.stop(999), "número que ele não conhece");
     }
 }

@@ -26,6 +26,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
 use crate::jobs::Log;
+use crate::msg;
+use crate::msg::Msg;
 
 #[derive(Deserialize)]
 pub struct Patch {
@@ -63,7 +65,7 @@ pub struct Patch {
 
 impl Patch {
     /// The new content of the file, starting from what was already in it.
-    fn merge(&self, current: &str) -> Result<String, String> {
+    fn merge(&self, current: &str) -> Result<String, Msg> {
         match self.format.as_deref() {
             Some("json") => merge_json(current, self.json.as_ref().unwrap_or(&Value::Null)),
             Some("xml") => merge_xml(current, self.xml.as_ref().unwrap_or(&Map::new())),
@@ -93,15 +95,15 @@ impl Patch {
 
 /// Same rule as `files::safe_join`: the path comes from the browser, so no
 /// absolute paths and no `..`.
-fn safe_join(dir: &Path, name: &str) -> Result<PathBuf, String> {
+fn safe_join(dir: &Path, name: &str) -> Result<PathBuf, Msg> {
     if name.trim().is_empty() || name.contains('\\') {
-        return Err(format!("caminho inválido: {name}"));
+        return Err(msg!("job.patch.invalidPath", name));
     }
     let mut out = dir.to_path_buf();
     for c in Path::new(name).components() {
         match c {
             Component::Normal(part) => out.push(part),
-            _ => return Err(format!("caminho inválido: {name}")),
+            _ => return Err(msg!("job.patch.invalidPath", name)),
         }
     }
     Ok(out)
@@ -197,7 +199,7 @@ pub fn merge_ini(
    It only holds for a top-level element whose value fits on one line, which is
    the case of `BaseUrl`. A list becomes `<K><string>a</string>…</K>`, in the
    shape Jellyfin writes them. */
-pub fn merge_xml(current: &str, ours: &Map<String, Value>) -> Result<String, String> {
+pub fn merge_xml(current: &str, ours: &Map<String, Value>) -> Result<String, Msg> {
     if ours.is_empty() {
         return Ok(current.to_string());
     }
@@ -262,11 +264,9 @@ fn esc_xml(s: &str) -> String {
         .replace('>', "&gt;")
 }
 
-pub fn merge_json(current: &str, ours: &Value) -> Result<String, String> {
+pub fn merge_json(current: &str, ours: &Value) -> Result<String, Msg> {
     let mut obj: Map<String, Value> = serde_json::from_str(current).unwrap_or_default();
-    let ours = ours
-        .as_object()
-        .ok_or_else(|| "o patch em JSON não veio como objeto".to_string())?;
+    let ours = ours.as_object().ok_or_else(|| Msg::k("job.patch.jsonNotObject"))?;
     for (k, v) in ours {
         obj.insert(k.clone(), v.clone());
     }
@@ -278,8 +278,8 @@ pub fn merge_json(current: &str, ours: &Value) -> Result<String, String> {
     let mut ser = serde_json::Serializer::with_formatter(&mut buf, indent);
     Value::Object(obj)
         .serialize(&mut ser)
-        .map_err(|e| e.to_string())?;
-    let mut txt = String::from_utf8(buf).map_err(|e| e.to_string())?;
+        .map_err(|e| msg!("job.patch.jsonEncodeError", e.to_string()))?;
+    let mut txt = String::from_utf8(buf).map_err(|e| msg!("job.patch.jsonEncodeError", e.to_string()))?;
     txt.push('\n');
     Ok(txt)
 }
@@ -317,11 +317,11 @@ async fn wait(path: &Path, log: &Log) {
             }
         }
         if attempt == 0 {
-            log.line(format!("esperando {} aparecer…", path.display()));
+            log.line(msg!("job.patch.waiting", path.display().to_string()));
         }
         tokio::time::sleep(Duration::from_secs(1)).await;
     }
-    log.line("o app não criou a configuração a tempo; ela nasce com estas chaves");
+    log.line(Msg::k("job.patch.timeout"));
 }
 
 /// Writes what the page sent, one service at a time: the container stops once,
@@ -333,13 +333,11 @@ pub async fn apply_all(
     cfg: Option<&Path>,
     patches: &[Patch],
     log: &Log,
-) -> Result<(), String> {
+) -> Result<(), Msg> {
     if patches.is_empty() {
         return Ok(());
     }
-    let root = cfg.ok_or_else(|| {
-        "sem o BASE_CONFIG do Ambiente não dá para achar a configuração do app".to_string()
-    })?;
+    let root = cfg.ok_or_else(|| Msg::k("job.patch.noBaseConfig"))?;
 
     // in the order the page sent them, grouped by service
     let mut services: Vec<&str> = Vec::new();
@@ -368,27 +366,26 @@ pub async fn apply_all(
             if let Some(parent) = path.parent() {
                 tokio::fs::create_dir_all(parent)
                     .await
-                    .map_err(|e| format!("{}: {e}", parent.display()))?;
+                    .map_err(|e| msg!("job.patch.mkdirError", parent.display().to_string(), e.to_string()))?;
             }
             tokio::fs::write(path, &new_value).await.map_err(|e| {
                 // the file belongs to the container: if it created it with another owner,
                 // the server does not rewrite it — it is the Environment's PUID/PGID that
                 // makes the two match
-                let hint = if e.kind() == std::io::ErrorKind::PermissionDenied {
-                    " — confira o PUID/PGID do Ambiente: o arquivo é de outro dono"
+                if e.kind() == std::io::ErrorKind::PermissionDenied {
+                    msg!("job.patch.writeErrorPerm", path.display().to_string(), e.to_string())
                 } else {
-                    ""
-                };
-                format!("{}: {e}{hint}", path.display())
+                    msg!("job.patch.writeError", path.display().to_string(), e.to_string())
+                }
             })?;
             crate::journal::detail(|| {
                 format!(
-                    "arquivo {} ({} bytes, chaves escritas na conf do app)",
+                    "file {} ({} bytes, keys written into the app's conf)",
                     path.display(),
                     new_value.len()
                 )
             });
-            log.line(format!("{}: {} chaves escritas", path.display(), p.keys()));
+            log.line(msg!("job.patch.written", path.display().to_string(), p.keys().to_string()));
         }
         crate::deploy::compose(docker, &["start", service], dir, log).await?;
     }

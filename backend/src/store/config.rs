@@ -20,7 +20,7 @@ impl Db {
     pub fn put_config(&self, v: &Value) -> Result<(), String> {
         let c = v
             .as_object()
-            .ok_or_else(|| "a Configuração não veio como objeto".to_string())?;
+            .ok_or_else(|| "the Configuration did not come as an object".to_string())?;
         let apps = obj(c.get("apps"));
         let clients = obj(c.get("clients"));
         let mm = obj(c.get("mm"));
@@ -121,7 +121,7 @@ impl Db {
         tx.commit().map_err(|e| e.to_string())?;
         crate::journal::detail(|| {
             format!(
-                "banco: Configuração — {} app(s) no Prowlarr, {} cliente(s), {} família(s) de Media Management, {} com perfis",
+                "db: Configuration — {} app(s) in Prowlarr, {} client(s), {} Media Management family(ies), {} with profiles",
                 apps.len(),
                 clients.len(),
                 mm.len(),

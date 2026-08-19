@@ -43,7 +43,7 @@ pub fn open(db_path: &Path) {
             let _ = LOG.set(Mutex::new(f));
         }
         // without the file the server stays whole, just without history
-        Err(e) => println!("(sem log em {}: {e})", p.display()),
+        Err(e) => println!("(no log at {}: {e})", p.display()),
     }
 }
 

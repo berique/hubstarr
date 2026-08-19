@@ -25,6 +25,8 @@ use serde::Deserialize;
 use serde_json::{json, Map, Value};
 
 use crate::jobs::Log;
+use crate::msg;
+use crate::msg::Msg;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -306,7 +308,7 @@ impl Client {
         cat_field: &str,
         cat: &str,
         schema: Option<&Vec<Value>>,
-    ) -> Result<Value, String> {
+    ) -> Result<Value, Msg> {
         let mut ours: Vec<(String, Value)> = vec![
             ("host".into(), json!(self.host)),
             ("port".into(), json!(self.port)),
@@ -335,7 +337,7 @@ impl Client {
                 ours.push(("apiKey".into(), json!(self.api_key)));
                 ("Sabnzbd", "SabnzbdSettings", "usenet")
             }
-            other => return Err(format!("cliente de download desconhecido: {other}")),
+            other => return Err(msg!("job.apply.unknownClient", other)),
         };
 
         /* The fields come from the schema the app publishes, with ours on top.
@@ -381,7 +383,7 @@ impl Client {
 
     /// This client's registration in an *arr: the name is the client's, and the
     /// category is the one the Configuration gave that instance.
-    fn body(&self, arr: &Arr, schema: Option<&Vec<Value>>) -> Result<Value, String> {
+    fn body(&self, arr: &Arr, schema: Option<&Vec<Value>>) -> Result<Value, Msg> {
         self.body_as(&self.name, &arr.cat_field, &self.cat(&arr.key), schema)
     }
 }
@@ -393,21 +395,21 @@ impl Client {
 /// Only waits for the apps to answer, applying nothing. It is the case of the
 /// stack that has Configarr and nothing else to configure: the profiles need
 /// the apps up as much as the download clients do, and without this nobody would have waited.
-pub async fn wait(req: &Req, running: &[String], log: &Log) -> Result<(), String> {
+pub async fn wait(req: &Req, running: &[String], log: &Log) -> Result<(), Msg> {
     let http = reqwest::Client::builder()
         .timeout(Duration::from_secs(20))
         .danger_accept_invalid_certs(true)
         .build()
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| msg!("job.apply.httpClientError", e.to_string()))?;
     let base = req.base.trim_end_matches('/').to_string();
     let targets: Vec<Arr> = req.arrs.iter().map(Arr::clone_target).collect();
     wait_apps(&http, &base, &req.api_key, &targets, running, log).await;
     Ok(())
 }
 
-pub async fn download_clients(mut req: Req, running: Vec<String>, log: Log) -> Result<(), String> {
+pub async fn download_clients(mut req: Req, running: Vec<String>, log: Log) -> Result<(), Msg> {
     if !req.has_work() {
-        return Err("nada para aplicar nesta stack".into());
+        return Err(Msg::k("job.apply.nothingToDo"));
     }
     let http = reqwest::Client::builder()
         .timeout(Duration::from_secs(20))
@@ -416,7 +418,7 @@ pub async fn download_clients(mut req: Req, running: Vec<String>, log: Log) -> R
         // proving who it is
         .danger_accept_invalid_certs(true)
         .build()
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| msg!("job.apply.httpClientError", e.to_string()))?;
 
     let base = req.base.trim_end_matches('/').to_string();
     let mut failures = 0;
@@ -449,7 +451,7 @@ pub async fn download_clients(mut req: Req, running: Vec<String>, log: Log) -> R
         let current = match list(&http, &url, &req.api_key).await {
             Ok(v) => v,
             Err(e) => {
-                log.line(format!("{}: {e}", arr.name));
+                log.line(msg!("job.apply.item", arr.name.clone(), e));
                 failures += req.clients.len();
                 continue;
             }
@@ -459,7 +461,7 @@ pub async fn download_clients(mut req: Req, running: Vec<String>, log: Log) -> R
             let body = match client.body(arr, schema.as_ref()) {
                 Ok(b) => b,
                 Err(e) => {
-                    log.line(format!("{} → {}: {e}", arr.name, client.name));
+                    log.line(msg!("job.apply.link", arr.name.clone(), client.name.clone(), e));
                     failures += 1;
                     continue;
                 }
@@ -469,18 +471,14 @@ pub async fn download_clients(mut req: Req, running: Vec<String>, log: Log) -> R
                 .find(|c| c.get("name").and_then(|n| n.as_str()) == Some(client.name.as_str()))
                 .and_then(|c| c.get("id").and_then(|i| i.as_i64()));
             match send(&http, &url, &req.api_key, existing, body).await {
-                Ok(()) => log.line(format!(
-                    "{} → {}: {}",
-                    arr.name,
-                    client.name,
-                    if existing.is_some() {
-                        "atualizado"
-                    } else {
-                        "registrado"
-                    }
+                Ok(()) => log.line(msg!(
+                    "job.apply.link",
+                    arr.name.clone(),
+                    client.name.clone(),
+                    Msg::k(if existing.is_some() { "job.apply.updated" } else { "job.apply.registered" })
                 )),
                 Err(e) => {
-                    log.line(format!("{} → {}: {e}", arr.name, client.name));
+                    log.line(msg!("job.apply.link", arr.name.clone(), client.name.clone(), e));
                     failures += 1;
                 }
             }
@@ -502,9 +500,9 @@ pub async fn download_clients(mut req: Req, running: Vec<String>, log: Log) -> R
         failures += jellyfin(&http, jf, &log).await;
     }
     if failures > 0 {
-        return Err(format!("{failures} ligação(ões) não passaram"));
+        return Err(msg!("job.apply.tooManyFailures", failures));
     }
-    log.line("Configuração aplicada.");
+    log.line(Msg::k("job.apply.done"));
     Ok(())
 }
 
@@ -526,15 +524,15 @@ fn sync_categories(family: &str) -> Vec<u32> {
 /// here are internal — container to container, on the stack network — not the
 /// nginx ones: the one that will talk to the *arr is Prowlarr, not the
 /// server.
-fn app_body(arr: &Arr, prowlarr_url: &str, api_key: &str) -> Result<Value, String> {
+fn app_body(arr: &Arr, prowlarr_url: &str, api_key: &str) -> Result<Value, Msg> {
     let (implementation, contract) = match arr.family.as_str() {
         "sonarr" => ("Sonarr", "SonarrSettings"),
         "radarr" => ("Radarr", "RadarrSettings"),
         "lidarr" => ("Lidarr", "LidarrSettings"),
-        other => return Err(format!("família sem aplicação no Prowlarr: {other}")),
+        other => return Err(msg!("job.apply.unknownProwlarrFamily", other)),
     };
     if arr.internal_url.is_empty() {
-        return Err("sem o endereço interno para o Prowlarr chamar".into());
+        return Err(Msg::k("job.apply.noInternalUrl"));
     }
     Ok(json!({
         "name": arr.name,
@@ -576,7 +574,7 @@ async fn prowlarr_clients(
     let current = match list(http, &url, &req.api_key).await {
         Ok(v) => v,
         Err(e) => {
-            log.line(format!("Prowlarr: {e}"));
+            log.line(msg!("job.apply.item", "Prowlarr", e));
             return req.clients.len();
         }
     };
@@ -594,7 +592,7 @@ async fn prowlarr_clients(
                 b
             }
             Err(e) => {
-                log.line(format!("Prowlarr → {}: {e}", client.name));
+                log.line(msg!("job.apply.link", "Prowlarr", client.name.clone(), e));
                 failures += 1;
                 continue;
             }
@@ -604,13 +602,13 @@ async fn prowlarr_clients(
             .find(|c| c.get("name").and_then(|n| n.as_str()) == Some(client.name.as_str()))
             .and_then(|c| c.get("id").and_then(|i| i.as_i64()));
         match send(http, &url, &req.api_key, existing, body).await {
-            Ok(()) => log.line(format!(
-                "Prowlarr → {} [{CAT_PROWLARR}]: {}",
-                client.name,
-                if existing.is_some() { "atualizado" } else { "registrado" }
+            Ok(()) => log.line(msg!(
+                "job.apply.prowlarrClientResult",
+                client.name.clone(),
+                Msg::k(if existing.is_some() { "job.apply.updated" } else { "job.apply.registered" })
             )),
             Err(e) => {
-                log.line(format!("Prowlarr → {}: {e}", client.name));
+                log.line(msg!("job.apply.link", "Prowlarr", client.name.clone(), e));
                 failures += 1;
             }
         }
@@ -642,7 +640,7 @@ async fn indexer_proxy(
     let tag = match tag(http, &tag_url, &req.api_key, TAG_SOLVER).await {
         Ok(id) => id,
         Err(e) => {
-            log.line(format!("Prowlarr → etiqueta {TAG_SOLVER}: {e}"));
+            log.line(msg!("job.apply.link", "Prowlarr", Msg::k("job.apply.solverTagLabel"), e));
             return 1;
         }
     };
@@ -651,7 +649,7 @@ async fn indexer_proxy(
     let current = match list(http, &url, &req.api_key).await {
         Ok(v) => v,
         Err(e) => {
-            log.line(format!("Prowlarr → {}: {e}", solver.name));
+            log.line(msg!("job.apply.link", "Prowlarr", solver.name.clone(), e));
             return 1;
         }
     };
@@ -673,15 +671,15 @@ async fn indexer_proxy(
         .and_then(|c| c.get("id").and_then(|i| i.as_i64()));
     match send(http, &url, &req.api_key, existing, body).await {
         Ok(()) => {
-            log.line(format!(
-                "Prowlarr → {} [{TAG_SOLVER}]: {}",
-                solver.name,
-                if existing.is_some() { "atualizado" } else { "registrado" }
+            log.line(msg!(
+                "job.apply.solverResult",
+                solver.name.clone(),
+                Msg::k(if existing.is_some() { "job.apply.updated" } else { "job.apply.registered" })
             ));
             0
         }
         Err(e) => {
-            log.line(format!("Prowlarr → {}: {e}", solver.name));
+            log.line(msg!("job.apply.link", "Prowlarr", solver.name.clone(), e));
             1
         }
     }
@@ -694,7 +692,7 @@ async fn tag(
     url: &str,
     key: &str,
     label: &str,
-) -> Result<i64, String> {
+) -> Result<i64, Msg> {
     let current = list(http, url, key).await?;
     if let Some(id) = current
         .iter()
@@ -715,7 +713,7 @@ async fn tag(
         .body(json!({"label": label}).to_string())
         .send()
         .await
-        .map_err(|e| format!("não respondeu ({e})"))?;
+        .map_err(|e| msg!("job.apply.tagCallError", e.to_string()))?;
     let st = r.status();
     api("POST", url, st);
     let txt = r.text().await.unwrap_or_default();
@@ -725,7 +723,7 @@ async fn tag(
     serde_json::from_str::<Value>(&txt)
         .ok()
         .and_then(|v| v.get("id").and_then(|i| i.as_i64()))
-        .ok_or_else(|| "o Prowlarr não devolveu o id da etiqueta".to_string())
+        .ok_or_else(|| Msg::k("job.apply.noTagId"))
 }
 
 /* The categories inside the download client itself.
@@ -753,10 +751,7 @@ async fn client_categories(
         return 0;
     }
     if client.web_url.is_empty() || client.api_key.is_empty() {
-        log.line(format!(
-            "{}: sem a API key dele não dá para criar as categorias — cole a chave no modal do serviço",
-            client.name
-        ));
+        log.line(msg!("job.apply.item", client.name.clone(), Msg::k("job.apply.noApiKeyForCategories")));
         return 1;
     }
     let mut failures = 0;
@@ -773,14 +768,24 @@ async fn client_categories(
         match retry("GET", &without_query(&url), || http.get(&url).send()).await {
             Ok(r) if r.status().is_success() => {
                 api("GET", &without_query(&url), r.status());
-                log.line(format!("{} → categoria {cat}: pronta", client.name))
+                log.line(msg!(
+                    "job.apply.link",
+                    client.name.clone(),
+                    msg!("job.apply.catName", cat.clone()),
+                    Msg::k("job.apply.readyF")
+                ));
             }
             Ok(r) => {
-                log.line(format!("{} → categoria {cat}: HTTP {}", client.name, r.status().as_u16()));
+                log.line(msg!(
+                    "job.apply.link",
+                    client.name.clone(),
+                    msg!("job.apply.catName", cat.clone()),
+                    msg!("job.apply.httpStatus", r.status().as_u16())
+                ));
                 failures += 1;
             }
             Err(e) => {
-                log.line(format!("{} → categoria {cat}: {e}", client.name));
+                log.line(msg!("job.apply.link", client.name.clone(), msg!("job.apply.catName", cat.clone()), e));
                 failures += 1;
             }
         }
@@ -816,11 +821,11 @@ async fn client_preferences(http: &reqwest::Client, client: &Client, log: &Log) 
     let auth = match qbit_auth(http, &base, client).await {
         Ok(a) => a,
         Err(e) => {
-            log.line(format!("{} → entrar para ajustar as preferências: {e}", client.name));
+            log.line(msg!("job.apply.link", client.name.clone(), Msg::k("job.apply.enterForPrefs"), e));
             return 1;
         }
     };
-    crate::journal::detail(|| format!("{}: preferências pela {}", client.name, auth.kind()));
+    crate::journal::detail(|| format!("{}: preferences via {}", client.name, auth.kind()));
 
     let body = format!("json={}", enc(&Value::Object(prefs.clone()).to_string()));
     let target = format!("{base}/api/v2/app/setPreferences");
@@ -838,17 +843,17 @@ async fn client_preferences(http: &reqwest::Client, client: &Client, log: &Log) 
             api("POST", &target, r.status());
             // the keys go to the log, the values do not: the password is among them
             let keys: Vec<&str> = prefs.keys().map(String::as_str).collect();
-            log.line(format!("{} → preferências: {}", client.name, keys.join(", ")));
+            log.line(msg!("job.apply.link", client.name.clone(), Msg::k("job.apply.prefsLabel"), keys.join(", ")));
             check_api_key(http, &base, client, &auth, log).await
         }
         Ok(r) => {
             let st = r.status();
             let txt = r.text().await.unwrap_or_default();
-            log.line(format!("{} → preferências: {}", client.name, error(st, &txt)));
+            log.line(msg!("job.apply.link", client.name.clone(), Msg::k("job.apply.prefsLabel"), error(st, &txt)));
             1
         }
         Err(e) => {
-            log.line(format!("{} → preferências: {e}", client.name));
+            log.line(msg!("job.apply.link", client.name.clone(), Msg::k("job.apply.prefsLabel"), e));
             1
         }
     }
@@ -891,10 +896,7 @@ async fn adopt_api_key(http: &reqwest::Client, req: &mut Req, log: &Log) {
         if dele.is_empty() || dele == c.api_key {
             continue;
         }
-        log.line(format!(
-            "{}: mantendo a API key que o app já tinha — é com ela que os *arr vão falar com ele",
-            c.name
-        ));
+        log.line(msg!("job.apply.item", c.name.clone(), Msg::k("job.apply.keptKey")));
         c.api_key = dele;
     }
 }
@@ -950,31 +952,22 @@ async fn check_api_key(
        key authentication never comes in, and the *arr gets a 403 on the first
        connection test with nothing saying why. */
     if !api_key_valid(&client.api_key) {
-        log.line(format!(
-            "{}: a API key não está no formato do qBittorrent (qbt_ + 28 caracteres) — ele a descarta calado, e os *arr não conseguem falar com ele",
-            client.name
-        ));
+        log.line(msg!("job.apply.item", client.name.clone(), Msg::k("job.apply.badKeyFormat")));
         return 1;
     }
     let Some(dele) = read_api_key(http, base, auth).await else {
         return 0;
     };
     if dele == client.api_key {
-        crate::journal::detail(|| format!("{}: a API key do app é a que os *arr receberam", client.name));
+        crate::journal::detail(|| format!("{}: the app's API key is the one the *arr got", client.name));
     } else if dele.is_empty() {
-        log.line(format!(
-            "{}: o app está sem API key — ela vem da conf dele, que o Subir escreve; o Aplicar sozinho não a cria",
-            client.name
-        ));
+        log.line(msg!("job.apply.item", client.name.clone(), Msg::k("job.apply.appHasNoKey")));
     } else {
         /* It should not happen: `adopt_api_key()` runs before everything and would
            already have taken the app's key. If the two differ here, it changed
            mid-round — someone touching its interface, or a conf rewritten — and
            the *arr apps were left with the previous one. */
-        log.line(format!(
-            "{}: a API key do app mudou no meio da aplicação — os *arr ficaram com a anterior; reaplique",
-            client.name
-        ));
+        log.line(msg!("job.apply.item", client.name.clone(), Msg::k("job.apply.keyChangedMidRound")));
     }
     0
 }
@@ -1016,7 +1009,7 @@ impl QbitAuth {
     fn kind(&self) -> &'static str {
         match self {
             QbitAuth::Key(_) => "API key",
-            QbitAuth::Cookie(_) => "usuário e senha",
+            QbitAuth::Cookie(_) => "username and password",
         }
     }
 }
@@ -1028,7 +1021,7 @@ async fn qbit_auth(
     http: &reqwest::Client,
     base: &str,
     client: &Client,
-) -> Result<QbitAuth, String> {
+) -> Result<QbitAuth, Msg> {
     if api_key_valid(&client.api_key) {
         let url = format!("{base}/api/v2/app/version");
         let key = client.api_key.clone();
@@ -1044,7 +1037,7 @@ async fn qbit_auth(
         }
         crate::journal::detail(|| {
             format!(
-                "{}: a API key não abriu o app ({}) — vou entrar com usuário e senha",
+                "{}: the API key did not open the app ({}) — logging in with username and password",
                 client.name, base
             )
         });
@@ -1060,7 +1053,7 @@ async fn qbit_login(
     http: &reqwest::Client,
     base: &str,
     client: &Client,
-) -> Result<String, String> {
+) -> Result<String, Msg> {
     let body = format!(
         "username={}&password={}",
         enc(&client.user),
@@ -1090,7 +1083,7 @@ async fn qbit_login(
     // a "Fails." body with a 200 is how it says the credential is no good
     let txt = r.text().await.unwrap_or_default();
     if txt.trim().eq_ignore_ascii_case("fails.") {
-        return Err("usuário ou senha recusados".into());
+        return Err(Msg::k("job.apply.badCredentials"));
     }
     Ok(cookie)
 }
@@ -1114,11 +1107,11 @@ async fn qbit_categories(http: &reqwest::Client, client: &Client, log: &Log) -> 
     let auth = match qbit_auth(http, &base, client).await {
         Ok(a) => a,
         Err(e) => {
-            log.line(format!("{} → entrar para criar as categorias: {e}", client.name));
+            log.line(msg!("job.apply.link", client.name.clone(), Msg::k("job.apply.enterForCategories"), e));
             return 1;
         }
     };
-    crate::journal::detail(|| format!("{}: categorias pela {}", client.name, auth.kind()));
+    crate::journal::detail(|| format!("{}: categories via {}", client.name, auth.kind()));
 
     let mut failures = 0;
     for cat in &client.categories {
@@ -1142,9 +1135,11 @@ async fn qbit_categories(http: &reqwest::Client, client: &Client, log: &Log) -> 
             match r {
                 Ok(r) if r.status().is_success() => {
                     api("POST", &target, r.status());
-                    log.line(format!(
-                        "{} → categoria {} ({}): pronta",
-                        client.name, cat.name, cat.save_path
+                    log.line(msg!(
+                        "job.apply.link",
+                        client.name.clone(),
+                        msg!("job.apply.catFolder", cat.name.clone(), cat.save_path.clone()),
+                        Msg::k("job.apply.readyF")
                     ));
                     done = true;
                     break;
@@ -1158,16 +1153,16 @@ async fn qbit_categories(http: &reqwest::Client, client: &Client, log: &Log) -> 
                 Ok(r) => {
                     let st = r.status();
                     let txt = r.text().await.unwrap_or_default();
-                    log.line(format!(
-                        "{} → categoria {}: {}",
-                        client.name,
-                        cat.name,
+                    log.line(msg!(
+                        "job.apply.link",
+                        client.name.clone(),
+                        msg!("job.apply.catName", cat.name.clone()),
                         error(st, &txt)
                     ));
                     break;
                 }
                 Err(e) => {
-                    log.line(format!("{} → categoria {}: {e}", client.name, cat.name));
+                    log.line(msg!("job.apply.link", client.name.clone(), msg!("job.apply.catName", cat.name.clone()), e));
                     break;
                 }
             }
@@ -1193,7 +1188,7 @@ async fn applications(
     let current = match list(http, &url, &req.api_key).await {
         Ok(v) => v,
         Err(e) => {
-            log.line(format!("Prowlarr: {e}"));
+            log.line(msg!("job.apply.item", "Prowlarr", e));
             return req.arrs.iter().filter(|a| a.sync).count();
         }
     };
@@ -1202,7 +1197,7 @@ async fn applications(
         let body = match app_body(arr, &prowlarr.url, &req.api_key) {
             Ok(b) => b,
             Err(e) => {
-                log.line(format!("Prowlarr → {}: {e}", arr.name));
+                log.line(msg!("job.apply.link", "Prowlarr", arr.name.clone(), e));
                 failures += 1;
                 continue;
             }
@@ -1212,17 +1207,14 @@ async fn applications(
             .find(|c| c.get("name").and_then(|n| n.as_str()) == Some(arr.name.as_str()))
             .and_then(|c| c.get("id").and_then(|i| i.as_i64()));
         match send(http, &url, &req.api_key, existing, body).await {
-            Ok(()) => log.line(format!(
-                "Prowlarr → {}: {}",
-                arr.name,
-                if existing.is_some() {
-                    "atualizado"
-                } else {
-                    "registrado"
-                }
+            Ok(()) => log.line(msg!(
+                "job.apply.link",
+                "Prowlarr",
+                arr.name.clone(),
+                Msg::k(if existing.is_some() { "job.apply.updated" } else { "job.apply.registered" })
             )),
             Err(e) => {
-                log.line(format!("Prowlarr → {}: {e}", arr.name));
+                log.line(msg!("job.apply.link", "Prowlarr", arr.name.clone(), e));
                 failures += 1;
             }
         }
@@ -1303,7 +1295,7 @@ const NUMERIC: &[&str] = &["recycleBinCleanupDays", "minimumFreeSpaceWhenImporti
 const COLON: &[&str] = &["delete", "dash", "spaceDash", "spaceDashSpace", "smart"];
 const MULTI_EP: &[&str] = &["extend", "duplicate", "repeat", "scene", "range", "prefixedRange"];
 
-fn enum_value(field: &str, v: &Value) -> Result<Value, String> {
+fn enum_value(field: &str, v: &Value) -> Result<Value, Msg> {
     if NUMERIC.contains(&field) {
         // a text field on the page, a number in the API: empty becomes 0, and what
         // is not a number becomes an error instead of a silent zero
@@ -1317,7 +1309,7 @@ fn enum_value(field: &str, v: &Value) -> Result<Value, String> {
         return txt
             .parse::<i64>()
             .map(|n| json!(n))
-            .map_err(|_| format!("{field}: {txt} não é um número"));
+            .map_err(|_| msg!("job.apply.notANumber", field, txt.clone()));
     }
     let list = match field {
         "colonReplacementFormat" => COLON,
@@ -1329,11 +1321,11 @@ fn enum_value(field: &str, v: &Value) -> Result<Value, String> {
         .iter()
         .position(|x| *x == name)
         .map(|i| json!(i))
-        .ok_or_else(|| format!("{field}: opção desconhecida ({name})"))
+        .ok_or_else(|| msg!("job.apply.unknownOption", field, name))
 }
 
 /// Replaces in the resource that was read only what the page governs, leaving the rest intact.
-fn merge(current: &mut Value, de: &Map<String, Value>, map: &[(&str, &str)]) -> Result<(), String> {
+fn merge(current: &mut Value, de: &Map<String, Value>, map: &[(&str, &str)]) -> Result<(), Msg> {
     for (pagina, api) in map {
         if let Some(v) = de.get(*pagina) {
             current[*api] = enum_value(api, v)?;
@@ -1381,7 +1373,7 @@ async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
                 .unwrap_or(true)
         }
         Err(e) => {
-            log.line(format!("{}: {e}", jf.name));
+            log.line(msg!("job.apply.item", jf.name.clone(), e));
             return 1;
         }
     };
@@ -1395,7 +1387,7 @@ async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
         match authenticate(http, &base, jf).await {
             Ok(t) => token = t,
             Err(e) => {
-                log.line(format!("{} → entrar como {}: {e}", jf.name, jf.user));
+                log.line(msg!("job.apply.link", jf.name.clone(), msg!("job.apply.loginAsUser", jf.user.clone()), e));
                 return failures + 1;
             }
         }
@@ -1403,10 +1395,7 @@ async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
         /* Wizard already finished and no credential: the libraries require a
            token, and guessing is not an option. Saying so is better than a
            round that silently does nothing. */
-        log.line(format!(
-            "{}: o assistente já foi concluído — preencha usuário e senha no modal dele para o Hubstarr criar as bibliotecas",
-            jf.name
-        ));
+        log.line(msg!("job.apply.item", jf.name.clone(), Msg::k("job.apply.wizardNeedsCreds")));
         return failures;
     }
 
@@ -1419,10 +1408,7 @@ async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
        deployed it to finish in the browser. */
     let made_admin = !jf.user.is_empty() && !jf.pass.is_empty();
     if !ready && !made_admin {
-        log.line(format!(
-            "{}: bibliotecas prontas, mas o assistente fica aberto — sem usuário e senha no modal dele, concluí-lo deixaria o Jellyfin sem conta nenhuma",
-            jf.name
-        ));
+        log.line(msg!("job.apply.item", jf.name.clone(), Msg::k("job.apply.libsReadyWizardOpen")));
     }
     if !ready && made_admin {
         let target = format!("{base}/Startup/Complete");
@@ -1435,14 +1421,19 @@ async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
         }
         match r {
             Ok(r) if r.status().is_success() => {
-                log.line(format!("{} → assistente concluído", jf.name))
+                log.line(msg!("job.apply.step", jf.name.clone(), Msg::k("job.apply.wizardDone")))
             }
             Ok(r) => {
-                log.line(format!("{} → assistente: HTTP {}", jf.name, r.status().as_u16()));
+                log.line(msg!(
+                    "job.apply.link",
+                    jf.name.clone(),
+                    Msg::k("job.apply.wizardLabel"),
+                    msg!("job.apply.httpStatus", r.status().as_u16())
+                ));
                 failures += 1;
             }
             Err(e) => {
-                log.line(format!("{} → assistente: {e}", jf.name));
+                log.line(msg!("job.apply.link", jf.name.clone(), Msg::k("job.apply.wizardLabel"), e));
                 failures += 1;
             }
         }
@@ -1454,11 +1445,10 @@ async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
 /// a token: it is the window in which it accepts none.
 async fn wizard(http: &reqwest::Client, base: &str, jf: &Jellyfin, log: &Log) -> usize {
     let mut failures = 0;
-    let mut step = |ok: bool, what: &str, detail: String| {
-        if ok {
-            log.line(format!("{} → {what}: pronto", jf.name));
-        } else {
-            log.line(format!("{} → {what}: {detail}", jf.name));
+    let mut step = |what: Msg, result: Result<(), Msg>| match result {
+        Ok(()) => log.line(msg!("job.apply.link", jf.name.clone(), what, Msg::k("job.apply.readyM"))),
+        Err(e) => {
+            log.line(msg!("job.apply.link", jf.name.clone(), what, e));
             failures += 1;
         }
     };
@@ -1470,26 +1460,26 @@ async fn wizard(http: &reqwest::Client, base: &str, jf: &Jellyfin, log: &Log) ->
             "MetadataCountryCode": country_of(&jf.culture),
             "PreferredMetadataLanguage": language_of(&jf.culture),
         });
-        let (ok, d) = post_json(http, &format!("{base}/Startup/Configuration"), "", body).await;
-        step(ok, "idioma", d);
+        let r = post_json(http, &format!("{base}/Startup/Configuration"), "", body).await;
+        step(Msg::k("job.apply.language"), r);
     }
 
     if !jf.user.is_empty() && !jf.pass.is_empty() {
         let body = json!({"Name": jf.user, "Password": jf.pass});
-        let (ok, d) = post_json(http, &format!("{base}/Startup/User"), "", body).await;
-        step(ok, &format!("administrador {}", jf.user), d);
+        let r = post_json(http, &format!("{base}/Startup/User"), "", body).await;
+        step(msg!("job.apply.admin", jf.user.clone()), r);
     }
 
     let body = json!({"EnableRemoteAccess": true, "EnableAutomaticPortMapping": false});
-    let (ok, d) = post_json(http, &format!("{base}/Startup/RemoteAccess"), "", body).await;
-    step(ok, "acesso remoto", d);
+    let r = post_json(http, &format!("{base}/Startup/RemoteAccess"), "", body).await;
+    step(Msg::k("job.apply.remoteAccess"), r);
     failures
 }
 
 /// The token of an already configured Jellyfin. The `Authorization` header with
 /// the MediaBrowser fields is mandatory: without it the call is refused before
 /// the password is even looked at.
-async fn authenticate(http: &reqwest::Client, base: &str, jf: &Jellyfin) -> Result<String, String> {
+async fn authenticate(http: &reqwest::Client, base: &str, jf: &Jellyfin) -> Result<String, Msg> {
     let target = format!("{base}/Users/AuthenticateByName");
     let body = json!({"Username": jf.user, "Pw": jf.pass}).to_string();
     let r = retry("POST", &target, || {
@@ -1516,7 +1506,7 @@ async fn authenticate(http: &reqwest::Client, base: &str, jf: &Jellyfin) -> Resu
     serde_json::from_str::<Value>(&txt)
         .ok()
         .and_then(|v| v["AccessToken"].as_str().map(String::from))
-        .ok_or_else(|| "entrou, mas não veio token".to_string())
+        .ok_or_else(|| Msg::k("job.apply.noTokenAfterLogin"))
 }
 
 /// The libraries that are missing. What is already there stays as it is — the
@@ -1539,11 +1529,16 @@ async fn libraries(
             serde_json::from_str(&r.text().await.unwrap_or_default()).unwrap_or_default()
         }
         Ok(r) => {
-            log.line(format!("{} → bibliotecas: HTTP {}", jf.name, r.status().as_u16()));
+            log.line(msg!(
+                "job.apply.link",
+                jf.name.clone(),
+                Msg::k("job.apply.librariesLabel"),
+                msg!("job.apply.httpStatus", r.status().as_u16())
+            ));
             return 1;
         }
         Err(e) => {
-            log.line(format!("{} → bibliotecas: {e}", jf.name));
+            log.line(msg!("job.apply.link", jf.name.clone(), Msg::k("job.apply.librariesLabel"), e));
             return 1;
         }
     };
@@ -1557,7 +1552,12 @@ async fn libraries(
     for lib in &jf.libs {
         let target = lib.path.trim_end_matches('/');
         if already_has.iter().any(|p| p == target) {
-            log.line(format!("{} → biblioteca {}: já estava lá", jf.name, lib.path));
+            log.line(msg!(
+                "job.apply.link",
+                jf.name.clone(),
+                msg!("job.apply.libraryLabel", lib.path.clone()),
+                Msg::k("job.apply.alreadyThere")
+            ));
             continue;
         }
         let mut request = format!(
@@ -1569,25 +1569,30 @@ async fn libraries(
             request.push_str(&format!("&collectionType={}", lib.kind));
         }
         // the body is mandatory even when empty: without it Jellyfin returns 400
-        let (ok, d) = post_json(http, &request, token, json!({"LibraryOptions": {}})).await;
-        if ok {
-            log.line(format!("{} → biblioteca {} ({}): pronta", jf.name, lib.name, lib.path));
-        } else {
-            log.line(format!("{} → biblioteca {}: {d}", jf.name, lib.name));
-            failures += 1;
+        let r = post_json(http, &request, token, json!({"LibraryOptions": {}})).await;
+        match r {
+            Ok(()) => log.line(msg!(
+                "job.apply.link",
+                jf.name.clone(),
+                msg!("job.apply.libraryWithPath", lib.name.clone(), lib.path.clone()),
+                Msg::k("job.apply.readyF")
+            )),
+            Err(e) => {
+                log.line(msg!("job.apply.link", jf.name.clone(), msg!("job.apply.libraryLabel", lib.name.clone()), e));
+                failures += 1;
+            }
         }
     }
     failures
 }
 
-/// POST with a JSON body, with the token when there is one. Returns whether it
-/// worked and, if not, what the app answered.
+/// POST with a JSON body, with the token when there is one.
 async fn post_json(
     http: &reqwest::Client,
     url: &str,
     token: &str,
     body: Value,
-) -> (bool, String) {
+) -> Result<(), Msg> {
     let text = body.to_string();
     let r = retry("POST", url, || {
         let mut req = http
@@ -1599,19 +1604,14 @@ async fn post_json(
         }
         req.send()
     })
-    .await;
-    match r {
-        Ok(r) => {
-            let st = r.status();
-            api("POST", url, st);
-            if st.is_success() {
-                (true, String::new())
-            } else {
-                let txt = r.text().await.unwrap_or_default();
-                (false, error(st, &txt))
-            }
-        }
-        Err(e) => (false, e),
+    .await?;
+    let st = r.status();
+    api("POST", url, st);
+    if st.is_success() {
+        Ok(())
+    } else {
+        let txt = r.text().await.unwrap_or_default();
+        Err(error(st, &txt))
     }
 }
 
@@ -1666,7 +1666,7 @@ async fn ensure_root_folders(
     let current = match list(http, &url, &req.api_key).await {
         Ok(v) => v,
         Err(e) => {
-            log.line(format!("{} → pastas raiz: {e}", arr.name));
+            log.line(msg!("job.apply.link", arr.name.clone(), Msg::k("job.apply.rootFoldersLabel"), e));
             return 1;
         }
     };
@@ -1697,7 +1697,12 @@ async fn ensure_root_folders(
     for dir in &arr.root_folders {
         let target = dir.trim_end_matches('/');
         if already_has.contains(&target) {
-            log.line(format!("{} → pasta raiz {dir}: já estava lá", arr.name));
+            log.line(msg!(
+                "job.apply.link",
+                arr.name.clone(),
+                msg!("job.apply.rootFolder", dir.clone()),
+                Msg::k("job.apply.alreadyThere")
+            ));
             continue;
         }
         let mut body = json!({"path": dir});
@@ -1707,9 +1712,14 @@ async fn ensure_root_folders(
             }
         }
         match send(http, &url, &req.api_key, None, body).await {
-            Ok(()) => log.line(format!("{} → pasta raiz {dir}: pronta", arr.name)),
+            Ok(()) => log.line(msg!(
+                "job.apply.link",
+                arr.name.clone(),
+                msg!("job.apply.rootFolder", dir.clone()),
+                Msg::k("job.apply.readyF")
+            )),
             Err(e) => {
-                log.line(format!("{} → pasta raiz {dir}: {e}", arr.name));
+                log.line(msg!("job.apply.link", arr.name.clone(), msg!("job.apply.rootFolder", dir.clone()), e));
                 failures += 1;
             }
         }
@@ -1798,9 +1808,9 @@ async fn media_management(
     ] {
         let url = format!("{base}{}/api/{}/config/{resource}", arr.route, arr.api);
         match put_config(http, &url, &req.api_key, &fields, &map).await {
-            Ok(()) => log.line(format!("{} → {resource}: aplicado", arr.name)),
+            Ok(()) => log.line(msg!("job.apply.link", arr.name.clone(), resource, Msg::k("job.apply.appliedM"))),
             Err(e) => {
-                log.line(format!("{} → {resource}: {e}", arr.name));
+                log.line(msg!("job.apply.link", arr.name.clone(), resource, e));
                 failures += 1;
             }
         }
@@ -1814,7 +1824,7 @@ async fn put_config(
     key: &str,
     fields: &Map<String, Value>,
     map: &[(&str, &str)],
-) -> Result<(), String> {
+) -> Result<(), Msg> {
     let r = retry("GET", url, || http.get(url).header("X-Api-Key", key).send()).await?;
     let st = r.status();
     api("GET", url, st);
@@ -1823,13 +1833,13 @@ async fn put_config(
         return Err(error(st, &txt));
     }
     let mut current: Value =
-        serde_json::from_str(&txt).map_err(|_| "resposta não foi a configuração".to_string())?;
+        serde_json::from_str(&txt).map_err(|_| Msg::k("job.apply.badConfigResponse"))?;
     /* A single resource is an object. If something else arrives — a list, an
        error in JSON, an app of another version — `merge` would index by key and
        **panic**, bringing the whole round down instead of complaining about one
        link. Better the line in the log. */
     if !current.is_object() {
-        return Err("resposta não foi a configuração (não veio um objeto)".into());
+        return Err(Msg::k("job.apply.badConfigResponseNotObject"));
     }
     merge(&mut current, fields, map)?;
 
@@ -1879,10 +1889,7 @@ async fn wait_apps(
            about something that never started. The `compose ps` knows better —
            when it is the one that answered, its word is final. */
         if !running.is_empty() && !running.iter().any(|k| k == &target.key) {
-            log.line(format!(
-                "{}: o container não está no ar — nada a configurar nele; veja o log do Subir",
-                target.name
-            ));
+            log.line(msg!("job.apply.item", target.name.clone(), Msg::k("job.apply.containerNotRunning")));
             continue;
         }
         wait_url(http, &format!("{base}{}/ping", target.route), &target.name, log).await;
@@ -1903,25 +1910,23 @@ async fn wait_ready(http: &reqwest::Client, url: &str, key: &str, name: &str, lo
             Ok(r) if r.status().is_success() => return,
             Ok(r) if r.status().is_server_error() => crate::journal::detail(|| {
                 format!(
-                    "{name}: o nginx ainda não alcança o container — {} em {}",
+                    "{name}: nginx still does not reach the container — {} at {}",
                     r.status(),
                     without_query(url)
                 )
             }),
             Ok(r) => crate::journal::detail(|| {
-                format!("{name}: inicializando ainda — {} em {}", r.status(), without_query(url))
+                format!("{name}: still starting up — {} at {}", r.status(), without_query(url))
             }),
             Err(e) => crate::journal::detail(|| format!("{name}: {e}")),
         }
         if !warned {
-            log.line(format!("esperando o {name} terminar de iniciar…"));
+            log.line(msg!("job.apply.waitingToStart", name));
             warned = true;
         }
         tokio::time::sleep(Duration::from_secs(2)).await;
     }
-    log.line(format!(
-        "{name}: ainda iniciando depois de 90s — sigo assim mesmo, e o que falhar sai no log"
-    ));
+    log.line(msg!("job.apply.stillStarting", name));
 }
 
 /* The same for the download clients. It matters less for the first `up` and
@@ -1961,7 +1966,7 @@ async fn wait_url(http: &reqwest::Client, url: &str, name: &str, log: &Log) {
             Ok(r) if !r.status().is_server_error() => break,
             _ => {
                 if !warned {
-                    log.line(format!("esperando o {name} responder…"));
+                    log.line(msg!("job.apply.waitingToRespond", name));
                     warned = true;
                 }
                 tokio::time::sleep(Duration::from_secs(2)).await;
@@ -1997,7 +2002,7 @@ fn implementation_of(kind: &str) -> &'static str {
 
 /// The clients the *arr already has, to know what is a new registration and
 /// what is an update.
-async fn list(http: &reqwest::Client, url: &str, key: &str) -> Result<Vec<Value>, String> {
+async fn list(http: &reqwest::Client, url: &str, key: &str) -> Result<Vec<Value>, Msg> {
     let r = retry("GET", url, || http.get(url).header("X-Api-Key", key).send()).await?;
     let st = r.status();
     api("GET", url, st);
@@ -2007,7 +2012,7 @@ async fn list(http: &reqwest::Client, url: &str, key: &str) -> Result<Vec<Value>
     }
     match serde_json::from_str::<Value>(&txt) {
         Ok(Value::Array(a)) => Ok(a),
-        _ => Err("resposta não foi a lista de clientes".into()),
+        _ => Err(Msg::k("job.apply.badClientListResponse")),
     }
 }
 
@@ -2017,7 +2022,7 @@ async fn send(
     key: &str,
     id: Option<i64>,
     mut body: Value,
-) -> Result<(), String> {
+) -> Result<(), Msg> {
     // updating requires the id in the body *and* in the path: the *arr refuses if they differ
     let target = match id {
         Some(id) => {
@@ -2072,7 +2077,7 @@ async fn send(
 const ATTEMPTS: usize = 10;
 const WAIT: Duration = Duration::from_secs(5);
 
-async fn retry<F, Fut>(what: &str, url: &str, mut build: F) -> Result<reqwest::Response, String>
+async fn retry<F, Fut>(what: &str, url: &str, mut build: F) -> Result<reqwest::Response, Msg>
 where
     F: FnMut() -> Fut,
     Fut: std::future::Future<Output = Result<reqwest::Response, reqwest::Error>>,
@@ -2086,12 +2091,12 @@ where
         }
         if n < ATTEMPTS {
             crate::journal::detail(|| {
-                format!("api {what} {url} → {last}, tentativa {n}/{ATTEMPTS}")
+                format!("api {what} {url} → {last}, attempt {n}/{ATTEMPTS}")
             });
             tokio::time::sleep(WAIT).await;
         }
     }
-    Err(format!("não respondeu depois de {ATTEMPTS} tentativas ({last})"))
+    Err(msg!("job.apply.retryTimeout", ATTEMPTS, last))
 }
 
 fn api(method: &str, url: &str, st: reqwest::StatusCode) {
@@ -2107,7 +2112,7 @@ fn without_query(url: &str) -> String {
 /// The *arr's message, when it sends one: its validation list says far more
 /// than the status number — "category does not exist", "could not talk to the
 /// client", and so on.
-fn error(st: reqwest::StatusCode, body: &str) -> String {
+fn error(st: reqwest::StatusCode, body: &str) -> Msg {
     let detail = match serde_json::from_str::<Value>(body) {
         Ok(Value::Array(a)) => a
             .iter()
@@ -2122,9 +2127,9 @@ fn error(st: reqwest::StatusCode, body: &str) -> String {
         Err(_) => String::new(),
     };
     if detail.is_empty() {
-        format!("HTTP {}", st.as_u16())
+        msg!("job.apply.httpStatus", st.as_u16())
     } else {
-        format!("HTTP {} — {detail}", st.as_u16())
+        msg!("job.apply.httpErrorDetail", st.as_u16(), detail)
     }
 }
 
@@ -2204,7 +2209,6 @@ mod tests {
         assert_eq!(val(&b, "apiKey"), "qbt_chave");
         assert_eq!(val(&b, "username"), Value::Null);
         assert_eq!(val(&b, "password"), Value::Null);
-
         // the one that does not know the field goes on with user and password
         let without_key = vec![json!({"name":"username","value":null}),
                        json!({"name":"password","value":null})];
@@ -2522,14 +2526,22 @@ mod tests {
         assert!(r.configarr().is_none());
     }
 
+    /// `error()` builds a `Msg`, not text: what reaches the log is the key plus the
+    /// app's own validation message, still untranslated (it is not ours to translate).
     #[test]
     fn the_arr_validation_message_reaches_the_log() {
+        use crate::msg::Arg;
+
         let e = error(
             reqwest::StatusCode::BAD_REQUEST,
             r#"[{"errorMessage":"Unable to connect to qBittorrent"}]"#,
         );
-        assert!(e.contains("400"));
-        assert!(e.contains("Unable to connect"));
-        assert_eq!(error(reqwest::StatusCode::NOT_FOUND, "não é json"), "HTTP 404");
+        assert_eq!(e.key, "job.apply.httpErrorDetail");
+        assert_eq!(e.args[0], Arg::Text("400".into()));
+        assert!(matches!(&e.args[1], Arg::Text(t) if t.contains("Unable to connect")));
+
+        let e = error(reqwest::StatusCode::NOT_FOUND, "não é json");
+        assert_eq!(e.key, "job.apply.httpStatus");
+        assert_eq!(e.args, vec![Arg::Text("404".into())]);
     }
 }

@@ -12,6 +12,8 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 
 use crate::jobs::Log;
+use crate::msg;
+use crate::msg::Msg;
 
 /// Does `docker compose` answer? It is what the page uses to warn before even
 /// trying to bring the stack up. It asks for the plugin, not just for docker:
@@ -67,14 +69,18 @@ pub async fn docker_ok(docker: &str) -> bool {
    the difference the dot shows.
 
    The key is the compose `Service`, which is the page's `cname()`; whoever does
-   not appear in the answer was never created. */
+   not appear in the answer was never created.
+
+   This one stays outside the `Msg` world on purpose: its error only ever
+   reaches the status-dot poll, which the page retries silently and never shows
+   in a language-sensitive way — unlike everything a job writes to `Log`. */
 pub async fn status(docker: &str, dir: &Path) -> Result<Value, String> {
     let out = Command::new(docker)
         .args(["compose", "ps", "--format", "json", "--all"])
         .current_dir(dir)
         .output()
         .await
-        .map_err(|e| format!("não consegui rodar o {docker}: {e}"))?;
+        .map_err(|e| format!("could not run {docker}: {e}"))?;
     // a folder with no compose yet, or docker down: nobody is up, and that is
     // not an error — the page simply paints no dot at all
     if !out.status.success() {
@@ -129,7 +135,7 @@ pub async fn running(docker: &str, dir: &Path) -> Vec<String> {
         .collect()
 }
 
-pub async fn up(docker: &str, dir: &Path, log: Log) -> Result<(), String> {
+pub async fn up(docker: &str, dir: &Path, log: Log) -> Result<(), Msg> {
     run(docker, &["compose", "up", "-d", "--remove-orphans"], dir, &log).await?;
     // whatever just got (re)created may have a new IP; nginx needs to forget
     // the old one before wait_apps() starts polling through it
@@ -137,7 +143,7 @@ pub async fn up(docker: &str, dir: &Path, log: Log) -> Result<(), String> {
     Ok(())
 }
 
-pub async fn down(docker: &str, dir: &Path, log: Log) -> Result<(), String> {
+pub async fn down(docker: &str, dir: &Path, log: Log) -> Result<(), Msg> {
     run(docker, &["compose", "down", "--remove-orphans"], dir, &log).await
 }
 
@@ -157,7 +163,7 @@ pub fn ok_service(key: &str) -> bool {
 /// but the compose would read it as an option.
 /// Brings a single container up, without touching the others. `--no-deps` is
 /// what keeps the promise of the click: whoever is stopped next to it stays stopped.
-pub async fn up_one(docker: &str, dir: &Path, key: &str, log: Log) -> Result<(), String> {
+pub async fn up_one(docker: &str, dir: &Path, key: &str, log: Log) -> Result<(), Msg> {
     run(docker, &["compose", "up", "-d", "--no-deps", key], dir, &log).await?;
     // recreated with --no-deps still gets a fresh IP; skip when the service
     // brought up *is* nginx — it just started with nothing cached yet
@@ -171,7 +177,7 @@ pub async fn up_one(docker: &str, dir: &Path, key: &str, log: Log) -> Result<(),
 /// stack away, and what is wanted here is the opposite — only that service goes
 /// off the air, and the container keeps existing so the dot goes back to
 /// "stopped" instead of "not created".
-pub async fn stop_one(docker: &str, dir: &Path, key: &str, log: Log) -> Result<(), String> {
+pub async fn stop_one(docker: &str, dir: &Path, key: &str, log: Log) -> Result<(), Msg> {
     run(docker, &["compose", "stop", key], dir, &log).await
 }
 
@@ -210,8 +216,8 @@ pub struct Configarr {
 /// `ENOENT` until a Configarr release caught up. Pinning to `:latest` without
 /// forcing the pull leaves whoever ran it once stuck on that broken image
 /// forever, quietly.
-pub async fn configarr(docker: &str, cfg: &Configarr, log: &Log) -> Result<(), String> {
-    log.line("aplicando os perfis do TRaSH Guides (configarr)…");
+pub async fn configarr(docker: &str, cfg: &Configarr, log: &Log) -> Result<(), Msg> {
+    log.line(Msg::k("job.deploy.configarr.start"));
     let dir = cfg.dir.trim_end_matches('/');
     let tz = if cfg.tz.is_empty() { "Etc/UTC" } else { &cfg.tz };
     let build = [
@@ -241,9 +247,9 @@ pub async fn configarr(docker: &str, cfg: &Configarr, log: &Log) -> Result<(), S
     for e in [
         "LOG_STACKTRACE=true",
         "LOG_LEVEL=debug",
-        "GIT_CONFIG_COUNT=1",
-        "GIT_CONFIG_KEY_0=safe.directory",
-        "GIT_CONFIG_VALUE_0=*",
+        //"GIT_CONFIG_COUNT=1",
+        //"GIT_CONFIG_KEY_0=safe.directory",
+        //"GIT_CONFIG_VALUE_0=*",
     ] {
         args.push("-e".into());
         args.push(e.into());
@@ -260,10 +266,7 @@ pub async fn configarr(docker: &str, cfg: &Configarr, log: &Log) -> Result<(), S
            whoever comes from the version in which it was a compose service and
            ran as root. The way out is to delete the cache: it rebuilds itself. */
         if !writable(&format!("{dir}/repos")) {
-            log.line(format!(
-                "o cache em {dir}/repos é de outro dono e o Configarr roda como {};                  apague a pasta (ela se refaz sozinha) e mande subir de novo",
-                cfg.user
-            ));
+            log.line(msg!("job.deploy.configarr.staleCache", dir.to_string(), cfg.user.clone()));
         }
     })
 }
@@ -309,15 +312,13 @@ const NGINX_SERVICE: &str = "nginx";
 async fn reload_nginx(docker: &str, dir: &Path, log: &Log) {
     if let Err(e) = compose(docker, &["exec", "-T", NGINX_SERVICE, "nginx", "-s", "reload"], dir, log).await
     {
-        log.line(format!(
-            "não consegui recarregar o nginx ({e}); se algum container foi recriado, a rota dele pode ficar respondendo 502 até o próximo Subir"
-        ));
+        log.line(msg!("job.deploy.nginxReloadFailed", e));
     }
 }
 
 /// Any `docker compose <args>` in the stack folder — it is how `patch.rs`
 /// stops and starts a single container around editing its configuration.
-pub async fn compose(docker: &str, args: &[&str], dir: &Path, log: &Log) -> Result<(), String> {
+pub async fn compose(docker: &str, args: &[&str], dir: &Path, log: &Log) -> Result<(), Msg> {
     let mut all = vec!["compose"];
     all.extend_from_slice(args);
     run(docker, &all, dir, log).await
@@ -325,8 +326,8 @@ pub async fn compose(docker: &str, args: &[&str], dir: &Path, log: &Log) -> Resu
 
 /// Runs the command in the stack folder copying both outputs to the log,
 /// line by line — the compose writes its progress to stderr.
-async fn run(docker: &str, args: &[&str], dir: &Path, log: &Log) -> Result<(), String> {
-    log.line(format!("$ {docker} {}", args.join(" ")));
+async fn run(docker: &str, args: &[&str], dir: &Path, log: &Log) -> Result<(), Msg> {
+    log.line(msg!("job.deploy.cmd", docker.to_string(), args.join(" ")));
 
     let mut child = Command::new(docker)
         .args(args)
@@ -338,7 +339,7 @@ async fn run(docker: &str, args: &[&str], dir: &Path, log: &Log) -> Result<(), S
            nobody reading its output. */
         .kill_on_drop(true)
         .spawn()
-        .map_err(|e| format!("não consegui rodar o {docker}: {e}"))?;
+        .map_err(|e| msg!("job.deploy.spawnError", docker.to_string(), e.to_string()))?;
 
     let out = child.stdout.take().map(|h| pipe(h, log.clone()));
     let err = child.stderr.take().map(|h| pipe(h, log.clone()));
@@ -346,12 +347,12 @@ async fn run(docker: &str, args: &[&str], dir: &Path, log: &Log) -> Result<(), S
         let _ = tokio::join!(a, b);
     }
 
-    let st = child.wait().await.map_err(|e| e.to_string())?;
+    let st = child.wait().await.map_err(|e| msg!("job.deploy.waitError", e.to_string()))?;
     if st.success() {
-        log.line("pronto.");
+        log.line(Msg::k("job.deploy.ready"));
         Ok(())
     } else {
-        Err(format!("{docker} terminou com {st}"))
+        Err(msg!("job.deploy.exitError", docker.to_string(), st.to_string()))
     }
 }
 
@@ -361,7 +362,9 @@ where
 {
     let mut lines = BufReader::new(handle).lines();
     while let Ok(Some(line)) = lines.next_line().await {
-        log.line(line);
+        // the command's own output — docker/compose/Configarr text, never ours
+        // to translate; it goes out under the `raw` key, verbatim
+        log.line(Msg::raw(line));
     }
 }
 

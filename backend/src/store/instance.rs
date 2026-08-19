@@ -41,9 +41,9 @@ impl Db {
         let o = inc
             .data
             .as_object()
-            .ok_or_else(|| "a instância não veio como objeto".to_string())?;
+            .ok_or_else(|| "the instance did not come as an object".to_string())?;
         if inc.key.trim().is_empty() {
-            return Err("a instância veio sem chave".into());
+            return Err("the instance came without a key".into());
         }
 
         let extra: Map<String, Value> = o
@@ -116,11 +116,11 @@ impl Db {
         tx.commit().map_err(|e| e.to_string())?;
         crate::journal::detail(|| {
             let renamed = match inc.old.as_deref() {
-                Some(old) if old != inc.key => format!(" (era {old})"),
+                Some(old) if old != inc.key => format!(" (was {old})"),
                 _ => String::new(),
             };
             format!(
-                "banco: instância {}{renamed}, ord {}, {} pasta(s) avulsa(s)",
+                "db: instance {}{renamed}, ord {}, {} extra folder(s)",
                 inc.key,
                 inc.ord,
                 libs.len()
@@ -134,7 +134,7 @@ impl Db {
             .lock()?
             .execute("DELETE FROM instance WHERE key = ?1", params![key])
             .map_err(|e| e.to_string())?;
-        crate::journal::detail(|| format!("banco: instância {key} apagada ({n} linha)"));
+        crate::journal::detail(|| format!("db: instance {key} deleted ({n} row)"));
         Ok(())
     }
 
@@ -176,12 +176,12 @@ impl Db {
         tx.commit().map_err(|e| e.to_string())?;
         crate::journal::detail(|| {
             format!(
-                "banco: lista com {} chave(s){}",
+                "db: list with {} key(s){}",
                 keys.len(),
                 if left.is_empty() {
                     String::new()
                 } else {
-                    format!(", apagou {}", left.join(", "))
+                    format!(", deleted {}", left.join(", "))
                 }
             )
         });

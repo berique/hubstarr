@@ -22,6 +22,9 @@ use std::path::{Component, Path, PathBuf};
 
 use serde::Deserialize;
 
+use crate::msg;
+use crate::msg::Msg;
+
 #[derive(Deserialize)]
 pub struct OutFile {
     pub name: String,
@@ -34,19 +37,19 @@ pub struct OutFile {
 /// Joins the name to the destination refusing anything that escapes it:
 /// absolute path, `..`, Windows root. Without this, a malformed `name` would
 /// write anywhere the process has permission to.
-fn safe_join(dir: &Path, name: &str) -> Result<PathBuf, String> {
+fn safe_join(dir: &Path, name: &str) -> Result<PathBuf, Msg> {
     if name.trim().is_empty() {
-        return Err("nome de arquivo vazio".into());
+        return Err(Msg::k("job.files.emptyName"));
     }
     if name.contains('\\') {
-        return Err(format!("nome de arquivo inválido: {name}"));
+        return Err(msg!("job.files.invalidName", name));
     }
     let rel = Path::new(name);
     let mut out = dir.to_path_buf();
     for c in rel.components() {
         match c {
             Component::Normal(part) => out.push(part),
-            _ => return Err(format!("nome de arquivo inválido: {name}")),
+            _ => return Err(msg!("job.files.invalidName", name)),
         }
     }
     Ok(out)
@@ -59,9 +62,9 @@ pub async fn write_all(
     dir: &Path,
     cfg: Option<&Path>,
     files: &[OutFile],
-) -> Result<Vec<String>, String> {
+) -> Result<Vec<String>, Msg> {
     if files.is_empty() {
-        return Err("nenhum arquivo recebido".into());
+        return Err(Msg::k("job.files.none"));
     }
     let mut done = Vec::with_capacity(files.len());
     for f in files {
@@ -73,13 +76,13 @@ pub async fn write_all(
         if let Some(parent) = path.parent() {
             tokio::fs::create_dir_all(parent)
                 .await
-                .map_err(|e| format!("{}: {e}", parent.display()))?;
+                .map_err(|e| msg!("job.files.mkdirError", parent.display().to_string(), e.to_string()))?;
         }
         tokio::fs::write(&path, &f.text)
             .await
-            .map_err(|e| format!("{}: {e}", path.display()))?;
+            .map_err(|e| msg!("job.files.writeError", path.display().to_string(), e.to_string()))?;
         crate::journal::detail(|| {
-            format!("arquivo {} ({} bytes)", path.display(), f.text.len())
+            format!("file {} ({} bytes)", path.display(), f.text.len())
         });
         done.push(path.display().to_string());
     }
@@ -90,11 +93,11 @@ pub async fn write_all(
 /// is refused: these come from the compose `source` entries, which belong to
 /// the host and are absolute — a relative one here would be a caller's mistake,
 /// and would land somewhere unpredictable relative to the server's directory.
-pub async fn ensure_dirs(dirs: &[String], log: &crate::jobs::Log) -> Result<(), String> {
+pub async fn ensure_dirs(dirs: &[String], log: &crate::jobs::Log) -> Result<(), Msg> {
     for d in dirs {
         let p = Path::new(d);
         if !p.is_absolute() {
-            return Err(format!("caminho relativo não vira pasta: {d}"));
+            return Err(msg!("job.dirs.relative", d.clone()));
         }
         if p.is_dir() {
             continue;
@@ -102,13 +105,13 @@ pub async fn ensure_dirs(dirs: &[String], log: &crate::jobs::Log) -> Result<(), 
         if p.exists() {
             // already there and not a folder: the bind is going to fail, and saying so
             // now is better than the docker error three steps later
-            return Err(format!("{d} existe e não é uma pasta"));
+            return Err(msg!("job.dirs.notADir", d.clone()));
         }
         tokio::fs::create_dir_all(p)
             .await
-            .map_err(|e| format!("{d}: {e}"))?;
-        crate::journal::detail(|| format!("pasta {d}"));
-        log.line(format!("pasta criada: {d}"));
+            .map_err(|e| msg!("job.dirs.mkdirError", d.clone(), e.to_string()))?;
+        crate::journal::detail(|| format!("folder {d}"));
+        log.line(msg!("job.dirs.created", d.clone()));
     }
     Ok(())
 }

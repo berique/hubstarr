@@ -45,7 +45,7 @@ pub fn cache_dir(db_path: &Path) -> PathBuf {
 /// load" of `#shotErr`.
 pub async fn fetch(dir: &Path, app: &str, theme: &str) -> Result<Vec<u8>, String> {
     if !ok_segment(app) || !ok_segment(theme) {
-        return Err("app ou tema inválido".into());
+        return Err("invalid app or theme".into());
     }
     let file = dir.join(format!("{app}-{theme}.png"));
     if let Ok(b) = tokio::fs::read(&file).await {

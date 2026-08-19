@@ -89,7 +89,7 @@ impl Db {
     pub fn put_env(&self, v: &Value) -> Result<(), String> {
         let o = v
             .as_object()
-            .ok_or_else(|| "o Ambiente não veio como objeto".to_string())?;
+            .ok_or_else(|| "the Environment did not come as an object".to_string())?;
         let conn = self.lock()?;
         conn.execute("INSERT OR IGNORE INTO stack_env (id) VALUES (1)", [])
             .map_err(|e| e.to_string())?;
@@ -126,7 +126,7 @@ impl Db {
             if o.contains_key("tls") {
                 fields.push("tls");
             }
-            format!("banco: Ambiente, {} campo(s): {}", fields.len(), fields.join(", "))
+            format!("db: Environment, {} field(s): {}", fields.len(), fields.join(", "))
         });
         Ok(())
     }
