@@ -2161,6 +2161,10 @@ const randKey = ()=> Array.from(crypto.getRandomValues(new Uint8Array(16)))
 const URLBASE_ENV = {sonarr:'SONARR__SERVER__URLBASE', radarr:'RADARR__SERVER__URLBASE',
                      lidarr:'LIDARR__SERVER__URLBASE', prowlarr:'PROWLARR__SERVER__URLBASE'};
 
+// the *arr apps' own env prefix, for the auth vars below — the .NET Servarr
+// stack only; sabnzbd and bazarr do not bind config through this convention
+const AUTH_ENV = {sonarr:'SONARR', radarr:'RADARR', lidarr:'LIDARR', prowlarr:'PROWLARR'};
+
 /* SVG logos from dashboardicons.com, embedded as data URIs (works offline).
    If some id has no icon, it falls back to the initial over the service color. */
 const ICONS = {
@@ -3980,6 +3984,10 @@ function build(){
         L.push(`      - <span class="v">${INSTANCE_ENV[s.id]}=${a.title}</span>`);
       if(URLBASE_ENV[s.id])
         L.push(`      - <span class="v">${URLBASE_ENV[s.id]}=/${cname(a)}</span>`);
+      if(AUTH_ENV[s.id]){
+        L.push(`      - <span class="v">${AUTH_ENV[s.id]}__AUTH__METHOD=Forms</span>`);
+        L.push(`      - <span class="v">${AUTH_ENV[s.id]}__AUTH__REQUIRED=DisabledForLocalAddresses</span>`);
+      }
       if(a.hw==='nvidia'){
         L.push(`      - <span class="v">NVIDIA_VISIBLE_DEVICES=all</span>`);
         L.push(`      - <span class="v">NVIDIA_DRIVER_CAPABILITIES=compute,video,utility</span>`);
