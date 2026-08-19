@@ -202,6 +202,14 @@ pub struct Configarr {
 /// `--dns` is what lets it resolve github from inside the stack network, which
 /// is a bridge of ours: without it the TRaSH and Recyclarr clone fails on a
 /// machine whose resolver is not reachable from there.
+///
+/// `--pull always` is what makes `CONFIGARR_IMG`'s `:latest` mean anything: a
+/// plain `docker run` reuses whatever is cached under that tag, and Configarr
+/// tracks a template repository (`recyclarr/config-templates`) that moves
+/// under it — a folder rename there broke every `custom_formats` load with an
+/// `ENOENT` until a Configarr release caught up. Pinning to `:latest` without
+/// forcing the pull leaves whoever ran it once stuck on that broken image
+/// forever, quietly.
 pub async fn configarr(docker: &str, cfg: &Configarr, log: &Log) -> Result<(), String> {
     log.line("aplicando os perfis do TRaSH Guides (configarr)…");
     let dir = cfg.dir.trim_end_matches('/');
@@ -214,6 +222,7 @@ pub async fn configarr(docker: &str, cfg: &Configarr, log: &Log) -> Result<(), S
     ];
     let mut args: Vec<String> = vec![
         "run".into(), "--rm".into(),
+        "--pull".into(), "always".into(),
         "--name".into(), "configarr".into(),
         "--user".into(), cfg.user.clone(),
         "--network".into(), cfg.network.clone(),
