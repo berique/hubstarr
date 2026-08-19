@@ -705,8 +705,8 @@ linha só — o `CHECK (id = 1)` é o que a mantém única), `instance` +
   saíram**: quando isso acontecer de novo, o log diz quem mandou o quê em vez de
   sobrar especulação. O `reconcile()` devolve o que apagou justamente para essa
   linha.
-- **O "Excluir" apaga a pasta de configuração da instância**, e é o **único**
-  caminho que faz isso. O `DELETE /api/instance/:key` leva no corpo o `dir` que
+- **O "Excluir" apaga a pasta de configuração da instância e remove o container
+  dela**, e é o **único** caminho que faz isso. O `DELETE /api/instance/:key` leva no corpo o `dir` que
   a página montou (o `cfgReal()`, o mesmo que a etiqueta da linha mostra), e o
   `remove_config_dir()` do `files.rs` **não confia nele**: exige caminho
   absoluto sem `..`, pai igual ao `BASE_CONFIG` do Ambiente e nome igual à
@@ -718,6 +718,24 @@ linha só — o `CHECK (id = 1)` é o que a mantém única), `instance` +
   linha volta com um save enquanto o banco do Sonarr não volta. Na página o
   botão arma no primeiro clique, como o "Limpar tudo" — o rótulo do segundo diz
   o que vai junto.
+
+  O container sai pelo `remove_container()` do `deploy.rs`, e **não** é
+  `compose rm`: quando isso roda, o serviço já pode ter saído do
+  `docker-compose.yml`, e o compose só remove o que o arquivo dele ainda lista.
+  O `docker rm -f <nome>` alcança nos dois casos — o nome do container *é* a
+  chave. E é justamente por isso que o dono é conferido antes: nome de container
+  é global no daemon, e o `sonarr` da máquina pode ser de outro compose (é o
+  marco v0.6 inteiro). Então o
+  `com.docker.compose.project.working_dir` é lido de volta e só se remove o que
+  diz ter vindo **desta** pasta; container sem etiqueta, de outra pasta ou feito
+  à mão fica de pé, com o motivo no log. Os dois lados canonizam o caminho antes
+  de comparar — o `--dir` pode ter chegado relativo ou por link simbólico, e
+  comparar as strings como vieram deixaria o container para trás calado.
+
+  O container vem **antes** da pasta: é ele que escreve nela, e apagar a
+  configuração debaixo de um app no ar o faz recriar metade dela na saída. As
+  duas metades são independentes — recusa numa não impede a outra —, e cada uma
+  confere o próprio dono.
 - **`cfg_mm` é por `service_id`**, não por instância: Media Management é por
   família, como na página.
 - **`instance.extra`** guarda o que não virou coluna e volta espalhado no

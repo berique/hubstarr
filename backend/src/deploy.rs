@@ -181,6 +181,71 @@ pub async fn stop_one(docker: &str, dir: &Path, key: &str, log: Log) -> Result<(
     run(docker, &["compose", "stop", key], dir, &log).await
 }
 
+/* Taking the container away along with the instance, on the explicit Delete.
+
+   It is not `compose rm`: by the time this runs the service may already be out
+   of the `docker-compose.yml`, and compose only knows how to remove what its
+   file still lists. `docker rm -f <name>` reaches it either way — the container
+   name *is* the key.
+
+   Which is exactly why the owner is checked first. Container names are global
+   to the daemon and the stack does not own them: a `sonarr` on this machine may
+   well belong to somebody else's compose (that is the whole of the v0.6
+   milestone), and removing it would take down a stack nobody asked about. So
+   the label compose writes on every container it creates is read back, and the
+   container is only removed when it says it came from **this** stack folder.
+   Anything else — another folder, no label at all, a container created by hand
+   — is left alone and said so.
+
+   Not being there is not a failure: `Ok(None)`. The instance may never have
+   been deployed, and that is the ordinary case for a service added and removed
+   in the same sitting. */
+pub async fn remove_container(docker: &str, key: &str, dir: &Path) -> Result<Option<String>, String> {
+    if !ok_service(key) {
+        return Err(format!("refused: {key} is not a valid container name"));
+    }
+    let out = Command::new(docker)
+        .args([
+            "inspect",
+            "--format",
+            "{{index .Config.Labels \"com.docker.compose.project.working_dir\"}}",
+            key,
+        ])
+        .output()
+        .await
+        .map_err(|e| format!("could not run {docker}: {e}"))?;
+    // no such container: nothing to remove, and nothing to say about it
+    if !out.status.success() {
+        return Ok(None);
+    }
+    let owner = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    /* `canonicalize` on both sides because the label carries the folder compose
+       was run from, resolved — while `--dir` may have arrived relative, or
+       through a symlink. Comparing the strings as they came calls a match a
+       mismatch and quietly leaves the container behind. */
+    let ours = dir.canonicalize().unwrap_or_else(|_| dir.to_path_buf());
+    let theirs = Path::new(&owner);
+    let theirs = theirs.canonicalize().unwrap_or_else(|_| theirs.to_path_buf());
+    if owner.is_empty() || theirs != ours {
+        return Err(format!(
+            "refused: the container {key} is not from this stack ({})",
+            if owner.is_empty() { "no compose label" } else { &owner }
+        ));
+    }
+    let out = Command::new(docker)
+        .args(["rm", "-f", key])
+        .output()
+        .await
+        .map_err(|e| format!("could not run {docker}: {e}"))?;
+    if !out.status.success() {
+        return Err(format!(
+            "{key}: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        ));
+    }
+    Ok(Some(key.to_string()))
+}
+
 /// What the page sends to run Configarr: paths, network and user — the
 /// decisions stay over there, here we only build the command line.
 #[derive(serde::Deserialize, Clone)]

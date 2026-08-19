@@ -375,11 +375,13 @@ async fn put_instance(State(ctx): State<Ctx>, Json(inc): Json<store::InstanceIn>
     }
 }
 
-/// Deleting one instance, and with it the folder the compose mounts at
-/// `/config` — an app's whole database. The page sends the path; `files.rs`
-/// refuses it unless it sits directly under the Environment's `BASE_CONFIG` and
-/// is named after the key. It is recorded in the short log, not only under
-/// `-v`: it is the most destructive thing a single click does here.
+/// Deleting one instance, and with it the two things it left on the machine:
+/// the container, and the folder the compose mounts at `/config` — an app's
+/// whole database. Each half checks its own ownership before touching anything
+/// (`deploy::remove_container` reads compose's label, `files::remove_config_dir`
+/// compares against `BASE_CONFIG`), and a refusal on either one leaves that half
+/// standing without stopping the other. It is recorded in the short log, not
+/// only under `-v`: it is the most destructive thing a single click does here.
 #[derive(serde::Deserialize, Default)]
 struct DelBody {
     /// absent for a `noVol` service, or for a page that predates this
@@ -394,9 +396,22 @@ async fn del_instance(
     if let Err(e) = ctx.db.delete_instance(&key) {
         return fail(&e);
     }
+    /* The container goes first: it is the one writing into the folder about to
+       be deleted, and removing the folder from under a running app leaves it
+       recreating half of it on the way out. */
+    let container = match deploy::remove_container(&ctx.docker, &key, &ctx.base).await {
+        Ok(gone) => gone,
+        Err(e) => {
+            journal::record(format!(
+                "{} DELETE /api/instance/{key} — container kept: {e}",
+                journal::stamp()
+            ));
+            None
+        }
+    };
     let Some(dir) = body.and_then(|Json(b)| b.dir).filter(|d| !d.trim().is_empty()) else {
         journal::record(format!("{} DELETE /api/instance/{key}", journal::stamp()));
-        return Json(json!({"ok": true})).into_response();
+        return Json(json!({"ok": true, "container": container})).into_response();
     };
     let cfg = ctx
         .db
@@ -406,14 +421,18 @@ async fn del_instance(
     match files::remove_config_dir(&dir, &key, cfg.as_deref()) {
         Ok(gone) => {
             journal::record(format!(
-                "{} DELETE /api/instance/{key} — {}",
+                "{} DELETE /api/instance/{key} — {}{}",
                 journal::stamp(),
                 match &gone {
                     Some(d) => format!("configuration folder {d} deleted"),
                     None => format!("no configuration folder at {dir}"),
+                },
+                match &container {
+                    Some(c) => format!(", container {c} removed"),
+                    None => String::new(),
                 }
             ));
-            Json(json!({"ok": true, "deleted": gone})).into_response()
+            Json(json!({"ok": true, "deleted": gone, "container": container})).into_response()
         }
         // the row is gone either way: the refusal is about the folder alone
         Err(e) => {
@@ -421,7 +440,8 @@ async fn del_instance(
                 "{} DELETE /api/instance/{key} — folder kept: {e}",
                 journal::stamp()
             ));
-            Json(json!({"ok": true, "deleted": null, "warning": e})).into_response()
+            Json(json!({"ok": true, "deleted": null, "container": container, "warning": e}))
+                .into_response()
         }
     }
 }

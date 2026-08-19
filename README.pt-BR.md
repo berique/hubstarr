@@ -105,12 +105,13 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   neles. As setas ↑ ↓ fazem o mesmo com a alça (`⁙`) em foco, para quem não usa
   o mouse. O nginx é linha fixa e não se move. Ordem não é ordem de subida:
   quem manda nisso no compose é o `depends_on`.
-- **Excluir apaga a configuração**: tirar um serviço da lista leva junto a
-  pasta de configuração dele — o banco do app, o histórico, os indexadores —,
-  então o botão pede confirmação: o primeiro clique arma, o segundo apaga. Só
-  ele faz isso; o "Limpar tudo" e a lista que o servidor reconcilia tiram a
-  linha e deixam a pasta onde está. Sem servidor não há o que apagar: a página
-  aberta do disco não alcança o seu sistema de arquivos.
+- **Excluir apaga a configuração**: tirar um serviço da lista leva junto o
+  container dele e a pasta de configuração — o banco do app, o histórico, os
+  indexadores —, então o botão pede confirmação: o primeiro clique arma, o
+  segundo apaga. Só ele faz isso; o "Limpar tudo" e a lista que o servidor
+  reconcilia tiram a linha e deixam container e pasta onde estão. Container de
+  outra stack que tenha o mesmo nome não é tocado. Sem servidor não há o que
+  apagar: a página aberta do disco não alcança o seu sistema de arquivos.
 - **Aviso de conflito**: duas instâncias apontadas para a mesma pasta se
   atropelam na importação, então a lista avisa em vermelho, com os nomes e o
   caminho. O Jellyfin, que monta a biblioteca inteira, e o Bazarr, que segue as

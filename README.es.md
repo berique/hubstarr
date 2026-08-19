@@ -110,11 +110,13 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   mueve. El orden no es el orden de arranque: de eso se encarga el
   `depends_on` del compose.
 - **Excluir borra la configuración**: sacar un servicio de la lista se lleva su
-  carpeta de configuración — la base de la app, el historial, los indexadores —,
-  así que el botón pide confirmación: el primer clic la arma, el segundo borra.
-  Solo él lo hace; el "Limpiar todo" y la lista que el servidor reconcilia
-  quitan la fila y dejan la carpeta donde está. Sin servidor no hay nada que
-  borrar: la página abierta del disco no alcanza tu sistema de archivos.
+  contenedor y su carpeta de configuración — la base de la app, el historial,
+  los indexadores —, así que el botón pide confirmación: el primer clic la arma,
+  el segundo borra. Solo él lo hace; el "Limpiar todo" y la lista que el
+  servidor reconcilia quitan la fila y dejan contenedor y carpeta donde están.
+  Un contenedor de otra stack que tenga el mismo nombre no se toca. Sin servidor
+  no hay nada que borrar: la página abierta del disco no alcanza tu sistema de
+  archivos.
 - **Aviso de conflicto**: dos instancias apuntadas a la misma carpeta se pisan
   al importar, así que la lista lo avisa en rojo, con los nombres y la ruta.
   Jellyfin, que monta la biblioteca entera, y Bazarr, que sigue a las otras,

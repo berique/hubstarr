@@ -105,11 +105,13 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   nginx is a fixed row and does not move. Order is not startup order: in
   compose that is what `depends_on` is for.
 - **Delete removes the configuration**: taking a service off the list takes its
-  configuration folder along — the app's database, its history, its indexers —
-  so the button asks first: the first click arms it, the second deletes. Only
-  that button does it; "Clear all" and the list the server reconciles drop the
-  row and leave the folder where it is. With no server there is nothing to
-  delete: the page opened from disk does not reach your filesystem.
+  container and its configuration folder along — the app's database, its
+  history, its indexers — so the button asks first: the first click arms it, the
+  second deletes. Only that button does it; "Clear all" and the list the server
+  reconciles drop the row and leave container and folder where they are. A
+  container from another stack that happens to share the name is left alone.
+  With no server there is nothing to delete: the page opened from disk does not
+  reach your filesystem.
 - **Conflict warning**: two instances pointed at the same folder step on each
   other when importing, so the list says so in red, with the names and the
   path. Jellyfin, which mounts the whole library, and Bazarr, which follows the
