@@ -725,6 +725,16 @@ pelo `svc(id)`: sem isso, a página morre no primeiro render, procurando a cor d
 um serviço que não existe, e a lista some inteira. A linha sai da interface e,
 no primeiro `saveSettings()`, sai do banco junto.
 
+O `api/health` devolve a **versão do binário** (o `CARGO_PKG_VERSION`), e é ela
+que o badge `servidor v0.4.5` do cabeçalho mostra — junto da linha de subida,
+que também a traz. Quem responde é o binário, não o arquivo, e os dois se
+separam: ver a versão ali é o jeito mais rápido de descobrir que o servidor no
+ar foi compilado antes da mudança que "não pegou". Quem pinta o badge é o
+`paintServer()`, num lugar só, porque três coisas o alimentam — a versão, a
+pasta da stack e se o `docker compose` respondeu — e o `applyI18n()` o chama,
+para ele acompanhar o idioma. Servidor velho demais para anunciar versão
+aparece sem ela, não com um `vundefined`.
+
 O `api/health` também devolve o `puid`/`pgid` do processo — lidos do dono de
 `/proc/self`, sem crate a mais. São eles o padrão de fábrica do PUID/PGID do
 Ambiente quando há servidor: é ele quem cria as pastas da stack, e o app precisa

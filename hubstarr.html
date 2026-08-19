@@ -366,7 +366,7 @@
   <button class="sm" id="credBtn" data-i18n="app.credits">♡ Credits</button>
   <span style="flex:1"></span>
   <!-- only shows with a server behind the page -->
-  <span id="srv" hidden data-i18n="srv.on">server</span>
+  <span id="srv" hidden>server</span>
   <select id="langSel" style="width:auto;padding:6px 8px" data-i18n-title="app.lang"></select>
   <button id="themeBtn" data-i18n-title="app.theme">🌙</button>
   <button id="cfgBtn" data-i18n="app.cfg">⇄ Configuration</button>
@@ -929,8 +929,8 @@ const I18N = {
   'btn.upHint':'Grava os arquivos na pasta da stack e roda um docker compose up -d',
   'btn.down':'Derrubar',
   'btn.downHint':'Roda um docker compose down na pasta da stack',
-  'srv.on':'servidor',
-  'srv.at':d=>`Servidor conectado; os arquivos vão para ${d}`,
+  'srv.on':v=>`servidor${v ? ' v'+v : ''}`,
+  'srv.at':(v,d)=>`Servidor${v ? ' v'+v : ''} conectado; os arquivos vão para ${d}`,
   'srv.noDocker':'o docker compose não respondeu neste servidor',
   'btn.noDocker':'O docker compose não respondeu neste servidor: instale-o para subir e derrubar a stack daqui',
   'docker.missing':'<b>Sem o Docker Compose neste servidor.</b> O Hubstarr continua gerando os arquivos e guardando a stack, mas <b>Subir</b> e <b>Derrubar</b> vão falhar até o plugin Compose estar instalado — veja abaixo como instalá-lo.',
@@ -1444,8 +1444,8 @@ const I18N = {
   'btn.upHint':'Writes the files to the stack folder and runs docker compose up -d',
   'btn.down':'Tear down',
   'btn.downHint':'Runs docker compose down in the stack folder',
-  'srv.on':'server',
-  'srv.at':d=>`Server connected; files go to ${d}`,
+  'srv.on':v=>`server${v ? ' v'+v : ''}`,
+  'srv.at':(v,d)=>`Server${v ? ' v'+v : ''} connected; files go to ${d}`,
   'srv.noDocker':'docker compose did not answer on this server',
   'btn.noDocker':'docker compose did not answer on this server: install it to bring the stack up and down from here',
   'docker.missing':'<b>No Docker Compose on this server.</b> Hubstarr still generates the files and keeps the stack, but <b>Bring up</b> and <b>Tear down</b> will fail until the Compose plugin is installed — see below how to install it.',
@@ -1959,8 +1959,8 @@ const I18N = {
   'btn.upHint':'Escribe los archivos en la carpeta de la stack y ejecuta docker compose up -d',
   'btn.down':'Derribar',
   'btn.downHint':'Ejecuta un docker compose down en la carpeta de la stack',
-  'srv.on':'servidor',
-  'srv.at':d=>`Servidor conectado; los archivos van a ${d}`,
+  'srv.on':v=>`servidor${v ? ' v'+v : ''}`,
+  'srv.at':(v,d)=>`Servidor${v ? ' v'+v : ''} conectado; los archivos van a ${d}`,
   'srv.noDocker':'docker compose no respondió en este servidor',
   'btn.noDocker':'docker compose no respondió en este servidor: instálalo para levantar y derribar la stack desde aquí',
   'docker.missing':'<b>Sin Docker Compose en este servidor.</b> Hubstarr sigue generando los archivos y guardando la stack, pero <b>Levantar</b> y <b>Derribar</b> fallarán hasta que el plugin Compose esté instalado — mira abajo cómo instalarlo.',
@@ -2305,6 +2305,8 @@ function applyI18n(){
   if($('#cfgBack') && $('#cfgBack').classList.contains('open')) renderConfig();
   // and the screenshot title, which carries the app and theme names
   if($('#shotTitle')) shotTitle();
+  // the server badge is built by hand as well: it carries the version
+  if(typeof paintServer === 'function') paintServer();
 }
 
 function setLang(l){
@@ -5188,6 +5190,22 @@ async function openStack(){
   paintStatus(); pollStatus();
 }
 
+/* The header badge, in one place: it says there is a server behind the page and
+   which version of it — the one `api/health` announces, so what shows is the
+   binary that is answering, not the page's idea of itself, and the two do come
+   apart (a server compiled a while ago serves the page it was compiled with).
+   Three things feed it — the version, the stack folder and whether docker
+   compose answered — and `applyI18n()` calls it, so it follows the language
+   like every other string. A server too old to announce a version simply shows
+   none, instead of "vundefined". */
+function paintServer(){
+  if(!SERVER) return;
+  const v = SERVER.version;
+  $('#srv').textContent = t('srv.on', v);
+  $('#srv').title = t('srv.at', v, SERVER.dir) +
+                    (SERVER.docker ? '' : ' — ' + t('srv.noDocker'));
+}
+
 async function detectServer(){
   if(!/^https?:$/.test(location.protocol)) return;   // file:// has no server
   try{
@@ -5203,7 +5221,7 @@ async function detectServer(){
   if(SERVER.pgid != null) DEFAULTS.pgid = String(SERVER.pgid);
   document.body.classList.add('srvOn');   // this is what reveals the status dots
   $('#srv').hidden = false;
-  $('#srv').title  = t('srv.at', SERVER.dir);
+  paintServer();
   $('#up').hidden = $('#down').hidden = false;
   /* the .zip is the way out for whoever has no server: here the files are
      written and the stack comes up from right here, so the button leaves the bar */
@@ -5214,7 +5232,6 @@ async function detectServer(){
      instead of becoming a hand-written `title` — the one that writes it is
      `applyI18n()`, on every language change. */
   if(!SERVER.docker){
-    $('#srv').title += ' — ' + t('srv.noDocker');
     $('#noDocker').hidden = false;
     $('#dockerHelp').open = true;
     ['#up','#down'].forEach(sel=>{

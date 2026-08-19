@@ -195,7 +195,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         journal::record("Verbose mode (-v): the step by step goes to the output and to the log.");
     }
     journal::record(format!(
-        "Hubstarr on http://{}  (stack in {}, database in {}, log in {})",
+        "Hubstarr v{} on http://{}  (stack in {}, database in {}, log in {})",
+        env!("CARGO_PKG_VERSION"),
         args.addr,
         ctx.base.display(),
         db_path.display(),
