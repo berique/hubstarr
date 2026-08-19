@@ -14,6 +14,9 @@ backend/stacks/
 # saída das checagens do CI, quando rodadas à mão
 page.js
 
+# cache do python das checagens de tools/
+__pycache__/
+
 # arquivos de trabalho do editor
 *.swp
 *.swo
