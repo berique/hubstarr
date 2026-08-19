@@ -5505,7 +5505,7 @@ async function runJob(start, title){
       const r = await api('job/' + head.job);
       j = await r.json();
       // a job the server no longer knows about (it keeps them in memory)
-      if(!r.ok || !Array.isArray(j.log)) throw new Error(j.error || ('HTTP ' + r.status));
+      if(!r.ok || !Array.isArray(j.log)) throw new Error(j.error ? msgText(j.error) : ('HTTP ' + r.status));
     }catch(e){
       ultimo = String(e && e.message || e);
       if(++errors < ATTEMPTS) continue;
