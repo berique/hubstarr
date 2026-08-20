@@ -28,9 +28,7 @@ Uma volta completa, do build do servidor até importar um filme baixado —
 adicionar serviços, configurar as instâncias, subir a stack, baixar pelo
 qBittorrent e importar no Radarr:
 
-<video src="docs/demo.mp4" controls width="100%"></video>
-
-Se o player não aparecer, [baixe o vídeo](docs/demo.mp4) direto.
+[![Assista à demonstração](docs/demo-thumb.png)](docs/demo.mp4)
 
 ## O que ele deixa pronto
 

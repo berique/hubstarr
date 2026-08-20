@@ -28,9 +28,7 @@ A full walkthrough, from building the server to importing a downloaded movie —
 adding services, configuring the instances, bringing the stack up, downloading
 through qBittorrent and importing into Radarr:
 
-<video src="docs/demo.mp4" controls width="100%"></video>
-
-If the player doesn't show up, [download the video](docs/demo.mp4) directly.
+[![Watch the demo](docs/demo-thumb.png)](docs/demo.mp4)
 
 ## What it sets up for you
 

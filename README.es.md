@@ -29,9 +29,7 @@ Un recorrido completo, desde compilar el servidor hasta importar una película
 descargada — añadir servicios, configurar las instancias, levantar la stack,
 descargar con qBittorrent e importar en Radarr:
 
-<video src="docs/demo.mp4" controls width="100%"></video>
-
-Si el reproductor no aparece, [descarga el video](docs/demo.mp4) directamente.
+[![Mira la demostración](docs/demo-thumb.png)](docs/demo.mp4)
 
 ## Lo que te deja listo
 
