@@ -5420,10 +5420,18 @@ const logLine = m =>{
    nothing — the server goes on with the `docker compose` and with the API calls
    — and it takes away the only place where one can follow what it is doing. It
    comes back when the job finishes, having worked or not. */
+/* The state line doubles as the job's verdict: neutral (`.hint`) while it runs
+   or stops, green (`.ok`) once it lands, red (`.warn`) on a failure or a stop
+   — the same pair of classes the rest of the page already uses for good/bad
+   text, so this is not a third color introduced just for the log modal. */
+function setLogState(key, cls){
+  $('#logState').textContent = t(key);
+  $('#logState').className = cls || 'hint';
+}
 function openLog(title){
   $('#logTitle').textContent = title;
   $('#logOut').textContent = '';
-  $('#logState').textContent = t('log.running');
+  setLogState('log.running');
   $('#logClose').disabled = true;
   $('#logStop').hidden = true;
   $('#logStop').disabled = false;
@@ -5439,7 +5447,7 @@ $('#logStop').onclick = async ()=>{
   if(!currentJob) return;
   $('#logStop').disabled = true;
   jobStopped = true;
-  $('#logState').textContent = t('log.stopping');
+  setLogState('log.stopping');
   try{ await api('job/' + currentJob + '/stop', {method:'POST'}); }
   catch(e){ logLine(String(e)); }
 };
@@ -5454,7 +5462,7 @@ async function runJob(start, title){
   catch(e){ logLine(String(e)); }
   if(!head || !head.ok){
     logLine((head && head.error) || t('log.noServer'));
-    $('#logState').textContent = t('log.fail');
+    setLogState('log.fail', 'warn');
     endLog();
     return false;
   }
@@ -5479,14 +5487,14 @@ async function runJob(start, title){
       ultimo = String(e && e.message || e);
       if(++errors < ATTEMPTS) continue;
       logLine(t('log.lost', ultimo));
-      $('#logState').textContent = t('log.fail');
+      setLogState('log.fail', 'warn');
       endLog();
       return false;
     }
     errors = 0;
     j.log.slice(seen).forEach(logLine); seen = j.log.length;
     if(j.done){
-      $('#logState').textContent = t(j.ok ? 'log.done' : jobStopped ? 'log.stopped' : 'log.fail');
+      setLogState(j.ok ? 'log.done' : jobStopped ? 'log.stopped' : 'log.fail', j.ok ? 'ok' : 'warn');
       endLog();
       return j.ok;
     }
