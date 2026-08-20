@@ -22,6 +22,16 @@ quem quer só os arquivos.
 > ou monitoramento. Revise tudo — senhas, portas, certificados e permissões —
 > antes de expor a stack a qualquer rede que não seja a sua.
 
+## Vídeo
+
+Uma volta completa, do build do servidor até importar um filme baixado —
+adicionar serviços, configurar as instâncias, subir a stack, baixar pelo
+qBittorrent e importar no Radarr:
+
+<video src="docs/demo.mp4" controls width="100%"></video>
+
+Se o player não aparecer, [baixe o vídeo](docs/demo.mp4) direto.
+
 ## O que ele deixa pronto
 
 Gerar os arquivos é a metade fácil. A outra é a que se faz à mão depois, app por

@@ -23,6 +23,16 @@ Guides. Es el modo de quien quiere solo los archivos.
 > certificados y permisos — antes de exponer la stack a cualquier red que no
 > sea la tuya.
 
+## Video
+
+Un recorrido completo, desde compilar el servidor hasta importar una película
+descargada — añadir servicios, configurar las instancias, levantar la stack,
+descargar con qBittorrent e importar en Radarr:
+
+<video src="docs/demo.mp4" controls width="100%"></video>
+
+Si el reproductor no aparece, [descarga el video](docs/demo.mp4) directamente.
+
 ## Lo que te deja listo
 
 Generar los archivos es la mitad fácil. La otra es la que se hace a mano
