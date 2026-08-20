@@ -28,7 +28,7 @@ A full walkthrough, from building the server to importing a downloaded movie —
 adding services, configuring the instances, bringing the stack up, downloading
 through qBittorrent and importing into Radarr:
 
-<video src="https://github.com/berique/hubstarr/raw/refs/heads/master/docs/demo.mp4" />
+<video src="https://github.com/berique/hubstarr/raw/refs/heads/master/docs/demo.mp4"></video>
 
 ## What it sets up for you
 
