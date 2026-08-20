@@ -454,14 +454,17 @@ campo **API key** do modal dele.
 
 ## Convenções geradas
 
-O nome da stack e o da rede são fixos: `starrnet`. O título de cada instância
-vira um slug (minúsculas, sem acentos, espaços como hífen) usado como
-`container_name`, chave do serviço e pasta de config:
+O nome do projeto do compose, o `container_name` de cada container e o nome da
+rede carregam o **Nome do projeto** do Ambiente (`hubstarr` por padrão — veja o
+item acima): é ele que separa esta stack de outra na mesma máquina. O que não
+carrega esse prefixo é o resto: o título de cada instância vira um slug
+(minúsculas, sem acentos, espaços como hífen) usado, sempre do mesmo jeito, como
+chave do serviço no compose, subpath do nginx e pasta de config:
 
-| Título          | container_name | config                       |
-| --------------- | -------------- | ---------------------------- |
-| `Radarr`        | `radarr`       | `${BASE_CONFIG}/radarr`      |
-| `Radarr [UHD]`  | `radarr-uhd`   | `${BASE_CONFIG}/radarr-uhd`  |
+| Título          | chave do serviço / config | container_name (projeto `hubstarr`) |
+| --------------- | -------------------------- | ------------------------------------ |
+| `Radarr`        | `radarr`                   | `hubstarr-radarr`                    |
+| `Radarr [UHD]`  | `radarr-uhd`               | `hubstarr-radarr-uhd`                |
 
 Os caminhos saem como variáveis resolvidas pelo `.env`:
 

@@ -464,14 +464,18 @@ its API key, the one the app itself generates on first boot: copy it from
 
 ## Generated conventions
 
-The stack and network names are fixed: `starrnet`. Each instance title becomes
-a slug (lowercase, no accents, spaces turned into hyphens) used as the
-`container_name`, the service key and the config folder:
+The compose project name, each container's `container_name` and the network
+name carry the **Project name** from the Environment (`hubstarr` by default —
+see the item above): it is what separates this stack from another on the same
+machine. What does not carry that prefix is everything else: each instance
+title becomes a slug (lowercase, no accents, spaces turned into hyphens) used,
+the same way every time, as the compose service key, the nginx subpath and the
+config folder:
 
-| Title           | container_name | config                       |
-| --------------- | -------------- | ---------------------------- |
-| `Radarr`        | `radarr`       | `${BASE_CONFIG}/radarr`      |
-| `Radarr [UHD]`  | `radarr-uhd`   | `${BASE_CONFIG}/radarr-uhd`  |
+| Title           | service key / config | container_name (project `hubstarr`) |
+| --------------- | --------------------- | ------------------------------------ |
+| `Radarr`        | `radarr`              | `hubstarr-radarr`                    |
+| `Radarr [UHD]`  | `radarr-uhd`           | `hubstarr-radarr-uhd`                |
 
 Paths come out as variables resolved by `.env`:
 
