@@ -382,8 +382,8 @@ quando o docker não responde — ali; se não houver, avisa e já abre o bloco
 | `--docker` | `docker`, ou `podman`    | comando do compose; sem a opção, vale o primeiro dos dois que responder |
 | `-v`       | desligado                | diz o passo a passo: arquivos, banco e chamadas de API |
 
-O servidor escreve o que faz na saída e num `servidor.log`, ao lado do banco
-(`~/.hubstarr/servidor.log`, com o `--db` de fábrica): a subida, o motor de
+O servidor escreve o que faz na saída e num `server.log`, ao lado do banco
+(`~/.hubstarr/server.log`, com o `--db` de fábrica): a subida, o motor de
 container escolhido e cada gravação de estado vinda da página — com quantos
 serviços vieram e quais saíram da stack. O arquivo acrescenta, nunca reescreve,
 e é onde se olha quando a stack mudou e não se sabe por quê.

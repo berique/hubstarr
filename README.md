@@ -390,8 +390,8 @@ button tooltip says why.
 | `--docker` | `docker`, or `podman`     | the compose command; without the option, whichever of the two answers first |
 | `-v`       | off                       | spells out each step: files, database and API calls |
 
-The server writes what it does both to its output and to a `servidor.log` next
-to the database (`~/.hubstarr/servidor.log` with the default `--db`): startup,
+The server writes what it does both to its output and to a `server.log` next
+to the database (`~/.hubstarr/server.log` with the default `--db`): startup,
 the container engine it picked, and every state save coming from the page — how
 many services came in and which ones left the stack. The file appends, never
 rewrites, and it is where to look when the stack changed and you do not know

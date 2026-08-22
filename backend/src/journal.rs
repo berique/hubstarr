@@ -1,4 +1,4 @@
-/* What the server writes: the output and `servidor.log`.
+/* What the server writes: the output and `server.log`.
 
    Two heights. The **normal** one is what always comes out — the startup, the
    container engine chosen, every state write coming from the page. The
@@ -33,7 +33,7 @@ pub fn path(db_path: &Path) -> PathBuf {
     db_path
         .parent()
         .unwrap_or(Path::new("."))
-        .join("servidor.log")
+        .join("server.log")
 }
 
 pub fn open(db_path: &Path) {
@@ -119,10 +119,10 @@ mod tests {
     fn the_log_sits_next_to_the_database() {
         assert_eq!(
             path(Path::new("/home/x/.hubstarr/hubstarr.db")),
-            Path::new("/home/x/.hubstarr/servidor.log")
+            Path::new("/home/x/.hubstarr/server.log")
         );
         // a database with no folder in the path: the log stays in the current directory
-        assert_eq!(path(Path::new("hubstarr.db")), Path::new("servidor.log"));
+        assert_eq!(path(Path::new("hubstarr.db")), Path::new("server.log"));
     }
 
     #[test]

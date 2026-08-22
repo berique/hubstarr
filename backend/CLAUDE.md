@@ -22,7 +22,7 @@ dele diz; é a primeira coisa a olhar. `cargo test` roda os testes do modelo e d
 `./stack`, a pasta em que os arquivos são gravados), `--db` (padrão
 `~/.hubstarr/hubstarr.db`), `--docker`, `-v`.
 
-O que ele escreve vai para a saída **e** para o `servidor.log`, ao lado do
+O que ele escreve vai para a saída **e** para o `server.log`, ao lado do
 banco — não na pasta da stack: o log é do servidor, e o `--dir` se apaga e se
 refaz enquanto o `--db` dura. É `append`, nunca reescrita, porque o valor dele
 é justamente o histórico entre reinícios; e o arquivo que não abre vira um
@@ -50,7 +50,7 @@ chave da stack e as senhas estão entre os valores), e a URL sai pelo
 
 E há **dois destinos**, que é o que decide o idioma de cada linha. O log do
 servidor — o `record()`, o `detail()`, o `--help` e as strings de erro internas
-— é **inglês**, o idioma do código: quem o lê está lendo o `servidor.log` ao
+— é **inglês**, o idioma do código: quem o lê está lendo o `server.log` ao
 lado do banco. Já o que vai para o **modal do log** é lido por quem está na
 página, no idioma dela, e por isso não é texto: é o `Msg` do `msg.rs`, um par
 `{key, args}` que viaja em JSON e só vira frase na página, no `I18N`

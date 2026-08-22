@@ -399,8 +399,8 @@ ayuda de los botones.
 | `--docker` | `docker`, o `podman`      | comando del compose; sin la opción, vale el primero de los dos que responda |
 | `-v`       | apagado                   | dice el paso a paso: archivos, base de datos y llamadas de API |
 
-El servidor escribe lo que hace en su salida y en un `servidor.log` junto a la
-base (`~/.hubstarr/servidor.log` con el `--db` de fábrica): el arranque, el
+El servidor escribe lo que hace en su salida y en un `server.log` junto a la
+base (`~/.hubstarr/server.log` con el `--db` de fábrica): el arranque, el
 motor de contenedores elegido y cada guardado de estado que llega de la página
 — cuántos servicios vinieron y cuáles salieron de la stack. El archivo añade,
 nunca reescribe, y es donde mirar cuando la stack cambió y no se sabe por qué.
