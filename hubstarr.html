@@ -4190,7 +4190,13 @@ function cancelCfg(){
 $('#cfgBtn').onclick = openCfg;
 $('#cfgCancel').onclick = cancelCfg;
 $('#cfgBack').onclick = e=>{ if(e.target.id==='cfgBack') cancelCfg(); };
-$('#cfgSave').onclick = closeCfg;
+/* Every other modal's Save pairs its close with a render() — it is what
+   rewrites the config.yml pane (and every other one) and, at its end, sends
+   CONFIG to the server. This one lacked it: presets, clients, naming and the
+   extra-templates chips all mutate CONFIG in place, but without a render() the
+   panes and the backend both keep showing whatever was there before the modal
+   opened, so Aplicar na stack (below) sent the stale config.yml. */
+$('#cfgSave').onclick = ()=>{ closeCfg(); render(); };
 
 /* ---------- global environment ---------- */
 function openEnv(){
@@ -5819,6 +5825,7 @@ function applyPayload(){
 
 $('#cfgApply').onclick = async ()=>{
   closeCfg();
+  render();   // applyPayload() reads the config.yml pane's text; it must be fresh first
   await runJob(()=> api('config/apply',
     {method:'POST', body:JSON.stringify(applyPayload())}), t('log.apply'));
 };
