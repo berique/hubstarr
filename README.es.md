@@ -31,6 +31,11 @@ descargar con qBittorrent e importar en Radarr:
 
 [![Mira la demostración](docs/demo-thumb.png)](docs/demo.mp4)
 
+También hay un recorrido rápido por la interfaz (~43 s), sin levantar nada de
+verdad — tema, idioma, añadir servicios, editar una instancia, reordenar con
+el teclado y los modales de Entorno, nginx, Créditos y Configuración:
+[tour por la página](docs/demo-tour.mp4).
+
 ## Lo que te deja listo
 
 Generar los archivos es la mitad fácil. La otra es la que se hace a mano

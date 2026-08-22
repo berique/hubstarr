@@ -30,6 +30,11 @@ qBittorrent e importar no Radarr:
 
 [![Assista à demonstração](docs/demo-thumb.png)](docs/demo.mp4)
 
+Tem também um passeio rápido pela interface (~43 s), sem subir nada de
+verdade — tema, idioma, adicionar serviços, editar uma instância, reordenar
+pelo teclado e os modais de Ambiente, nginx, Créditos e Configuração:
+[tour pela página](docs/demo-tour.mp4).
+
 ## O que ele deixa pronto
 
 Gerar os arquivos é a metade fácil. A outra é a que se faz à mão depois, app por

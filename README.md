@@ -30,6 +30,11 @@ through qBittorrent and importing into Radarr:
 
 [![Watch the demonstration](docs/demo-thumb.png)](docs/demo.mp4)
 
+There's also a quick tour of the interface (~43 s), without actually bringing
+anything up — theme, language, adding services, editing an instance,
+reordering by keyboard, and the Environment, nginx, Credits and Configuration
+modals: [tour of the page](docs/demo-tour.mp4).
+
 ## What it sets up for you
 
 Generating the files is the easy half. The other half is the one you do by hand
