@@ -235,8 +235,9 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   proxy. The four keys are written into the `sabnzbd.ini` the app itself
   created, once the stack is up, just like qBittorrent's.
 - **Bazarr's config.yaml**: its **API key** is the stack's own — the field in
-  the modal shows the one in force, and changing it there makes this instance
-  use another —, and along with it goes `general.base_url`, the subpath nginx
+  the modal shows the one in force, and **Generate** makes another by the same
+  method (16 random bytes in hex), which then holds for this instance alone —,
+  and along with it goes `general.base_url`, the subpath nginx
   serves it on, without which Bazarr builds its links at the root and breaks
   behind the proxy. Both are written into the `config.yaml` the app itself
   created, once the stack is up, just like SABnzbd's.

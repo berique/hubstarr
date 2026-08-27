@@ -667,7 +667,10 @@ sudo sh get-docker.sh</pre>
           <button type="button" id="mDlKeyGen" data-i18n="btn.gen">Generate</button>
         </div></div>
       <div class="row" id="mAppKeyRow" data-help="m.appKeyWhy"><label for="mAppKey" data-i18n="m.appKey">API key</label>
-        <input type="text" id="mAppKey" class="fmt"></div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="mAppKey" class="fmt">
+          <button type="button" id="mAppKeyGen" data-i18n="btn.gen">Generate</button>
+        </div></div>
       <div class="row" id="mSolverRow" data-help="m.solverWhy"><label data-i18n="m.indexers">Indexers</label>
         <label class="check"><input type="checkbox" id="mSolver"> <span data-i18n="m.solver">Add FlareSolverr to the stack</span></label>
       </div>
@@ -1167,7 +1170,7 @@ const I18N = {
   'm.dlKey':'API key',
   'm.dlKeyWhy':'A chave da API deste cliente, que os *arr usam para falar com ele. Diferente da senha da interface, ela é o próprio app que gera na primeira subida — copie de <i>Config → General</i> e cole aqui. Ela não vai para arquivo nenhum: serve só para o <b>Aplicar na stack</b> da Configuração registrar o cliente nos *arr.',
   'm.appKey':'API key',
-  'm.appKeyWhy':'A chave da API deste app, com que o <b>Aplicar na stack</b> manda os idiomas de legenda do <b>idioma da busca</b> do Ambiente. De fábrica ela acompanha a chave da stack: o Subir a escreve no <code>config.yaml</code> do próprio app antes de alguém falar com ele, então não há nada para copiar da interface. Trocando o valor aqui, esta instância passa a usar essa chave.',
+  'm.appKeyWhy':'A chave da API deste app, com que o <b>Aplicar na stack</b> manda os idiomas de legenda do <b>idioma da busca</b> do Ambiente. De fábrica ela acompanha a chave da stack: o Subir a escreve no <code>config.yaml</code> do próprio app antes de alguém falar com ele, então não há nada para copiar da interface. Trocando o valor aqui, esta instância passa a usar essa chave — o <b>Gerar</b> cria uma pelo mesmo método, 16 bytes em hexadecimal.',
   'm.solverWhy':'Vários indexadores ficam atrás do desafio anti-bot da Cloudflare, e o Prowlarr sozinho esbarra nele: a busca volta vazia ou com erro. O <b>FlareSolverr</b> resolve o desafio num navegador headless e devolve a página ao Prowlarr. Marcando aqui, ele entra na stack junto — e o <b>Subir</b> já o registra no Prowlarr, em <i>Settings → Indexers → Indexer Proxies</i>, com a etiqueta <b>flaresolverr</b>. O que sobra é marcar essa etiqueta nos indexadores que precisam dele: é o Prowlarr que casa proxy e indexador por etiqueta, e quais precisam só você sabe. A imagem usada é a do <b>Byparr</b>, um substituto direto e mais atual, com a mesma API e a mesma porta. Sem indexador protegido pela Cloudflare, dá para deixar desmarcado.',
   'm.libs':'Outras pastas',
   'm.libAdd':'+ pasta',
@@ -1688,7 +1691,7 @@ const I18N = {
   'm.dlKey':'API key',
   'm.dlKeyWhy':'This client\'s API key, the one the *arr apps use to talk to it. Unlike the web UI password, the app itself generates it on first boot — copy it from <i>Config → General</i> and paste it here. It goes into no file: it only serves the Configuration\'s <b>Apply to the stack</b>, which registers the client in every *arr.',
   'm.appKey':'API key',
-  'm.appKeyWhy':'This app\'s API key, the one <b>Apply to the stack</b> uses to send the subtitle languages of the Environment\'s <b>search language</b>. Out of the box it follows the stack key: Bring up writes it into the app\'s own <code>config.yaml</code> before anyone talks to it, so there is nothing to copy out of the interface. Change the value here and this instance uses that key instead.',
+  'm.appKeyWhy':'This app\'s API key, the one <b>Apply to the stack</b> uses to send the subtitle languages of the Environment\'s <b>search language</b>. Out of the box it follows the stack key: Bring up writes it into the app\'s own <code>config.yaml</code> before anyone talks to it, so there is nothing to copy out of the interface. Change the value here and this instance uses that key instead — <b>Generate</b> makes one by the same method, 16 random bytes in hex.',
   'm.solverWhy':'Plenty of indexers sit behind Cloudflare\'s anti-bot challenge, and Prowlarr alone runs straight into it: searches come back empty or failing. <b>FlareSolverr</b> solves the challenge in a headless browser and hands the page back to Prowlarr. Tick this and it joins the stack — and <b>Bring up</b> already registers it in Prowlarr, under <i>Settings → Indexers → Indexer Proxies</i>, with the <b>flaresolverr</b> tag. What is left is putting that tag on the indexers that need it: Prowlarr matches proxy to indexer by tag, and which ones need it only you know. The image behind it is <b>Byparr</b>, a drop-in, better-maintained replacement with the same API and the same port. With no Cloudflare-protected indexer, you can leave it off.',
   'm.libs':'Other folders',
   'm.libAdd':'+ folder',
@@ -2209,7 +2212,7 @@ const I18N = {
   'm.dlKey':'API key',
   'm.dlKeyWhy':'La clave de API de este cliente, la que los *arr usan para hablar con él. A diferencia de la contraseña de la interfaz, la genera el propio app en el primer arranque — cópiala de <i>Config → General</i> y pégala aquí. No va a ningún archivo: sirve solo para el <b>Aplicar en la stack</b> de la Configuración, que registra el cliente en cada *arr.',
   'm.appKey':'API key',
-  'm.appKeyWhy':'La clave de API de este app, con la que el <b>Aplicar en la stack</b> manda los idiomas de subtítulos del <b>idioma de la búsqueda</b> del Entorno. De fábrica acompaña a la clave de la stack: el Levantar la escribe en el <code>config.yaml</code> del propio app antes de que nadie hable con él, así que no hay nada que copiar de la interfaz. Si cambias el valor aquí, esta instancia usa esa clave.',
+  'm.appKeyWhy':'La clave de API de este app, con la que el <b>Aplicar en la stack</b> manda los idiomas de subtítulos del <b>idioma de la búsqueda</b> del Entorno. De fábrica acompaña a la clave de la stack: el Levantar la escribe en el <code>config.yaml</code> del propio app antes de que nadie hable con él, así que no hay nada que copiar de la interfaz. Si cambias el valor aquí, esta instancia usa esa clave — el <b>Generar</b> crea una por el mismo método, 16 bytes en hexadecimal.',
   'm.solverWhy':'Varios indexadores están detrás del desafío anti-bot de Cloudflare, y Prowlarr solo choca con él: la búsqueda vuelve vacía o con error. <b>FlareSolverr</b> resuelve el desafío en un navegador headless y le devuelve la página a Prowlarr. Al marcarlo, entra en la stack junto — y el <b>Levantar</b> ya lo registra en Prowlarr, en <i>Settings → Indexers → Indexer Proxies</i>, con la etiqueta <b>flaresolverr</b>. Lo que queda es poner esa etiqueta en los indexadores que lo necesitan: Prowlarr casa proxy e indexador por etiqueta, y cuáles lo necesitan solo lo sabes tú. La imagen que usa es la de <b>Byparr</b>, un reemplazo directo y más actual, con la misma API y el mismo puerto. Sin ningún indexador protegido por Cloudflare, se puede dejar sin marcar.',
   'm.libs':'Otras carpetas',
   'm.libAdd':'+ carpeta',
@@ -3357,6 +3360,7 @@ function tpvIco(s){
 }
 // same recipe as the stack key: 16 bytes in hexadecimal
 $('#mDlKeyGen').onclick = ()=> $('#mDlKey').value = randKey();
+$('#mAppKeyGen').onclick = ()=> $('#mAppKey').value = randKey();
 $('#mTpv').addEventListener('change', ()=>{
   const id = editing ? byKey(editing).id : picked;
   if(id && svc(id).tpAddon) tpvIco(svc(id));

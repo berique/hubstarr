@@ -229,7 +229,8 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   escritas no `sabnzbd.ini` que o próprio app criou, depois de a stack subir,
   como no qBittorrent.
 - **config.yaml do Bazarr**: a **API key** dele é a mesma da stack — o campo no
-  modal mostra a que vale, e trocá-la ali faz esta instância usar outra —, e vai
+  modal mostra a que vale, e o **Gerar** cria outra pelo mesmo método (16 bytes
+  em hexadecimal), que passa a valer só para esta instância —, e vai
   junto o `general.base_url` com o subpath em que o nginx o serve, sem o qual o
   Bazarr monta os links na raiz e quebra atrás do proxy. As duas são escritas no
   `config.yaml` que o próprio app criou, depois de a stack subir, como no

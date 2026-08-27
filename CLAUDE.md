@@ -495,8 +495,11 @@ o `bzKey()` cai no `DEFAULTS.apiKey` e o servidor a escreve no `config.yaml` do
 próprio app, por `patch`, antes de qualquer chamada. O app gera uma sozinho na
 primeira subida — 16 bytes em hexadecimal, a mesma forma do `randKey()` —, e
 por isso sobrescrevê-la não custa nada: ninguém além de nós fala com ele. A
-flag `appKey` no `SERVICES` dá o campo do modal, que é o **override**, e ela
-mora no `instance.extra`, sem coluna nova.
+flag `appKey` no `SERVICES` dá o campo do modal, que é o **override**, com o
+botão **Gerar** que cria outra pelo mesmo método — os mesmos 16 bytes em
+hexadecimal do `randKey()`, como o do SABnzbd. Valor igual ao da stack é o
+mesmo que vazio: quer dizer "acompanhe a stack". Ela mora no `instance.extra`,
+sem coluna nova.
 
 Foi ele que trouxe o quarto formato do `patch.rs`, o **`yaml`**: o Bazarr
 largou o INI na 1.4 e escreve `auth:` com a chave indentada embaixo. O
