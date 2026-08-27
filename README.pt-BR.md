@@ -28,7 +28,7 @@ Uma volta completa, do build do servidor até importar um filme baixado —
 adicionar serviços, configurar as instâncias, subir a stack, baixar pelo
 qBittorrent e importar no Radarr:
 
-[![Assista à demonstração](docs/demo-thumb.png)](docs/demo.mp4)
+https://github.com/user-attachments/assets/bfab344a-0547-4518-bdd3-382e6ef12307
 
 Tem também um passeio rápido pela interface (~43 s), sem subir nada de
 verdade — tema, idioma, adicionar serviços, editar uma instância, reordenar
