@@ -309,8 +309,8 @@ handler de `#mSave`.
   `system.xml`. Montá-lo não serve: o arquivo é do app, que migra a
   configuração de rede ao subir, e num nível errado ele existe e é ignorado —
   o app sobe sem base URL e o subpath responde 404, sem nada no log dizer por
-  quê; no SABnzbd é o `url_base` do `sabnzbd.ini`, que o servidor
-  escreve depois de subir. Serviço em subpath sem esse ajuste monta os links na raiz e
+  quê; no SABnzbd é o `url_base` do `sabnzbd.ini` e no Bazarr é o
+  `general.base_url` do `config.yaml`, que o servidor escreve depois de subir. Serviço em subpath sem esse ajuste monta os links na raiz e
   quebra atrás do proxy — e é essa a razão de o **Seerr** publicar porta em
   vez de virar rota.
 - **App sem base URL configurável pode virar rota se o prefixo for retirado**,
@@ -484,6 +484,11 @@ Três coisas que não são óbvias:
   mostrava, e os nomes do `lang` de cada preset vieram de lá — nada inventado.
   Idioma sem template deixa os perfis como estão; nome errado viraria erro no
   log do Configarr, e a página não tem rede para conferir.
+
+O `config.yaml` do Bazarr leva **duas** chaves, e a segunda é o
+`general.base_url`: ele é serviço em subpath como qualquer outro, e estava sem
+base URL nenhuma desde sempre — os links dele saíam na raiz. `route()` já dá a
+forma que ele quer, com a barra na frente e nenhuma atrás.
 
 A chave de API do **Bazarr** acompanha a `${STARR_APIKEY}`, como a do SABnzbd:
 o `bzKey()` cai no `DEFAULTS.apiKey` e o servidor a escreve no `config.yaml` do

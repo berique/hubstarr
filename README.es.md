@@ -239,6 +239,12 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   nginx — sin él SABnzbd arma los enlaces en la raíz y se rompe detrás del
   proxy. Las cuatro claves se escriben en el `sabnzbd.ini` que creó el propio
   app, después de levantar la stack, como en qBittorrent.
+- **config.yaml de Bazarr**: su **API key** es la misma de la stack — el campo
+  del modal muestra la que vale, y cambiarla ahí hace que esta instancia use
+  otra —, y con ella va el `general.base_url`, el subpath en que lo sirve nginx,
+  sin el cual Bazarr arma los enlaces en la raíz y se rompe detrás del proxy.
+  Las dos se escriben en el `config.yaml` que creó el propio app, después de
+  levantar la stack, como en SABnzbd.
 - **Categorías de qBittorrent**: las que la **Configuración** dio a cada *arr,
   cada una con su subcarpeta dentro de la ruta de descarga — misma partición,
   así que el *arr sigue haciendo hardlink en vez de copiar. Con servidor se

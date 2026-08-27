@@ -633,6 +633,22 @@ general:
         assert!(!out.contains("aaaaaaaa"));
     }
 
+    /// The real pair Bazarr receives: the key and the base URL, in two
+    /// different sections of the same file, one existing and one to be created.
+    #[test]
+    fn the_yaml_writes_both_sections_bazarr_gets() {
+        let ours = vec![
+            ("auth".to_string(), vec![("apikey".to_string(), "0123456789abcdef0123456789abcdef".to_string())]),
+            ("general".to_string(), vec![("base_url".to_string(), "/bazarr".to_string())]),
+        ];
+        let out = merge_yaml(BAZARR_YAML, &ours, ": ", &[]);
+        assert!(out.contains("  apikey: 0123456789abcdef0123456789abcdef"));
+        assert!(out.contains("  base_url: /bazarr"));
+        // the base URL joins the section the app already had, next to its port
+        assert!(out.contains("general:\n  port: 6767\n  base_url: /bazarr"), "{out}");
+        assert_eq!(out, merge_yaml(&out, &ours, ": ", &[]));
+    }
+
     #[test]
     fn a_missing_yaml_key_lands_in_its_own_section() {
         let without = "auth:\n  type: null\ngeneral:\n  port: 6767\n";

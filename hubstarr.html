@@ -4972,11 +4972,17 @@ function sabPairs(a){
 }
 
 
-/* Bazarr's config.yaml. Only the API key, and the file is the app's: it writes
-   the rest itself on its first boot, and the merge does not touch what it did
-   not send. */
+/* Bazarr's config.yaml. Two keys, and the file is the app's: it writes the rest
+   itself on its first boot, and the merge does not touch what it did not send.
+
+   The `base_url` is the same rule as every other service on a subpath — without
+   it the app builds its links at the root and breaks behind the proxy. Bazarr
+   wants it with the leading slash and no trailing one, which is exactly what
+   `route()` gives; it strips the trailing slash itself, but sending what it
+   already normalizes to is what keeps reapplying from rewriting the line. */
 function bazarrPairs(a){
-  return [['auth', [['apikey', bzKey(a)]]]];
+  return [['auth',    [['apikey', bzKey(a)]]],
+          ['general', [['base_url', route(a)]]]];
 }
 
 
