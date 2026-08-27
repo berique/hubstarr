@@ -768,13 +768,13 @@ const I18N = {
     '<p>Com o Docker no lugar, descompacte o <code>.zip</code> e suba a stack de dentro da pasta dos arquivos:</p>'+
     '<pre>docker compose up -d</pre>',
   'wish.h':'Wishlist',
-  'wish.body':'<p>O que ainda não existe, na ordem em que faria sentido acontecer. Os marcos são versões, não datas: cada um só começa depois do anterior, porque depende dele. Hoje o repositório está no <b>v0.6</b> — a página, o servidor que guarda a stack e a sobe no Docker, a Configuração aplicada nos apps, o TRaSH Guides inteiro pelo Configarr e o nome do projeto que separa esta stack das outras da máquina.</p>'+
+  'wish.body':'<p>O que ainda não existe, na ordem em que faria sentido acontecer. Os marcos são versões, não datas: cada um só começa depois do anterior, porque depende dele. Hoje o repositório está no <b>v0.7</b> — a página, o servidor que guarda a stack e a sobe no Docker, a Configuração aplicada nos apps, o TRaSH Guides inteiro pelo Configarr, o nome do projeto que separa esta stack das outras da máquina e o idioma da busca.</p>'+
     '<p><s><b>v0.2</b> · Backend ligando o Hubstarr ao Docker</s> — feito: a página grava os arquivos e sobe a stack sem passar pelo <code>.zip</code>.</p>'+
     '<p><s><b>v0.3</b> · Configuração automática da stack pelo backend</s> — feito: as três partes da Configuração viram chamada de API pelo <b>Aplicar na stack</b>.</p>'+
     '<p><s><b>v0.4</b> · Custom formats e profiles por instância</s> — feito: a de 4K, a de anime e as demais nascem com o perfil de qualidade delas, aplicado pelo Configarr.</p>'+
     '<p><s><b>v0.5</b> · Compatibilidade com o TRaSH Guides</s> — feito junto do v0.4: cada preset traz o perfil, os custom formats com os scores do guia e a quality definition.</p>'+
     '<p><s><b>v0.6</b> · Nome de projeto e de container configurável</s> — feito: o <b>Nome do projeto</b>, no Ambiente, entra no projeto do compose, no nome de cada container e no da rede.</p>'+
-    '<p><b>v0.7</b> · Busca localizada de mídia — dá para escolher o idioma da busca e os *arr acham o lançamento certo.</p>',
+    '<p><s><b>v0.7</b> · Busca localizada de mídia</s> — feito: o <b>Idioma da busca</b>, no Ambiente, desce para os metadados do Radarr, as bibliotecas do Jellyfin, as legendas do Bazarr e os perfis do Configarr.</p>',
   'cfg.h':'⇄ Configuração',
   'cfg.apps':'Aplicações no Prowlarr',
   'cfg.appsHint':'As instâncias marcadas entram em <i>Settings → Apps</i> do Prowlarr, que passa a empurrar os indexadores para elas.',
@@ -1291,13 +1291,13 @@ const I18N = {
     '<p>With Docker in place, unzip the <code>.zip</code> and bring the stack up from inside the files folder:</p>'+
     '<pre>docker compose up -d</pre>',
   'wish.h':'Wishlist',
-  'wish.body':'<p>What is not there yet, in the order it would make sense to happen. The milestones are versions, not dates: each one only starts after the previous, because it depends on it. The repository is at <b>v0.6</b> today — the page, the server that keeps the stack and brings it up on Docker, the Configuration applied to the apps, the whole TRaSH Guides through Configarr and the project name that separates this stack from the others on the machine.</p>'+
+  'wish.body':'<p>What is not there yet, in the order it would make sense to happen. The milestones are versions, not dates: each one only starts after the previous, because it depends on it. The repository is at <b>v0.7</b> today — the page, the server that keeps the stack and brings it up on Docker, the Configuration applied to the apps, the whole TRaSH Guides through Configarr, the project name that separates this stack from the others on the machine and the search language.</p>'+
     '<p><s><b>v0.2</b> · A backend wiring Hubstarr to Docker</s> — done: the page writes the files and brings the stack up without going through the <code>.zip</code>.</p>'+
     '<p><s><b>v0.3</b> · Automatic stack configuration from the backend</s> — done: all three parts of the Configuration become API calls through <b>Apply to the stack</b>.</p>'+
     '<p><s><b>v0.4</b> · Custom formats and profiles per instance</s> — done: the 4K one, the anime one and the rest are born with their own quality profile, applied by Configarr.</p>'+
     '<p><s><b>v0.5</b> · Compatibility with the TRaSH Guides</s> — done alongside v0.4: each preset brings the profile, the custom formats with the guide\'s scores and the quality definition.</p>'+
     '<p><s><b>v0.6</b> · Configurable project and container names</s> — done: the <b>Project name</b>, in the Environment, goes into the compose project, into every container name and into the network.</p>'+
-    '<p><b>v0.7</b> · Localized media search — the search language can be picked and the *arr apps find the right release.</p>',
+    '<p><s><b>v0.7</b> · Localized media search</s> — done: the <b>Search language</b>, in the Environment, reaches Radarr\'s metadata, the Jellyfin libraries, Bazarr\'s subtitles and the Configarr profiles.</p>',
   'cfg.h':'⇄ Configuration',
   'cfg.apps':'Applications in Prowlarr',
   'cfg.appsHint':'The instances you tick land in Prowlarr\'s <i>Settings → Apps</i>, so it pushes indexers to them.',
@@ -1812,13 +1812,13 @@ const I18N = {
     '<p>Con Docker en su sitio, descomprime el <code>.zip</code> y levanta la stack desde dentro de la carpeta de los archivos:</p>'+
     '<pre>docker compose up -d</pre>',
   'wish.h':'Wishlist',
-  'wish.body':'<p>Lo que todavía no existe, en el orden en que tendría sentido que ocurra. Los hitos son versiones, no fechas: cada uno solo empieza después del anterior, porque depende de él. Hoy el repositorio está en <b>v0.6</b> — la página, el servidor que guarda la stack y la levanta en Docker, la Configuración aplicada en las apps, el TRaSH Guides entero por Configarr y el nombre del proyecto que separa esta stack de las otras de la máquina.</p>'+
+  'wish.body':'<p>Lo que todavía no existe, en el orden en que tendría sentido que ocurra. Los hitos son versiones, no fechas: cada uno solo empieza después del anterior, porque depende de él. Hoy el repositorio está en <b>v0.7</b> — la página, el servidor que guarda la stack y la levanta en Docker, la Configuración aplicada en las apps, el TRaSH Guides entero por Configarr, el nombre del proyecto que separa esta stack de las otras de la máquina y el idioma de la búsqueda.</p>'+
     '<p><s><b>v0.2</b> · Un backend que conecte Hubstarr con Docker</s> — hecho: la página graba los archivos y levanta la stack sin pasar por el <code>.zip</code>.</p>'+
     '<p><s><b>v0.3</b> · Configuración automática de la stack desde el backend</s> — hecho: las tres partes de la Configuración son llamadas de API por el <b>Aplicar en la stack</b>.</p>'+
     '<p><s><b>v0.4</b> · Custom formats y profiles por instancia</s> — hecho: la de 4K, la de anime y las demás nacen con su perfil de calidad, aplicado por Configarr.</p>'+
     '<p><s><b>v0.5</b> · Compatibilidad con TRaSH Guides</s> — hecho junto con el v0.4: cada preset trae el perfil, los custom formats con los scores de la guía y la quality definition.</p>'+
     '<p><s><b>v0.6</b> · Nombre de proyecto y de contenedor configurable</s> — hecho: el <b>Nombre del proyecto</b>, en el Entorno, entra en el proyecto de compose, en el nombre de cada contenedor y en el de la red.</p>'+
-    '<p><b>v0.7</b> · Búsqueda localizada de medios — se puede elegir el idioma de la búsqueda y los *arr encuentran el lanzamiento correcto.</p>',
+    '<p><s><b>v0.7</b> · Búsqueda localizada de medios</s> — hecho: el <b>Idioma de la búsqueda</b>, en el Entorno, baja a los metadatos de Radarr, las bibliotecas de Jellyfin, los subtítulos de Bazarr y los perfiles de Configarr.</p>',
   'cfg.h':'⇄ Configuración',
   'cfg.apps':'Aplicaciones en Prowlarr',
   'cfg.appsHint':'Las instancias marcadas entran en <i>Settings → Apps</i> de Prowlarr, que pasa a empujarles los indexadores.',
