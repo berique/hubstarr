@@ -1,7 +1,3 @@
-
-
-https://github.com/user-attachments/assets/acaf795f-e7d7-4c5d-b928-b12c703f6e5c
-
 # <img src="docs/logo.svg" width="26" align="top" alt=""> HUBSTARR - *arr stack generator and configurator
 
 *[🇧🇷 Português (Brasil)](README.pt-BR.md) · 🇬🇧 English · [🇪🇸 Español](README.es.md)*
