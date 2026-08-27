@@ -5815,7 +5815,7 @@ function applyPayload(){
                  `categories.json` — `qbitCats()` — so what the file would say
                  and what the API receives cannot diverge. The path is the one
                  inside the container, which is what the app sees. */
-              categorias: c.id==='qbittorrent'
+              categories: c.id==='qbittorrent'
                 ? Object.entries(qbitCats(c)).map(([name, v])=>({name:name, savePath:v.save_path}))
                 : [],
               prefs: qbitPrefs(c)};
