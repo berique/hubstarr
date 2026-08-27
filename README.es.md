@@ -29,7 +29,7 @@ Un recorrido completo, desde compilar el servidor hasta importar una película
 descargada — añadir servicios, configurar las instancias, levantar la stack,
 descargar con qBittorrent e importar en Radarr:
 
-[![Mira la demostración](docs/demo-thumb.png)](docs/demo.mp4)
+https://github.com/user-attachments/assets/bfab344a-0547-4518-bdd3-382e6ef12307
 
 También hay un recorrido rápido por la interfaz (~43 s), sin levantar nada de
 verdad — tema, idioma, añadir servicios, editar una instancia, reordenar con
