@@ -30,7 +30,7 @@ jobs:
             nome: hubstarr-linux-arm64
             cross: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -62,7 +62,7 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           sha256sum "${{ matrix.nome }}.tar.gz" > "${{ matrix.nome }}.tar.gz.sha256"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.nome }}
           path: ${{ matrix.nome }}.tar.gz*
@@ -72,9 +72,9 @@ jobs:
     needs: binarios
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: pacotes
           merge-multiple: true
@@ -84,7 +84,7 @@ jobs:
       - name: Junta a página
         run: cp hubstarr.html pacotes/
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: pacotes/*
           generate_release_notes: true
