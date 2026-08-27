@@ -1,3 +1,7 @@
+
+
+https://github.com/user-attachments/assets/acaf795f-e7d7-4c5d-b928-b12c703f6e5c
+
 # <img src="docs/logo.svg" width="26" align="top" alt=""> HUBSTARR - *arr stack generator and configurator
 
 *[🇧🇷 Português (Brasil)](README.pt-BR.md) · 🇬🇧 English · [🇪🇸 Español](README.es.md)*
@@ -28,7 +32,7 @@ A full walkthrough, from building the server to importing a downloaded movie —
 adding services, configuring the instances, bringing the stack up, downloading
 through qBittorrent and importing into Radarr:
 
-[![Watch the demonstration](docs/demo-thumb.png)](docs/demo.mp4)
+https://github.com/user-attachments/assets/bfab344a-0547-4518-bdd3-382e6ef12307
 
 There's also a quick tour of the interface (~43 s), without actually bringing
 anything up — theme, language, adding services, editing an instance,
