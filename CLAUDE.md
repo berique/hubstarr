@@ -190,7 +190,8 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    montado. **`patch`** muda o destino da entrada: em vez de bind, ela vira
    chaves que o servidor escreve na configuração que o próprio app criou, depois
    do `up` — o valor da flag é a chave do `PATCH_DATA`, que diz o formato
-   (`ini`, `json` ou `xml`) e quem monta os dados. O `xml` é o `network.xml` do
+   (`ini`, `yaml`, `json` ou `xml`) e quem monta os dados. O `yaml` é o
+   `config.yaml` do Bazarr — ver "Idioma da busca" abaixo. O `xml` é o `network.xml` do
    Jellyfin: o `merge_xml` do servidor não é parser, é a mesma ideia do INI —
    elemento de primeiro nível que existe é trocado no lugar (inclusive quando
    ocupa várias linhas), o que falta entra antes de fechar a raiz, e o resto do
@@ -484,11 +485,23 @@ Três coisas que não são óbvias:
   Idioma sem template deixa os perfis como estão; nome errado viraria erro no
   log do Configarr, e a página não tem rede para conferir.
 
-A chave de API do **Bazarr** é do app (ele a gera na primeira subida), então é
-a flag `appKey` no `SERVICES`, campo no modal dele, guardada no
-`instance.extra` — sem coluna nova, no molde do `dlKey` do SABnzbd. Ela não vai
-para arquivo nenhum: só para o corpo do `apply`. Sem ela, é uma linha no log,
-não uma falha da stack.
+A chave de API do **Bazarr** acompanha a `${STARR_APIKEY}`, como a do SABnzbd:
+o `bzKey()` cai no `DEFAULTS.apiKey` e o servidor a escreve no `config.yaml` do
+próprio app, por `patch`, antes de qualquer chamada. O app gera uma sozinho na
+primeira subida — 16 bytes em hexadecimal, a mesma forma do `randKey()` —, e
+por isso sobrescrevê-la não custa nada: ninguém além de nós fala com ele. A
+flag `appKey` no `SERVICES` dá o campo do modal, que é o **override**, e ela
+mora no `instance.extra`, sem coluna nova.
+
+Foi ele que trouxe o quarto formato do `patch.rs`, o **`yaml`**: o Bazarr
+largou o INI na 1.4 e escreve `auth:` com a chave indentada embaixo. O
+`merge_yaml()` não é parser — é o `merge_ini()` com outra pontuação: seção é
+linha sem indentação terminada em `:`, filho é linha indentada, e a indentação
+que vale é a que o app já usava. Só vale para dois níveis, que é toda a forma
+do `auth.apikey`; valor que precisasse de aspas pede o formato crescer antes,
+de propósito — aspas adivinhadas erradas é arquivo que o app recusa carregar.
+O `patchText()` conhece os dois, porque o texto do `.zip` e as chaves que o
+servidor escreve não podem discordar.
 
 ## READMEs
 

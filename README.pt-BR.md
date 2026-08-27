@@ -619,10 +619,10 @@ Configarr. E o guia só publica perfis de **francês** e **alemão**; nos outros
 idiomas os perfis ficam como estão, e quem quiser um arquivo específico ainda
 tem o campo de texto livre da Configuração.
 
-O Bazarr precisa da **chave de API dele**, que ele mesmo gera na primeira
-subida: copie de `Settings → General → Security` e cole no Editar dele. Sem
-ela, as legendas ficam como estão e sai uma linha no log. Deixar o campo do
-Ambiente vazio não mexe no idioma de app nenhum.
+A chave de API do Bazarr acompanha a **chave da stack**, como a dos *arr: o
+Subir a escreve no `config.yaml` do próprio app antes de alguém falar com ele,
+então não há nada para copiar da interface. Quem quiser outra troca no Editar
+dele. Deixar o campo do Ambiente vazio não mexe no idioma de app nenhum.
 
 ## Wishlist
 

@@ -1044,7 +1044,7 @@ const I18N = {
   'job.apply.badCredentials':'usuário ou senha recusados',
   'job.apply.notANumber':(f,t)=>`${f}: ${t} não é um número`,
   'job.apply.unknownLanguage':n=>`o app não conhece o idioma "${n}"`,
-  'job.apply.noApiKeyForBazarr':'sem a chave da API no modal dele — os idiomas de legenda ficam como estão',
+  'job.apply.noApiKeyForBazarr':'sem chave da API — os idiomas de legenda ficam como estão',
   'job.apply.unknownOption':(f,n)=>`${f}: opção desconhecida (${n})`,
   'job.apply.wizardNeedsCreds':'o assistente já foi concluído — preencha usuário e senha no modal dele para o Hubstarr criar as bibliotecas',
   'job.apply.libsReadyWizardOpen':'bibliotecas prontas, mas o assistente fica aberto — sem usuário e senha no modal dele, concluí-lo deixaria o Jellyfin sem conta nenhuma',
@@ -1167,7 +1167,7 @@ const I18N = {
   'm.dlKey':'API key',
   'm.dlKeyWhy':'A chave da API deste cliente, que os *arr usam para falar com ele. Diferente da senha da interface, ela é o próprio app que gera na primeira subida — copie de <i>Config → General</i> e cole aqui. Ela não vai para arquivo nenhum: serve só para o <b>Aplicar na stack</b> da Configuração registrar o cliente nos *arr.',
   'm.appKey':'API key',
-  'm.appKeyWhy':'A chave da API deste app. É ele que a gera na primeira subida — copie de <i>Settings → General → Security</i> e cole aqui. Ela não vai para arquivo nenhum: serve só para o <b>Aplicar na stack</b> mandar os idiomas de legenda do <b>idioma da busca</b> do Ambiente. Vazia, o Bazarr fica como está.',
+  'm.appKeyWhy':'A chave da API deste app, com que o <b>Aplicar na stack</b> manda os idiomas de legenda do <b>idioma da busca</b> do Ambiente. De fábrica ela acompanha a chave da stack: o Subir a escreve no <code>config.yaml</code> do próprio app antes de alguém falar com ele, então não há nada para copiar da interface. Trocando o valor aqui, esta instância passa a usar essa chave.',
   'm.solverWhy':'Vários indexadores ficam atrás do desafio anti-bot da Cloudflare, e o Prowlarr sozinho esbarra nele: a busca volta vazia ou com erro. O <b>FlareSolverr</b> resolve o desafio num navegador headless e devolve a página ao Prowlarr. Marcando aqui, ele entra na stack junto — e o <b>Subir</b> já o registra no Prowlarr, em <i>Settings → Indexers → Indexer Proxies</i>, com a etiqueta <b>flaresolverr</b>. O que sobra é marcar essa etiqueta nos indexadores que precisam dele: é o Prowlarr que casa proxy e indexador por etiqueta, e quais precisam só você sabe. A imagem usada é a do <b>Byparr</b>, um substituto direto e mais atual, com a mesma API e a mesma porta. Sem indexador protegido pela Cloudflare, dá para deixar desmarcado.',
   'm.libs':'Outras pastas',
   'm.libAdd':'+ pasta',
@@ -1565,7 +1565,7 @@ const I18N = {
   'job.apply.badCredentials':'username or password refused',
   'job.apply.notANumber':(f,t)=>`${f}: ${t} is not a number`,
   'job.apply.unknownLanguage':n=>`the app does not know the language "${n}"`,
-  'job.apply.noApiKeyForBazarr':'no API key in its modal — the subtitle languages stay as they are',
+  'job.apply.noApiKeyForBazarr':'no API key — the subtitle languages stay as they are',
   'job.apply.unknownOption':(f,n)=>`${f}: unknown option (${n})`,
   'job.apply.wizardNeedsCreds':'the wizard has already been completed — fill in username and password in its modal for Hubstarr to create the libraries',
   'job.apply.libsReadyWizardOpen':'libraries ready, but the wizard stays open — without username and password in its modal, completing it would leave Jellyfin with no account at all',
@@ -1688,7 +1688,7 @@ const I18N = {
   'm.dlKey':'API key',
   'm.dlKeyWhy':'This client\'s API key, the one the *arr apps use to talk to it. Unlike the web UI password, the app itself generates it on first boot — copy it from <i>Config → General</i> and paste it here. It goes into no file: it only serves the Configuration\'s <b>Apply to the stack</b>, which registers the client in every *arr.',
   'm.appKey':'API key',
-  'm.appKeyWhy':'This app\'s API key. The app itself generates it on first boot — copy it from <i>Settings → General → Security</i> and paste it here. It goes into no file: it only serves <b>Apply to the stack</b>, which sends the subtitle languages of the Environment\'s <b>search language</b>. Left empty, Bazarr is not touched.',
+  'm.appKeyWhy':'This app\'s API key, the one <b>Apply to the stack</b> uses to send the subtitle languages of the Environment\'s <b>search language</b>. Out of the box it follows the stack key: Bring up writes it into the app\'s own <code>config.yaml</code> before anyone talks to it, so there is nothing to copy out of the interface. Change the value here and this instance uses that key instead.',
   'm.solverWhy':'Plenty of indexers sit behind Cloudflare\'s anti-bot challenge, and Prowlarr alone runs straight into it: searches come back empty or failing. <b>FlareSolverr</b> solves the challenge in a headless browser and hands the page back to Prowlarr. Tick this and it joins the stack — and <b>Bring up</b> already registers it in Prowlarr, under <i>Settings → Indexers → Indexer Proxies</i>, with the <b>flaresolverr</b> tag. What is left is putting that tag on the indexers that need it: Prowlarr matches proxy to indexer by tag, and which ones need it only you know. The image behind it is <b>Byparr</b>, a drop-in, better-maintained replacement with the same API and the same port. With no Cloudflare-protected indexer, you can leave it off.',
   'm.libs':'Other folders',
   'm.libAdd':'+ folder',
@@ -2086,7 +2086,7 @@ const I18N = {
   'job.apply.badCredentials':'usuario o contraseña rechazados',
   'job.apply.notANumber':(f,t)=>`${f}: ${t} no es un número`,
   'job.apply.unknownLanguage':n=>`el app no conoce el idioma "${n}"`,
-  'job.apply.noApiKeyForBazarr':'sin la clave de API en su modal — los idiomas de subtítulos se quedan como están',
+  'job.apply.noApiKeyForBazarr':'sin clave de API — los idiomas de subtítulos se quedan como están',
   'job.apply.unknownOption':(f,n)=>`${f}: opción desconocida (${n})`,
   'job.apply.wizardNeedsCreds':'el asistente ya fue completado — rellena usuario y contraseña en su modal para que Hubstarr cree las bibliotecas',
   'job.apply.libsReadyWizardOpen':'bibliotecas listas, pero el asistente queda abierto — sin usuario y contraseña en su modal, completarlo dejaría Jellyfin sin ninguna cuenta',
@@ -2209,7 +2209,7 @@ const I18N = {
   'm.dlKey':'API key',
   'm.dlKeyWhy':'La clave de API de este cliente, la que los *arr usan para hablar con él. A diferencia de la contraseña de la interfaz, la genera el propio app en el primer arranque — cópiala de <i>Config → General</i> y pégala aquí. No va a ningún archivo: sirve solo para el <b>Aplicar en la stack</b> de la Configuración, que registra el cliente en cada *arr.',
   'm.appKey':'API key',
-  'm.appKeyWhy':'La clave de API de este app. La genera él mismo en el primer arranque — cópiala de <i>Settings → General → Security</i> y pégala aquí. No va a ningún archivo: sirve solo para que el <b>Aplicar en la stack</b> mande los idiomas de subtítulos del <b>idioma de la búsqueda</b> del Entorno. Vacía, Bazarr se queda como está.',
+  'm.appKeyWhy':'La clave de API de este app, con la que el <b>Aplicar en la stack</b> manda los idiomas de subtítulos del <b>idioma de la búsqueda</b> del Entorno. De fábrica acompaña a la clave de la stack: el Levantar la escribe en el <code>config.yaml</code> del propio app antes de que nadie hable con él, así que no hay nada que copiar de la interfaz. Si cambias el valor aquí, esta instancia usa esa clave.',
   'm.solverWhy':'Varios indexadores están detrás del desafío anti-bot de Cloudflare, y Prowlarr solo choca con él: la búsqueda vuelve vacía o con error. <b>FlareSolverr</b> resuelve el desafío en un navegador headless y le devuelve la página a Prowlarr. Al marcarlo, entra en la stack junto — y el <b>Levantar</b> ya lo registra en Prowlarr, en <i>Settings → Indexers → Indexer Proxies</i>, con la etiqueta <b>flaresolverr</b>. Lo que queda es poner esa etiqueta en los indexadores que lo necesitan: Prowlarr casa proxy e indexador por etiqueta, y cuáles lo necesitan solo lo sabes tú. La imagen que usa es la de <b>Byparr</b>, un reemplazo directo y más actual, con la misma API y el mismo puerto. Sin ningún indexador protegido por Cloudflare, se puede dejar sin marcar.',
   'm.libs':'Otras carpetas',
   'm.libAdd':'+ carpeta',
@@ -2356,7 +2356,8 @@ const SERVICES = [
   {id:'radarr',   name:'Radarr',    port:7878, img:'lscr.io/linuxserver/radarr:latest',    color:'#feca57', media:true, mdir:'movies', needsDl:true, tp:true, tpAddon:true, tpTheme:true, site:'https://radarr.video'},
   {id:'lidarr',   name:'Lidarr',    port:8686, img:'lscr.io/linuxserver/lidarr:latest',    color:'#1db954', media:true, mdir:'music', needsDl:true, tp:true, site:'https://lidarr.audio'},
   {id:'prowlarr', name:'Prowlarr',  port:9696, img:'lscr.io/linuxserver/prowlarr:latest', color:'#e5534b', solver:true, tp:true, site:'https://prowlarr.com'},
-  {id:'bazarr',   name:'Bazarr',    port:6767, appKey:true, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr'], tp:true, site:'https://www.bazarr.media'},
+  {id:'bazarr',   name:'Bazarr',    port:6767, appKey:true,
+   conf:[{host:'config.yaml', target:'/config/config/config.yaml', patch:'bazarr'}], img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr'], tp:true, site:'https://www.bazarr.media'},
   {id:'qbittorrent',name:'qBittorrent',port:8181, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true, webAuth:'qbit', stripBase:true, tp:true, conf:[{host:'qBittorrent.conf', target:'/config/qBittorrent/qBittorrent.conf', patch:'qbit'},
           {host:'categories.json', target:'/config/qBittorrent/categories.json', patch:'qbitCats', viaApi:true}], site:'https://www.qbittorrent.org'},
   {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true, cdh:true, dlKey:true, dlDirs:true, tp:true,
@@ -2430,6 +2431,13 @@ const qbitKey = ()=> DEFAULTS.qbitKey || qbitKeyFrom(DEFAULTS.apiKey);
    someone generates another one there — empty means "follow ${STARR_APIKEY}".
    The format is the same as its: 16 bytes in hexadecimal. */
 const sabKey = a => (a && a.dlKey) || DEFAULTS.apiKey;
+/* Bazarr's key, the same way: empty in `appKey` means "follow the stack key".
+   It is the app that generates one on its first boot — 16 bytes in hexadecimal,
+   exactly the shape of `randKey()` — but it is a key like any other, and the
+   server writes it into the app's own `config.yaml` before anyone talks to it.
+   That is what spares whoever deploys the stack from copying it out of the
+   interface by hand. */
+const bzKey = a => (a && a.appKey) || DEFAULTS.apiKey;
 const sabKeyVar = a => a && a.dlKey ? `\${${envBase(a)}_API_KEY}` : '${STARR_APIKEY}';
 
 /* SABnzbd's two folders, as host paths: the one being downloaded to and the
@@ -3242,7 +3250,8 @@ function openModal(id, key){
      client: it goes to no file and no `.env` variable, only into the apply
      body, so it gets a field of its own instead of riding on `dlKey`. */
   $('#mAppKeyRow').style.display = s.appKey ? 'grid' : 'none';
-  if(s.appKey) $('#mAppKey').value = cur.appKey || '';
+  // empty in `appKey` means "the stack key": the field shows the one in force
+  if(s.appKey) $('#mAppKey').value = bzKey(cur);
   $('#mDlKeyRow').style.display = s.dlKey ? 'grid' : 'none';
   // empty in `dlKey` means "the stack key": the field shows the one in force
   if(s.dlKey) $('#mDlKey').value = sabKey(cur);
@@ -3392,7 +3401,9 @@ $('#mSave').onclick = ()=>{
                // equal to the stack key = "follow the stack", and not a copy
                dlKey: s.dlKey && $('#mDlKey').value.trim() !== DEFAULTS.apiKey
                         ? $('#mDlKey').value.trim() : '',
-               appKey: s.appKey ? $('#mAppKey').value.trim() : '',
+               // equal to the stack key = "follow the stack", and not a copy
+               appKey: s.appKey && $('#mAppKey').value.trim() !== DEFAULTS.apiKey
+                         ? $('#mAppKey').value.trim() : '',
                dlIn:   s.dlDirs ? realToVars($('#mDlIn').value.trim())   : '',
                dlDone: s.dlDirs ? realToVars($('#mDlDone').value.trim()) : '',
                hostPort: s.publish ? ($('#mPort').value.trim() || String(s.port)) : ''};
@@ -4961,6 +4972,14 @@ function sabPairs(a){
 }
 
 
+/* Bazarr's config.yaml. Only the API key, and the file is the app's: it writes
+   the rest itself on its first boot, and the merge does not touch what it did
+   not send. */
+function bazarrPairs(a){
+  return [['auth', [['apikey', bzKey(a)]]]];
+}
+
+
 /* qBittorrent's categories.json: the categories the Configuration gave each
    *arr, already created when it comes up. Each one gets its own subfolder
    inside the download path — the same partition, so the *arr can still hardlink
@@ -5262,6 +5281,13 @@ function patchText(patchData){
            body.join('\n') + `\n</NetworkConfiguration>`;
   }
   const sep = patchData.sep || '=';
+  /* The same two levels in either shape: the YAML writes the section as
+     `key:` with the pairs indented under it, the INI as `[Section]` with them
+     flush left. The data is the same one the server receives — the file in the
+     `.zip` and the keys it writes must never say different things. */
+  if(patchData.format === 'yaml')
+    return patchData.sections.map(([sec, pairs])=>
+      `${sec}:\n` + pairs.map(([k, v])=>`  ${k}${sep}${v}`).join('\n')).join('\n');
   return patchData.sections.map(([sec, pairs])=>
     `[${sec}]\n` + pairs.map(([k, v])=>`${k}${sep}${v}`).join('\n')).join('\n\n');
 }
@@ -5343,6 +5369,9 @@ const PATCH_DATA = {
      with no spaces at all — hence the default being `=` and only SABnzbd
      carrying its own. */
   sab:      a => ({format:'ini',  sep:' = ', sections: sabPairs(a)}),
+  /* YAML: the same two-level shape as the INI, for the apps that left it
+     behind. Bazarr writes `auth:` with the key indented under it. */
+  bazarr:   a => ({format:'yaml', sep:': ',  sections: bazarrPairs(a)}),
   /* INI: sections with pairs in the order the page wants them. `keep` are the
      keys the server does **not** overwrite once the app has answered for them —
      the API key: once it has one, that is the key its clients know, and swapping
@@ -5928,15 +5957,15 @@ function applyPayload(){
                   libs: jellyfinLibs(j)} : null;
     })(),
     /* Bazarr: the subtitle half of the search language. The address is nginx's,
-       like everyone else's. An empty key means "do not touch it" — the app
-       generates its own on first boot, and without it this is a line in the log,
-       not a failure of the stack. */
+       like everyone else's, and the key is the stack's — the server has already
+       written it into the app's `config.yaml`, so there is nothing to copy by
+       hand. */
     bazarr: (()=>{
       const l = searchLang();
       if(!l) return null;
-      const list = added.filter(a=>a.id === 'bazarr' && a.appKey);
+      const list = added.filter(a=>a.id === 'bazarr');
       return list.length ? list.map(b=>({name:nameOf(b), url: base + route(b),
-                                         apiKey: b.appKey})) : null;
+                                         apiKey: bzKey(b)})) : null;
     })(),
     clients: clientList().map(c=>{
       const st = CONFIG.clients[cname(c)] || {};

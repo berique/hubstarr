@@ -632,10 +632,10 @@ for **French** and **German**; in every other language the profiles stay as
 they are, and whoever wants a specific file still has the Configuration's
 free-text field.
 
-Bazarr needs **its own API key**, the one it generates on first boot: copy it
-from `Settings → General → Security` and paste it into its Edit. Without it the
-subtitles stay as they are and a line goes to the log. Leaving the Environment
-field empty touches no app's language.
+Bazarr's API key follows the **stack key**, like the *arr apps': Bring up
+writes it into the app's own `config.yaml` before anyone talks to it, so there
+is nothing to copy out of the interface. Whoever wants a different one changes
+it in its Edit. Leaving the Environment field empty touches no app's language.
 
 ## Wishlist
 

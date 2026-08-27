@@ -69,6 +69,12 @@ impl Patch {
         match self.format.as_deref() {
             Some("json") => merge_json(current, self.json.as_ref().unwrap_or(&Value::Null)),
             Some("xml") => merge_xml(current, self.xml.as_ref().unwrap_or(&Map::new())),
+            Some("yaml") => Ok(merge_yaml(
+                current,
+                &self.sections,
+                self.sep.as_deref().unwrap_or(": "),
+                &self.keep,
+            )),
             _ => Ok(merge_ini(
                 current,
                 &self.sections,
@@ -168,6 +174,95 @@ pub fn merge_ini(
                         pos -= 1;
                     }
                     lines.insert(pos, line);
+                    end += 1;
+                }
+            }
+        }
+    }
+
+    let mut out = lines.join("\n");
+    if !out.ends_with('\n') {
+        out.push('\n');
+    }
+    out
+}
+
+/* The same idea as the INI merge, in the two-level YAML the apps that dropped
+   the INI now write — today Bazarr's `config.yaml`.
+
+   It is not a YAML parser, and it does not need to be: what is governed here is
+   a **top-level key with indented children**, which is the whole shape of
+   `auth:` / `apikey:`. A section is a line with no indentation ending in `:`,
+   and it runs until the next one; inside it, a child is matched by its own key,
+   replaced in place with the indentation it already had, and a missing one
+   lands at the end of the section with the indentation of its neighbours. What
+   the app stored elsewhere — order, comments, every section we know nothing
+   about — stays exactly as it was, because the file is the app's.
+
+   A value is written plain: the keys that come through here are hexadecimal and
+   paths, which YAML reads as strings with no quoting. Something that needed
+   escaping would need this to grow first, and that is deliberate — quoting
+   guessed wrong is a file the app refuses to load. */
+pub fn merge_yaml(
+    current: &str,
+    sections: &[(String, Vec<(String, String)>)],
+    sep: &str,
+    keep_keys: &[String],
+) -> String {
+    let mut lines: Vec<String> = current.lines().map(String::from).collect();
+    // a section header: no indentation, and nothing after the colon
+    let is_header = |l: &str| {
+        !l.starts_with(' ') && !l.starts_with('\t') && l.trim_end().ends_with(':') && !l.trim_start().starts_with('#')
+    };
+
+    for (section, pairs) in sections {
+        let header = format!("{section}:");
+        let (start, mut end) = match lines.iter().position(|l| l.trim_end() == header) {
+            Some(i) => {
+                let end = lines
+                    .iter()
+                    .enumerate()
+                    .skip(i + 1)
+                    .find(|(_, l)| !l.trim().is_empty() && is_header(l))
+                    .map(|(j, _)| j)
+                    .unwrap_or(lines.len());
+                (i, end)
+            }
+            None => {
+                lines.push(header);
+                (lines.len() - 1, lines.len())
+            }
+        };
+        // the indentation the app itself used inside this section, two spaces otherwise
+        let indent = lines[start + 1..end]
+            .iter()
+            .find(|l| !l.trim().is_empty())
+            .map(|l| l[..l.len() - l.trim_start().len()].to_string())
+            .filter(|i| !i.is_empty())
+            .unwrap_or_else(|| "  ".to_string());
+
+        for (key, value) in pairs {
+            let found = lines[start + 1..end]
+                .iter()
+                .position(|l| l.trim_start().split(':').next().map(str::trim) == Some(key.as_str()))
+                .map(|k| start + 1 + k);
+            match found {
+                // the same rule as the INI's: a key the app has answered for stays
+                Some(k)
+                    if keep_keys.iter().any(|m| m == key)
+                        && lines[k]
+                            .split_once(':')
+                            .is_some_and(|(_, v)| !v.trim().is_empty()) => {}
+                Some(k) => {
+                    let own = lines[k][..lines[k].len() - lines[k].trim_start().len()].to_string();
+                    lines[k] = format!("{own}{key}{sep}{value}");
+                }
+                None => {
+                    let mut pos = end;
+                    while pos > start + 1 && lines[pos - 1].trim().is_empty() {
+                        pos -= 1;
+                    }
+                    lines.insert(pos, format!("{indent}{key}{sep}{value}"));
                     end += 1;
                 }
             }
@@ -503,6 +598,87 @@ mod tests {
         // and the default is still the Qt one, with no spaces
         let qt = merge_ini("[BitTorrent]\n", &sections, "=", &[]);
         assert!(qt.contains("api_key=abc123"));
+    }
+
+    /* Bazarr's `config.yaml`, which is what the YAML merge exists for. The
+       shape is the real one: a top-level key with indented children, several
+       sections, and things we know nothing about that have to survive. */
+    fn bazarr() -> Vec<(String, Vec<(String, String)>)> {
+        vec![(
+            "auth".into(),
+            vec![("apikey".into(), "0123456789abcdef0123456789abcdef".into())],
+        )]
+    }
+
+    const BAZARR_YAML: &str = "\
+analytics:
+  enabled: true
+auth:
+  apikey: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  type: null
+  username: ''
+general:
+  port: 6767
+";
+
+    #[test]
+    fn the_yaml_replaces_the_key_and_leaves_the_rest_of_the_file_alone() {
+        let out = merge_yaml(BAZARR_YAML, &bazarr(), ": ", &[]);
+        assert!(out.contains("  apikey: 0123456789abcdef0123456789abcdef"));
+        // the neighbours of the section, and the sections around it
+        assert!(out.contains("  type: null"));
+        assert!(out.contains("  username: ''"));
+        assert!(out.contains("analytics:\n  enabled: true"));
+        assert!(out.contains("general:\n  port: 6767"));
+        assert!(!out.contains("aaaaaaaa"));
+    }
+
+    #[test]
+    fn a_missing_yaml_key_lands_in_its_own_section() {
+        let without = "auth:\n  type: null\ngeneral:\n  port: 6767\n";
+        let out = merge_yaml(without, &bazarr(), ": ", &[]);
+        // inside `auth`, not after `general`
+        let key = out.find("apikey").unwrap();
+        assert!(key < out.find("general:").unwrap());
+        assert!(out.contains("  apikey: 0123456789abcdef0123456789abcdef"));
+    }
+
+    #[test]
+    fn a_missing_yaml_section_lands_at_the_end() {
+        let out = merge_yaml("general:\n  port: 6767\n", &bazarr(), ": ", &[]);
+        assert!(out.contains("auth:\n  apikey: 0123456789abcdef0123456789abcdef"));
+        assert!(out.contains("general:\n  port: 6767"));
+    }
+
+    /// The app owns the file, so its own indentation is the one that is kept —
+    /// a four-space file does not come back mixed.
+    #[test]
+    fn the_yaml_keeps_the_indentation_the_app_used() {
+        let four = "auth:\n    type: null\n";
+        let out = merge_yaml(four, &bazarr(), ": ", &[]);
+        assert!(out.contains("    apikey: 0123456789abcdef0123456789abcdef"), "{out}");
+        assert!(out.contains("    type: null"));
+    }
+
+    #[test]
+    fn applying_the_yaml_again_neither_duplicates_nor_reorders() {
+        let once = merge_yaml(BAZARR_YAML, &bazarr(), ": ", &[]);
+        assert_eq!(once, merge_yaml(&once, &bazarr(), ": ", &[]));
+        assert_eq!(once.matches("apikey").count(), 1);
+    }
+
+    #[test]
+    fn a_kept_yaml_key_is_not_overwritten_but_an_empty_one_is() {
+        let out = merge_yaml(BAZARR_YAML, &bazarr(), ": ", &["apikey".to_string()]);
+        assert!(out.contains("  apikey: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        let empty = merge_yaml("auth:\n  apikey:\n", &bazarr(), ": ", &["apikey".to_string()]);
+        assert!(empty.contains("  apikey: 0123456789abcdef0123456789abcdef"));
+    }
+
+    #[test]
+    fn an_empty_yaml_file_is_born_with_only_our_keys() {
+        let out = merge_yaml("", &bazarr(), ": ", &[]);
+        assert_eq!(out, "auth:\n  apikey: 0123456789abcdef0123456789abcdef\n");
     }
 
     #[test]

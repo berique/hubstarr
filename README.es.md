@@ -642,10 +642,11 @@ del Configarr. Y la guía solo publica perfiles de **francés** y **alemán**; e
 los demás idiomas los perfiles se quedan como están, y quien quiera un archivo
 concreto todavía tiene el campo de texto libre de la Configuración.
 
-Bazarr necesita **su propia clave de API**, la que él mismo genera en el primer
-arranque: cópiala de `Settings → General → Security` y pégala en su Editar. Sin
-ella, los subtítulos se quedan como están y sale una línea en el log. Dejar
-vacío el campo del Entorno no toca el idioma de ninguna app.
+La clave de API de Bazarr acompaña a la **clave de la stack**, como la de los
+*arr: el Levantar la escribe en el `config.yaml` del propio app antes de que
+nadie hable con él, así que no hay nada que copiar de la interfaz. Quien quiera
+otra la cambia en su Editar. Dejar vacío el campo del Entorno no toca el idioma
+de ninguna app.
 
 ## Wishlist
 

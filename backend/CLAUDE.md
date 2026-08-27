@@ -321,7 +321,9 @@ de campo que a página não mostra, então são lidos, mexidos nas chaves do
 `naming_map()`/`MEDIA_MANAGEMENT` e devolvidos inteiros, nunca montados do zero;
 e as opções de lista viajam pelo nome e chegam como número, pela ordem do
 `COLON`/`MULTI_EP`, que é a mesma da página — nome fora da lista é erro, não
-zero), `patch.rs` (escreve chaves na configuração que o próprio app cria:
+zero), `patch.rs` (escreve chaves na configuração que o próprio app cria, em quatro
+formatos — `ini`, `yaml`, `json` e `xml`; o `merge_yaml` é o `merge_ini` com
+outra pontuação, para o `config.yaml` que o Bazarr passou a escrever:
 espera o arquivo aparecer, **para** o container, faz o merge no INI e sobe de
 novo — parar é o que impede o app de sobrescrever o que gravamos, porque ele
 despeja a configuração em memória no disco justamente ao sair, e por isso
