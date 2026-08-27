@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS stack_env (
   puid      TEXT NOT NULL DEFAULT '',
   pgid      TEXT NOT NULL DEFAULT '',
   tz        TEXT NOT NULL DEFAULT '',
+  -- o idioma da busca (v0.7); vazio nao mexe no idioma de app nenhum
+  search_lang TEXT NOT NULL DEFAULT '',
   api_key   TEXT NOT NULL DEFAULT '',
   qbit_user TEXT NOT NULL DEFAULT '',
   qbit_pass TEXT NOT NULL DEFAULT '',

@@ -445,6 +445,51 @@ Uma ligação que não passou (um app fora do ar) **não cancela os perfis**: s�
 coisas independentes, e o erro do `download_clients` volta no fim, depois de o
 Configarr ter rodado.
 
+## Idioma da busca (v0.7)
+
+`DEFAULTS.searchLang` (vazio = "não mexer no idioma de app nenhum") mora no
+**Ambiente**, porque é da stack inteira, como o `TZ`. A tabela é o
+`SEARCH_LANGS`: por código, o que **cada app espera ouvir** — o nome do idioma
+como o Radarr o publica, o BCP-47 do Jellyfin, o código de duas letras do
+Bazarr e o sufixo do template do Recyclarr. A tabela é da página, e não passa
+pelo `I18N`: são valores de API, como os ids do `PROFILE_PRESETS`.
+
+O marco tem **três metades, e cada uma vai por um caminho diferente** — é essa
+a divisão a preservar:
+
+- **metadados**, pela API, no `apply.rs` (`metadata_language()` e, no Jellyfin,
+  o `server_language()` mais o `LibraryOptions` de biblioteca nova);
+- **lançamento**, pelo **Configarr**, trocando o par do preset pelo do idioma
+  (`presetPair()`); montar custom format de idioma no Rust seria reimplementar
+  o Recyclarr, que é o que a seção "Perfis de qualidade" já proíbe;
+- **legenda**, pela API do Bazarr (`bazarr()` no `apply.rs`).
+
+Três coisas que não são óbvias:
+
+- **O Sonarr não entra na primeira metade.** O `config/ui` dele não tem idioma
+  de metadados, só `uiLanguage`, que é a **interface** — conferido no
+  `UiConfigResource.cs` das duas casas: o do Radarr traz `MovieInfoLanguage`, o
+  do Sonarr não. Trocar a interface de quem pediu títulos em outro idioma é
+  surpresa, então o Sonarr recebe idioma só pela metade do lançamento. Isso
+  está dito nos READMEs de propósito: sem essa linha, a promessa do marco fica
+  maior do que o que o app permite.
+- **O `culture` do Jellyfin continua saindo do idioma da página.** Ele é a
+  *interface* (`UICulture`), e a decisão de sempre; o que o `searchLang` manda é
+  o `metaLang`, à parte, e sem ele tudo volta a ser o que era. Também foi tapado
+  ali um buraco antigo: o idioma só era aplicado dentro do `wizard()`, então
+  Jellyfin já configurado ignorava o campo — agora o ramo autenticado escreve o
+  `/System/Configuration`.
+- **Só francês e alemão têm template no guia.** É o que o `TPL_SEED` já
+  mostrava, e os nomes do `lang` de cada preset vieram de lá — nada inventado.
+  Idioma sem template deixa os perfis como estão; nome errado viraria erro no
+  log do Configarr, e a página não tem rede para conferir.
+
+A chave de API do **Bazarr** é do app (ele a gera na primeira subida), então é
+a flag `appKey` no `SERVICES`, campo no modal dele, guardada no
+`instance.extra` — sem coluna nova, no molde do `dlKey` do SABnzbd. Ela não vai
+para arquivo nenhum: só para o corpo do `apply`. Sem ela, é uma linha no log,
+não uma falha da stack.
+
 ## READMEs
 
 `README.pt-BR.md` é a fonte; o `README.md` (inglês, o padrão do repositório) e
@@ -530,7 +575,9 @@ que separa esta stack das outras da máquina.
   vez do JSON do TRaSH lido na mão.
 - ~~**v0.6**~~ — feito: o **nome do projeto**, no Ambiente, entra nos três nomes
   que o docker enxerga de fora — ver "Nome do projeto" acima.
-- **v0.7** — busca localizada de mídia, com o idioma da busca escolhível.
+- ~~**v0.7**~~ — feito: o **idioma da busca**, no Ambiente, desce para os
+  metadados do Radarr, o Jellyfin, as legendas do Bazarr e os perfis do
+  Configarr — ver "Idioma da busca" acima.
 
 Marco é ordem, não calendário: cada um depende do anterior. Ao propor mudança
 que caia num deles, diga em qual — e não comece o de baixo antes do de cima.

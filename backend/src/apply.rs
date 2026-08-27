@@ -56,6 +56,42 @@ pub struct Req {
     /// after it. Absent or null: there is no profile to apply.
     #[serde(default)]
     configarr: Option<crate::deploy::Configarr>,
+    /// the search language (v0.7). Already resolved into what each app expects,
+    /// because deciding is the page's job. `None` means "do not touch any app's
+    /// language", which is what a stack that never asked for one keeps.
+    #[serde(default)]
+    search_lang: Option<SearchLang>,
+    /// the stack's Bazarr instances that carry an API key of their own, for the
+    /// subtitle half of the search language
+    #[serde(default)]
+    bazarr: Option<Vec<Bazarr>>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SearchLang {
+    /// the page's own tag (`pt-BR`), for the log
+    code: String,
+    /// the language **name** as Radarr publishes it in `/api/v3/language`; the
+    /// number is looked up in the app itself, like every other option name.
+    /// Empty means the app does not know that language.
+    #[serde(default)]
+    arr: String,
+    /// Bazarr's two-letter code. Jellyfin's is not here: it reaches the server
+    /// inside the `jellyfin` object, which is the only thing that speaks its API.
+    #[serde(default)]
+    bz2: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Bazarr {
+    /// the instance title, for the log
+    name: String,
+    /// how the server reaches it: through nginx, on its subpath
+    url: String,
+    /// the key the app generated itself, typed into its modal
+    api_key: String,
 }
 
 #[derive(Deserialize)]
@@ -73,6 +109,12 @@ struct Jellyfin {
     /// the interface language, in .NET form (`pt-BR`, `en-US`)
     #[serde(default)]
     culture: String,
+    /// the language the **metadata** is fetched in, which since v0.7 is a
+    /// separate question from the interface: it comes from the Environment's
+    /// search language. Empty falls back to `culture`, which is what the stack
+    /// of whoever picked no language always did.
+    #[serde(default)]
+    meta_lang: Option<String>,
     libs: Vec<JfLib>,
 }
 
@@ -217,7 +259,11 @@ impl Req {
             .clients
             .iter()
             .any(|c| c.prefs.as_ref().is_some_and(|p| !p.is_empty()));
-        by_arrs || by_prowlarr || by_jellyfin || by_clients
+        /* And Bazarr on its own, for the same reason: a stack of subtitles and a
+           search language has work to do, with no *arr in sight. */
+        let by_bazarr = self.search_lang.is_some()
+            && self.bazarr.as_ref().is_some_and(|l| !l.is_empty());
+        by_arrs || by_prowlarr || by_jellyfin || by_clients || by_bazarr
     }
 
     /// Run Configarr afterwards? It does not depend on `has_work()`: a stack with
@@ -494,10 +540,17 @@ pub async fn download_clients(mut req: Req, running: Vec<String>, log: Log) -> R
     for arr in &req.arrs {
         failures += ensure_root_folders(&http, &base, &req, arr, &log).await;
         failures += media_management(&http, &base, &req, arr, &log).await;
+        failures += metadata_language(&http, &base, &req, arr, &log).await;
     }
     // Jellyfin is no *arr and does not speak their API: its own round, at the end
     if let Some(jf) = &req.jellyfin {
         failures += jellyfin(&http, jf, &log).await;
+    }
+    // Bazarr, likewise: its own API, its own round, and only when a language was picked
+    if let (Some(lang), Some(list)) = (&req.search_lang, &req.bazarr) {
+        for bz in list {
+            failures += bazarr(&http, bz, lang, &log).await;
+        }
     }
     if failures > 0 {
         return Err(msg!("job.apply.tooManyFailures", failures));
@@ -1399,6 +1452,14 @@ async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
         return failures;
     }
 
+    /* The wizard-already-finished path used to apply no language at all: the
+       block above only runs inside `wizard()`, so a Jellyfin that was already
+       set up quietly ignored the field. With a token there is an endpoint for
+       it, and it is the same decision written to the server's own config. */
+    if ready && !jf.meta_lang.as_deref().unwrap_or("").is_empty() {
+        failures += server_language(http, &base, jf, &token, log).await;
+    }
+
     failures += libraries(http, &base, jf, &token, log).await;
 
     /* Last: closing the wizard seals what came in without a token. Except that
@@ -1454,11 +1515,12 @@ async fn wizard(http: &reqwest::Client, base: &str, jf: &Jellyfin, log: &Log) ->
     };
 
     if !jf.culture.is_empty() {
+        let meta = meta_culture(jf);
         let body = json!({
             "ServerName": jf.name,
             "UICulture": jf.culture,
-            "MetadataCountryCode": country_of(&jf.culture),
-            "PreferredMetadataLanguage": language_of(&jf.culture),
+            "MetadataCountryCode": country_of(meta),
+            "PreferredMetadataLanguage": language_of(meta),
         });
         let r = post_json(http, &format!("{base}/Startup/Configuration"), "", body).await;
         step(Msg::k("job.apply.language"), r);
@@ -1507,6 +1569,70 @@ async fn authenticate(http: &reqwest::Client, base: &str, jf: &Jellyfin) -> Resu
         .ok()
         .and_then(|v| v["AccessToken"].as_str().map(String::from))
         .ok_or_else(|| Msg::k("job.apply.noTokenAfterLogin"))
+}
+
+/* The metadata language of a Jellyfin that is already set up. The whole
+   configuration is read and written back, for the same reason `naming` and
+   `mediamanagement` are: it is a single resource full of fields the page never
+   shows, and building it from scratch would wipe them. */
+async fn server_language(
+    http: &reqwest::Client,
+    base: &str,
+    jf: &Jellyfin,
+    token: &str,
+    log: &Log,
+) -> usize {
+    let meta = meta_culture(jf).to_string();
+    let url = format!("{base}/System/Configuration");
+    let current = match retry("GET", &url, || {
+        http.get(&url).header("X-Emby-Token", token).send()
+    })
+    .await
+    {
+        Ok(r) if r.status().is_success() => {
+            api("GET", &url, r.status());
+            serde_json::from_str::<Value>(&r.text().await.unwrap_or_default()).ok()
+        }
+        Ok(r) => {
+            log.line(msg!(
+                "job.apply.link",
+                jf.name.clone(),
+                Msg::k("job.apply.language"),
+                msg!("job.apply.httpStatus", r.status().as_u16())
+            ));
+            return 1;
+        }
+        Err(e) => {
+            log.line(msg!("job.apply.link", jf.name.clone(), Msg::k("job.apply.language"), e));
+            return 1;
+        }
+    };
+    let Some(mut body) = current.filter(Value::is_object) else {
+        log.line(msg!(
+            "job.apply.link",
+            jf.name.clone(),
+            Msg::k("job.apply.language"),
+            Msg::k("job.apply.badConfigResponseNotObject")
+        ));
+        return 1;
+    };
+    body["PreferredMetadataLanguage"] = json!(language_of(&meta));
+    body["MetadataCountryCode"] = json!(country_of(&meta));
+    match post_json(http, &url, token, body).await {
+        Ok(()) => {
+            log.line(msg!(
+                "job.apply.link",
+                jf.name.clone(),
+                Msg::k("job.apply.language"),
+                Msg::raw(meta)
+            ));
+            0
+        }
+        Err(e) => {
+            log.line(msg!("job.apply.link", jf.name.clone(), Msg::k("job.apply.language"), e));
+            1
+        }
+    }
 }
 
 /// The libraries that are missing. What is already there stays as it is — the
@@ -1568,8 +1694,18 @@ async fn libraries(
         if !lib.kind.is_empty() {
             request.push_str(&format!("&collectionType={}", lib.kind));
         }
-        // the body is mandatory even when empty: without it Jellyfin returns 400
-        let r = post_json(http, &request, token, json!({"LibraryOptions": {}})).await;
+        /* The body is mandatory even when empty: without it Jellyfin returns
+           400. Since v0.7 it also carries the search language, so a library
+           born now fetches its metadata in it — only a new one, because the
+           existing ones are not touched, for the same reason as above. */
+        let meta = meta_culture(jf);
+        let opts = if meta.is_empty() {
+            json!({})
+        } else {
+            json!({"PreferredMetadataLanguage": language_of(meta),
+                   "MetadataCountryCode": country_of(meta)})
+        };
+        let r = post_json(http, &request, token, json!({"LibraryOptions": opts})).await;
         match r {
             Ok(()) => log.line(msg!(
                 "job.apply.link",
@@ -1626,6 +1762,18 @@ fn enc(s: &str) -> String {
             _ => format!("%{b:02X}"),
         })
         .collect()
+}
+
+/// The culture the **metadata** follows. Since v0.7 it is the Environment's
+/// search language, which is a different question from the interface: whoever
+/// builds the stack in Portuguese may well want its titles in Japanese. With no
+/// language picked it falls back to the interface one, which is exactly what
+/// every stack did before the field existed.
+fn meta_culture(jf: &Jellyfin) -> &str {
+    match jf.meta_lang.as_deref() {
+        Some(l) if !l.is_empty() => l,
+        _ => &jf.culture,
+    }
 }
 
 /// `pt-BR` → `BR`, `en-US` → `US`. With no region, the country is left empty
@@ -1816,6 +1964,191 @@ async fn media_management(
         }
     }
     failures
+}
+
+/* The subtitle half of the search language (v0.7): Bazarr.
+
+   It speaks neither the *arr apps' API nor Jellyfin's — the key goes in
+   `X-API-KEY`, and `system/settings` takes a **form**, not a JSON body, with
+   the profiles as JSON inside one field. That key is the app's own, generated
+   on its first boot, so it is typed into its modal like SABnzbd's; without one
+   this is a line in the log, not a failure of the stack.
+
+   A profile of the same name is **updated in place** and none is ever removed:
+   a series may already point at one, exactly as with a root folder. And the
+   profile alone configures nothing — what makes a new series or movie inherit
+   it is the two `*_default_profile` settings, which is why they go along. */
+async fn bazarr(http: &reqwest::Client, bz: &Bazarr, lang: &SearchLang, log: &Log) -> usize {
+    if bz.api_key.is_empty() || lang.bz2.is_empty() {
+        log.line(msg!("job.apply.item", bz.name.clone(), Msg::k("job.apply.noApiKeyForBazarr")));
+        return 0;
+    }
+    let base = bz.url.trim_end_matches('/').to_string();
+    let url = format!("{base}/api/system/settings");
+
+    // what is there now, so a profile of ours is updated instead of duplicated
+    let current = match retry("GET", &url, || {
+        http.get(&url).header("X-API-KEY", &bz.api_key).send()
+    })
+    .await
+    {
+        Ok(r) if r.status().is_success() => {
+            api("GET", &url, r.status());
+            serde_json::from_str::<Value>(&r.text().await.unwrap_or_default()).unwrap_or(Value::Null)
+        }
+        Ok(r) => {
+            log.line(msg!(
+                "job.apply.link",
+                bz.name.clone(),
+                Msg::k("job.apply.language"),
+                msg!("job.apply.httpStatus", r.status().as_u16())
+            ));
+            return 1;
+        }
+        Err(e) => {
+            log.line(msg!("job.apply.link", bz.name.clone(), Msg::k("job.apply.language"), e));
+            return 1;
+        }
+    };
+
+    let mut profiles: Vec<Value> = current["languagesProfiles"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
+    let name = format!("Hubstarr {}", lang.code);
+    let item = json!({"id": 1, "language": lang.bz2, "audio_exclude": "False",
+                      "forced": "False", "hi": "False"});
+    // an id nobody else has: profiles are numbered from 1 upwards
+    let id = profiles
+        .iter()
+        .find(|p| p["name"].as_str() == Some(name.as_str()))
+        .and_then(|p| p["profileId"].as_i64())
+        .unwrap_or_else(|| {
+            profiles
+                .iter()
+                .filter_map(|p| p["profileId"].as_i64())
+                .max()
+                .unwrap_or(0)
+                + 1
+        });
+    let ours = json!({"profileId": id, "name": name, "cutoff": null,
+                      "items": [item], "mustContain": [], "mustNotContain": [],
+                      "originalFormat": false, "tag": null});
+    match profiles
+        .iter()
+        .position(|p| p["profileId"].as_i64() == Some(id))
+    {
+        Some(i) => profiles[i] = ours,
+        None => profiles.push(ours),
+    }
+
+    let body = [
+        format!("languages-enabled={}", enc(&lang.bz2)),
+        format!("languages-profiles={}", enc(&Value::Array(profiles).to_string())),
+        format!("settings-general-serie_default_enabled={}", enc("True")),
+        format!("settings-general-serie_default_profile={id}"),
+        format!("settings-general-movie_default_enabled={}", enc("True")),
+        format!("settings-general-movie_default_profile={id}"),
+    ]
+    .join("&");
+    let sent = retry("POST", &url, || {
+        http.post(&url)
+            .header("X-API-KEY", &bz.api_key)
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(body.clone())
+            .send()
+    })
+    .await;
+    match sent {
+        Ok(r) if r.status().is_success() => {
+            api("POST", &url, r.status());
+            log.line(msg!(
+                "job.apply.link",
+                bz.name.clone(),
+                Msg::k("job.apply.language"),
+                Msg::raw(lang.code.clone())
+            ));
+            0
+        }
+        Ok(r) => {
+            log.line(msg!(
+                "job.apply.link",
+                bz.name.clone(),
+                Msg::k("job.apply.language"),
+                msg!("job.apply.httpStatus", r.status().as_u16())
+            ));
+            1
+        }
+        Err(e) => {
+            log.line(msg!("job.apply.link", bz.name.clone(), Msg::k("job.apply.language"), e));
+            1
+        }
+    }
+}
+
+/* The metadata half of the search language (v0.7): the language the app looks
+   titles up in, so that whoever asked for Portuguese gets "Rogue One: Uma
+   História Star Wars" and not the English title.
+
+   Only **Radarr** has it. Sonarr's `config/ui` carries no metadata language,
+   only `uiLanguage`, which is the *interface* — turning someone's Sonarr
+   Japanese because they wanted Japanese titles is not what the field promises,
+   so Sonarr's language reaches it through the release half instead, in the
+   Configarr templates. Lidarr has neither.
+
+   The number is looked up in the app itself, the same idea as `first_id()`: the
+   page sends the **name** Radarr publishes, and a name the app does not have
+   becomes a line in the log, never a zero — the same rule as `enum_value()`. */
+async fn metadata_language(
+    http: &reqwest::Client,
+    base: &str,
+    req: &Req,
+    arr: &Arr,
+    log: &Log,
+) -> usize {
+    let Some(lang) = &req.search_lang else { return 0 };
+    if arr.family != "radarr" || lang.arr.is_empty() {
+        return 0;
+    }
+    let list_url = format!("{base}{}/api/{}/language", arr.route, arr.api);
+    let id = match list(http, &list_url, &req.api_key).await {
+        Ok(all) => all
+            .iter()
+            .find(|l| l.get("name").and_then(Value::as_str) == Some(lang.arr.as_str()))
+            .and_then(|l| l.get("id").and_then(Value::as_i64)),
+        Err(e) => {
+            log.line(msg!("job.apply.link", arr.name.clone(), Msg::k("job.apply.language"), e));
+            return 1;
+        }
+    };
+    let Some(id) = id else {
+        log.line(msg!(
+            "job.apply.link",
+            arr.name.clone(),
+            Msg::k("job.apply.language"),
+            msg!("job.apply.unknownLanguage", lang.arr.clone())
+        ));
+        return 1;
+    };
+    let mut fields = Map::new();
+    fields.insert("movieInfoLanguage".into(), json!(id));
+    let url = format!("{base}{}/api/{}/config/ui", arr.route, arr.api);
+    let map: &[(&str, &str)] = &[("movieInfoLanguage", "movieInfoLanguage")];
+    match put_config(http, &url, &req.api_key, &fields, map).await {
+        Ok(()) => {
+            log.line(msg!(
+                "job.apply.link",
+                arr.name.clone(),
+                Msg::k("job.apply.language"),
+                Msg::raw(lang.code.clone())
+            ));
+            0
+        }
+        Err(e) => {
+            log.line(msg!("job.apply.link", arr.name.clone(), Msg::k("job.apply.language"), e));
+            1
+        }
+    }
 }
 
 async fn put_config(
@@ -2461,6 +2794,8 @@ mod tests {
             jellyfin: None,
             mm: Map::new(),
             configarr: None,
+            search_lang: None,
+            bazarr: None,
         };
         assert!(req.has_work());
         // with no solver and no client, Prowlarr alone has nothing to do
@@ -2480,6 +2815,8 @@ mod tests {
             jellyfin: None,
             mm: Map::new(),
             configarr: None,
+            search_lang: None,
+            bazarr: None,
         };
         assert!(!req(vec![], vec![qbit()]).has_work());
         assert!(!req(vec![arr("sonarr", "tvCategory")], vec![]).has_work());
@@ -2518,6 +2855,8 @@ mod tests {
                 user: "1000:1000".into(),
                 tz: "America/Sao_Paulo".into(),
             }),
+            search_lang: None,
+            bazarr: None,
         };
         assert!(!r.has_work());
         assert!(r.configarr().is_some());

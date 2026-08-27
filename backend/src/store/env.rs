@@ -11,7 +11,7 @@ use serde_json::{Map, Value};
 use super::Db;
 
 /// (key in `DEFAULTS`, column). `tls` is left out: it is the only boolean.
-const ENV_COLS: [(&str, &str); 26] = [
+const ENV_COLS: [(&str, &str); 27] = [
     ("restart", "restart"),
     // what tells this stack from another on the machine (v0.6)
     ("project", "project"),
@@ -23,6 +23,8 @@ const ENV_COLS: [(&str, &str); 26] = [
     ("puid", "puid"),
     ("pgid", "pgid"),
     ("tz", "tz"),
+    // the search language (v0.7)
+    ("searchLang", "search_lang"),
     ("apiKey", "api_key"),
     ("qbitUser", "qbit_user"),
     ("qbitPass", "qbit_pass"),
@@ -177,10 +179,12 @@ mod tests {
     #[test]
     fn the_environment_comes_back_as_it_went_in() {
         let db = Db::memory().unwrap();
-        db.put_env(&json!({"tz":"America/Sao_Paulo","puid":"1000","tls":true,"domain":"casa.example"}))
+        db.put_env(&json!({"tz":"America/Sao_Paulo","puid":"1000","tls":true,
+                           "domain":"casa.example","searchLang":"pt-BR"}))
             .unwrap();
         let back = db.env().unwrap();
         assert_eq!(back["tz"], json!("America/Sao_Paulo"));
+        assert_eq!(back["searchLang"], json!("pt-BR"));
         assert_eq!(back["tls"], json!(true));
         assert_eq!(back["domain"], json!("casa.example"));
         assert_eq!(back["cert"], json!(""));
@@ -243,9 +247,13 @@ mod tests {
         // what was already stored survives, and what was missing comes back empty
         assert_eq!(back["tz"], json!("America/Sao_Paulo"));
         assert_eq!(back["jfUser"], json!(""));
-        // and the new column takes writes like any other
-        db.put_env(&json!({"jfUser": "henrique"})).unwrap();
+        // the same holds for every later one — the search language of v0.7
+        assert_eq!(back["searchLang"], json!(""));
+        // and the new columns take writes like any other
+        db.put_env(&json!({"jfUser": "henrique", "searchLang": "pt-BR"}))
+            .unwrap();
         assert_eq!(db.env().unwrap()["jfUser"], json!("henrique"));
+        assert_eq!(db.env().unwrap()["searchLang"], json!("pt-BR"));
     }
 
     /// Running it again on an up-to-date database changes nothing — it is the

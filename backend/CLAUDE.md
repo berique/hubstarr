@@ -151,6 +151,19 @@ binds que a biblioteca tem de bater. Caminho que ele não enxerga não dá erro:
 biblioteca nasce vazia e calada, e é por isso que o `check-compose.py` a
 confere contra os binds do compose.
 
+O **idioma da busca** do v0.7 entra por aqui em duas voltas, e nenhuma decide
+nada: a página manda o que cada app espera ouvir. O `metadata_language()` é do
+**Radarr** só — o `config/ui` do Sonarr não tem idioma de metadados, e o
+`uiLanguage` dele é a interface —, e resolve o número lendo a lista do próprio
+app, como o `first_id()`; nome que o app não conhece vira linha no log, nunca
+um zero. O `bazarr()` é a única volta que fala a API do Bazarr: `X-API-KEY`,
+`system/settings` em **formulário** com os perfis em JSON dentro de um campo, e
+o perfil de mesmo nome atualizado no lugar — nenhum é removido, pela mesma razão
+da pasta raiz. A chave é do app, digitada no modal dele, e sem ela é uma linha
+no log. O Jellyfin ganhou o `server_language()`, para o ramo em que o assistente
+já foi fechado: o idioma só era escrito dentro do `wizard()`, e app já
+configurado ignorava o campo em silêncio.
+
 Com o FlareSolverr na stack, ele também entra no Prowlarr, em Settings →
 Indexers → Indexer Proxies, com a **etiqueta `flaresolverr`** — criada ali
 mesmo, se não existir. A etiqueta não é enfeite: o Prowlarr casa proxy com

@@ -550,6 +550,9 @@ sudo sh get-docker.sh</pre>
       <div class="row" data-help="env.hTz"><label for="eTz" data-i18n="env.tz">Time zone</label>
         <select id="eTz"></select>
       </div>
+      <div class="row" data-help="env.hLang"><label for="eLang" data-i18n="env.lang">Search language</label>
+        <select id="eLang"></select>
+      </div>
       <div class="row" data-help="env.hRestart"><label for="eRestart" data-i18n="env.restart">Restart policy</label>
         <select id="eRestart"><option>unless-stopped</option><option>always</option><option>no</option></select>
       </div>
@@ -663,6 +666,8 @@ sudo sh get-docker.sh</pre>
           <input type="text" id="mDlKey" class="fmt">
           <button type="button" id="mDlKeyGen" data-i18n="btn.gen">Generate</button>
         </div></div>
+      <div class="row" id="mAppKeyRow" data-help="m.appKeyWhy"><label for="mAppKey" data-i18n="m.appKey">API key</label>
+        <input type="text" id="mAppKey" class="fmt"></div>
       <div class="row" id="mSolverRow" data-help="m.solverWhy"><label data-i18n="m.indexers">Indexers</label>
         <label class="check"><input type="checkbox" id="mSolver"> <span data-i18n="m.solver">Add FlareSolverr to the stack</span></label>
       </div>
@@ -1038,6 +1043,8 @@ const I18N = {
   'job.apply.keyChangedMidRound':'a API key do app mudou no meio da aplicação — os *arr ficaram com a anterior; reaplique',
   'job.apply.badCredentials':'usuário ou senha recusados',
   'job.apply.notANumber':(f,t)=>`${f}: ${t} não é um número`,
+  'job.apply.unknownLanguage':n=>`o app não conhece o idioma "${n}"`,
+  'job.apply.noApiKeyForBazarr':'sem a chave da API no modal dele — os idiomas de legenda ficam como estão',
   'job.apply.unknownOption':(f,n)=>`${f}: opção desconhecida (${n})`,
   'job.apply.wizardNeedsCreds':'o assistente já foi concluído — preencha usuário e senha no modal dele para o Hubstarr criar as bibliotecas',
   'job.apply.libsReadyWizardOpen':'bibliotecas prontas, mas o assistente fica aberto — sem usuário e senha no modal dele, concluí-lo deixaria o Jellyfin sem conta nenhuma',
@@ -1093,6 +1100,9 @@ const I18N = {
   'btn.help':'O que é isso?',
   'env.hIds':'Usuário e grupo do host que os containers assumem para escrever nos volumes. Saem no <b>.env</b> como <b>PUID</b>/<b>PGID</b>; no seu usuário, veja com <b>id -u</b> e <b>id -g</b>.',
   'env.hTz':'Fuso dos containers, em <b>TZ</b> — mexe nos horários de log, agendamento e renomeio. A lista é a IANA inteira; o valor inicial é o desta máquina.',
+  'env.lang':'Idioma da busca',
+  'env.langNone':'Não mudar',
+  'env.hLang':'O idioma em que a stack procura e mostra os títulos. Ele desce para três lugares: o <b>idioma dos metadados</b> do Radarr, o idioma preferido das bibliotecas do <b>Jellyfin</b> e os idiomas de legenda do <b>Bazarr</b>. Quando o TRaSH Guides publica perfis daquele idioma — hoje só francês e alemão —, os do Configarr trocam junto, e aí os *arr passam a preferir o lançamento naquele idioma. O <b>Sonarr</b> fica de fora: a API dele não tem idioma de metadados, só o da interface, e trocar a interface de quem pediu outra coisa seria surpresa. Vazio não mexe no idioma de app nenhum.',
   'env.hRestart':'O que o Docker faz quando um container morre ou a máquina reinicia. Sai como <b>${RESTART}</b> em todos os serviços: <b>unless-stopped</b> volta sozinho, menos se você tiver parado o container na mão.',
   'env.hProject':'O que separa esta stack das outras na mesma máquina. Ele nomeia o projeto do compose e entra no nome de cada container (<b>hubstarr-sonarr</b>) e no da rede — os três nomes que o docker enxerga de fora e que, fixos, faziam uma stack tomar a outra. Rota do nginx, pasta de configuração e o que está guardado não mudam com ele. Mexer nele recria os containers na próxima subida; a configuração dos apps fica onde está.',
   'env.hCfg':'Pasta do host onde fica a configuração de cada container, uma subpasta por serviço. Sai como <b>${BASE_CONFIG}</b>.',
@@ -1156,6 +1166,8 @@ const I18N = {
   'm.dlDoneWhy':'Pasta em que o download termina, e de onde os *arr importam. Vai para o <code>complete_dir</code> do <b>sabnzbd.ini</b>. Ela fica dentro da árvore de downloads que os *arr também enxergam — é o que permite o hardlink na importação.',
   'm.dlKey':'API key',
   'm.dlKeyWhy':'A chave da API deste cliente, que os *arr usam para falar com ele. Diferente da senha da interface, ela é o próprio app que gera na primeira subida — copie de <i>Config → General</i> e cole aqui. Ela não vai para arquivo nenhum: serve só para o <b>Aplicar na stack</b> da Configuração registrar o cliente nos *arr.',
+  'm.appKey':'API key',
+  'm.appKeyWhy':'A chave da API deste app. É ele que a gera na primeira subida — copie de <i>Settings → General → Security</i> e cole aqui. Ela não vai para arquivo nenhum: serve só para o <b>Aplicar na stack</b> mandar os idiomas de legenda do <b>idioma da busca</b> do Ambiente. Vazia, o Bazarr fica como está.',
   'm.solverWhy':'Vários indexadores ficam atrás do desafio anti-bot da Cloudflare, e o Prowlarr sozinho esbarra nele: a busca volta vazia ou com erro. O <b>FlareSolverr</b> resolve o desafio num navegador headless e devolve a página ao Prowlarr. Marcando aqui, ele entra na stack junto — e o <b>Subir</b> já o registra no Prowlarr, em <i>Settings → Indexers → Indexer Proxies</i>, com a etiqueta <b>flaresolverr</b>. O que sobra é marcar essa etiqueta nos indexadores que precisam dele: é o Prowlarr que casa proxy e indexador por etiqueta, e quais precisam só você sabe. A imagem usada é a do <b>Byparr</b>, um substituto direto e mais atual, com a mesma API e a mesma porta. Sem indexador protegido pela Cloudflare, dá para deixar desmarcado.',
   'm.libs':'Outras pastas',
   'm.libAdd':'+ pasta',
@@ -1552,6 +1564,8 @@ const I18N = {
   'job.apply.keyChangedMidRound':'the app\'s API key changed mid-round — the *arr were left with the previous one; apply again',
   'job.apply.badCredentials':'username or password refused',
   'job.apply.notANumber':(f,t)=>`${f}: ${t} is not a number`,
+  'job.apply.unknownLanguage':n=>`the app does not know the language "${n}"`,
+  'job.apply.noApiKeyForBazarr':'no API key in its modal — the subtitle languages stay as they are',
   'job.apply.unknownOption':(f,n)=>`${f}: unknown option (${n})`,
   'job.apply.wizardNeedsCreds':'the wizard has already been completed — fill in username and password in its modal for Hubstarr to create the libraries',
   'job.apply.libsReadyWizardOpen':'libraries ready, but the wizard stays open — without username and password in its modal, completing it would leave Jellyfin with no account at all',
@@ -1607,6 +1621,9 @@ const I18N = {
   'btn.help':'What is this?',
   'env.hIds':'Host user and group the containers take on to write in the volumes. They land in <b>.env</b> as <b>PUID</b>/<b>PGID</b>; for your own user, check <b>id -u</b> and <b>id -g</b>.',
   'env.hTz':'Container time zone, as <b>TZ</b> — it drives log timestamps, scheduling and renaming. The list is the whole IANA database; the initial value is this machine\'s.',
+  'env.lang':'Search language',
+  'env.langNone':'Do not change',
+  'env.hLang':'The language the stack searches and shows titles in. It goes to three places: Radarr\'s <b>metadata language</b>, the preferred language of the <b>Jellyfin</b> libraries and <b>Bazarr</b>\'s subtitle languages. Where the TRaSH Guides publish profiles for that language — today only French and German — the Configarr ones switch along, and the *arr apps start preferring the release in it. <b>Sonarr</b> is left out: its API has no metadata language, only the interface one, and changing someone\'s interface when they asked for something else would be a surprise. Empty touches no app\'s language.',
   'env.hRestart':'What Docker does when a container dies or the machine reboots. Lands as <b>${RESTART}</b> on every service: <b>unless-stopped</b> comes back on its own, unless you stopped the container yourself.',
   'env.hProject':'What separates this stack from the others on the same machine. It names the compose project and goes into every container name (<b>hubstarr-sonarr</b>) and into the network — the three names docker sees from outside, and the ones that, being fixed, let one stack take over another. The nginx route, the configuration folder and what is stored do not change with it. Changing it recreates the containers on the next deploy; the apps\' configuration stays where it is.',
   'env.hCfg':'Host folder holding each container\'s configuration, one subfolder per service. Lands as <b>${BASE_CONFIG}</b>.',
@@ -1670,6 +1687,8 @@ const I18N = {
   'm.dlDoneWhy':'Folder where the download ends up, and where the *arr apps import from. It lands in <code>complete_dir</code> in <b>sabnzbd.ini</b>. It sits inside the downloads tree the *arr apps also see — that is what allows hardlinking on import.',
   'm.dlKey':'API key',
   'm.dlKeyWhy':'This client\'s API key, the one the *arr apps use to talk to it. Unlike the web UI password, the app itself generates it on first boot — copy it from <i>Config → General</i> and paste it here. It goes into no file: it only serves the Configuration\'s <b>Apply to the stack</b>, which registers the client in every *arr.',
+  'm.appKey':'API key',
+  'm.appKeyWhy':'This app\'s API key. The app itself generates it on first boot — copy it from <i>Settings → General → Security</i> and paste it here. It goes into no file: it only serves <b>Apply to the stack</b>, which sends the subtitle languages of the Environment\'s <b>search language</b>. Left empty, Bazarr is not touched.',
   'm.solverWhy':'Plenty of indexers sit behind Cloudflare\'s anti-bot challenge, and Prowlarr alone runs straight into it: searches come back empty or failing. <b>FlareSolverr</b> solves the challenge in a headless browser and hands the page back to Prowlarr. Tick this and it joins the stack — and <b>Bring up</b> already registers it in Prowlarr, under <i>Settings → Indexers → Indexer Proxies</i>, with the <b>flaresolverr</b> tag. What is left is putting that tag on the indexers that need it: Prowlarr matches proxy to indexer by tag, and which ones need it only you know. The image behind it is <b>Byparr</b>, a drop-in, better-maintained replacement with the same API and the same port. With no Cloudflare-protected indexer, you can leave it off.',
   'm.libs':'Other folders',
   'm.libAdd':'+ folder',
@@ -2066,6 +2085,8 @@ const I18N = {
   'job.apply.keyChangedMidRound':'la API key de la app cambió a mitad de la aplicación — los *arr quedaron con la anterior; vuelve a aplicar',
   'job.apply.badCredentials':'usuario o contraseña rechazados',
   'job.apply.notANumber':(f,t)=>`${f}: ${t} no es un número`,
+  'job.apply.unknownLanguage':n=>`el app no conoce el idioma "${n}"`,
+  'job.apply.noApiKeyForBazarr':'sin la clave de API en su modal — los idiomas de subtítulos se quedan como están',
   'job.apply.unknownOption':(f,n)=>`${f}: opción desconocida (${n})`,
   'job.apply.wizardNeedsCreds':'el asistente ya fue completado — rellena usuario y contraseña en su modal para que Hubstarr cree las bibliotecas',
   'job.apply.libsReadyWizardOpen':'bibliotecas listas, pero el asistente queda abierto — sin usuario y contraseña en su modal, completarlo dejaría Jellyfin sin ninguna cuenta',
@@ -2121,6 +2142,9 @@ const I18N = {
   'btn.help':'¿Qué es esto?',
   'env.hIds':'Usuario y grupo del host que los contenedores asumen para escribir en los volúmenes. Salen en el <b>.env</b> como <b>PUID</b>/<b>PGID</b>; para tu usuario, mira <b>id -u</b> e <b>id -g</b>.',
   'env.hTz':'Zona horaria de los contenedores, como <b>TZ</b> — afecta a los horarios de log, la programación y el renombrado. La lista es la IANA entera; el valor inicial es el de esta máquina.',
+  'env.lang':'Idioma de la búsqueda',
+  'env.langNone':'No cambiar',
+  'env.hLang':'El idioma en que la stack busca y muestra los títulos. Baja a tres lugares: el <b>idioma de los metadatos</b> de Radarr, el idioma preferido de las bibliotecas de <b>Jellyfin</b> y los idiomas de subtítulos de <b>Bazarr</b>. Cuando el TRaSH Guides publica perfiles de ese idioma — hoy solo francés y alemán —, los del Configarr cambian con él, y los *arr pasan a preferir el lanzamiento en ese idioma. <b>Sonarr</b> queda fuera: su API no tiene idioma de metadatos, solo el de la interfaz, y cambiar la interfaz de quien pidió otra cosa sería una sorpresa. Vacío no toca el idioma de ninguna app.',
   'env.hRestart':'Qué hace Docker cuando un contenedor muere o la máquina reinicia. Sale como <b>${RESTART}</b> en todos los servicios: <b>unless-stopped</b> vuelve solo, salvo que hayas parado el contenedor a mano.',
   'env.hProject':'Lo que separa esta stack de las otras en la misma máquina. Nombra el proyecto de compose y entra en el nombre de cada contenedor (<b>hubstarr-sonarr</b>) y en el de la red — los tres nombres que docker ve desde fuera y que, fijos, hacían que una stack tomara la otra. La ruta de nginx, la carpeta de configuración y lo guardado no cambian con él. Cambiarlo recrea los contenedores en el próximo despliegue; la configuración de las apps queda donde está.',
   'env.hCfg':'Carpeta del host donde queda la configuración de cada contenedor, una subcarpeta por servicio. Sale como <b>${BASE_CONFIG}</b>.',
@@ -2184,6 +2208,8 @@ const I18N = {
   'm.dlDoneWhy':'Carpeta en la que termina la descarga, y desde donde importan los *arr. Va al <code>complete_dir</code> del <b>sabnzbd.ini</b>. Queda dentro del árbol de descargas que los *arr también ven — es lo que permite el hardlink al importar.',
   'm.dlKey':'API key',
   'm.dlKeyWhy':'La clave de API de este cliente, la que los *arr usan para hablar con él. A diferencia de la contraseña de la interfaz, la genera el propio app en el primer arranque — cópiala de <i>Config → General</i> y pégala aquí. No va a ningún archivo: sirve solo para el <b>Aplicar en la stack</b> de la Configuración, que registra el cliente en cada *arr.',
+  'm.appKey':'API key',
+  'm.appKeyWhy':'La clave de API de este app. La genera él mismo en el primer arranque — cópiala de <i>Settings → General → Security</i> y pégala aquí. No va a ningún archivo: sirve solo para que el <b>Aplicar en la stack</b> mande los idiomas de subtítulos del <b>idioma de la búsqueda</b> del Entorno. Vacía, Bazarr se queda como está.',
   'm.solverWhy':'Varios indexadores están detrás del desafío anti-bot de Cloudflare, y Prowlarr solo choca con él: la búsqueda vuelve vacía o con error. <b>FlareSolverr</b> resuelve el desafío en un navegador headless y le devuelve la página a Prowlarr. Al marcarlo, entra en la stack junto — y el <b>Levantar</b> ya lo registra en Prowlarr, en <i>Settings → Indexers → Indexer Proxies</i>, con la etiqueta <b>flaresolverr</b>. Lo que queda es poner esa etiqueta en los indexadores que lo necesitan: Prowlarr casa proxy e indexador por etiqueta, y cuáles lo necesitan solo lo sabes tú. La imagen que usa es la de <b>Byparr</b>, un reemplazo directo y más actual, con la misma API y el mismo puerto. Sin ningún indexador protegido por Cloudflare, se puede dejar sin marcar.',
   'm.libs':'Otras carpetas',
   'm.libAdd':'+ carpeta',
@@ -2330,7 +2356,7 @@ const SERVICES = [
   {id:'radarr',   name:'Radarr',    port:7878, img:'lscr.io/linuxserver/radarr:latest',    color:'#feca57', media:true, mdir:'movies', needsDl:true, tp:true, tpAddon:true, tpTheme:true, site:'https://radarr.video'},
   {id:'lidarr',   name:'Lidarr',    port:8686, img:'lscr.io/linuxserver/lidarr:latest',    color:'#1db954', media:true, mdir:'music', needsDl:true, tp:true, site:'https://lidarr.audio'},
   {id:'prowlarr', name:'Prowlarr',  port:9696, img:'lscr.io/linuxserver/prowlarr:latest', color:'#e5534b', solver:true, tp:true, site:'https://prowlarr.com'},
-  {id:'bazarr',   name:'Bazarr',    port:6767, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr'], tp:true, site:'https://www.bazarr.media'},
+  {id:'bazarr',   name:'Bazarr',    port:6767, appKey:true, img:'lscr.io/linuxserver/bazarr:latest',    color:'#9b59b6', media:true, mdir:'', derived:['radarr','sonarr'], tp:true, site:'https://www.bazarr.media'},
   {id:'qbittorrent',name:'qBittorrent',port:8181, img:'lscr.io/linuxserver/qbittorrent:latest',color:'#4f9cf9', media:true, vpn:true, mdir:'torrents', dlClient:true, webAuth:'qbit', stripBase:true, tp:true, conf:[{host:'qBittorrent.conf', target:'/config/qBittorrent/qBittorrent.conf', patch:'qbit'},
           {host:'categories.json', target:'/config/qBittorrent/categories.json', patch:'qbitCats', viaApi:true}], site:'https://www.qbittorrent.org'},
   {id:'sabnzbd',  name:'SABnzbd',   port:8080, img:'lscr.io/linuxserver/sabnzbd:latest',   color:'#f2c94c', media:true, vpn:true, mdir:'usenet', dlClient:true, cdh:true, dlKey:true, dlDirs:true, tp:true,
@@ -2564,11 +2590,70 @@ const DEFAULTS = {restart:'unless-stopped',
                      `.env` nor the compose — only into the apply body. Empty
                      means "do not touch the wizard". */
                   jfUser:'', jfPass:'',
+                  /* the search language (v0.7). Empty means "do not touch any
+                     app's language", which has to stay a valid state: otherwise
+                     the first Deploy of whoever never asked for this starts
+                     rewriting `config/ui` behind their back. */
+                  searchLang:'',
                   // TLS in nginx: host paths, mounted read-only
                   tls:false, domain:'', cert:'/etc/letsencrypt/live/exemplo/fullchain.pem',
                   tlsKey:'/etc/letsencrypt/live/exemplo/privkey.pem',
                   vpnProv:'mullvad', vpnType:'wireguard',
                   wgKey:'', wgAddr:'', ovpnUser:'', ovpnPass:'', countries:''};
+
+/* The search language (v0.7): one choice in the Environment, and what each app
+   expects to hear it as. The table lives on the page because the page is what
+   decides — the server only formats (the contract in `backend/CLAUDE.md`).
+
+   - `arr` is the language **name** as Radarr publishes it in `/api/v3/language`;
+     the server looks the number up in the app itself, the same way option names
+     become numbers everywhere else. A name the app does not have becomes a line
+     in the log, never a zero.
+   - `jf` is a BCP-47 tag: the server splits it into Jellyfin's
+     `PreferredMetadataLanguage` and `MetadataCountryCode` (`language_of` /
+     `country_of`).
+   - `bz2` is Bazarr's two-letter code.
+   - `tpl` names the Recyclarr **language** templates, per preset. Only French
+     and German have any — that is the guide's doing, not ours — so every other
+     language leaves the profiles as they are. Whoever wants a specific file
+     still has the free-text field in the Configuration.
+
+   Sonarr is deliberately absent from `arr`: its `config/ui` has no metadata
+   language, only `uiLanguage`, which is the **interface**. Turning someone's
+   Sonarr Japanese because they asked for Japanese titles is not what the field
+   promises, so Sonarr gets its language from the release half instead. */
+const SEARCH_LANGS = {
+  'en':    {arr:'English',              jf:'en-US', bz2:'en'},
+  'pt-BR': {arr:'Portuguese (Brazil)',  jf:'pt-BR', bz2:'pt'},
+  'pt':    {arr:'Portuguese',           jf:'pt-PT', bz2:'pt'},
+  'es':    {arr:'Spanish',              jf:'es-ES', bz2:'es'},
+  'es-419':{arr:'Spanish (Latino)',     jf:'es-MX', bz2:'es'},
+  'fr':    {arr:'French',               jf:'fr-FR', bz2:'fr', tpl:'french'},
+  'de':    {arr:'German',               jf:'de-DE', bz2:'de', tpl:'german'},
+  'it':    {arr:'Italian',              jf:'it-IT', bz2:'it'},
+  'nl':    {arr:'Dutch',                jf:'nl-NL', bz2:'nl'},
+  'da':    {arr:'Danish',               jf:'da-DK', bz2:'da'},
+  'sv':    {arr:'Swedish',              jf:'sv-SE', bz2:'sv'},
+  'no':    {arr:'Norwegian',            jf:'nb-NO', bz2:'no'},
+  'fi':    {arr:'Finnish',              jf:'fi-FI', bz2:'fi'},
+  'pl':    {arr:'Polish',               jf:'pl-PL', bz2:'pl'},
+  'cs':    {arr:'Czech',                jf:'cs-CZ', bz2:'cs'},
+  'ru':    {arr:'Russian',              jf:'ru-RU', bz2:'ru'},
+  'uk':    {arr:'Ukrainian',            jf:'uk-UA', bz2:'uk'},
+  'tr':    {arr:'Turkish',              jf:'tr-TR', bz2:'tr'},
+  'el':    {arr:'Greek',                jf:'el-GR', bz2:'el'},
+  'he':    {arr:'Hebrew',               jf:'he-IL', bz2:'he'},
+  'ar':    {arr:'Arabic',               jf:'ar-SA', bz2:'ar'},
+  'ja':    {arr:'Japanese',             jf:'ja-JP', bz2:'ja'},
+  'ko':    {arr:'Korean',               jf:'ko-KR', bz2:'ko'},
+  'zh':    {arr:'Chinese',              jf:'zh-CN', bz2:'zh'},
+  'hi':    {arr:'Hindi',                jf:'hi-IN', bz2:'hi'},
+};
+// what goes in the apply body; null when nobody picked a language
+function searchLang(){
+  const l = SEARCH_LANGS[DEFAULTS.searchLang];
+  return l ? {code:DEFAULTS.searchLang, arr:l.arr || '', jf:l.jf, bz2:l.bz2} : null;
+}
 
 // services that take several instances (a different title is enough)
 const MULTI = ['sonarr','radarr','lidarr','bazarr','prowlarr'];
@@ -2762,7 +2847,7 @@ const locked = id => !isMulti(id) && has(id);
 const defCfg = id => ({id, title:svc(id).name, hw:'cpu', tpv:'std', tpt:TP_THEME_DEF,
                        data:svc(id).mdir||'', abs:'', libs:[], vpn:false,
                        // whoever accepts the challenge solver is born with it already ticked
-                       solver:!!svc(id).solver, dlKey:'', dlIn:'', dlDone:'',
+                       solver:!!svc(id).solver, dlKey:'', appKey:'', dlIn:'', dlDone:'',
                        hostPort: svc(id).publish ? String(svc(id).port) : ''});
 
 /* ---------- combobox ---------- */
@@ -3153,6 +3238,11 @@ function openModal(id, key){
   // the published port belongs to a single service, so it lives in its modal
   $('#mPortRow').style.display = s.publish ? 'grid' : 'none';
   if(s.publish){ $('#mPort').value = cur.hostPort || s.port; $('#mPort').placeholder = s.port; }
+  /* Bazarr's key is the app's own, like SABnzbd's, but it is no download
+     client: it goes to no file and no `.env` variable, only into the apply
+     body, so it gets a field of its own instead of riding on `dlKey`. */
+  $('#mAppKeyRow').style.display = s.appKey ? 'grid' : 'none';
+  if(s.appKey) $('#mAppKey').value = cur.appKey || '';
   $('#mDlKeyRow').style.display = s.dlKey ? 'grid' : 'none';
   // empty in `dlKey` means "the stack key": the field shows the one in force
   if(s.dlKey) $('#mDlKey').value = sabKey(cur);
@@ -3302,6 +3392,7 @@ $('#mSave').onclick = ()=>{
                // equal to the stack key = "follow the stack", and not a copy
                dlKey: s.dlKey && $('#mDlKey').value.trim() !== DEFAULTS.apiKey
                         ? $('#mDlKey').value.trim() : '',
+               appKey: s.appKey ? $('#mAppKey').value.trim() : '',
                dlIn:   s.dlDirs ? realToVars($('#mDlIn').value.trim())   : '',
                dlDone: s.dlDirs ? realToVars($('#mDlDone').value.trim()) : '',
                hostPort: s.publish ? ($('#mPort').value.trim() || String(s.port)) : ''};
@@ -3518,23 +3609,53 @@ const mmDefault = id => ({hardlink:true, rename:true, perms:false, empty:false,
 const PROFILE_PRESETS = {
   sonarr:{
     hd:   {p:'sonarr-v4-quality-profile-web-1080p',
-           cf:'sonarr-v4-custom-formats-web-1080p', q:'sonarr-quality-definition-series'},
+           cf:'sonarr-v4-custom-formats-web-1080p', q:'sonarr-quality-definition-series',
+           lang:{french:'sonarr-v4-@-bluray-web-1080p-french-multi-vf',
+                 german:'sonarr-v4-@-hd-bluray-web-german'}},
     uhd:  {p:'sonarr-v4-quality-profile-web-2160p',
-           cf:'sonarr-v4-custom-formats-web-2160p', q:'sonarr-quality-definition-series'},
+           cf:'sonarr-v4-custom-formats-web-2160p', q:'sonarr-quality-definition-series',
+           lang:{french:'sonarr-v4-@-bluray-web-2160p-french-multi-vf',
+                 german:'sonarr-v4-@-uhd-bluray-web-german'}},
     anime:{p:'sonarr-v4-quality-profile-anime',
-           cf:'sonarr-v4-custom-formats-anime',     q:'sonarr-quality-definition-anime'},
+           cf:'sonarr-v4-custom-formats-anime',     q:'sonarr-quality-definition-anime',
+           lang:{french:'sonarr-v4-@-1080p-french-anime-multi'}},
   },
   radarr:{
     hd:   {p:'radarr-quality-profile-hd-bluray-web',
-           cf:'radarr-custom-formats-hd-bluray-web', q:'radarr-quality-definition-movie'},
+           cf:'radarr-custom-formats-hd-bluray-web', q:'radarr-quality-definition-movie',
+           lang:{french:'radarr-@-hd-bluray-web-french-multi-vf',
+                 german:'radarr-@-hd-bluray-web-german'}},
     uhd:  {p:'radarr-quality-profile-uhd-bluray-web',
-           cf:'radarr-custom-formats-uhd-bluray-web',q:'radarr-quality-definition-movie'},
+           cf:'radarr-custom-formats-uhd-bluray-web',q:'radarr-quality-definition-movie',
+           lang:{french:'radarr-@-uhd-bluray-web-french-multi-vf',
+                 german:'radarr-@-uhd-bluray-web-german'}},
     remux:{p:'radarr-quality-profile-remux-web-2160p',
-           cf:'radarr-custom-formats-remux-web-2160p',q:'radarr-quality-definition-movie'},
+           cf:'radarr-custom-formats-remux-web-2160p',q:'radarr-quality-definition-movie',
+           lang:{french:'radarr-@-uhd-remux-web-french-multi-vf',
+                 german:'radarr-@-uhd-remux-web-german'}},
     anime:{p:'radarr-quality-profile-anime',
            cf:'radarr-custom-formats-anime',         q:'radarr-quality-definition-anime'},
   },
 };
+/* The release half of the search language (v0.7). A preset's `lang` names the
+   guide's template for that language, with `@` standing for the two halves —
+   `quality-profile` and `custom-formats` — because the pair only ever differs
+   in that word. It **replaces** the preset's own pair rather than joining it:
+   two profiles built from the same tier, one scoring French releases and one
+   ignoring them, would fight over the same releases.
+
+   Only French and German exist, and that is the guide's doing, not ours: every
+   other language leaves the presets exactly as they are, and whoever wants a
+   specific file still has the free-text field. Names that the repository does
+   not have are not invented here — these came from the same commit's
+   `includes/` as the ids above, and are the ones `TPL_SEED` already offers. */
+function presetPair(fam, key, tpl){
+  const x = PROFILE_PRESETS[fam][key];
+  if(!x) return null;
+  const v = tpl && x.lang && x.lang[tpl];
+  return v ? {p:v.replace('@','quality-profile'), cf:v.replace('@','custom-formats'), q:x.q}
+           : x;
+}
 
 /* An instance's templates, in the order they go into the file.
 
@@ -3546,7 +3667,8 @@ const PROFILE_PRESETS = {
    overwriting the other, so the first ticked preset's counts and the others come
    out as a comment in the file — which is where someone notices. */
 function profTemplates(fam, st){
-  const ps = (st.presets || []).map(k=>PROFILE_PRESETS[fam][k]).filter(Boolean);
+  const tpl = (SEARCH_LANGS[DEFAULTS.searchLang] || {}).tpl;
+  const ps = (st.presets || []).map(k=>presetPair(fam, k, tpl)).filter(Boolean);
   const use = [], drop = [];
   ps.forEach(x=>{ use.push(x.p, x.cf); });
   let q = null;
@@ -4208,7 +4330,8 @@ function openEnv(){
   tlsRows();
   $('#ePuid').value=DEFAULTS.puid; $('#ePgid').value=DEFAULTS.pgid;
   $('#eProject').value=DEFAULTS.project;
-  $('#eTz').value=DEFAULTS.tz; $('#eCfg').value=DEFAULTS.cfg; $('#eData').value=DEFAULTS.data;
+  $('#eTz').value=DEFAULTS.tz; $('#eLang').value=DEFAULTS.searchLang;
+  $('#eCfg').value=DEFAULTS.cfg; $('#eData').value=DEFAULTS.data;
   $('#eDl').value=DEFAULTS.dl;
   $('#eWarn').textContent='';
   $('#envBack').classList.add('open');
@@ -4294,7 +4417,8 @@ $('#eSave').onclick = ()=>{
      a way to write a compose that does not come up. */
   Object.assign(DEFAULTS, {restart:$('#eRestart').value, puid, pgid,
     project:slug($('#eProject').value) || 'hubstarr',
-    tz:$('#eTz').value, cfg:$('#eCfg').value.trim(), data:$('#eData').value.trim(),
+    tz:$('#eTz').value, searchLang:$('#eLang').value,
+    cfg:$('#eCfg').value.trim(), data:$('#eData').value.trim(),
     dl:$('#eDl').value.trim(),
     });
   DEFAULTS.apiKey = $('#eApiKey').value.trim() || randKey();
@@ -5259,6 +5383,11 @@ $('#dl').onclick = async ()=>{
 };
 
 $('#eTz').innerHTML = TIMEZONES.map(z=>`<option>${z}</option>`).join('');
+/* The empty option first, and it is the default: it means "do not touch any
+   app's language". The language names themselves do not go through the I18N —
+   a language is written the same way in every interface. */
+$('#eLang').innerHTML = `<option value="" data-i18n="env.langNone">Do not change</option>`
+  + Object.entries(SEARCH_LANGS).map(([c,l])=>`<option value="${c}">${l.arr}</option>`).join('');
 $('#mTp').innerHTML = TP_THEMES.map(v=>`<option>${v}</option>`).join('');
 
 $('#langSel').innerHTML = Object.entries(LANGS)
@@ -5685,7 +5814,13 @@ function skipNaming(a){
    mixed, which is the right thing for a content folder nobody declared. */
 const JF_TYPE = {sonarr:'tvshows', radarr:'movies', lidarr:'music'};
 /* Jellyfin's language comes from the page's language: whoever builds the stack
-   in Portuguese wants its interface in Portuguese. The format is .NET's. */
+   in Portuguese wants its interface in Portuguese. The format is .NET's.
+
+   This is the **interface** (`UICulture`), and it stays where it is. What the
+   metadata is fetched in is a different question, and since v0.7 it has its own
+   answer — the Environment's search language, sent apart as `metaLang`. Falling
+   back to this one keeps the stack of whoever picked no language exactly as it
+   was. */
 const JF_CULTURE = {'pt-BR':'pt-BR', en:'en-US', es:'es'};
 
 function jellyfinLibs(a){
@@ -5765,6 +5900,11 @@ function applyPayload(){
        server wrote. What goes is what it needs to run Configarr after the apps —
        it is no service of the stack, it is a standalone `docker run`, and the
        paths, the network and the user come from here, like everything else. */
+    /* The search language (v0.7): the metadata half. What each app expects is
+       already resolved here — the server only looks the Radarr number up in the
+       app itself. `null` when nobody picked one, and then no app's language is
+       touched at all. */
+    searchLang: searchLang(),
     configarr: plainCfgarr() ? {
       dir:     CFGARR_DIR(),
       network: netName(),
@@ -5784,7 +5924,19 @@ function applyPayload(){
       return j ? {name: nameOf(j), url: base + route(j),
                   user: DEFAULTS.jfUser, pass: DEFAULTS.jfPass,
                   culture: JF_CULTURE[LANG] || 'en-US',
+                  metaLang: (searchLang() || {}).jf || null,
                   libs: jellyfinLibs(j)} : null;
+    })(),
+    /* Bazarr: the subtitle half of the search language. The address is nginx's,
+       like everyone else's. An empty key means "do not touch it" — the app
+       generates its own on first boot, and without it this is a line in the log,
+       not a failure of the stack. */
+    bazarr: (()=>{
+      const l = searchLang();
+      if(!l) return null;
+      const list = added.filter(a=>a.id === 'bazarr' && a.appKey);
+      return list.length ? list.map(b=>({name:nameOf(b), url: base + route(b),
+                                         apiKey: b.appKey})) : null;
     })(),
     clients: clientList().map(c=>{
       const st = CONFIG.clients[cname(c)] || {};

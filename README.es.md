@@ -622,14 +622,39 @@ el HTML, los textos estáticos van marcados con `data-i18n` (o `data-i18n-html`,
 `data-i18n-ph`, `data-i18n-title`). Añadir un idioma es copiar uno de los
 bloques y traducir los valores.
 
+### Idioma de la búsqueda
+
+El **idioma de la interfaz** y el **idioma de la búsqueda** son dos cosas
+distintas, y el segundo vive en el Entorno. Es el que decide en qué idioma la
+stack busca y muestra los títulos, y baja a cuatro lugares:
+
+| Dónde | Qué recibe |
+| ----- | ---------- |
+| **Radarr** | el *Movie Info Language* de `Settings → UI`, aplicado por el Aplicar en la stack |
+| **Jellyfin** | el idioma preferido de metadatos del servidor y de las bibliotecas que nazcan de ahí en adelante |
+| **Bazarr** | un perfil de subtítulos en ese idioma, puesto como predeterminado de serie y de película |
+| **Configarr** | los perfiles del TRaSH Guides de ese idioma, cuando la guía publica alguno |
+
+Dos salvedades que conviene saber de antemano. **Sonarr** queda fuera: su API
+no tiene idioma de metadatos, solo el de la interfaz, y cambiar la interfaz de
+quien pidió otra cosa sería una sorpresa — el idioma le llega por los perfiles
+del Configarr. Y la guía solo publica perfiles de **francés** y **alemán**; en
+los demás idiomas los perfiles se quedan como están, y quien quiera un archivo
+concreto todavía tiene el campo de texto libre de la Configuración.
+
+Bazarr necesita **su propia clave de API**, la que él mismo genera en el primer
+arranque: cópiala de `Settings → General → Security` y pégala en su Editar. Sin
+ella, los subtítulos se quedan como están y sale una línea en el log. Dejar
+vacío el campo del Entorno no toca el idioma de ninguna app.
+
 ## Wishlist
 
 Lo que todavía no existe, en el orden en que tendría sentido que ocurra. Los
 hitos son versiones, no fechas: cada uno solo empieza después del anterior, porque
-depende de él. Hoy el repositorio está en **v0.6** — la página, el servidor que
-guarda la stack y la levanta en Docker, la Configuración aplicada en las apps y
-el TRaSH Guides entero por Configarr: perfiles, custom formats con los scores de
-la guía y las quality definitions.
+depende de él. Hoy el repositorio está en **v0.7** — la página, el servidor que
+guarda la stack y la levanta en Docker, la Configuración aplicada en las apps, el
+TRaSH Guides entero por Configarr (perfiles, custom formats con los scores de la
+guía y las quality definitions) y el idioma de la búsqueda.
 
 | Hito     | Entrega                                              | Se cierra cuando                                                                        |
 | -------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------- |
@@ -638,7 +663,7 @@ la guía y las quality definitions.
 | ~~**v0.4**~~ | ~~Custom formats y profiles propios de cada stack~~ | ✅ los perfiles del TRaSH Guides, por instancia, aplicados por Configarr |
 | ~~**v0.5**~~ | ~~Compatibilidad con TRaSH Guides~~               | ✅ quality definitions y scores de custom format vienen en los templates que aplica Configarr |
 | ~~**v0.6**~~ | ~~Nombre de proyecto y de contenedor configurable~~ | ✅ el nombre del proyecto, en el Entorno, entra en el proyecto de compose, los contenedores y la red |
-| **v0.7** | Búsqueda localizada de medios                         | se puede elegir el idioma de la búsqueda y los *arr encuentran el lanzamiento correcto     |
+| ~~**v0.7**~~ | ~~Búsqueda localizada de medios~~                 | ✅ el **idioma de la búsqueda**, en el Entorno, baja a los metadatos de Radarr, las bibliotecas de Jellyfin, los subtítulos de Bazarr y los perfiles de Configarr |
 
 ## Comprobaciones
 

@@ -599,14 +599,39 @@ os textos estáticos são marcados com `data-i18n` (ou `data-i18n-html`,
 `data-i18n-ph`, `data-i18n-title`). Adicionar um idioma é copiar um dos blocos
 e traduzir os valores.
 
+### Idioma da busca
+
+O **idioma da interface** e o **idioma da busca** são duas coisas diferentes, e
+o segundo mora no Ambiente. É ele que decide em que idioma a stack procura e
+mostra os títulos, e desce para quatro lugares:
+
+| Onde | O que recebe |
+| ---- | ------------ |
+| **Radarr** | o *Movie Info Language* de `Settings → UI`, aplicado pelo Aplicar na stack |
+| **Jellyfin** | o idioma preferido de metadados do servidor e das bibliotecas que nascerem daí em diante |
+| **Bazarr** | um perfil de legendas naquele idioma, ligado como padrão de série e de filme |
+| **Configarr** | os perfis do TRaSH Guides daquele idioma, quando o guia publica algum |
+
+Duas ressalvas que valem saber de antemão. O **Sonarr** fica de fora: a API
+dele não tem idioma de metadados, só o da interface, e trocar a interface de
+quem pediu outra coisa seria surpresa — o idioma chega nele pelos perfis do
+Configarr. E o guia só publica perfis de **francês** e **alemão**; nos outros
+idiomas os perfis ficam como estão, e quem quiser um arquivo específico ainda
+tem o campo de texto livre da Configuração.
+
+O Bazarr precisa da **chave de API dele**, que ele mesmo gera na primeira
+subida: copie de `Settings → General → Security` e cole no Editar dele. Sem
+ela, as legendas ficam como estão e sai uma linha no log. Deixar o campo do
+Ambiente vazio não mexe no idioma de app nenhum.
+
 ## Wishlist
 
 O que ainda não existe, na ordem em que faria sentido acontecer. Os marcos são
 versões, não datas: cada um só começa depois do anterior, porque depende dele.
-Hoje o repositório está no **v0.6** — a página, o servidor que guarda a stack e
-a sobe no Docker, a Configuração aplicada nos apps e o TRaSH Guides inteiro pelo
-Configarr: perfis, custom formats com os scores do guia e as quality
-definitions.
+Hoje o repositório está no **v0.7** — a página, o servidor que guarda a stack e
+a sobe no Docker, a Configuração aplicada nos apps, o TRaSH Guides inteiro pelo
+Configarr (perfis, custom formats com os scores do guia e as quality
+definitions) e o idioma da busca.
 
 | Marco    | Entrega                                              | Fecha quando                                                                            |
 | -------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -615,7 +640,7 @@ definitions.
 | ~~**v0.4**~~ | ~~Custom formats e profiles próprios de cada stack~~ | ✅ os perfis do TRaSH Guides, por instância, aplicados pelo Configarr |
 | ~~**v0.5**~~ | ~~Compatibilidade com o TRaSH Guides~~            | ✅ quality definitions e scores de custom format vêm nos templates que o Configarr aplica |
 | ~~**v0.6**~~ | ~~Nome de projeto e de container configurável~~   | ✅ o nome do projeto, no Ambiente, entra no projeto do compose, nos containers e na rede |
-| **v0.7** | Busca localizada de mídia                             | dá para escolher o idioma da busca e os *arr acham o lançamento certo                      |
+| ~~**v0.7**~~ | ~~Busca localizada de mídia~~                     | ✅ o **idioma da busca**, no Ambiente, desce para os metadados do Radarr, as bibliotecas do Jellyfin, as legendas do Bazarr e os perfis do Configarr |
 
 ## Verificações
 

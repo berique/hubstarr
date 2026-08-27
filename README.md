@@ -611,14 +611,40 @@ on some data. In the HTML, static texts are marked with `data-i18n` (or
 `data-i18n-html`, `data-i18n-ph`, `data-i18n-title`). Adding a language means
 copying one of the blocks and translating the values.
 
+### Search language
+
+The **interface language** and the **search language** are two different
+things, and the second one lives in the Environment. It decides what language
+the stack searches and shows titles in, and it reaches four places:
+
+| Where | What it gets |
+| ----- | ------------ |
+| **Radarr** | the *Movie Info Language* under `Settings → UI`, applied by Apply to the stack |
+| **Jellyfin** | the server's preferred metadata language, and that of any library born from then on |
+| **Bazarr** | a subtitle profile in that language, set as the series and movie default |
+| **Configarr** | the TRaSH Guides profiles for that language, where the guide publishes any |
+
+Two caveats worth knowing up front. **Sonarr** is left out: its API has no
+metadata language, only the interface one, and changing the interface of
+someone who asked for something else would be a surprise — its language arrives
+through the Configarr profiles instead. And the guide only publishes profiles
+for **French** and **German**; in every other language the profiles stay as
+they are, and whoever wants a specific file still has the Configuration's
+free-text field.
+
+Bazarr needs **its own API key**, the one it generates on first boot: copy it
+from `Settings → General → Security` and paste it into its Edit. Without it the
+subtitles stay as they are and a line goes to the log. Leaving the Environment
+field empty touches no app's language.
+
 ## Wishlist
 
 What is not there yet, in the order it would make sense to happen. The
 milestones are versions, not dates: each one only starts after the previous, because
-it depends on it. The repository is at **v0.6** today — the page, the server
+it depends on it. The repository is at **v0.7** today — the page, the server
 that keeps the stack and brings it up in Docker, the Configuration applied to
-the apps and the whole TRaSH Guides through Configarr: profiles, custom formats
-with the guide's scores, and the quality definitions.
+the apps, the whole TRaSH Guides through Configarr (profiles, custom formats
+with the guide's scores, and the quality definitions) and the search language.
 
 | Milestone | Delivers                                          | Done when                                                                          |
 | --------- | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
@@ -627,7 +653,7 @@ with the guide's scores, and the quality definitions.
 | ~~**v0.4**~~ | ~~Custom formats and profiles per stack~~ | ✅ the TRaSH Guides profiles, per instance, applied by Configarr |
 | ~~**v0.5**~~ | ~~Compatibility with the TRaSH Guides~~        | ✅ quality definitions and custom format scores come in the templates Configarr applies |
 | ~~**v0.6**~~ | ~~Configurable project and container names~~   | ✅ the project name, in the Environment, goes into the compose project, the containers and the network |
-| **v0.7**  | Localized media search                            | the search language can be picked and the *arr apps find the right release          |
+| ~~**v0.7**~~ | ~~Localized media search~~                     | ✅ the **search language**, in the Environment, reaches Radarr's metadata, the Jellyfin libraries, Bazarr's subtitles and the Configarr profiles |
 
 ## Checks
 
