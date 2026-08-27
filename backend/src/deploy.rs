@@ -437,10 +437,19 @@ where
 mod tests {
     use super::{ok_service, pick_from};
 
-    /// A made-up command that answers (or not) to `compose version`.
-    fn fake(name: &str, responds: bool) -> String {
+    /* A made-up command that answers (or not) to `compose version`.
+
+       `owner` is the test asking for it, and it is what keeps the folder its
+       own. The tests run in parallel inside one process, so a single folder
+       meant two of them writing the same `quebrado` at the same time — and
+       `fs::write` truncates before it writes. Whoever ran the file in that
+       window ran an **empty** script, which a shell exits 0 for: the command
+       that must not answer answered, and the wrong engine was picked. Measured
+       at 32 spurious zeroes in 4000 runs, and it is what turned the CI red on a
+       commit that had touched nothing of the sort. */
+    fn fake(owner: &str, name: &str, responds: bool) -> String {
         use std::os::unix::fs::PermissionsExt;
-        let dir = std::env::temp_dir().join(format!("hubmotor{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("hubmotor{}-{owner}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let p = dir.join(name);
         let body = if responds {
@@ -455,15 +464,15 @@ mod tests {
 
     #[tokio::test]
     async fn the_engine_chosen_on_the_command_line_wins() {
-        let good = fake("bom", true);
+        let good = fake("linha-de-comando", "bom", true);
         // the one that came is not even asked: whoever passed --docker has decided
         assert_eq!(pick_from(Some("qualquer".into()), &[&good]).await, "qualquer");
     }
 
     #[tokio::test]
     async fn with_no_option_the_first_that_answers_wins() {
-        let broken = fake("quebrado", false);
-        let good = fake("bom", true);
+        let broken = fake("primeiro-que-responde", "quebrado", false);
+        let good = fake("primeiro-que-responde", "bom", true);
         let e: Vec<&str> = vec![&broken, &good];
         assert_eq!(pick_from(None, &e).await, good);
         // and the first one is still the first when it answers
@@ -473,7 +482,7 @@ mod tests {
 
     #[tokio::test]
     async fn with_no_engine_the_first_of_the_list_is_used() {
-        let broken = fake("quebrado", false);
+        let broken = fake("sem-motor", "quebrado", false);
         // it does not even exist as a file: `Command` fails before running
         let e: Vec<&str> = vec![&broken, "hubstarr-motor-que-nao-existe"];
         assert_eq!(pick_from(None, &e).await, broken);
