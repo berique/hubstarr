@@ -4,7 +4,10 @@ description: Regenerate the hubstarr.html screenshots in docs/ (screenshot.png, 
 ---
 
 Para refazer as capturas, copie o HTML para um arquivo temporário fora do
-projeto (o chromium do snap não lê `/tmp` nem `/srv`), injete no fim do
+projeto (o chromium do snap não lê `/tmp` nem `/srv` — e também não **escreve**
+neles: o `--screenshot` apontado para `docs/` falha calado, o arquivo antigo
+continua onde estava e a rodada inteira parece ter dado certo. Fotografe para o
+`$HOME` e copie depois), injete no fim do
 `<script>` o que a captura precisa — `setTheme('dark')` (as quatro capturas
 estão no tema escuro), o `added` da stack de exemplo,
 `$('#combo').classList.add('open')`, `openModal('sonarr',null)` mais
