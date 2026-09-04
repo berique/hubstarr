@@ -1433,9 +1433,12 @@ async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
 
     let mut failures = 0;
     let mut token = String::new();
+    let mut admin_ok = false;
 
     if !ready {
-        failures += wizard(http, &base, jf, log).await;
+        let (f, ok) = wizard(http, &base, jf, log).await;
+        failures += f;
+        admin_ok = ok;
     } else if !jf.user.is_empty() && !jf.pass.is_empty() {
         match authenticate(http, &base, jf).await {
             Ok(t) => token = t,
@@ -1467,11 +1470,21 @@ async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
        with no account to log in with — so, with no credential in the modal, it
        stays open on purpose, with the libraries already there, for whoever
        deployed it to finish in the browser. */
-    let made_admin = !jf.user.is_empty() && !jf.pass.is_empty();
-    if !ready && !made_admin {
-        log.line(msg!("job.apply.item", jf.name.clone(), Msg::k("job.apply.libsReadyWizardOpen")));
+    /* What decides this is the administrator that **exists**, not the one that
+       was asked for: the step can fail — and did, with `POST /Startup/User`
+       answering 404 on a Jellyfin whose first account had not been brought into
+       being — and closing the wizard on top of that hands over a server nobody
+       can log into, with no way back through the interface. */
+    let asked_admin = !jf.user.is_empty() && !jf.pass.is_empty();
+    if !ready && !admin_ok {
+        let why = if asked_admin {
+            Msg::k("job.apply.wizardKeptOpen")
+        } else {
+            Msg::k("job.apply.libsReadyWizardOpen")
+        };
+        log.line(msg!("job.apply.item", jf.name.clone(), why));
     }
-    if !ready && made_admin {
+    if !ready && admin_ok {
         let target = format!("{base}/Startup/Complete");
         let r = retry("POST", &target, || {
             http.post(&target).header("Content-Length", "0").send()
@@ -1502,40 +1515,78 @@ async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
     failures
 }
 
+/// The wizard's first user, read before it is written.
+///
+/// `POST /Startup/User` does not create an account: it **renames** the one that
+/// is already there, and answers `404` when there is none — a status its own
+/// OpenAPI does not even list, so it reads like a wrong address instead of what
+/// it is. In Jellyfin 10.11 that account does not exist until something asks
+/// for it, and this GET is what asks: it is the call the browser wizard makes
+/// before showing the form. Measured on 10.11.11: the POST alone answers 404
+/// and no user is born; a GET before it, and the POST answers 204 with an
+/// account that logs in. On a Jellyfin that already has the user, the GET is
+/// simply what it always was — the one that is there.
+async fn first_user(http: &reqwest::Client, url: &str) -> Result<(), Msg> {
+    let r = retry("GET", url, || http.get(url).send()).await?;
+    let st = r.status();
+    api("GET", url, st);
+    if st.is_success() {
+        Ok(())
+    } else {
+        Err(error(st, &r.text().await.unwrap_or_default()))
+    }
+}
+
 /// The initial wizard, in the order Jellyfin expects it. Nothing here carries
 /// a token: it is the window in which it accepts none.
-async fn wizard(http: &reqwest::Client, base: &str, jf: &Jellyfin, log: &Log) -> usize {
+///
+/// It answers how many steps failed **and whether the administrator was really
+/// created** — the second one because it is what decides whether the wizard may
+/// be closed, and "there was a user and a password in the modal" is not the
+/// same thing as "the account exists".
+async fn wizard(http: &reqwest::Client, base: &str, jf: &Jellyfin, log: &Log) -> (usize, bool) {
     let mut failures = 0;
-    let mut step = |what: Msg, result: Result<(), Msg>| match result {
-        Ok(()) => log.line(msg!("job.apply.link", jf.name.clone(), what, Msg::k("job.apply.readyM"))),
-        Err(e) => {
-            log.line(msg!("job.apply.link", jf.name.clone(), what, e));
-            failures += 1;
+    let mut admin = false;
+    {
+        let mut step = |what: Msg, result: Result<(), Msg>| match result {
+            Ok(()) => {
+                log.line(msg!("job.apply.link", jf.name.clone(), what, Msg::k("job.apply.readyM")));
+                true
+            }
+            Err(e) => {
+                log.line(msg!("job.apply.link", jf.name.clone(), what, e));
+                failures += 1;
+                false
+            }
+        };
+
+        if !jf.culture.is_empty() {
+            let meta = meta_culture(jf);
+            let body = json!({
+                "ServerName": jf.name,
+                "UICulture": jf.culture,
+                "MetadataCountryCode": country_of(meta),
+                "PreferredMetadataLanguage": language_of(meta),
+            });
+            let r = post_json(http, &format!("{base}/Startup/Configuration"), "", body).await;
+            step(Msg::k("job.apply.language"), r);
         }
-    };
 
-    if !jf.culture.is_empty() {
-        let meta = meta_culture(jf);
-        let body = json!({
-            "ServerName": jf.name,
-            "UICulture": jf.culture,
-            "MetadataCountryCode": country_of(meta),
-            "PreferredMetadataLanguage": language_of(meta),
-        });
-        let r = post_json(http, &format!("{base}/Startup/Configuration"), "", body).await;
-        step(Msg::k("job.apply.language"), r);
+        if !jf.user.is_empty() && !jf.pass.is_empty() {
+            let target = format!("{base}/Startup/User");
+            let body = json!({"Name": jf.user, "Password": jf.pass});
+            let r = match first_user(http, &target).await {
+                Ok(()) => post_json(http, &target, "", body).await,
+                Err(e) => Err(e),
+            };
+            admin = step(msg!("job.apply.admin", jf.user.clone()), r);
+        }
+
+        let body = json!({"EnableRemoteAccess": true, "EnableAutomaticPortMapping": false});
+        let r = post_json(http, &format!("{base}/Startup/RemoteAccess"), "", body).await;
+        step(Msg::k("job.apply.remoteAccess"), r);
     }
-
-    if !jf.user.is_empty() && !jf.pass.is_empty() {
-        let body = json!({"Name": jf.user, "Password": jf.pass});
-        let r = post_json(http, &format!("{base}/Startup/User"), "", body).await;
-        step(msg!("job.apply.admin", jf.user.clone()), r);
-    }
-
-    let body = json!({"EnableRemoteAccess": true, "EnableAutomaticPortMapping": false});
-    let r = post_json(http, &format!("{base}/Startup/RemoteAccess"), "", body).await;
-    step(Msg::k("job.apply.remoteAccess"), r);
-    failures
+    (failures, admin)
 }
 
 /// The token of an already configured Jellyfin. The `Authorization` header with

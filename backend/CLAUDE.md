@@ -140,9 +140,26 @@ com requisições próprias, e é o `StartupWizardCompleted` do
 que o `FirstTimeSetupOrElevated` dele aceita criar usuário e biblioteca **sem
 token** — daí a ordem, com as bibliotecas *antes* do `Startup/Complete`.
 Assistente fechado exige token, e ele sai do usuário e senha do modal
-(`webAuth: 'jf'`); sem eles, é uma linha no log, não uma falha da stack. O
-`Complete` só é chamado quando houve administrador a criar: fechar o assistente
-sem conta nenhuma entrega um Jellyfin em que ninguém entra. Biblioteca que já
+(`webAuth: 'jf'`); sem eles, é uma linha no log, não uma falha da stack.
+
+Duas coisas do administrador, e as duas custaram um Jellyfin em que ninguém
+entrava:
+
+- **O `POST /Startup/User` não cria conta, ele renomeia a que já existe** — e
+  responde **404** quando não há nenhuma. Na 10.11 essa conta só nasce quando
+  alguém a pede, e quem a pede é o `GET /Startup/User`, a chamada que o
+  assistente do navegador faz antes de mostrar o formulário. Por isso o
+  `first_user()` vem antes do POST. O 404 nem sequer está entre as respostas que
+  o OpenAPI dele lista, então ele se parece com endereço errado em vez do que é.
+  Medido na 10.11.11: o POST sozinho dá 404 e nenhum usuário nasce; com o GET
+  antes, dá 204 e a conta entra.
+- **O `Complete` só é chamado com o administrador que existe**, não com o que
+  foi pedido — é o `bool` que o `wizard()` devolve, e não o "havia usuário e
+  senha no modal". A diferença é a stack de quem viu o `Startup/User` falhar e
+  o assistente ser selado em cima: um Jellyfin sem conta nenhuma e sem caminho
+  de volta pela interface, que só se recupera pondo o
+  `IsStartupWizardCompleted` do `system.xml` de volta em `false` com o
+  container parado. Biblioteca que já
 existe não é tocada e nenhuma é removida, pela mesma razão da pasta raiz. Quem
 monta a lista é a página, no `jellyfinLibs()`, com o caminho **de dentro do
 container** — e ele **não** é a pasta raiz do *arr: o Jellyfin monta a base
