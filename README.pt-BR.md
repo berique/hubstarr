@@ -408,6 +408,13 @@ container escolhido e cada gravação de estado vinda da página — com quantos
 serviços vieram e quais saíram da stack. O arquivo acrescenta, nunca reescreve,
 e é onde se olha quando a stack mudou e não se sabe por quê.
 
+Os dois — o banco e o log — ficam em **0600**, do dono e de mais ninguém, e
+isso é acertado a cada abertura, não só quando eles nascem: o Ambiente é
+guardado como foi digitado, com a chave da stack, as senhas do qBittorrent e do
+Jellyfin e as credenciais da VPN. O `.env` da pasta da stack é outro caso e
+continua como está — o docker compose precisa lê-lo, então quem o guarda é a
+pasta em volta.
+
 Com **`-v`** ele conta o passo a passo, nos dois lugares: cada arquivo gravado
 (inclusive as chaves escritas na configuração de cada app), cada linha mexida no
 banco — instância, Ambiente, Configuração, a lista de serviços — e **cada

@@ -29,6 +29,14 @@ pub use instance::InstanceIn;
 
 pub struct Db(Arc<Mutex<Connection>>);
 
+/// The database's companion files, which SQLite names by appending to it — and
+/// so does not answer `with_extension()`, since the database may have one.
+fn wal(path: &Path, suffix: &str) -> std::path::PathBuf {
+    let mut s = path.as_os_str().to_os_string();
+    s.push(suffix);
+    std::path::PathBuf::from(s)
+}
+
 impl Db {
     /// Opens the database and creates whatever is missing. Running it again on a
     /// ready database changes nothing — it is the same path the first time and
@@ -48,6 +56,14 @@ impl Db {
         env::ensure_env_cols(&conn)?;
         // and the extra folders, which gained the alias beside the path
         instance::ensure_lib_cols(&conn)?;
+        /* The Environment is kept here as it was typed — the stack key, the
+           qBittorrent and Jellyfin passwords, the VPN credentials — so the file
+           is the owner's alone. The `-wal` and the `-shm` go along: SQLite
+           gives them the database's mode when it creates them, but the ones
+           already on disk were born before this. */
+        for p in [path.to_path_buf(), wal(path, "-wal"), wal(path, "-shm")] {
+            crate::journal::keep_private(&p);
+        }
         Ok((Db(Arc::new(Mutex::new(conn))), done))
     }
 
@@ -105,6 +121,36 @@ pub(crate) fn obj(v: Option<&Value>) -> serde_json::Map<String, Value> {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    /// The database holds the Environment as it was typed — the stack key, the
+    /// qBittorrent and Jellyfin passwords, the VPN credentials — so it is the
+    /// owner's alone. It runs on **every** open, not only on creation: a file
+    /// keeps the mode it was born with, and the ones written before this are
+    /// exactly the ones worth tightening.
+    #[cfg(unix)]
+    #[test]
+    fn the_database_is_left_readable_only_by_its_owner() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = std::env::temp_dir().join(format!("hubstarr-modo-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let p = dir.join("h.db");
+        // a database from before this, born from the umask
+        std::fs::write(&p, b"").unwrap();
+        std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o644)).unwrap();
+
+        let (db, _) = Db::open(&p).unwrap();
+        let mode = |f: &Path| std::fs::metadata(f).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode(&p), 0o600);
+        for suffix in ["-wal", "-shm"] {
+            let c = wal(&p, suffix);
+            if c.exists() {
+                assert_eq!(mode(&c), 0o600, "{}", c.display());
+            }
+        }
+        drop(db);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     #[test]
     fn an_empty_db_returns_no_state() {

@@ -40,10 +40,42 @@ pub fn open(db_path: &Path) {
     let p = path(db_path);
     match std::fs::OpenOptions::new().create(true).append(true).open(&p) {
         Ok(f) => {
+            keep_private(&p);
             let _ = LOG.set(Mutex::new(f));
         }
         // without the file the server stays whole, just without history
         Err(e) => println!("(no log at {}: {e})", p.display()),
+    }
+}
+
+/* The two files the server keeps for itself — the database and this log — are
+   for the owner alone.
+
+   The database holds the Environment as it was typed: the stack's API key, the
+   qBittorrent and Jellyfin passwords, the VPN credentials. Born from the
+   process umask they come out `0644`, which on a machine with more than one
+   person is every one of those secrets readable by all of them. The log has the
+   same shape of content by proximity — it names paths and, with `-v`, every
+   call made — and it lives right beside it.
+
+   It runs on every open, not only on creation: a file that already exists keeps
+   the mode it was created with, and the ones written before this are exactly
+   the ones worth tightening. Failing is a line on the output, never a server
+   that does not come up — a permission we could not change is not a reason to
+   refuse to work, and saying so is what lets whoever reads it decide.
+
+   The `.env` of the stack folder is a different matter and stays as it is:
+   docker compose has to read it, so what guards it is the folder around it. */
+pub fn keep_private(p: &Path) {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        if !p.exists() {
+            return;
+        }
+        if let Err(e) = std::fs::set_permissions(p, std::fs::Permissions::from_mode(0o600)) {
+            println!("({}: could not restrict to 0600: {e})", p.display());
+        }
     }
 }
 

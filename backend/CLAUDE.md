@@ -29,6 +29,17 @@ refaz enquanto o `--db` dura. É `append`, nunca reescrita, porque o valor dele
 aviso na saída, não um servidor que não sobe. Quem cuida disso é o
 `journal.rs`, e `println!` fora dele é sinal de linha que não vai ao arquivo.
 
+Os dois arquivos que o servidor guarda para si — o banco e o log — passam pelo
+`journal::keep_private()`, que os deixa em **0600**. O banco tem o Ambiente como
+foi digitado: a chave da stack, as senhas do qBittorrent e do Jellyfin, as
+credenciais da VPN; nascidos do umask eles saem `0644`, e numa máquina com mais
+de uma pessoa isso é cada um desses segredos legível por todas. Roda a **cada
+abertura**, não só na criação — arquivo já existente mantém o modo com que
+nasceu, e são justamente os antigos que valem apertar —, e vale também para o
+`-wal` e o `-shm`. Falhar é uma linha na saída, nunca um servidor que não sobe.
+O `.env` da pasta da stack fica de fora de propósito: o compose tem de lê-lo, e
+quem o guarda é a pasta em volta.
+
 Ali moram **duas alturas de log**, e a distinção é o que mantém as duas úteis:
 
 - `record()` é o que sempre sai — a subida, o motor escolhido, cada

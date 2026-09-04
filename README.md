@@ -418,6 +418,13 @@ many services came in and which ones left the stack. The file appends, never
 rewrites, and it is where to look when the stack changed and you do not know
 why.
 
+Both of them — the database and the log — are kept at **0600**, the owner's and
+nobody else's, and that is set on every open, not only when they are created:
+the Environment is stored as it was typed, with the stack key, the qBittorrent
+and Jellyfin passwords and the VPN credentials. The stack folder's `.env` is a
+different matter and stays as it is — docker compose has to read it, so what
+guards it is the folder around it.
+
 With **`-v`** it spells out each step, in both places: every file written
 (including the keys written into each app's own configuration), every row
 touched in the database — instance, Environment, Configuration, the service

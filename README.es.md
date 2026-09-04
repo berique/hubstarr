@@ -427,6 +427,13 @@ motor de contenedores elegido y cada guardado de estado que llega de la página
 — cuántos servicios vinieron y cuáles salieron de la stack. El archivo añade,
 nunca reescribe, y es donde mirar cuando la stack cambió y no se sabe por qué.
 
+Los dos — la base y el log — quedan en **0600**, del dueño y de nadie más, y
+eso se ajusta en cada apertura, no solo cuando nacen: el Entorno se guarda tal
+como se escribió, con la clave de la stack, las contraseñas de qBittorrent y de
+Jellyfin y las credenciales de la VPN. El `.env` de la carpeta de la stack es
+otro caso y sigue como está — docker compose tiene que leerlo, así que lo que
+lo guarda es la carpeta que lo rodea.
+
 Con **`-v`** cuenta el paso a paso, en los dos sitios: cada archivo grabado
 (incluidas las claves escritas en la configuración de cada app), cada fila
 tocada en la base — instancia, Entorno, Configuración, la lista de servicios — y
