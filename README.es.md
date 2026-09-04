@@ -207,6 +207,8 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
   certificado y de la clave eligen archivo en vez de carpeta. Sin servidor el
   botón no aparece: abierta desde el disco, la página no alcanza tu sistema de
   archivos.
+
+  ![El navegador de carpetas del servidor, abierto sobre el Entorno](docs/browse.png)
 - **network.xml de Jellyfin**: con él en la stack, el `BaseUrl` en el subpath
   de nginx y `nginx` en `KnownProxies` — sin lo primero la interfaz arma los
   enlaces en la raíz y el subpath responde 404, sin lo segundo registra la IP

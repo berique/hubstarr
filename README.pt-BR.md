@@ -196,6 +196,8 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   (`series/4k`), e fora das bases vira caminho literal no compose. Os campos do
   certificado e da chave escolhem arquivo em vez de pasta. Sem servidor o botão
   não aparece: aberta do disco, a página não alcança o seu sistema de arquivos.
+
+  ![O navegador de pastas do servidor, aberto sobre o Ambiente](docs/browse.png)
 - **network.xml do Jellyfin**: com ele na stack, o `BaseUrl` no subpath do
   nginx e o `nginx` em `KnownProxies` — sem o primeiro a interface monta os
   links na raiz e o subpath responde 404, sem o segundo ele registra o IP do

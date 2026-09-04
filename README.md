@@ -200,6 +200,8 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   path in the compose file. The certificate and key fields choose a file instead
   of a folder. Without a server the button is not there: opened from disk, the
   page cannot reach your file system.
+
+  ![The server's folder browser, open over the Environment](docs/browse.png)
 - **Jellyfin's network.xml**: with it in the stack, `BaseUrl` set to the nginx
   subpath and `nginx` in `KnownProxies` — without the first the UI builds its
   links at the root and the subpath answers 404, without the second it logs the

@@ -1,6 +1,6 @@
 ---
 name: docs-screenshots
-description: Regenerate the hubstarr.html screenshots in docs/ (screenshot.png, services.png, theme.png, credits.png, config.png) via headless chromium. Use when the interface changed and the docs/ captures need to be refreshed.
+description: Regenerate the hubstarr.html screenshots in docs/ (screenshot.png, services.png, theme.png, credits.png, config.png, browse.png) via headless chromium. Use when the interface changed and the docs/ captures need to be refreshed.
 ---
 
 Para refazer as capturas, copie o HTML para um arquivo temporário fora do
@@ -26,10 +26,19 @@ Duas coisas que a `screenshot.png` pede além disso: **forçar o idioma** com um
 captura anterior em outro idioma contamina a próxima, em silêncio — e abrir a
 Wishlist pelo `open` do `<details>` dela, deixando o bloco do Docker fechado.
 
-`services.png`, `theme.png` e `credits.png` são 1480×760, a `config.png` é
-1480×900 — o modal é denso e em 760 não caberia o que ela mostra — e a
-`screenshot.png` acompanha a altura do conteúdo (hoje 1898, com a Wishlist
-aberta). A
+`services.png`, `theme.png` e `credits.png` são 1480×760, a `config.png` e a
+`browse.png` são 1480×900 — os modais são densos e em 760 não caberia o que
+mostram — e a `screenshot.png` acompanha a altura do conteúdo (hoje 1888, com a
+Wishlist aberta).
+
+A `browse.png` é o navegador de pastas por cima do Ambiente e pede duas coisas
+próprias: um `document.body.classList.add('srvOn')`, que é o que revela o `📁`,
+e uma **listagem de exemplo** posta à mão (`fbAt`, `fbEntries` e
+`renderBrowse()`, sem passar pelo `openBrowse()`, que sairia buscando o
+`api/browse`). O Ambiente fica no topo, como ele abre: mirar numa linha
+específica com `scrollTop` não vale a briga, porque no passo do `--screenshot`
+o modal rola bem menos do que no `--dump-dom` e a tira visível muda entre os
+dois. A
 `theme.png` é a única que precisa de rede: o modal da captura busca a imagem
 em `docs.theme-park.dev`. O mesmo truque, com `--dump-dom` no lugar de `--screenshot`, é a
 maneira de testar mudanças de comportamento sem navegador interativo. Se o
