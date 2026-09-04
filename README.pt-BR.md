@@ -518,7 +518,11 @@ monta o caminho de cada instância como ela ficou. O Jellyfin também: além da
 base inteira, ganha um volume para cada pasta que ficou fora dela, senão a
 biblioteca não apareceria para ele. E o modal dele tem um **+ pasta** para
 apontar diretórios que nenhum outro serviço usa — um disco antigo, um
-compartilhamento de rede. Cada um vira um volume em `/data/<nome da pasta>`.
+compartilhamento de rede. Cada linha tem um **alias** antes do caminho: é ele o
+volume dentro do container (`/data/<alias>`) e o nome da biblioteca no Jellyfin.
+Em branco, o alias sai do nome da própria pasta — que é o que sempre foi —, e é
+ele que resolve dois discos com uma pasta `movies` em cada: sem alias, os dois
+cairiam no mesmo `/data/movies`.
 
 Todos os volumes usam a sintaxe longa, com `type: bind` e
 `bind.propagation: rslave`. A porta é sempre a original do serviço, dentro do

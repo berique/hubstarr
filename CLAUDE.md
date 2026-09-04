@@ -80,7 +80,9 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
 4. **Estado** — quatro globais mutáveis: `added` (instâncias,
    `{id,title,data,abs,libs,vpn,hw,solver}` — `abs` só quando o caminho da mídia
    sai das bases, e aí é ele que vai literal para o compose; `libs` são as
-   pastas avulsas do Jellyfin, do "+ pasta"), `picked` (id no
+   pastas avulsas do Jellyfin, do "+ pasta", cada uma um `{name, path}` — o
+   `name` é o **alias**, e vazio quer dizer "chame-a pelo nome da própria
+   pasta", que é o que toda linha guardada antes do campo existir tem), `picked` (id no
    combobox), `editing` (key em edição). `DEFAULTS` guarda o ambiente global
    (caminhos base, PUID/PGID, TZ, portas do host, TLS, VPN, API key). Nem tudo
    que está no `DEFAULTS` se edita no Ambiente: as portas do host saem no modal
@@ -141,7 +143,10 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    Quem monta pasta de outro serviço passa por `derivedMounts()` (Bazarr) e
    `extraLibs()` (Jellyfin, que junta as pastas de fora das outras instâncias
    com as do "+ pasta") — os dois já devolvem o caminho certo de cada instância,
-   literal ou com variável; não remonte `${BASE_MEDIA}/…` na mão.
+   literal ou com variável; não remonte `${BASE_MEDIA}/…` na mão. O `name` que o
+   `extraLibs()` devolve é o alias da linha, e sem ele o nome da própria pasta:
+   é ele o volume (`/data/<name>`) e o nome da biblioteca no Jellyfin, e é ele
+   que separa dois discos com uma pasta de mesmo nome em cada.
 6. **UI** — as etiquetas da linha do serviço saem todas do `tagHtml(kind,
    texto)`, e o `kind` é o que dá a cor no CSS (`.tag[data-kind=…]`) e o rótulo
    no `I18N` (`tag.<kind>`). O `TAG_KINDS` é a lista deles, na ordem de leitura,

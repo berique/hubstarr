@@ -540,7 +540,11 @@ acompaña: monta la ruta de cada instancia tal como quedó. Jellyfin también:
 además de la base entera, recibe un volumen por cada carpeta que quedó fuera de
 ella, si no esa biblioteca no le aparecería. Y su modal tiene un **+ carpeta**
 para apuntar directorios que ningún otro servicio usa — un disco viejo, un
-recurso de red. Cada uno se vuelve un volumen en `/data/<nombre de la carpeta>`.
+recurso de red. Cada línea tiene un **alias** antes de la ruta: es él el volumen
+dentro del contenedor (`/data/<alias>`) y el nombre de la biblioteca en
+Jellyfin. En blanco, el alias sale del nombre de la propia carpeta — que es lo
+que siempre fue — y es lo que resuelve dos discos con una carpeta `movies` cada
+uno: sin alias, los dos caerían en el mismo `/data/movies`.
 
 Todos los volúmenes usan la sintaxis larga, con `type: bind` y
 `bind.propagation: rslave`. El puerto siempre es el original del servicio,

@@ -248,12 +248,13 @@ mod tests {
 
         let db = Db::from_conn(conn);
         let st = db.load().unwrap().expect("o estado migrou");
-        // the instances, in order, with `extra` and the Jellyfin folders
+        // the instances, in order, with `extra` and the Jellyfin folders — which
+        // come out of the old model with no alias, meaning "named after itself"
         assert_eq!(st["added"][0]["title"], serde_json::json!("Sonarr"));
         assert_eq!(st["added"][0]["flagNova"], serde_json::json!(42));
         assert_eq!(
             st["added"][1]["libs"],
-            serde_json::json!(["/mnt/a", "/mnt/b"])
+            serde_json::json!([{"path":"/mnt/a","name":""}, {"path":"/mnt/b","name":""}])
         );
         // the Environment, with the boolean back as a boolean
         assert_eq!(st["defaults"]["tz"], serde_json::json!("America/Sao_Paulo"));

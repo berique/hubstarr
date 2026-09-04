@@ -529,8 +529,12 @@ compose file carries that literal path, with no variable at all. Bazarr
 follows: it mounts each instance's path as it ended up. So does Jellyfin: on
 top of the whole base it gets one volume per folder left outside it, otherwise
 that library would be invisible to it. Its modal also has a **+ folder** button
-for directories no other service uses — an old disk, a network share. Each one
-becomes a volume at `/data/<folder name>`.
+for directories no other service uses — an old disk, a network share. Every row
+has an **alias** before the path: it is the volume inside the container
+(`/data/<alias>`) and the library's name in Jellyfin. Left empty, the alias is
+the folder's own name — which is what it always was — and it is what settles two
+disks with a `movies` folder each: with no alias, both would land on the same
+`/data/movies`.
 
 Every volume uses the long syntax, with `type: bind` and
 `bind.propagation: rslave`. The port is always the service's own, inside the

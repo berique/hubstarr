@@ -229,10 +229,19 @@
   .cfgList .check{font-size:13px}
 
   /* extra library directories: one row per folder, with the × beside it */
-  .libs{display:grid;gap:6px}
+  /* minmax(0,1fr) and not the implicit `auto`: an auto column takes the row's
+     max-content — two text fields plus two buttons — and the row would run out
+     of the modal instead of fitting in it */
+  .libs{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
   /* link to the theme screenshot, in the theme.park documentation */
   #mTpShot{display:block;margin-top:6px;font-size:12px;color:var(--muted)}
-  .libs .lib{display:flex;gap:6px}
+  .libs .lib{display:flex;gap:6px;min-width:0}
+  /* the alias is a name, not a path: it takes only what a name needs. The
+     `min-width:0` is what lets it: a flex item's automatic minimum is its
+     min-content, and an input's is the ~20 characters of its default size —
+     with `auto` there, neither field ever shrinks. */
+  .libs .lib .alias{flex:0 0 96px;min-width:0;width:auto}
+  .libs .lib .path{flex:1 1 0;min-width:0;width:auto}
   .libs .lib button{padding:0 10px;color:var(--muted)}
   /* only the × is destructive: the 📁 next to it keeps the ordinary hover */
   .libs .lib button.rm:hover{border-color:var(--danger);color:var(--danger)}
@@ -1245,7 +1254,8 @@ const I18N = {
   'm.libs':'Outras pastas',
   'm.libAdd':'+ pasta',
   'm.libRemove':'Remover',
-  'm.libsWhy':'Pastas de mídia que o Jellyfin deve enxergar além da base — um outro disco, um compartilhamento de rede. Cada uma vira um volume em <b>/data/&lt;nome da pasta&gt;</b>. As pastas que outros serviços já usam fora da base entram sozinhas; aqui é para o que só o Jellyfin conhece. O caminho é do host: com servidor, o 📁 ao lado abre o seletor de pastas dele; sem servidor, é digitado à mão.',
+  'm.libAliasPh':'alias',
+  'm.libsWhy':'Pastas de mídia que o Jellyfin deve enxergar além da base — um outro disco, um compartilhamento de rede. Cada uma vira um volume em <b>/data/&lt;alias&gt;</b>, e o alias é também o nome da biblioteca no Jellyfin; em branco, ele sai do nome da própria pasta. É ele que resolve o encontro de dois discos com uma pasta <b>movies</b> em cada: sem alias, os dois cairiam no mesmo <b>/data/movies</b>. As pastas que outros serviços já usam fora da base entram sozinhas; aqui é para o que só o Jellyfin conhece. O caminho é do host: com servidor, o 📁 ao lado abre o seletor de pastas dele; sem servidor, é digitado à mão.',
   'm.hw':'Aceleração',
   'm.hwCpu':'Só CPU (sem aceleração)',
   'm.hwIntel':'Intel — VAAPI / QuickSync',
@@ -1785,7 +1795,8 @@ const I18N = {
   'm.libs':'Other folders',
   'm.libAdd':'+ folder',
   'm.libRemove':'Remove',
-  'm.libsWhy':'Media folders Jellyfin should see beyond the base — another disk, a network share. Each one becomes a volume at <b>/data/&lt;folder name&gt;</b>. Folders other services already use outside the base come in on their own; this is for what only Jellyfin knows about. The path is on the host: with a server, the 📁 beside it opens its folder browser; without one, it is typed by hand.',
+  'm.libAliasPh':'alias',
+  'm.libsWhy':'Media folders Jellyfin should see beyond the base — another disk, a network share. Each one becomes a volume at <b>/data/&lt;alias&gt;</b>, and the alias is the library\'s name in Jellyfin too; left empty, it is the folder\'s own name. It is what settles two disks with a <b>movies</b> folder each: with no alias, both would land on the same <b>/data/movies</b>. Folders other services already use outside the base come in on their own; this is for what only Jellyfin knows about. The path is on the host: with a server, the 📁 beside it opens its folder browser; without one, it is typed by hand.',
   'm.hw':'Acceleration',
   'm.hwCpu':'CPU only (no acceleration)',
   'm.hwIntel':'Intel — VAAPI / QuickSync',
@@ -2325,7 +2336,8 @@ const I18N = {
   'm.libs':'Otras carpetas',
   'm.libAdd':'+ carpeta',
   'm.libRemove':'Quitar',
-  'm.libsWhy':'Carpetas de medios que Jellyfin debe ver además de la base — otro disco, un recurso de red. Cada una se vuelve un volumen en <b>/data/&lt;nombre de la carpeta&gt;</b>. Las carpetas que otros servicios ya usan fuera de la base entran solas; esto es para lo que solo Jellyfin conoce. La ruta es del host: con servidor, el 📁 de al lado abre su navegador de carpetas; sin servidor, se escribe a mano.',
+  'm.libAliasPh':'alias',
+  'm.libsWhy':'Carpetas de medios que Jellyfin debe ver además de la base — otro disco, un recurso de red. Cada una se vuelve un volumen en <b>/data/&lt;alias&gt;</b>, y el alias es también el nombre de la biblioteca en Jellyfin; en blanco, sale del nombre de la propia carpeta. Es lo que resuelve el encuentro de dos discos con una carpeta <b>movies</b> cada uno: sin alias, los dos caerían en el mismo <b>/data/movies</b>. Las carpetas que otros servicios ya usan fuera de la base entran solas; esto es para lo que solo Jellyfin conoce. La ruta es del host: con servidor, el 📁 de al lado abre su navegador de carpetas; sin servidor, se escribe a mano.',
   'm.hw':'Aceleración',
   'm.hwCpu':'Solo CPU (sin aceleración)',
   'm.hwIntel':'Intel — VAAPI / QuickSync',
@@ -2952,17 +2964,20 @@ const dataReal = a => {
    library (jellyfin) mounts the base plus these, one by one. */
 function extraLibs(self){
   const seen = new Set([self && self.abs].filter(Boolean)), out = [];
-  const push = path => {
+  /* the alias names the mount; without one it is the folder's own name, which
+     is what an instance's outside path has — there is no modal row to type in */
+  const push = (path, alias) => {
     if(!path || seen.has(path)) return;
     seen.add(path);
-    out.push({name:slug(path.slice(path.lastIndexOf('/') + 1)), path});
+    out.push({name: alias || slug(path.slice(path.lastIndexOf('/') + 1)), path});
   };
   added.forEach(x=>{
     const sx = svc(x.id);
     if(!x.abs || !sx.media || sx.dlClient || sx.derived) return;
     push(x.abs);
   });
-  (self && self.libs || []).forEach(push);   // the ones chosen in its own modal
+  // the ones chosen in its own modal, each with the alias typed beside it
+  (self && self.libs || []).map(libOf).forEach(l=>push(l.path, l.name));
   return out;
 }
 
@@ -3643,29 +3658,49 @@ $('#nSave').onclick = ()=>{
 };
 
 /* ---------- extra library folders ---------- */
-/* One row per folder: the path, the 📁 that picks it on the server (only with
-   one — see the file browser section) and the × that drops the row. The `📁`
-   has no `data-pick` because the row is built on the fly and there is no id to
-   point at: the handler takes the input beside it. */
-function libRow(path=''){
+/* A folder row, in the shape the page works with: the alias and the path. A
+   bare string is what a database — or a page — from before the alias holds, and
+   it goes on meaning "this path, name it after itself". */
+const libOf = l => typeof l === 'string' ? {name:'', path:l}
+                                         : {name:(l && l.name) || '', path:(l && l.path) || ''};
+
+/* One row per folder: the **alias**, the path, the 📁 that picks it on the
+   server (only with one — see the file browser section) and the × that drops
+   the row. The alias comes first because it is what names the mount
+   (`/data/<alias>`) and the Jellyfin library; empty, it goes on being the
+   folder's own name, which is what every row had before it existed.
+
+   The `📁` has no `data-pick` because the row is built on the fly and there is
+   no id to point at: the handler takes the field right before it, which is why
+   the button sits after the path and not after the alias. */
+function libRow(lib){
+  const l = libOf(lib || '');
   const row = document.createElement('div');
   row.className = 'lib';
-  row.innerHTML = `<input type="text" value="${attr(path)}" placeholder="/mnt/disk2/movies">
+  row.innerHTML = `<input type="text" class="alias" value="${attr(l.name)}"
+                          data-i18n-ph="m.libAliasPh" placeholder="${attr(t('m.libAliasPh'))}">
+                   <input type="text" class="path" value="${attr(l.path)}"
+                          placeholder="/mnt/disk2/movies">
                    <button type="button" class="sm browse" data-base="${attr(DEFAULTS.data)}"
                            title="${attr(t('btn.browse'))}">📁</button>
                    <button type="button" class="sm rm" title="${attr(t('m.libRemove'))}">×</button>`;
   row.querySelector('button.rm').onclick = ()=>{ row.remove(); hintNow(); };
-  const inp = row.querySelector('input');
+  const inp = row.querySelector('input.path');
   inp.addEventListener('input', ()=>{ expandInto(inp); hintNow(); });
+  row.querySelector('input.alias').addEventListener('input', hintNow);
   return row;
 }
 function renderLibs(list){
   const box = $('#mLibs');
   box.innerHTML = '';
-  (list || []).forEach(p=>box.appendChild(libRow(p)));
+  (list || []).forEach(l=>box.appendChild(libRow(l)));
 }
-const libsOf = ()=> [...$('#mLibs').querySelectorAll('input')]
-  .map(i=>expandVars(i.value.trim()).replace(/\/+$/,'')).filter(Boolean);
+/* The alias goes through `slug()` because it becomes a folder inside the
+   container, like every other name here. A row with no path is not a folder. */
+const libsOf = ()=> [...$('#mLibs').querySelectorAll('.lib')].map(r=>({
+    name: slug(r.querySelector('input.alias').value),
+    path: expandVars(r.querySelector('input.path').value.trim()).replace(/\/+$/,'')
+  })).filter(l=>l.path);
 $('#mLibAdd').onclick = ()=>{
   const row = libRow();
   $('#mLibs').appendChild(row);
@@ -5895,8 +5930,10 @@ $('#fbNewName').addEventListener('keydown', e=>{
 
 /* One handler for every 📁, and not a click bound to each: some of them are
    built on the fly — Jellyfin's folder rows. The button says which field it
-   fills, by `data-pick` when the field has an id and otherwise by being next to
-   it in the row; `data-base` is where to start when the field is empty.
+   fills, by `data-pick` when the field has an id and otherwise by being the
+   field right before it — which is why, in Jellyfin's rows, the button sits
+   after the path and not after the alias; `data-base` is where to start when
+   the field is empty.
 
    Two things the service modal's fields need and the Environment's do not: they
    may hold a `${BASE_MEDIA}` to expand before asking, and the hint under the
@@ -5909,8 +5946,8 @@ const pickBtn = id => document.querySelector(`button.browse[data-pick="${id}"]`)
 document.addEventListener('click', e=>{
   const b = e.target.closest && e.target.closest('button.browse');
   if(!b) return;
-  const inp = b.dataset.pick ? $('#' + b.dataset.pick) : b.parentNode.querySelector('input');
-  if(!inp) return;
+  const inp = b.dataset.pick ? $('#' + b.dataset.pick) : b.previousElementSibling;
+  if(!inp || inp.tagName !== 'INPUT') return;
   openBrowse({path: expandVars(inp.value.trim()) || b.dataset.base || '',
               mode: b.dataset.mode,
               onPick: v => { inp.value = v; if(b.closest('#backdrop')) hintNow(); }});

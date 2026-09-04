@@ -46,6 +46,8 @@ impl Db {
         // the schema does not add a column to a table that already exists, and the
         // Environment is the table that grows a column per new key — see `ensure_env_cols`
         env::ensure_env_cols(&conn)?;
+        // and the extra folders, which gained the alias beside the path
+        instance::ensure_lib_cols(&conn)?;
         Ok((Db(Arc::new(Mutex::new(conn))), done))
     }
 

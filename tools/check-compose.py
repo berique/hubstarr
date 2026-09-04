@@ -10,8 +10,9 @@ tiver olhado antes.
 
 A stack de exemplo tem um pouco de cada coisa que muda a forma do compose:
 duas instâncias da mesma família, roteamento pela VPN (que traz o gluetun e o
-`network_mode`), serviço que publica porta em vez de virar rota, GPU, e um
-serviço `internal`.
+`network_mode`), serviço que publica porta em vez de virar rota, GPU, um
+serviço `internal` e uma pasta avulsa do Jellyfin com alias — é ela que faz o
+volume e a biblioteca terem de bater em `/data/<alias>`.
 """
 import html
 import json
@@ -34,7 +35,9 @@ added = [
   {id:'prowlarr',    title:'Prowlarr'},
   {id:'qbittorrent', title:'qBittorrent', data:'torrents', vpn:true},
   {id:'sabnzbd',     title:'SABnzbd',    data:'usenet'},
-  {id:'jellyfin',    title:'Jellyfin',   hw:'intel'},
+  {id:'jellyfin',    title:'Jellyfin',   hw:'intel',
+   // pasta avulsa com alias: o volume e a biblioteca saem em /data/<alias>
+   libs:[{name:'disco2', path:'/tmp/hubstarr-ci/disco2/series'}]},
   {id:'seerr',       title:'Seerr'},
   {id:'flaresolverr',title:'FlareSolverr'},
 ];

@@ -62,11 +62,16 @@ CREATE TABLE IF NOT EXISTS instance (
   extra      TEXT NOT NULL DEFAULT '{}'
 );
 
--- As pastas avulsas do Jellyfin, do "+ pasta": lista de caminhos, na ordem.
+-- As pastas avulsas do Jellyfin, do "+ pasta": caminho e alias, na ordem. O
+-- alias e o nome do volume dentro do container (/data/<alias>) e o da
+-- biblioteca no Jellyfin; vazio, ele sai do nome da propria pasta, que e o que
+-- toda linha escrita antes de o campo existir tem. Coluna nova em tabela que ja
+-- existe e do ensure_lib_cols(), nao daqui.
 CREATE TABLE IF NOT EXISTS instance_lib (
   instance_key TEXT NOT NULL REFERENCES instance(key) ON DELETE CASCADE,
   ord          INTEGER NOT NULL,
   path         TEXT NOT NULL,
+  name         TEXT NOT NULL DEFAULT '',
   PRIMARY KEY (instance_key, ord)
 );
 

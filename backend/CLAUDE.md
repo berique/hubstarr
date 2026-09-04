@@ -402,6 +402,12 @@ linha só — o `CHECK (id = 1)` é o que a mantém única), `instance` +
 - **`instance.extra`** guarda o que não virou coluna e volta espalhado no
   objeto. Uma flag nova no `SERVICES` não exige migração — só acrescente à
   `COLUMNS` o que precisar de coluna de verdade.
+- **A pasta avulsa do Jellyfin leva alias**: o `instance_lib` tem `path` e
+  `name`, e o `name` vazio quer dizer "chame-a pelo nome da própria pasta". A
+  coluna nasceu depois da tabela, então quem a põe no banco de quem já tinha
+  stack é o `ensure_lib_cols()`, pela mesma razão do `ensure_env_cols()` logo
+  abaixo. Lista de caminhos crus continua sendo aceita no `PUT`: é o que uma
+  página anterior ao campo manda.
 - **Chave nova no Ambiente é coluna nova, e o `schema.sql` sozinho não a
   acrescenta**: o `CREATE TABLE IF NOT EXISTS` não mexe em tabela que já
   existe. Quem a põe no banco de quem já tinha stack é o `ensure_env_cols()`,
