@@ -58,7 +58,12 @@ O script é uma sequência de seções marcadas por comentários `/* ---------- 
    `DEFAULTS`: `'qbit'` vai para a conf do qBittorrent e `'jf'` é o
    administrador que o Subir cria no assistente do Jellyfin, e não vai para
    arquivo nenhum. O bloco do modal é um só; a linha da API key é do
-   qBittorrent), `conf` (qBittorrent: os
+   qBittorrent. O `keep` do `WEB_AUTH` diz o que **apagar** o campo da senha
+   significa: no qBittorrent ele mantém a guardada, porque aquela senha vira
+   hash PBKDF2 na conf e vazia é uma interface que abre sem senha nenhuma; no
+   Jellyfin vazio é um estado com sentido — "não mexa no assistente", que é o
+   que a ajuda do campo promete —, então o campo limpo chega ao Ambiente em vez
+   de ser desfeito no caminho), `conf` (qBittorrent: os
    dois arquivos dele — nenhum dos dois é montado, o servidor os escreve depois
    de subir; ver `patch` abaixo), `cdh` (SABnzbd: gerenciamento de
    downloads concluídos na Configuração), `dlKey` (SABnzbd: a API key no modal

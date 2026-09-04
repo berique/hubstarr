@@ -2718,9 +2718,16 @@ function localTz(){
 
 /* Whoever has an interface of their own keeps user and password in `DEFAULTS`,
    and the service's `webAuth` flag says which pair is theirs. The modal block is
-   the same for both; what changes is where the fields write. */
+   the same for both; what changes is where the fields write.
+
+   `keep` is what an **emptied** password field means. In qBittorrent it keeps
+   the stored one, because that password goes into the conf as a PBKDF2 hash and
+   an empty one is an interface that opens with no password at all. Jellyfin has
+   no such file, and there empty is a state with a meaning of its own — "do not
+   touch the wizard", which is what the field's help promises — so clearing it
+   has to reach the Environment instead of being undone on the way. */
 const WEB_AUTH = {
-  qbit:{user:'qbitUser', pass:'qbitPass', userDef:'admin', ph:'admin'},
+  qbit:{user:'qbitUser', pass:'qbitPass', userDef:'admin', ph:'admin', keep:true},
   jf:  {user:'jfUser',   pass:'jfPass',   userDef:'',      ph:'admin'},
 };
 
@@ -3588,7 +3595,9 @@ $('#mSave').onclick = ()=>{
   if(s.webAuth){
     const c = WEB_AUTH[s.webAuth];
     DEFAULTS[c.user] = $('#mUser').value.trim() || c.userDef;
-    DEFAULTS[c.pass] = $('#mPass').value || DEFAULTS[c.pass];
+    /* An emptied field is a decision, and it goes through — except where
+       `keep` says the old value is safer than nothing (see WEB_AUTH). */
+    DEFAULTS[c.pass] = $('#mPass').value || (c.keep ? DEFAULTS[c.pass] : '');
     if(s.webAuth === 'qbit'){
       DEFAULTS.qbitKey = (v=>v === qbitKeyFrom(DEFAULTS.apiKey) ? '' : v)($('#mApiKey').value.trim());
       refreshQbitHash();
