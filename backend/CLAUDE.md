@@ -334,7 +334,17 @@ em disco das capturas de paleta do theme.park, ao lado do banco, servido em
 `api/shot/:app/:theme` — o `ok_segment()` recusa segmento que escaparia da pasta ou
 do domínio, e o repositório continua sem redistribuir captura de ninguém: a
 primeira visita sai para a documentação deles. Aberta do disco, a página busca
-lá direto, como sempre).
+lá direto, como sempre), `browse.rs` (as pastas do host, para os campos de
+caminho do Ambiente: `api/browse` lista uma e `api/browse/mkdir` cria uma, e é
+só isso — sem renomear, sem apagar, sem ler arquivo. Duas regras moram lá em
+vez de nos chamadores: a listagem sempre cai numa pasta que **existe** — a
+pedida, ou o ancestral mais próximo dela, até o `/`, de modo que um
+`/mnt/media/filmes` digitado antes de existir abre no `/mnt`, que é onde o
+botão de criar vai ser usado —, e a pasta nova é um **nome** só dentro de uma
+pasta que já existe, nunca um caminho, pela mesma razão do `safe_join()`. Ele
+não alarga a porta: quem alcança esta porta já grava arquivo e roda `docker
+compose` aqui, e o endereço em que ele atende continua sendo todo o controle de
+acesso).
 
 O modelo é **normalizado**, uma tabela por conceito do estado da página:
 `stack_env` (o `DEFAULTS`, uma coluna por chave, mapeadas em `ENV_COLS`, numa

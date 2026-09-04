@@ -183,6 +183,15 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
 - **Ajuda por campo** no Ambiente e na Configuração: cada linha tem um `?` que
   abre uma explicação do que aquele valor faz — e, no Ambiente, de como ele sai
   nos arquivos gerados.
+- **Escolher os caminhos, em vez de digitá-los**: com servidor, cada campo de
+  caminho do Ambiente ganha um **📁** que abre um navegador das pastas da
+  máquina em que o servidor roda — que muitas vezes não é a máquina em que a
+  página está aberta. Dá para andar pelo caminho clicando nos pedaços dele,
+  mostrar ou esconder os ocultos e **criar pasta** ali mesmo, antes de
+  escolher. Um caminho digitado que ainda não exista abre na pasta mais próxima
+  que exista, que é justamente onde a nova vai ser criada. Os campos do
+  certificado e da chave escolhem arquivo em vez de pasta. Sem servidor o botão
+  não aparece: aberta do disco, a página não alcança o seu sistema de arquivos.
 - **network.xml do Jellyfin**: com ele na stack, o `BaseUrl` no subpath do
   nginx e o `nginx` em `KnownProxies` — sem o primeiro a interface monta os
   links na raiz e o subpath responde 404, sem o segundo ele registra o IP do
@@ -460,9 +469,16 @@ tentativa aparece no log. O SABnzbd precisa da chave de API dele, que é o
 próprio app que gera na primeira subida: copie de *Config → General* e cole no
 campo **API key** do modal dele.
 
+Os campos de caminho do **Ambiente** têm um navegador de pastas servido por
+ele: `api/browse` lista uma pasta e `api/browse/mkdir` cria uma. É só isso —
+não há renomear, apagar nem ler o conteúdo de arquivo nenhum. A pasta nova é um
+nome só dentro de uma pasta que já existe, e nasce do usuário que roda o
+servidor, que é o mesmo dono das pastas da stack.
+
 > [!WARNING]
-> O servidor roda `docker compose` e escreve em disco: não o exponha a uma
-> rede em que você não confie. O padrão é atender só em `127.0.0.1`.
+> O servidor roda `docker compose`, escreve em disco e mostra os nomes das
+> pastas da máquina: não o exponha a uma rede em que você não confie. O padrão
+> é atender só em `127.0.0.1`.
 
 ## Convenções geradas
 

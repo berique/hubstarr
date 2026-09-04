@@ -16,6 +16,7 @@
    page built. That way the generators go on existing in a single place. */
 
 mod apply;
+mod browse;
 mod deploy;
 mod files;
 mod jobs;
@@ -29,7 +30,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::{header, StatusCode};
 use axum::response::IntoResponse;
 use axum::routing::{delete, get, post, put};
@@ -184,6 +185,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/down", post(start_down))
         .route("/api/service/:key/:action", post(start_service))
         .route("/api/config/apply", post(apply_config))
+        .route("/api/browse", get(browse))
+        .route("/api/browse/mkdir", post(browse_mkdir))
         .route("/api/shot/:app/:theme", get(shot))
         .route("/api/status", get(stack_status))
         .route("/api/job/:id", get(job_status))
@@ -238,6 +241,23 @@ async fn shot(State(ctx): State<Ctx>, Path((app, theme)): Path<(String, String)>
         )
             .into_response(),
         Err(e) => (StatusCode::BAD_GATEWAY, e).into_response(),
+    }
+}
+
+/// The host's folders, so the Environment's path fields can be chosen instead
+/// of typed — the browser cannot list a directory, and the paths are on this
+/// machine anyway. See `browse.rs`: it reads a folder and creates one, nothing else.
+async fn browse(Query(q): Query<browse::Ask>) -> Response {
+    match browse::list(q.path.as_deref().unwrap_or("")).await {
+        Ok(v) => Json(v).into_response(),
+        Err(e) => fail(e),
+    }
+}
+
+async fn browse_mkdir(Json(req): Json<browse::NewDir>) -> Response {
+    match browse::mkdir(&req).await {
+        Ok(v) => Json(v).into_response(),
+        Err(e) => fail(e),
     }
 }
 

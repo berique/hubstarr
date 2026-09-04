@@ -186,6 +186,15 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
 - **Per-field help** in the Environment and in the Configuration: every row has
   a `?` that opens an explanation of what the value does — and, in the
   Environment, of how it lands in the generated files.
+- **Choosing the paths instead of typing them**: with a server, every path
+  field in the Environment gets a **📁** that opens a browser of the folders of
+  the machine the server runs on — often not the machine the page is open on.
+  One can walk the path by clicking its segments, show or hide the hidden ones
+  and **create a folder** right there, before choosing. A path typed before it
+  exists opens at the closest folder that does, which is exactly where the new
+  one is about to be made. The certificate and key fields choose a file instead
+  of a folder. Without a server the button is not there: opened from disk, the
+  page cannot reach your file system.
 - **Jellyfin's network.xml**: with it in the stack, `BaseUrl` set to the nginx
   subpath and `nginx` in `KnownProxies` — without the first the UI builds its
   links at the root and the subpath answers 404, without the second it logs the
@@ -470,9 +479,16 @@ times over. With `-v`, every attempt shows up in the log. SABnzbd needs
 its API key, the one the app itself generates on first boot: copy it from
 *Config → General* and paste it into the **API key** field of its modal.
 
+The **Environment**'s path fields have a folder browser served by it:
+`api/browse` lists a folder and `api/browse/mkdir` creates one. That is all of
+it — no renaming, no deleting, no reading the contents of any file. A new
+folder is a single name inside a folder that already exists, and it belongs to
+the user running the server, the same owner as the stack's folders.
+
 > [!WARNING]
-> The server runs `docker compose` and writes to disk: do not expose it to a
-> network you do not trust. It listens on `127.0.0.1` only by default.
+> The server runs `docker compose`, writes to disk and shows the machine's
+> folder names: do not expose it to a network you do not trust. It listens on
+> `127.0.0.1` only by default.
 
 ## Generated conventions
 

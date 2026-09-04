@@ -192,6 +192,16 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
 - **Ayuda por campo** en el Entorno y en la Configuración: cada línea tiene un
   `?` que abre una explicación de lo que hace ese valor — y, en el Entorno, de
   cómo sale en los archivos generados.
+- **Elegir las rutas en vez de escribirlas**: con servidor, cada campo de ruta
+  del Entorno gana un **📁** que abre un navegador de las carpetas de la máquina
+  en la que corre el servidor — que muchas veces no es la máquina en la que está
+  abierta la página. Se puede recorrer la ruta haciendo clic en sus partes,
+  mostrar u ocultar los archivos ocultos y **crear carpeta** ahí mismo, antes de
+  elegir. Una ruta escrita que todavía no exista abre en la carpeta más cercana
+  que sí exista, que es justo donde se va a crear la nueva. Los campos del
+  certificado y de la clave eligen archivo en vez de carpeta. Sin servidor el
+  botón no aparece: abierta desde el disco, la página no alcanza tu sistema de
+  archivos.
 - **network.xml de Jellyfin**: con él en la stack, el `BaseUrl` en el subpath
   de nginx y `nginx` en `KnownProxies` — sin lo primero la interfaz arma los
   enlaces en la raíz y el subpath responde 404, sin lo segundo registra la IP
@@ -479,9 +489,16 @@ no para la app rechazando el pedido, que respondería lo mismo diez veces. Con
 genera el propio app en el primer arranque: cópiala de *Config → General* y
 pégala en el campo **API key** de su modal.
 
+Los campos de ruta del **Entorno** tienen un navegador de carpetas servido por
+él: `api/browse` lista una carpeta y `api/browse/mkdir` crea una. Eso es todo —
+no hay renombrar, borrar ni leer el contenido de ningún archivo. La carpeta
+nueva es un solo nombre dentro de una carpeta que ya existe, y nace del usuario
+que ejecuta el servidor, el mismo dueño de las carpetas de la stack.
+
 > [!WARNING]
-> El servidor ejecuta `docker compose` y escribe en disco: no lo expongas a una
-> red en la que no confíes. De forma predeterminada solo atiende en `127.0.0.1`.
+> El servidor ejecuta `docker compose`, escribe en disco y muestra los nombres
+> de las carpetas de la máquina: no lo expongas a una red en la que no confíes.
+> De forma predeterminada solo atiende en `127.0.0.1`.
 
 ## Convenciones generadas
 

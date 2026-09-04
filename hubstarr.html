@@ -310,6 +310,35 @@
   .credApp{display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;
     border:1px solid transparent;border-radius:8px;color:var(--txt)}
   .credApp:hover{border-color:var(--line);background:var(--panel-2)}
+  /* choosing a path on the server: the field and the button that opens the browser */
+  .pathPick{display:flex;gap:8px}
+  /* opened from disk there is nobody to ask, so the button only exists with a server */
+  .browse{display:none}
+  body.srvOn .browse{display:inline-flex;align-items:center}
+  /* the file browser sits over the Environment, like the screenshot over the service modal */
+  #fbBack{z-index:75}
+  #fbBack .modal{max-width:620px}
+  /* the path, one clickable button per segment */
+  .fbCrumbs{display:flex;flex-wrap:wrap;align-items:center;gap:2px;margin-bottom:10px}
+  .fbCrumbs button{padding:2px 6px;font-size:12px;background:none;border-color:transparent;
+    color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .fbCrumbs button:hover{color:var(--txt);border-color:var(--line)}
+  .fbCrumbs button.at{color:var(--txt)}
+  .fbList{height:320px;overflow:auto;padding:4px;background:var(--panel-2);
+    border:1px solid var(--line);border-radius:8px}
+  .fbList .it{display:flex;align-items:center;gap:8px;width:100%;padding:5px 8px;font-size:13px;
+    text-align:left;background:none;border:1px solid transparent;border-radius:6px}
+  .fbList .it:hover{background:var(--code-bg);border-color:var(--line)}
+  .fbList .it.on{border-color:var(--accent)}
+  /* choosing a folder, the files are only there as context: they say which
+     folder this is, and there is nothing to click */
+  .fbList .it:disabled{color:var(--muted);opacity:1;cursor:default}
+  .fbList .it:disabled:hover{background:none;border-color:transparent}
+  .fbList .it .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .fbFoot{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .fbNew{display:flex;gap:8px;margin-top:8px}
+  .fbNew[hidden]{display:none}
+
   /* the palette screenshot is wide: the modal follows the image */
   #shotBack{z-index:70}
   #shotBack .modal{max-width:1100px;width:auto}
@@ -557,9 +586,15 @@ sudo sh get-docker.sh</pre>
         <select id="eRestart"><option>unless-stopped</option><option>always</option><option>no</option></select>
       </div>
       <div class="row" data-help="env.hProject"><label for="eProject" data-i18n="env.project">Project name</label><input type="text" id="eProject"></div>
-      <div class="row" data-help="env.hCfg"><label for="eCfg" data-i18n="env.cfg">Config base path</label><input type="text" id="eCfg"></div>
-      <div class="row" data-help="env.hData"><label for="eData" data-i18n="env.data">Media base path</label><input type="text" id="eData"></div>
-      <div class="row" data-help="env.hDl"><label for="eDl" data-i18n="env.dl">Downloads base path</label><input type="text" id="eDl"></div>
+      <div class="row" data-help="env.hCfg"><label for="eCfg" data-i18n="env.cfg">Config base path</label>
+        <div class="pathPick"><input type="text" id="eCfg">
+          <button type="button" class="browse" data-pick="eCfg" data-i18n-title="btn.browse">📁</button></div></div>
+      <div class="row" data-help="env.hData"><label for="eData" data-i18n="env.data">Media base path</label>
+        <div class="pathPick"><input type="text" id="eData">
+          <button type="button" class="browse" data-pick="eData" data-i18n-title="btn.browse">📁</button></div></div>
+      <div class="row" data-help="env.hDl"><label for="eDl" data-i18n="env.dl">Downloads base path</label>
+        <div class="pathPick"><input type="text" id="eDl">
+          <button type="button" class="browse" data-pick="eDl" data-i18n-title="btn.browse">📁</button></div></div>
       <h4 style="margin:18px 0 10px;font-size:12px;text-transform:uppercase;
                  letter-spacing:.06em;color:var(--muted)" data-i18n="env.secApi">API keys</h4>
       <div class="row" data-help="env.apiHint"><label for="eApiKey">STARR_APIKEY</label>
@@ -577,9 +612,13 @@ sudo sh get-docker.sh</pre>
         <input type="text" id="eDomain" data-i18n-ph="env.phDomain"></div>
       <div id="eTlsRows">
         <div class="row" data-help="env.hCert"><label for="eCert" data-i18n="env.cert">Certificate (host)</label>
-          <input type="text" id="eCert"></div>
+          <div class="pathPick"><input type="text" id="eCert">
+            <button type="button" class="browse" data-pick="eCert" data-mode="file"
+                    data-i18n-title="btn.browse">📁</button></div></div>
         <div class="row" data-help="env.hKey"><label for="eTlsKey" data-i18n="env.key">Private key (host)</label>
-          <input type="text" id="eTlsKey"></div>
+          <div class="pathPick"><input type="text" id="eTlsKey">
+            <button type="button" class="browse" data-pick="eTlsKey" data-mode="file"
+                    data-i18n-title="btn.browse">📁</button></div></div>
       </div>
 
       <p class="hint" data-i18n-html="env.hint">These apply to the whole stack. The base paths land in the compose file as <b>${BASE_CONFIG}</b>, <b>${BASE_MEDIA}</b> and <b>${DOWNLOAD_BASE}</b>, and the restart policy as <b>${RESTART}</b>. Every value above goes to <b>.env</b>.</p>
@@ -724,6 +763,33 @@ sudo sh get-docker.sh</pre>
 
 <!-- theme.park palette screenshot: the image comes from their documentation,
      but it is shown here over the service modal, not in another window -->
+<!-- file browser: the server's folders, for the Environment's path fields -->
+<div class="backdrop" id="fbBack">
+  <div class="modal">
+    <h3><span id="fbTitle"></span></h3>
+    <div class="body">
+      <div class="fbCrumbs" id="fbCrumbs"></div>
+      <div class="fbList" id="fbList"></div>
+      <div class="fbFoot">
+        <label class="check"><input type="checkbox" id="fbHidden">
+          <span data-i18n="fb.hidden">Show hidden</span></label>
+        <span class="sp" style="flex:1"></span>
+        <button type="button" id="fbNewBtn" data-i18n="fb.new">+ New folder</button>
+      </div>
+      <div class="fbNew" id="fbNewRow" hidden>
+        <input type="text" id="fbNewName" data-i18n-ph="fb.newPh">
+        <button type="button" class="primary" id="fbNewOk" data-i18n="fb.create">Create</button>
+      </div>
+    </div>
+    <div class="bar">
+      <span class="hint" id="fbWarn"></span>
+      <span class="sp"></span>
+      <button id="fbCancel" data-i18n="btn.cancel">Cancel</button>
+      <button class="primary" id="fbPick" data-i18n="fb.pick">Select</button>
+    </div>
+  </div>
+</div>
+
 <div class="backdrop" id="shotBack">
   <div class="modal" id="shotModal">
     <h3><span id="shotTitle"></span><span class="sp"></span>
@@ -1231,6 +1297,25 @@ const I18N = {
   'env.key':'Chave privada (host)',
   'env.tlsHint':'Os caminhos são do host e entram no compose como <b>${TLS_CERT}</b> e <b>${TLS_KEY}</b>, montados só-leitura no nginx. Sem TLS, a stack fica só na porta 80.',
   'env.phDomain':'midia.seudominio.com',
+  /* navegador de arquivo: as pastas da máquina em que o servidor roda. As
+     mensagens de erro daqui são do `backend/src/browse.rs`, que manda a chave
+     e os argumentos — a frase é desta tabela, como todas as outras. */
+  'btn.browse':'Escolher no servidor',
+  'fb.hDir':'📁 Escolher pasta',
+  'fb.hFile':'📁 Escolher arquivo',
+  'fb.pick':'Selecionar',
+  'fb.parent':'.. (pasta acima)',
+  'fb.empty':'(pasta vazia)',
+  'fb.hidden':'Mostrar ocultos',
+  'fb.new':'+ Nova pasta',
+  'fb.newPh':'nome da pasta',
+  'fb.create':'Criar',
+  'fb.more':n=>`… e mais: a lista parou em ${n} itens`,
+  'fb.e.read':(dir,e)=>`Não deu para ler ${dir}: ${e}`,
+  'fb.e.badName':n=>`"${n}" não serve de nome: precisa ser um nome só, sem barra e sem "..".`,
+  'fb.e.notADir':d=>`${d} não é uma pasta do servidor`,
+  'fb.e.exists':n=>`Já existe algo chamado "${n}" aqui`,
+  'fb.e.mkdir':(dir,e)=>`Não deu para criar ${dir}: ${e}`,
   'ngx.redirect':'redireciona http para https',
   'env.phProvider':'seu-provedor',
   'env.phKey':'SUA_CHAVE_PRIVADA',
@@ -1752,6 +1837,25 @@ const I18N = {
   'env.key':'Private key (host)',
   'env.tlsHint':'These are host paths; they land in the compose file as <b>${TLS_CERT}</b> and <b>${TLS_KEY}</b>, mounted read-only into nginx. Without TLS the stack stays on port 80 only.',
   'env.phDomain':'media.yourdomain.com',
+  /* file browser: the folders of the machine the server runs on. The errors
+     here come from `backend/src/browse.rs`, which sends the key and its
+     arguments — the wording is this table's, like every other one. */
+  'btn.browse':'Choose on the server',
+  'fb.hDir':'📁 Choose folder',
+  'fb.hFile':'📁 Choose file',
+  'fb.pick':'Select',
+  'fb.parent':'.. (folder above)',
+  'fb.empty':'(empty folder)',
+  'fb.hidden':'Show hidden',
+  'fb.new':'+ New folder',
+  'fb.newPh':'folder name',
+  'fb.create':'Create',
+  'fb.more':n=>`… and more: the list stopped at ${n} items`,
+  'fb.e.read':(dir,e)=>`Could not read ${dir}: ${e}`,
+  'fb.e.badName':n=>`"${n}" will not do as a name: it has to be a single name, with no slash and no "..".`,
+  'fb.e.notADir':d=>`${d} is not a folder on the server`,
+  'fb.e.exists':n=>`There is already something called "${n}" here`,
+  'fb.e.mkdir':(dir,e)=>`Could not create ${dir}: ${e}`,
   'ngx.redirect':'redirects http to https',
   'env.phProvider':'your-provider',
   'env.phKey':'YOUR_PRIVATE_KEY',
@@ -2273,6 +2377,25 @@ const I18N = {
   'env.key':'Clave privada (host)',
   'env.tlsHint':'Las rutas son del host y entran en el compose como <b>${TLS_CERT}</b> y <b>${TLS_KEY}</b>, montadas de solo lectura en nginx. Sin TLS, la stack se queda solo en el puerto 80.',
   'env.phDomain':'media.tudominio.com',
+  /* navegador de archivos: las carpetas de la máquina en la que corre el
+     servidor. Los errores de aquí vienen de `backend/src/browse.rs`, que manda
+     la clave y sus argumentos — la frase es de esta tabla, como todas. */
+  'btn.browse':'Elegir en el servidor',
+  'fb.hDir':'📁 Elegir carpeta',
+  'fb.hFile':'📁 Elegir archivo',
+  'fb.pick':'Seleccionar',
+  'fb.parent':'.. (carpeta de arriba)',
+  'fb.empty':'(carpeta vacía)',
+  'fb.hidden':'Mostrar ocultos',
+  'fb.new':'+ Nueva carpeta',
+  'fb.newPh':'nombre de la carpeta',
+  'fb.create':'Crear',
+  'fb.more':n=>`… y más: la lista se detuvo en ${n} elementos`,
+  'fb.e.read':(dir,e)=>`No se pudo leer ${dir}: ${e}`,
+  'fb.e.badName':n=>`"${n}" no sirve como nombre: tiene que ser un solo nombre, sin barra y sin "..".`,
+  'fb.e.notADir':d=>`${d} no es una carpeta del servidor`,
+  'fb.e.exists':n=>`Ya existe algo llamado "${n}" aquí`,
+  'fb.e.mkdir':(dir,e)=>`No se pudo crear ${dir}: ${e}`,
   'ngx.redirect':'redirige http a https',
   'env.phProvider':'tu-proveedor',
   'env.phKey':'TU_CLAVE_PRIVADA',
@@ -3384,6 +3507,9 @@ document.addEventListener('keydown', e=>{
   // the screenshot sits over the service modal: close only it first
   if(e.key==='Escape'){
     if($('#shotBack').classList.contains('open')) return closeShot();
+    // the file browser sits over the Environment: closing it must not take the
+    // Environment down with everything typed there
+    if($('#fbBack').classList.contains('open')) return closeBrowse();
     closeModal(); closeEnv(); closeCred();
   }
 });
@@ -5603,6 +5729,159 @@ async function detectServer(){
   pollStatus();
   setInterval(pollStatus, 5000);
 }
+
+
+/* ---------- file browser ---------- */
+
+/* Choosing a path instead of typing it. The folders are on the machine the
+   server runs on — often not the one the page is open on — and a browser has
+   no way of listing a directory by itself, so the list comes from `api/browse`
+   and the new folder from `api/browse/mkdir`. Those two and nothing else: the
+   point is choosing a path, not managing the disk (see `backend/src/browse.rs`).
+
+   That is also why the 📁 button only exists with a server, through
+   `body.srvOn`: opened from disk there is nobody to ask, and the fields stay
+   typed by hand, as they always were.
+
+   It is the one modal that opens **over** another, the Environment, and that is
+   what its z-index and its place in the Escape order are about: closing it must
+   not take the Environment down and lose everything typed there.
+
+   Nothing is written on the way out — `onPick` only fills the field in, and it
+   is still the Environment's Save that decides. */
+let fbAt = '';        // the folder on screen, as the server resolved it
+let fbEntries = [];   // what came back, unfiltered: the hidden ones are dropped at render time
+let fbTrunc = false;  // the folder had more entries than the server sends
+let fbMode = 'dir';   // 'file' for the certificate fields
+let fbSel = null;     // the chosen file, in file mode
+let fbDone = null;    // what to do with the answer
+
+function openBrowse(o){
+  fbMode = o.mode === 'file' ? 'file' : 'dir';
+  fbDone = o.onPick;
+  fbSel = null; fbEntries = []; fbTrunc = false; fbAt = '';
+  // the key goes in the dataset so that applyI18n() carries the title along
+  $('#fbTitle').dataset.i18n = fbMode === 'file' ? 'fb.hFile' : 'fb.hDir';
+  $('#fbTitle').textContent = t($('#fbTitle').dataset.i18n);
+  $('#fbNewRow').hidden = true;
+  $('#fbWarn').textContent = '';
+  $('#fbCrumbs').textContent = ''; $('#fbList').textContent = '';
+  $('#fbBack').classList.add('open');
+  fbGo(o.path || '');
+}
+const closeBrowse = ()=> $('#fbBack').classList.remove('open');
+const fbWarn = m => $('#fbWarn').innerHTML = `<span class="warn">${escHtml(m)}</span>`;
+
+const parentOf = p => p.replace(/\/[^/]*$/, '') || '/';
+// the path as buttons, one per segment: it is how one goes several levels back at once
+function crumbs(p){
+  const out = [{name:'/', path:'/'}];
+  let acc = '';
+  p.split('/').filter(Boolean).forEach(s=>{ acc += '/' + s; out.push({name:'/' + s, path:acc}); });
+  return out;
+}
+
+/* Where we end up is the server's answer, not what was asked: it settles on
+   the nearest folder that exists, so a media path typed before being created
+   opens at the closest one that is there — which is where the new folder is
+   about to be made. */
+async function fbGo(path){
+  try{
+    const r = await api('browse?path=' + encodeURIComponent(path));
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.error ? msgText(j.error) : ('HTTP ' + r.status));
+    fbAt = j.path; fbEntries = j.entries || []; fbTrunc = !!j.truncated; fbSel = null;
+    $('#fbWarn').textContent = '';
+    renderBrowse();
+  }catch(e){ fbWarn(e.message || String(e)); }
+}
+
+/* Built element by element, not with innerHTML: these names come from the disk
+   and can hold anything, `<` included. */
+function renderBrowse(){
+  const cr = $('#fbCrumbs'); cr.textContent = '';
+  const list = crumbs(fbAt);
+  list.forEach((c, i)=>{
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = c.name;
+    if(i === list.length - 1) b.className = 'at';
+    b.onclick = ()=> fbGo(c.path);
+    cr.appendChild(b);
+  });
+
+  const box = $('#fbList'); box.textContent = '';
+  // a row is only clickable when there is somewhere to go: choosing a folder,
+  // the files are context — they say which folder this is
+  const row = (icon, name, act, on)=>{
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'it' + (on ? ' on' : '');
+    const i = document.createElement('span'); i.textContent = icon;
+    const n = document.createElement('span'); n.className = 'nm'; n.textContent = name;
+    b.append(i, n);
+    if(act) b.onclick = act; else b.disabled = true;
+    box.appendChild(b);
+    return b;
+  };
+
+  if(fbAt !== '/') row('↰', t('fb.parent'), ()=> fbGo(parentOf(fbAt)));
+  const shown = fbEntries.filter(e=> $('#fbHidden').checked || !e.name.startsWith('.'));
+  shown.forEach(e=>{
+    const path = (fbAt === '/' ? '' : fbAt) + '/' + e.name;
+    if(e.dir) return void row('📁', e.name, ()=> fbGo(path));
+    const b = row('📄', e.name,
+      fbMode === 'file' ? ()=>{ fbSel = path; renderBrowse(); } : null,
+      fbSel === path);
+    if(fbMode === 'file') b.ondblclick = fbTake;
+  });
+  if(!shown.length) row('', t('fb.empty'), null);
+  if(fbTrunc) row('…', t('fb.more', fbEntries.length), null);
+  // in file mode there is nothing to select until a file is clicked
+  $('#fbPick').disabled = fbMode === 'file' && !fbSel;
+}
+
+function fbTake(){
+  const v = fbMode === 'file' ? fbSel : fbAt;
+  if(!v) return;
+  closeBrowse();
+  if(fbDone) fbDone(v);
+}
+
+/* Created and walked into: the folder that was just made is the one about to
+   be chosen, and one level further down is the next click. */
+async function fbCreate(){
+  const name = $('#fbNewName').value.trim();
+  if(!name) return;
+  try{
+    const r = await api('browse/mkdir', {method:'POST',
+      body:JSON.stringify({path:fbAt, name})});
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.error ? msgText(j.error) : ('HTTP ' + r.status));
+    $('#fbNewRow').hidden = true; $('#fbNewName').value = '';
+    fbGo(j.path);
+  }catch(e){ fbWarn(e.message || String(e)); }
+}
+
+$('#fbPick').onclick   = fbTake;
+$('#fbCancel').onclick = closeBrowse;
+$('#fbBack').onclick   = e=>{ if(e.target.id === 'fbBack') closeBrowse(); };
+$('#fbHidden').onchange = renderBrowse;
+$('#fbNewBtn').onclick = ()=>{
+  const r = $('#fbNewRow'); r.hidden = !r.hidden;
+  if(!r.hidden){ $('#fbNewName').value = ''; $('#fbNewName').focus(); }
+};
+$('#fbNewOk').onclick = fbCreate;
+$('#fbNewName').addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){ e.preventDefault(); fbCreate(); }
+});
+
+// the field says where to start and what to do with the answer
+document.querySelectorAll('button.browse').forEach(b=>{
+  b.onclick = ()=>{
+    const inp = $('#' + b.dataset.pick);
+    openBrowse({path: inp.value.trim(), mode: b.dataset.mode,
+                onPick: v => { inp.value = v; }});
+  };
+});
 
 
 /* ---------- tour ---------- */

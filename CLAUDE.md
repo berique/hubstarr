@@ -270,6 +270,27 @@ para a stack no momento do save — `vpn` traz o `gluetun` (obrigatório, porque
 mesmo: flag no `SERVICES`, campo no `cfg`, e um `if(cfg.X && !has('y'))` no
 handler de `#mSave`.
 
+## Navegador de arquivo
+
+Os campos de caminho do **Ambiente** têm um `📁` que abre o `#fbBack`, com as
+pastas da máquina em que o **servidor** roda — e por isso ele só existe com
+servidor (`body.srvOn`): aberta do disco, a página não alcança sistema de
+arquivos nenhum, e os campos continuam digitados à mão. A entrada é o
+`openBrowse({path, mode, onPick})`, com `mode:'file'` para os campos do
+certificado e da chave; o `onPick` **só preenche o campo** — quem grava
+continua sendo o Salvar do Ambiente.
+
+Três coisas dele:
+
+- **A página não decide onde está.** Quem resolve o caminho é o `browse.rs`: a
+  listagem cai na pasta existente mais próxima da pedida, e o `fbAt` é sempre a
+  resposta dele, nunca o que se pediu.
+- **A lista é montada elemento a elemento**, não com `innerHTML`: os nomes vêm
+  do disco e podem ter qualquer coisa dentro.
+- **Ele abre por cima do Ambiente** — o único modal que faz isso além da captura
+  da paleta —, daí o z-index e o lugar dele na ordem do Escape: fechá-lo não
+  pode levar o Ambiente junto com tudo o que foi digitado ali.
+
 ## Invariantes a preservar
 
 - **Zero dependências externas em runtime**: os logotipos são data URI, o ZIP é
