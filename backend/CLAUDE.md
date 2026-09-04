@@ -164,6 +164,13 @@ entrava:
   o OpenAPI dele lista, então ele se parece com endereço errado em vez do que é.
   Medido na 10.11.11: o POST sozinho dá 404 e nenhum usuário nasce; com o GET
   antes, dá 204 e a conta entra.
+- **A volta termina entrando com a credencial**, quando ela existe: o `login()`
+  é o `authenticate()` mais a linha no log, e é o mesmo nas duas pontas — no
+  ramo do assistente já fechado ele é de onde o token sai, e no do assistente
+  aberto ele prova que a conta recém-criada abre. Criar e nunca experimentar é
+  como um Jellyfin em que ninguém entrava saía relatado como pronto: cada passo
+  tinha a resposta dele, e nenhuma era a que importa. Login que não abre conta
+  como falha, porque a stack está no ar e quem subiu está do lado de fora.
 - **O `Complete` só é chamado com o administrador que existe**, não com o que
   foi pedido — é o `bool` que o `wizard()` devolve, e não o "havia usuário e
   senha no modal". A diferença é a stack de quem viu o `Startup/User` falhar e

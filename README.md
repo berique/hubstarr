@@ -307,8 +307,12 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   to finish in the browser — completing it with no administrator would leave
   Jellyfin with no account to log in with. On a Jellyfin whose wizard is already
   done, the username and password from the modal are what give Hubstarr the token
-  to create the libraries. A library that already exists is left alone, and none
-  is ever removed.
+  to create the libraries. With a username and password filled in, the round
+  ends by **logging in with them** and says in the log whether it opened —
+  creating the account and never trying it is how a Jellyfin nobody could enter
+  went out reported as done. A login that does not open counts as a failure: the
+  stack is up and you are outside it. A library that already exists is left
+  alone, and none is ever removed.
 - **Quality profiles and custom formats** from the [TRaSH Guides](https://trash-guides.info),
   per instance: every Sonarr and Radarr in the stack picks the profiles it wants
   — **HD (1080p)**, **4K (2160p)**, **Remux 4K**, **Anime** — and that is how the

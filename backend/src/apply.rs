@@ -1440,12 +1440,10 @@ async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
         failures += f;
         admin_ok = ok;
     } else if !jf.user.is_empty() && !jf.pass.is_empty() {
-        match authenticate(http, &base, jf).await {
+        match login(http, &base, jf, log).await {
             Ok(t) => token = t,
-            Err(e) => {
-                log.line(msg!("job.apply.link", jf.name.clone(), msg!("job.apply.loginAsUser", jf.user.clone()), e));
-                return failures + 1;
-            }
+            // the line is already in the log: `login()` writes both outcomes
+            Err(_) => return failures + 1,
         }
     } else {
         /* Wizard already finished and no credential: the libraries require a
@@ -1511,6 +1509,18 @@ async fn jellyfin(http: &reqwest::Client, jf: &Jellyfin, log: &Log) -> usize {
                 failures += 1;
             }
         }
+    }
+
+    /* And then the account is tried, with the very credential the Environment
+       holds. Creating it and never opening it is how a Jellyfin nobody could
+       enter went out reported as done: every step of the wizard had its own
+       answer, and none of them was the one that matters. This one is, and a
+       login that does not open counts as a failure — the stack is up and the
+       person is locked out of it. The branch that found the wizard closed
+       already logged in above; here it is the wizard's own account being
+       checked. */
+    if !ready && admin_ok && login(http, &base, jf, log).await.is_err() {
+        failures += 1;
     }
     failures
 }
@@ -1587,6 +1597,26 @@ async fn wizard(http: &reqwest::Client, base: &str, jf: &Jellyfin, log: &Log) ->
         step(Msg::k("job.apply.remoteAccess"), r);
     }
     (failures, admin)
+}
+
+/// Logging in with the modal's credential, and saying so in the job log.
+///
+/// It is the question whoever deployed this is about to ask — *does this
+/// username and password open Jellyfin?* — and the only answer that counts is
+/// the app's own. On the branch that finds the wizard already closed it is also
+/// where the token comes from; on the branch that just ran the wizard it proves
+/// the account it created is really there, which is exactly what nobody was
+/// checking when `Startup/User` answered 404 and the wizard got sealed on top
+/// of nothing. Both outcomes become the same line, because they are the same
+/// event.
+async fn login(http: &reqwest::Client, base: &str, jf: &Jellyfin, log: &Log) -> Result<String, Msg> {
+    let r = authenticate(http, base, jf).await;
+    let what = msg!("job.apply.loginAsUser", jf.user.clone());
+    match &r {
+        Ok(_) => log.line(msg!("job.apply.link", jf.name.clone(), what, Msg::k("job.apply.readyM"))),
+        Err(e) => log.line(msg!("job.apply.link", jf.name.clone(), what, e.clone())),
+    }
+    r
 }
 
 /// The token of an already configured Jellyfin. The `Authorization` header with

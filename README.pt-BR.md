@@ -300,8 +300,11 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
   aberto para você terminar no navegador — concluí-lo sem administrador deixaria
   o Jellyfin sem conta nenhuma em que entrar. Num Jellyfin cujo assistente já foi
   concluído, é o usuário e a senha do modal que dão ao Hubstarr o token para
-  criar as bibliotecas. Biblioteca que já existe não é tocada, e nenhuma é
-  removida.
+  criar as bibliotecas. Com usuário e senha preenchidos, a volta termina
+  **entrando com eles** e diz no log se o login abriu — criar a conta e nunca
+  experimentá-la é como um Jellyfin em que ninguém entrava saía relatado como
+  pronto. Login que não abre conta como falha: a stack está no ar e você, do
+  lado de fora. Biblioteca que já existe não é tocada, e nenhuma é removida.
 - **Perfis de qualidade e custom formats** do [TRaSH Guides](https://trash-guides.info),
   por instância: cada Sonarr e cada Radarr da stack escolhe os perfis do guia
   que quer — **HD (1080p)**, **4K (2160p)**, **Remux 4K**, **Anime** —, e é assim
