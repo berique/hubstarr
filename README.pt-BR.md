@@ -183,13 +183,17 @@ E o campo **Tema** mostra a captura da paleta escolhida sem sair da página:
 - **Ajuda por campo** no Ambiente e na Configuração: cada linha tem um `?` que
   abre uma explicação do que aquele valor faz — e, no Ambiente, de como ele sai
   nos arquivos gerados.
-- **Escolher os caminhos, em vez de digitá-los**: com servidor, cada campo de
-  caminho do Ambiente ganha um **📁** que abre um navegador das pastas da
-  máquina em que o servidor roda — que muitas vezes não é a máquina em que a
-  página está aberta. Dá para andar pelo caminho clicando nos pedaços dele,
-  mostrar ou esconder os ocultos e **criar pasta** ali mesmo, antes de
-  escolher. Um caminho digitado que ainda não exista abre na pasta mais próxima
-  que exista, que é justamente onde a nova vai ser criada. Os campos do
+- **Escolher os caminhos, em vez de digitá-los**: com servidor, todo campo de
+  caminho ganha um **📁** que abre um navegador das pastas da máquina em que o
+  servidor roda — que muitas vezes não é a máquina em que a página está aberta.
+  São os do Ambiente (as três bases, o certificado e a chave) e os do modal de
+  cada serviço: a **subpasta de mídia** — ou a de downloads —, as duas pastas do
+  SABnzbd e as **pastas avulsas do Jellyfin**, uma por linha. Dá para andar pelo
+  caminho clicando nos pedaços dele, mostrar ou esconder os ocultos e **criar
+  pasta** ali mesmo, antes de escolher. Um caminho digitado que ainda não exista
+  abre na pasta mais próxima que exista, que é justamente onde a nova vai ser
+  criada. Pasta escolhida abaixo da base vira subpasta com todos os níveis
+  (`series/4k`), e fora das bases vira caminho literal no compose. Os campos do
   certificado e da chave escolhem arquivo em vez de pasta. Sem servidor o botão
   não aparece: aberta do disco, a página não alcança o seu sistema de arquivos.
 - **network.xml do Jellyfin**: com ele na stack, o `BaseUrl` no subpath do

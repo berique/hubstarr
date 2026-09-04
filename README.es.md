@@ -192,13 +192,18 @@ Y el campo **Tema** muestra la captura de la paleta elegida sin salir de la pág
 - **Ayuda por campo** en el Entorno y en la Configuración: cada línea tiene un
   `?` que abre una explicación de lo que hace ese valor — y, en el Entorno, de
   cómo sale en los archivos generados.
-- **Elegir las rutas en vez de escribirlas**: con servidor, cada campo de ruta
-  del Entorno gana un **📁** que abre un navegador de las carpetas de la máquina
-  en la que corre el servidor — que muchas veces no es la máquina en la que está
-  abierta la página. Se puede recorrer la ruta haciendo clic en sus partes,
-  mostrar u ocultar los archivos ocultos y **crear carpeta** ahí mismo, antes de
-  elegir. Una ruta escrita que todavía no exista abre en la carpeta más cercana
-  que sí exista, que es justo donde se va a crear la nueva. Los campos del
+- **Elegir las rutas en vez de escribirlas**: con servidor, todo campo de ruta
+  gana un **📁** que abre un navegador de las carpetas de la máquina en la que
+  corre el servidor — que muchas veces no es la máquina en la que está abierta
+  la página. Son los del Entorno (las tres bases, el certificado y la clave) y
+  los del modal de cada servicio: la **subcarpeta de medios** — o la de
+  descargas —, las dos carpetas de SABnzbd y las **carpetas sueltas de
+  Jellyfin**, una por línea. Se puede recorrer la ruta haciendo clic en sus
+  partes, mostrar u ocultar los archivos ocultos y **crear carpeta** ahí mismo,
+  antes de elegir. Una ruta escrita que todavía no exista abre en la carpeta más
+  cercana que sí exista, que es justo donde se va a crear la nueva. Una carpeta
+  elegida bajo la base se vuelve subcarpeta con todos sus niveles (`series/4k`),
+  y fuera de las bases se vuelve ruta literal en el compose. Los campos del
   certificado y de la clave eligen archivo en vez de carpeta. Sin servidor el
   botón no aparece: abierta desde el disco, la página no alcanza tu sistema de
   archivos.

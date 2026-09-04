@@ -244,7 +244,8 @@ resolvido e expande o que for digitado: `expandVars()` troca `${BASE_MEDIA}`,
 `${DOWNLOAD_BASE}` e `${BASE_CONFIG}` pelo valor atual, preservando o cursor.
 `dataOf()` faz o caminho de volta — devolve a subpasta e, quando o caminho sai
 das bases, o literal em `abs`. Campo que aceita caminho deve usar os dois, não
-`slug()` no valor cru.
+`slug()` no valor cru; e, com servidor, ganha também o `📁` — ver "Navegador de
+arquivo".
 
 **Campo de um serviço fica no modal dele.** O Ambiente é só o que vale para a
 stack inteira. O que é de um container vai para o "Editar" dele, num bloco
@@ -272,24 +273,41 @@ handler de `#mSave`.
 
 ## Navegador de arquivo
 
-Os campos de caminho do **Ambiente** têm um `📁` que abre o `#fbBack`, com as
-pastas da máquina em que o **servidor** roda — e por isso ele só existe com
-servidor (`body.srvOn`): aberta do disco, a página não alcança sistema de
-arquivos nenhum, e os campos continuam digitados à mão. A entrada é o
-`openBrowse({path, mode, onPick})`, com `mode:'file'` para os campos do
-certificado e da chave; o `onPick` **só preenche o campo** — quem grava
-continua sendo o Salvar do Ambiente.
+Todo campo de caminho tem um `📁` que abre o `#fbBack`, com as pastas da máquina
+em que o **servidor** roda — e por isso ele só existe com servidor
+(`body.srvOn`): aberta do disco, a página não alcança sistema de arquivos
+nenhum, e os campos continuam digitados à mão. São os do Ambiente (as três
+bases, mais o certificado e a chave, que abrem em `mode:'file'`) e os do modal
+do serviço: a subpasta de mídia (`#mData`), as duas do SABnzbd (`#mDlIn`,
+`#mDlDone`) e cada linha do `libRow()` do Jellyfin. A entrada é o
+`openBrowse({path, mode, onPick})`, e o `onPick` **só preenche o campo** — quem
+grava continua sendo o Salvar de cada modal.
 
-Três coisas dele:
+Botão novo é uma linha de HTML, não um handler: o clique é **delegado** no
+`document`, porque a linha do Jellyfin nasce em tempo de execução. O botão diz
+qual campo preenche — pelo `data-pick`, quando o campo tem id, e senão por estar
+ao lado dele na linha — e o `data-base` diz onde começar quando o campo está
+vazio.
+
+Cinco coisas dele:
 
 - **A página não decide onde está.** Quem resolve o caminho é o `browse.rs`: a
   listagem cai na pasta existente mais próxima da pedida, e o `fbAt` é sempre a
   resposta dele, nunca o que se pediu.
+- **O que entra no campo é o caminho como está**, sem variável: é o mesmo que
+  digitar produz, porque o `expandInto()` resolve o `${...}` enquanto se digita,
+  e o `dataOf()`/`realToVars()` põem a variável de volta na frente a caminho do
+  compose.
+- **Subpasta guarda os níveis.** O `dataOf()` fatia por `/` e passa o `slug()`
+  em cada pedaço (`subSlug`): pasta escolhida dois níveis abaixo da base vira
+  `series/4k`, e não o `series-4k` de achatar tudo de uma vez — que seria montar
+  uma pasta que ninguém escolheu. Todo lugar que usa a subpasta a cola numa
+  base, no host e dentro do container, então mais de um nível não custa nada.
 - **A lista é montada elemento a elemento**, não com `innerHTML`: os nomes vêm
   do disco e podem ter qualquer coisa dentro.
-- **Ele abre por cima do Ambiente** — o único modal que faz isso além da captura
-  da paleta —, daí o z-index e o lugar dele na ordem do Escape: fechá-lo não
-  pode levar o Ambiente junto com tudo o que foi digitado ali.
+- **Ele abre por cima de outro modal** — o único que faz isso além da captura da
+  paleta —, daí o z-index e o lugar dele na ordem do Escape: fechá-lo não pode
+  levar o modal de baixo junto com tudo o que foi digitado ali.
 
 ## Invariantes a preservar
 

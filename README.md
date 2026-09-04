@@ -187,12 +187,17 @@ And the **Theme** field shows the chosen palette's screenshot without leaving th
   a `?` that opens an explanation of what the value does — and, in the
   Environment, of how it lands in the generated files.
 - **Choosing the paths instead of typing them**: with a server, every path
-  field in the Environment gets a **📁** that opens a browser of the folders of
-  the machine the server runs on — often not the machine the page is open on.
-  One can walk the path by clicking its segments, show or hide the hidden ones
-  and **create a folder** right there, before choosing. A path typed before it
+  field gets a **📁** that opens a browser of the folders of the machine the
+  server runs on — often not the machine the page is open on. Those are the
+  Environment's (the three bases, the certificate and the key) and each
+  service's own modal: the **media subfolder** — or the downloads one —,
+  SABnzbd's two folders and **Jellyfin's extra folders**, one per row. One can
+  walk the path by clicking its segments, show or hide the hidden ones and
+  **create a folder** right there, before choosing. A path typed before it
   exists opens at the closest folder that does, which is exactly where the new
-  one is about to be made. The certificate and key fields choose a file instead
+  one is about to be made. A folder picked below the base becomes a subfolder
+  with all its levels (`series/4k`), and one outside the bases becomes a literal
+  path in the compose file. The certificate and key fields choose a file instead
   of a folder. Without a server the button is not there: opened from disk, the
   page cannot reach your file system.
 - **Jellyfin's network.xml**: with it in the stack, `BaseUrl` set to the nginx

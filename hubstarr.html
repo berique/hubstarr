@@ -234,7 +234,8 @@
   #mTpShot{display:block;margin-top:6px;font-size:12px;color:var(--muted)}
   .libs .lib{display:flex;gap:6px}
   .libs .lib button{padding:0 10px;color:var(--muted)}
-  .libs .lib button:hover{border-color:var(--danger);color:var(--danger)}
+  /* only the × is destructive: the 📁 next to it keeps the ordinary hover */
+  .libs .lib button.rm:hover{border-color:var(--danger);color:var(--danger)}
   /* extra profile templates: typed names become removable chips, not one line
      of text — the field stays free-form on purpose (see tagsHtml() below) */
   .tplTags{display:flex;flex-wrap:wrap;gap:6px;align-items:center;width:100%;
@@ -645,7 +646,8 @@ sudo sh get-docker.sh</pre>
           <span data-i18n="m.portHint">(fixed) — published by nginx only</span></span>
       </div>
       <div class="row" id="mDataRow"><label for="mData" id="mDataLabel">Subpasta de mídia</label>
-        <input type="text" id="mData" placeholder="/mnt/media/movies">
+        <div class="pathPick"><input type="text" id="mData" placeholder="/mnt/media/movies">
+          <button type="button" class="browse" data-pick="mData" data-i18n-title="btn.browse">📁</button></div>
       </div>
       <div class="row" id="mLibsRow" data-help="m.libsWhy"><label data-i18n="m.libs">Other folders</label>
         <div>
@@ -697,9 +699,11 @@ sudo sh get-docker.sh</pre>
       <div class="row" id="mPortRow" data-help="m.hostPortWhy"><label for="mPort" data-i18n="m.hostPort">Host port</label>
         <input type="text" id="mPort" placeholder="5055"></div>
       <div class="row" id="mDlInRow" data-help="m.dlInWhy"><label for="mDlIn" data-i18n="m.dlIn">Downloading</label>
-        <input type="text" id="mDlIn"></div>
+        <div class="pathPick"><input type="text" id="mDlIn">
+          <button type="button" class="browse" data-pick="mDlIn" data-i18n-title="btn.browse">📁</button></div></div>
       <div class="row" id="mDlDoneRow" data-help="m.dlDoneWhy"><label for="mDlDone" data-i18n="m.dlDone">Completed download</label>
-        <input type="text" id="mDlDone"></div>
+        <div class="pathPick"><input type="text" id="mDlDone">
+          <button type="button" class="browse" data-pick="mDlDone" data-i18n-title="btn.browse">📁</button></div></div>
       <div class="row" id="mDlKeyRow" data-help="m.dlKeyWhy"><label for="mDlKey" data-i18n="m.dlKey">API key</label>
         <div style="display:flex;gap:8px">
           <input type="text" id="mDlKey" class="fmt">
@@ -1241,7 +1245,7 @@ const I18N = {
   'm.libs':'Outras pastas',
   'm.libAdd':'+ pasta',
   'm.libRemove':'Remover',
-  'm.libsWhy':'Pastas de mídia que o Jellyfin deve enxergar além da base — um outro disco, um compartilhamento de rede. Cada uma vira um volume em <b>/data/&lt;nome da pasta&gt;</b>. As pastas que outros serviços já usam fora da base entram sozinhas; aqui é para o que só o Jellyfin conhece. O caminho é do host e digitado à mão: o navegador não abre um seletor de diretórios.',
+  'm.libsWhy':'Pastas de mídia que o Jellyfin deve enxergar além da base — um outro disco, um compartilhamento de rede. Cada uma vira um volume em <b>/data/&lt;nome da pasta&gt;</b>. As pastas que outros serviços já usam fora da base entram sozinhas; aqui é para o que só o Jellyfin conhece. O caminho é do host: com servidor, o 📁 ao lado abre o seletor de pastas dele; sem servidor, é digitado à mão.',
   'm.hw':'Aceleração',
   'm.hwCpu':'Só CPU (sem aceleração)',
   'm.hwIntel':'Intel — VAAPI / QuickSync',
@@ -1781,7 +1785,7 @@ const I18N = {
   'm.libs':'Other folders',
   'm.libAdd':'+ folder',
   'm.libRemove':'Remove',
-  'm.libsWhy':'Media folders Jellyfin should see beyond the base — another disk, a network share. Each one becomes a volume at <b>/data/&lt;folder name&gt;</b>. Folders other services already use outside the base come in on their own; this is for what only Jellyfin knows about. The path is on the host and typed by hand: the browser cannot open a directory picker.',
+  'm.libsWhy':'Media folders Jellyfin should see beyond the base — another disk, a network share. Each one becomes a volume at <b>/data/&lt;folder name&gt;</b>. Folders other services already use outside the base come in on their own; this is for what only Jellyfin knows about. The path is on the host: with a server, the 📁 beside it opens its folder browser; without one, it is typed by hand.',
   'm.hw':'Acceleration',
   'm.hwCpu':'CPU only (no acceleration)',
   'm.hwIntel':'Intel — VAAPI / QuickSync',
@@ -2321,7 +2325,7 @@ const I18N = {
   'm.libs':'Otras carpetas',
   'm.libAdd':'+ carpeta',
   'm.libRemove':'Quitar',
-  'm.libsWhy':'Carpetas de medios que Jellyfin debe ver además de la base — otro disco, un recurso de red. Cada una se vuelve un volumen en <b>/data/&lt;nombre de la carpeta&gt;</b>. Las carpetas que otros servicios ya usan fuera de la base entran solas; esto es para lo que solo Jellyfin conoce. La ruta es del host y se escribe a mano: el navegador no abre un selector de directorios.',
+  'm.libsWhy':'Carpetas de medios que Jellyfin debe ver además de la base — otro disco, un recurso de red. Cada una se vuelve un volumen en <b>/data/&lt;nombre de la carpeta&gt;</b>. Las carpetas que otros servicios ya usan fuera de la base entran solas; esto es para lo que solo Jellyfin conoce. La ruta es del host: con servidor, el 📁 de al lado abre su navegador de carpetas; sin servidor, se escribe a mano.',
   'm.hw':'Aceleración',
   'm.hwCpu':'Solo CPU (sin aceleración)',
   'm.hwIntel':'Intel — VAAPI / QuickSync',
@@ -2917,11 +2921,17 @@ const mediaSub = (s, title) => {
    the bind target) and, when the path is not under the Environment base, the
    literal path — in that case it is the literal that goes to the compose, with
    no variable. */
+/* Below the base the subfolder keeps its depth, one slug per level: a picked
+   `/mnt/media/tv/4k` mounts that, and not the `tv-4k` that slugging the whole
+   thing at once would produce — a folder that is not the one anybody chose.
+   Everywhere a subfolder is used it is glued to a base, on the host and inside
+   the container alike, so more than one level costs nothing. */
+const subSlug = p => p.split('/').map(slug).filter(Boolean).join('/');
 function dataOf(s){
   const v = expandVars($('#mData').value.trim()).replace(/\/+$/,'');
   const base = baseOf(s);
   if(!v || v === base) return {data:'', abs:''};
-  if(v.startsWith(base + '/')) return {data:slug(v.slice(base.length + 1)), abs:''};
+  if(v.startsWith(base + '/')) return {data:subSlug(v.slice(base.length + 1)), abs:''};
   const name = slug(v.slice(v.lastIndexOf('/') + 1));
   return v.startsWith('/') ? {data:name, abs:v} : {data:name, abs:''};
 }
@@ -3351,6 +3361,10 @@ function openModal(id, key){
   $('#mSolver').checked = cur.solver;
   $('#mDataLabel').textContent = t(s.dlClient ? 'm.dlDir' : 'm.mediaDir');
   $('#mData').placeholder = baseVar(s) + subOf(s.mdir);
+  /* where the file browser starts when the field was emptied: this service's
+     own base, which is the media one or the downloads one */
+  pickBtn('mData').dataset.base = baseOf(s);
+  pickBtn('mDlIn').dataset.base = pickBtn('mDlDone').dataset.base = DEFAULTS.dl;
   $('#mDataRow').style.display = (s.media && !s.noVol && !s.derived) ? 'grid' : 'none';
   $('#mLibsRow').style.display = s.library ? 'grid' : 'none';
   renderLibs(s.library ? cur.libs : []);
@@ -3629,13 +3643,18 @@ $('#nSave').onclick = ()=>{
 };
 
 /* ---------- extra library folders ---------- */
-// the browser opens no host directory picker: these are typed paths
+/* One row per folder: the path, the 📁 that picks it on the server (only with
+   one — see the file browser section) and the × that drops the row. The `📁`
+   has no `data-pick` because the row is built on the fly and there is no id to
+   point at: the handler takes the input beside it. */
 function libRow(path=''){
   const row = document.createElement('div');
   row.className = 'lib';
-  row.innerHTML = `<input type="text" value="${path}" placeholder="/mnt/disk2/movies">
-                   <button type="button" class="sm" title="${t('m.libRemove')}">×</button>`;
-  row.querySelector('button').onclick = ()=>{ row.remove(); hintNow(); };
+  row.innerHTML = `<input type="text" value="${attr(path)}" placeholder="/mnt/disk2/movies">
+                   <button type="button" class="sm browse" data-base="${attr(DEFAULTS.data)}"
+                           title="${attr(t('btn.browse'))}">📁</button>
+                   <button type="button" class="sm rm" title="${attr(t('m.libRemove'))}">×</button>`;
+  row.querySelector('button.rm').onclick = ()=>{ row.remove(); hintNow(); };
   const inp = row.querySelector('input');
   inp.addEventListener('input', ()=>{ expandInto(inp); hintNow(); });
   return row;
@@ -5874,13 +5893,27 @@ $('#fbNewName').addEventListener('keydown', e=>{
   if(e.key === 'Enter'){ e.preventDefault(); fbCreate(); }
 });
 
-// the field says where to start and what to do with the answer
-document.querySelectorAll('button.browse').forEach(b=>{
-  b.onclick = ()=>{
-    const inp = $('#' + b.dataset.pick);
-    openBrowse({path: inp.value.trim(), mode: b.dataset.mode,
-                onPick: v => { inp.value = v; }});
-  };
+/* One handler for every 📁, and not a click bound to each: some of them are
+   built on the fly — Jellyfin's folder rows. The button says which field it
+   fills, by `data-pick` when the field has an id and otherwise by being next to
+   it in the row; `data-base` is where to start when the field is empty.
+
+   Two things the service modal's fields need and the Environment's do not: they
+   may hold a `${BASE_MEDIA}` to expand before asking, and the hint under the
+   modal has to be rebuilt with what was chosen. What goes into the field is the
+   path as it is — the same thing typing it produces, since `expandInto()`
+   resolves the variable as one types, and `dataOf()`/`realToVars()` put the
+   variable back in front on the way to the compose. */
+const pickBtn = id => document.querySelector(`button.browse[data-pick="${id}"]`);
+
+document.addEventListener('click', e=>{
+  const b = e.target.closest && e.target.closest('button.browse');
+  if(!b) return;
+  const inp = b.dataset.pick ? $('#' + b.dataset.pick) : b.parentNode.querySelector('input');
+  if(!inp) return;
+  openBrowse({path: expandVars(inp.value.trim()) || b.dataset.base || '',
+              mode: b.dataset.mode,
+              onPick: v => { inp.value = v; if(b.closest('#backdrop')) hintNow(); }});
 });
 
 
