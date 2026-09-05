@@ -13,7 +13,10 @@ estão no tema escuro), o `added` da stack de exemplo,
 `$('#combo').classList.add('open')`, `openModal('sonarr',null)` mais
 `openShot()` na da paleta, `openCred()` na dos créditos, `openCfg()` mais o `scrollTop` do `#cfgBody` na
 da Configuração (e um `SERVER` de mentira mais um `STATUS` com algum
-container `running`, senão o "Aplicar na stack" não aparece) — e rode:
+container `running`, senão o "Aplicar na stack" não aparece; o `STATUS` sai do
+próprio `added`, e o `body.classList.add('srvOn')` é o que revela os **pontos de
+status** da lista — sem ele a captura mostrava um "Aplicar na stack", que só
+existe com servidor, ao lado de uma lista sem ponto nenhum) — e rode:
 
 ```sh
 chromium-browser --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
@@ -26,10 +29,11 @@ Duas coisas que a `screenshot.png` pede além disso: **forçar o idioma** com um
 captura anterior em outro idioma contamina a próxima, em silêncio — e abrir a
 Wishlist pelo `open` do `<details>` dela, deixando o bloco do Docker fechado.
 
-`services.png`, `theme.png` e `credits.png` são 1480×760, a `config.png` e a
-`browse.png` são 1480×900 — os modais são densos e em 760 não caberia o que
-mostram — e a `screenshot.png` acompanha a altura do conteúdo (hoje 1888, com a
-Wishlist aberta).
+`theme.png` e `credits.png` são 1480×760, a `config.png` e a `browse.png` são
+1480×900 — os modais são densos e em 760 não caberia o que mostram —, a
+`services.png` é 1480×1000, porque o dropdown aberto cobre a lista e é abaixo
+dele que aparecem as linhas com o ponto de status, e a `screenshot.png`
+acompanha a altura do conteúdo (hoje 1888, com a Wishlist aberta).
 
 A `browse.png` é o navegador de pastas por cima do Ambiente e pede duas coisas
 próprias: um `document.body.classList.add('srvOn')`, que é o que revela o `📁`,
