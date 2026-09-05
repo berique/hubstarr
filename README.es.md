@@ -474,6 +474,16 @@ Sin eso las crea Docker, como `root`, y el app no consigue escribir en ellas. Un
 ruta que ya existe y no es carpeta detiene el Levantar ahí mismo, con su nombre
 en el log.
 
+El **Levantar** también **actualiza las imágenes**: el `up` lleva
+`--pull always`, porque todo lo que la página escribe en el compose es una
+etiqueta móvil (`:latest`) — sin eso, la stack que se levantó una vez se
+quedaría para siempre en la imagen de aquel primer día, en silencio. Por eso el
+primer Levantar después de un tiempo tarda más: son las imágenes nuevas
+bajando. En el log sale una línea por imagen, y no el progreso capa a capa
+(`--quiet-pull`), que llenaría el modal sin decir nada. El clic en el punto de
+estado de un servicio hace lo mismo con él solo — es el camino para actualizar
+una app sin tocar el resto de la stack.
+
 El **Levantar** ya deja la stack configurada: en cuanto cada app **termina de
 iniciar** — el servidor espera a que responda `system/status`, y no solo a que
 el puerto atienda —, el

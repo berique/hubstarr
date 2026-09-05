@@ -463,6 +463,16 @@ that creates them, as `root`, and the app cannot write in them. A path that
 already exists and is not a folder stops Bring up right there, naming it in the
 log.
 
+**Bring up** also **updates the images**: the `up` carries `--pull always`,
+because every image the page writes into the compose is a moving tag
+(`:latest`) — without it, a stack that came up once would sit on that first
+day's image forever, quietly. That is why the first bring up after a while takes
+longer: those are the new images coming down. The log gets one line per image,
+not the layer-by-layer progress (`--quiet-pull`), which would fill the modal
+without saying anything. Clicking a service's status dot does the same for that
+one container — it is the way to update one app without touching the rest of the
+stack.
+
 **Bring up** leaves the stack configured: as soon as each app **finishes
 starting** — the server waits for `system/status` to answer, not merely for the
 port to accept —, the

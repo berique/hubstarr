@@ -135,8 +135,29 @@ pub async fn running(docker: &str, dir: &Path) -> Vec<String> {
         .collect()
 }
 
+/// `--pull always` for the same reason `configarr()` has it: every image the
+/// page writes is a moving tag (`:latest`, `nginx:alpine`), and a plain `up`
+/// reuses whatever is cached under it — a stack that came up once would stay
+/// on that first image forever, quietly, and Subir would stop being the way to
+/// update the apps. `--quiet-pull` is what keeps that affordable in the modal:
+/// the per-layer progress of a dozen images is thousands of lines through the
+/// job log, and what is worth reading there is one line per image.
 pub async fn up(docker: &str, dir: &Path, log: Log) -> Result<(), Msg> {
-    run(docker, &["compose", "up", "-d", "--remove-orphans"], dir, &log).await?;
+    run(
+        docker,
+        &[
+            "compose",
+            "up",
+            "-d",
+            "--remove-orphans",
+            "--pull",
+            "always",
+            "--quiet-pull",
+        ],
+        dir,
+        &log,
+    )
+    .await?;
     // whatever just got (re)created may have a new IP; nginx needs to forget
     // the old one before wait_apps() starts polling through it
     reload_nginx(docker, dir, &log).await;
@@ -162,9 +183,26 @@ pub fn ok_service(key: &str) -> bool {
 
 /// but the compose would read it as an option.
 /// Brings a single container up, without touching the others. `--no-deps` is
-/// what keeps the promise of the click: whoever is stopped next to it stays stopped.
+/// what keeps the promise of the click: whoever is stopped next to it stays
+/// stopped. It pulls like `up()` does — the click on the status dot is the way
+/// to update one app without moving the rest of the stack.
 pub async fn up_one(docker: &str, dir: &Path, key: &str, log: Log) -> Result<(), Msg> {
-    run(docker, &["compose", "up", "-d", "--no-deps", key], dir, &log).await?;
+    run(
+        docker,
+        &[
+            "compose",
+            "up",
+            "-d",
+            "--no-deps",
+            "--pull",
+            "always",
+            "--quiet-pull",
+            key,
+        ],
+        dir,
+        &log,
+    )
+    .await?;
     // recreated with --no-deps still gets a fresh IP; skip when the service
     // brought up *is* nginx — it just started with nothing cached yet
     if key != NGINX_SERVICE {

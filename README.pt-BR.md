@@ -453,6 +453,15 @@ esperam — as de configuração, as de mídia e as de download. Sem isso quem a
 cria é o Docker, como `root`, e o app não consegue escrever nelas. Caminho que
 já existe e não é pasta faz o Subir parar ali, com o nome dele no log.
 
+O **Subir** também **atualiza as imagens**: o `up` vai com `--pull always`,
+porque tudo o que a página escreve no compose é tag móvel (`:latest`) — sem
+isso, a stack que subiu uma vez ficaria para sempre na imagem daquele primeiro
+dia, calada. É por isso que a subida seguinte a um tempo parado demora mais: são
+as imagens novas descendo. No log sai uma linha por imagem, e não o progresso
+camada a camada (`--quiet-pull`), que encheria o modal sem dizer nada. O clique
+no ponto de status de um serviço faz o mesmo com ele sozinho — é o caminho para
+atualizar um app sem mexer no resto da stack.
+
 O **Subir** já deixa a stack configurada: assim que cada app **termina de
 iniciar** — o servidor espera o `system/status` responder, e não só a porta
 atender —, o
